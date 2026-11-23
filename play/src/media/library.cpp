@@ -5,6 +5,7 @@
 #include "reader/pages.hpp"
 
 #include <cctype>
+#include <chrono>
 #include <cstdio>
 #include <ctime>
 #include <filesystem>
@@ -229,10 +230,14 @@ std::vector<std::pair<std::string, Poster>> Posters::take() {
     return out;
 }
 
-static std::string poster_file(const std::string& dir, const Item& item) {
+void resample(const uint32_t* src, int sw, int sh, uint32_t* dst, int dw, int dh); // shared.cpp
+
+std::string poster_path(const std::string& dir, const Item& item) {
     // The key holds the path; size and time make a changed file a new poster.
     return dir + "/" + item.key + "-" + std::to_string(item.size ^ uint64_t(item.mtime)) + ".px";
 }
+
+static std::string poster_file(const std::string& dir, const Item& item) { return poster_path(dir, item); }
 
 bool Posters::cached(const Item& item, Poster& out) const {
     std::ifstream f(poster_file(dir_, item), std::ios::binary);
@@ -261,11 +266,15 @@ void Posters::run() {
             queue_.pop_front();
         }
         Poster p;
-        if (cached(item, p)) {
-            std::lock_guard<std::mutex> lock(mutex_);
-            done_.push_back({item.key, std::move(p)});
-            continue;
-        }
+        make(item, p);
+        std::lock_guard<std::mutex> lock(mutex_);
+        done_.push_back({item.key, std::move(p)});
+    }
+}
+
+bool Posters::make(const Item& item, Poster& p) {
+    {
+        if (cached(item, p)) return true;
         std::string error, title;
         Item source = item;
         if (item.kind == Kind::Folder) { // a folder shows its first film or book
@@ -308,9 +317,183 @@ void Posters::run() {
         } else {
             std::fprintf(stderr, "rgds-media: no picture for %s: %s\n", item.path.c_str(), error.c_str());
         }
-        std::lock_guard<std::mutex> lock(mutex_);
-        done_.push_back({item.key, std::move(p)});
     }
+    return !p.failed;
+}
+
+// ---- The launcher's index (rgds-media --index)
+
+namespace {
+
+// A 24-bit BMP, which the launcher's picture loader reads on its worker thread.
+bool write_bmp(const std::string& file, const uint32_t* px, int w, int h) {
+    const int stride = (w * 3 + 3) & ~3;
+    const uint32_t data = uint32_t(stride) * uint32_t(h), size = 54 + data;
+    std::vector<unsigned char> out(size, 0);
+    auto put32 = [&](size_t at, uint32_t v) {
+        for (int i = 0; i < 4; ++i) out[at + size_t(i)] = static_cast<unsigned char>(v >> (8 * i));
+    };
+    out[0] = 'B', out[1] = 'M';
+    put32(2, size);
+    put32(10, 54);
+    put32(14, 40);
+    put32(18, uint32_t(w));
+    put32(22, uint32_t(h));
+    out[26] = 1, out[28] = 24;
+    put32(34, data);
+    for (int y = 0; y < h; ++y) {
+        unsigned char* row = out.data() + 54 + size_t(h - 1 - y) * size_t(stride);
+        for (int x = 0; x < w; ++x) {
+            const uint32_t p = px[size_t(y) * size_t(w) + size_t(x)]; // RGBA in memory: R is the low byte
+            row[x * 3 + 0] = static_cast<unsigned char>(p >> 16);
+            row[x * 3 + 1] = static_cast<unsigned char>(p >> 8);
+            row[x * 3 + 2] = static_cast<unsigned char>(p);
+        }
+    }
+    const std::string tmp = file + ".tmp";
+    {
+        std::ofstream f(tmp, std::ios::binary);
+        f.write(reinterpret_cast<const char*>(out.data()), std::streamsize(out.size()));
+        if (!f) return false;
+    }
+    std::error_code ec;
+    fs::rename(tmp, file, ec);
+    return !ec;
+}
+
+struct Entry {
+    std::string shelf, parent;
+    Item item;
+    double length = 0;
+    int shade = 150;           // how far the hero darkens the blur so white words read over it
+    std::string picture, blur; // BMPs; empty until made
+    bool tried = false;
+};
+
+void walk(const std::string& dir, bool books, const std::string& shelf, std::vector<Entry>& out, int depth) {
+    if (depth > 8) return;
+    for (const Item& it : list_folder(dir, books)) {
+        Entry e;
+        e.shelf = shelf;
+        e.parent = dir;
+        e.item = it;
+        out.push_back(e);
+        if (it.kind == Kind::Folder) walk(it.path, books, shelf, out, depth + 1);
+    }
+}
+
+std::string clean(std::string s) {
+    for (char& c : s)
+        if (c == '\t' || c == '\n' || c == '\r') c = ' ';
+    return s;
+}
+
+bool write_index(const std::string& file, const std::vector<Entry>& all, bool done) {
+    const std::string tmp = file + ".tmp";
+    {
+        std::ofstream f(tmp);
+        f << "# rgds-media index 1\t" << (done ? "done" : "working") << '\n';
+        for (const Entry& e : all) {
+            const char* kind = e.item.kind == Kind::Folder ? "folder" : e.item.kind == Kind::Book ? "book" : "video";
+            f << e.shelf << '\t' << kind << '\t' << clean(e.parent) << '\t' << clean(e.item.path) << '\t'
+              << clean(e.item.name) << '\t' << e.item.key << '\t' << e.length << '\t' << e.picture << '\t' << e.blur
+              << '\t' << e.item.children << '\t' << e.item.size << '\t' << e.item.ext << '\t' << e.shade << '\n';
+        }
+        if (!f) return false;
+    }
+    std::error_code ec;
+    fs::rename(tmp, file, ec);
+    return !ec;
+}
+
+} // namespace
+
+int make_index(const std::vector<std::string>& videos, const std::vector<std::string>& books,
+               const std::string& state_dir) {
+    const std::string dir = state_dir + "/posters", index = state_dir + "/index.tsv";
+    std::error_code ec;
+    fs::create_directories(dir, ec);
+    std::vector<Entry> all;
+    for (const auto& d : videos) {
+        fs::create_directories(d, ec);
+        walk(d, false, "videos", all, 0);
+    }
+    for (const auto& d : books) {
+        fs::create_directories(d, ec);
+        walk(d, true, "books", all, 0);
+    }
+    // The shades worked out last time (they need the picture's pixels, which are not read again).
+    std::map<std::string, int> shades;
+    {
+        std::ifstream old(index);
+        std::string line;
+        while (std::getline(old, line)) {
+            std::vector<std::string> f;
+            std::istringstream row(line);
+            for (std::string cell; std::getline(row, cell, '\t');) f.push_back(cell);
+            if (f.size() >= 13 && !f[7].empty()) shades[f[7]] = std::atoi(f[12].c_str());
+        }
+    }
+    // What is already made goes into the first index at once: the launcher shows the shelves straight away.
+    auto names = [&](const Entry& e, std::string& picture, std::string& blur) {
+        const std::string base = poster_path(dir, e.item);
+        picture = base.substr(0, base.size() - 2) + "bmp";
+        blur = base.substr(0, base.size() - 2) + "blur.bmp";
+    };
+    for (Entry& e : all) {
+        std::string picture, blur;
+        names(e, picture, blur);
+        std::ifstream px(poster_path(dir, e.item), std::ios::binary);
+        int32_t head[2] = {};
+        double length = 0;
+        px.read(reinterpret_cast<char*>(head), sizeof head);
+        px.read(reinterpret_cast<char*>(&length), sizeof length);
+        if (px && head[0] > 0) e.length = e.item.kind == Kind::Folder ? 0 : length;
+        if (fs::exists(picture, ec) && fs::exists(blur, ec)) {
+            e.picture = picture, e.blur = blur;
+            if (shades.count(picture)) e.shade = shades[picture];
+        }
+    }
+    write_index(index, all, false);
+    // Then the rest: what is being watched or read first, then in shelf order.
+    Places places;
+    places.load(state_dir + "/places.tsv");
+    std::vector<size_t> order;
+    for (size_t i = 0; i < all.size(); ++i)
+        if (places.get(all[i].item.key).started()) order.push_back(i);
+    for (size_t i = 0; i < all.size(); ++i)
+        if (!places.get(all[i].item.key).started()) order.push_back(i);
+    Posters maker;
+    maker.set_folder(dir);
+    auto written = std::chrono::steady_clock::now();
+    for (size_t i : order) {
+        Entry& e = all[i];
+        if (!e.picture.empty()) continue;
+        Poster p;
+        if (!maker.make(e.item, p) || p.px.empty()) continue;
+        std::string picture, blur;
+        names(e, picture, blur);
+        // The blur of the picture behind the hero: 24 px wide, scaled up smooth by the launcher.
+        const int bw = 24, bh = std::max(2, 24 * p.h / std::max(1, p.w));
+        std::vector<uint32_t> small(size_t(bw) * size_t(bh));
+        resample(p.px.data(), p.w, p.h, small.data(), bw, bh);
+        // A pale picture needs a deeper shade: the ground ends near 55 of 255 whatever it was.
+        double sum = 0;
+        for (uint32_t q : small) sum += (q & 255) * .3 + ((q >> 8) & 255) * .59 + ((q >> 16) & 255) * .11;
+        const double lum = sum / double(std::max<size_t>(1, small.size()));
+        e.shade = std::clamp(int(255 * (1 - 55.0 / std::max(55.0, lum))), 110, 225);
+        if (write_bmp(picture, p.px.data(), p.w, p.h) && write_bmp(blur, small.data(), bw, bh)) {
+            e.picture = picture, e.blur = blur;
+            if (e.item.kind != Kind::Folder) e.length = p.length;
+        }
+        const auto now = std::chrono::steady_clock::now();
+        if (now - written > std::chrono::milliseconds(350)) {
+            write_index(index, all, false);
+            written = now;
+        }
+    }
+    write_index(index, all, true);
+    return 0;
 }
 
 } // namespace media

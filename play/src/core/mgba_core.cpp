@@ -295,10 +295,12 @@ public:
                 else if (a >= 0xD000 && a < 0xE000 && console == 6) value = int(core_->rawRead8(core_, a, 1));
                 else if (a < 0x10000) value = int(core_->busRead8(core_, a));
                 else if (a < 0x16000) {
-                    if (console == 6) value = int(core_->rawRead8(core_, 0xD000 + (a - 0x10000) % 0x1000,
-                                                                   int(2 + (a - 0x10000) / 0x1000)));
+                    if (console == 6)
+                        value = int(
+                            core_->rawRead8(core_, 0xD000 + (a - 0x10000) % 0x1000, int(2 + (a - 0x10000) / 0x1000)));
                 } else if (a < 0x34000)
-                    value = int(core_->rawRead8(core_, 0xA000 + (a - 0x16000) % 0x2000, int(1 + (a - 0x16000) / 0x2000)));
+                    value =
+                        int(core_->rawRead8(core_, 0xA000 + (a - 0x16000) % 0x2000, int(1 + (a - 0x16000) / 0x2000)));
             }
             if (value < 0) break;
             buffer[done] = uint8_t(value);

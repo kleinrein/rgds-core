@@ -13,16 +13,33 @@
 
 namespace rgds {
 enum class VizMode {
-    Bars, Scope, Fire, Plasma, Stars, Meters, Vector, Radial, Waterfall, Tunnel,
-    Prism, Lissajous, Matrix, Kaleido, Fireworks, Lava, Aurora, Copper, Synthwave, Ripples, Rotozoom,
+    Bars,
+    Scope,
+    Fire,
+    Plasma,
+    Stars,
+    Meters,
+    Vector,
+    Radial,
+    Waterfall,
+    Tunnel,
+    Prism,
+    Lissajous,
+    Matrix,
+    Kaleido,
+    Fireworks,
+    Lava,
+    Aurora,
+    Copper,
+    Synthwave,
+    Ripples,
+    Rotozoom,
     Count
 };
 inline constexpr std::array<const char*, size_t(VizMode::Count)> viz_names = {
-    "Spectrum",  "Oscilloscope", "Fire",          "Plasma",       "Starfield",
-    "VU meters", "Vectorscope",  "Radial spectrum", "Waterfall", "Tunnel",
-    "Prism",     "Lissajous",    "Matrix rain",     "Kaleidoscope", "Fireworks",
-    "Lava lamp", "Aurora",       "Copper bars",     "Synthwave",    "Ripples",
-    "Rotozoom"};
+    "Spectrum",        "Oscilloscope", "Fire",   "Plasma",      "Starfield", "VU meters",   "Vectorscope",
+    "Radial spectrum", "Waterfall",    "Tunnel", "Prism",       "Lissajous", "Matrix rain", "Kaleidoscope",
+    "Fireworks",       "Lava lamp",    "Aurora", "Copper bars", "Synthwave", "Ripples",     "Rotozoom"};
 
 // What a visualiser reads: a copy of the engine's numbers, taken once a frame.
 struct VizInput {
@@ -275,7 +292,7 @@ private:
         const int radius = int(reach);
         show_glow([&](int x, int y) {
             const int dx = x - int(cx), dy = y - int(cy);
-            if ((dx == 0 || dy == 0) && (x + y) % 3 == 0) return true; // the axes, dotted
+            if ((dx == 0 || dy == 0) && (x + y) % 3 == 0) return true;             // the axes, dotted
             if (dx == dy || dx == -dy) return std::abs(dx) < radius && x % 2 == 0; // L and R
             const int ring = dx * dx * 10 / 17 + dy * dy; // an ellipse as wide as the trace may go
             return std::abs(ring - radius * radius) < radius && (x % 2 == 0);
@@ -326,7 +343,8 @@ private:
         for (int k = 0; k < ridges; k++) {
             const float depth = float(k) / float(ridges - 1), near = 1 - depth;
             const float span = float(width) * (.96f - depth * .46f), left = (float(width) - span) / 2;
-            const float floor = float(height) - 6 - depth * float(height) * .52f, lift = float(height) * (.16f + near * .3f);
+            const float floor = float(height) - 6 - depth * float(height) * .52f,
+                        lift = float(height) * (.16f + near * .3f);
             const uint32_t colour = mix(back, ramp[size_t(110 + int(near * 145))], .25f + near * .75f);
             const auto& row = ridge[size_t(k)];
             int before_x = -1, before_y = 0;
@@ -340,7 +358,8 @@ private:
                 const int y = int(std::lround(floor - std::pow(level, 1.3f) * lift * (.35f + .65f * taper)));
                 if (x >= 0 && x < width) {
                     // Behind a nearer ridge: hidden. Otherwise the line, joined up with its neighbour.
-                    const int from = before_x < 0 ? y : std::min(before_y, y), to = before_x < 0 ? y : std::max(before_y, y);
+                    const int from = before_x < 0 ? y : std::min(before_y, y),
+                              to = before_x < 0 ? y : std::max(before_y, y);
                     for (int py = std::max(0, from); py <= std::min(height - 1, to); py++)
                         if (py < horizon[size_t(x)]) pixels[size_t(py) * width + size_t(x)] = colour;
                     horizon[size_t(x)] = std::min(horizon[size_t(x)], std::max(0, y));
@@ -392,7 +411,8 @@ private:
             for (int i = 0; i <= 48; i++) {
                 const float a = float(i) / 48 * 6.2831853f + r.turn;
                 const float spike = r.shape[size_t((i % 48) / 3)] * .35f;
-                const float x = cx + std::sin(a) * radius * (1 + spike) * 1.4f, y = cy - std::cos(a) * radius * (1 + spike);
+                const float x = cx + std::sin(a) * radius * (1 + spike) * 1.4f,
+                            y = cy - std::cos(a) * radius * (1 + spike);
                 if (i) beam(bx, by, x, y, colour, (.25f + near * .6f) * (.5f + r.energy * .5f), near > .7f ? 1.6f : 1);
                 bx = x;
                 by = y;
@@ -656,7 +676,8 @@ private:
         clock += dt * (.5f + in.bass * 1.6f);
         hue_clock += dt * .045f;
         flash = std::max(in.beat, flash - dt * 4);
-        const float loud = .45f + .55f * loudness(in), cx = width / 2.f, cy = height / 2.f, scale = 1.f / (height * .5f);
+        const float loud = .45f + .55f * loudness(in), cx = width / 2.f, cy = height / 2.f,
+                    scale = 1.f / (height * .5f);
         const float segment = 6.2831853f / 6, spin = clock * .12f, zoom = 2.6f + in.bass * .9f + std::sin(clock * .2f);
         for (int y = 0; y < height; y += 2)
             for (int x = 0; x < width; x += 2) {
@@ -727,7 +748,8 @@ private:
                     }
                     for (int oy = -5; oy <= 5; oy++)
                         for (int ox = -8; ox <= 8; ox++)
-                            light(int(bx) + ox, int(by) + oy, hue(h0, .3f), .5f * std::max(0.f, 1 - std::hypot(ox / 1.6f, float(oy)) / 5));
+                            light(int(bx) + ox, int(by) + oy, hue(h0, .3f),
+                                  .5f * std::max(0.f, 1 - std::hypot(ox / 1.6f, float(oy)) / 5));
                 }
                 continue;
             }
@@ -745,11 +767,10 @@ private:
         hue_clock += dt * .02f;
         for (int x = 0; x < width; x++) {
             const int h = 9 + int(5 + 4 * std::sin(float(x) * .13f) + 3 * std::sin(float(x) * .41f + 1.f) +
-                                    2.5f * std::sin(float(x) * .07f + 3.f));
+                                  2.5f * std::sin(float(x) * .07f + 3.f));
             for (int y = height - h; y < height; y++) {
                 uint32_t colour = wall;
-                if ((x / 3 + y / 4) % 2 == 0 && (x % 3) == 1 && (y % 4) < 2 &&
-                    ((x * 31 + y * 17) % 11) < 5)
+                if ((x / 3 + y / 4) % 2 == 0 && (x % 3) == 1 && (y % 4) < 2 && ((x * 31 + y * 17) % 11) < 5)
                     colour = mix(rgb(255, 200, 90), tintc, .25f);
                 put(x, y, colour);
             }
@@ -802,14 +823,16 @@ private:
         for (int y = 0; y < height * 7 / 10; y++)
             for (int x = (y * 7) % 13; x < width; x += 13) {
                 const uint32_t h = uint32_t(x) * 73856093u ^ uint32_t(y) * 19349663u;
-                if (h % 11 == 0) put(x, y, mix(back, bright, .25f + .35f * (.5f + .5f * std::sin(clock * 2 + float(h % 97)))));
+                if (h % 11 == 0)
+                    put(x, y, mix(back, bright, .25f + .35f * (.5f + .5f * std::sin(clock * 2 + float(h % 97)))));
             }
         for (int k = 0; k < 3; k++) {
             for (int x = 0; x < width; x++) {
                 const float place = float(x) / float(width - 1), level = band_at(in, place * .85f + .05f);
-                const float top = height * (.2f + .13f * float(k)) +
-                                  std::sin(float(x) * .021f + clock * (.5f + .2f * float(k)) + float(k) * 2) * height * .09f +
-                                  std::sin(float(x) * .047f - clock * .9f) * height * .03f - level * height * .2f;
+                const float top =
+                    height * (.2f + .13f * float(k)) +
+                    std::sin(float(x) * .021f + clock * (.5f + .2f * float(k)) + float(k) * 2) * height * .09f +
+                    std::sin(float(x) * .047f - clock * .9f) * height * .03f - level * height * .2f;
                 const float length = height * .4f + level * height * .25f;
                 const float rays = .72f + .28f * std::sin(float(x) * .33f + clock * 2.2f + float(k));
                 for (int y = std::max(0, int(top)); y < std::min(height, int(top + length)); y++) {
@@ -844,7 +867,8 @@ private:
         const auto phase = [&](int i) { return clock * 1.15f + float(i) * 1.12f; };
         std::sort(order.begin(), order.end(), [&](int a, int b) { return std::cos(phase(a)) < std::cos(phase(b)); });
         for (int i : order) {
-            const float level = band_at(in, float(i) / (count - 1)), centre = height / 2.f + std::sin(phase(i)) * height * .34f * (.65f + level * .5f);
+            const float level = band_at(in, float(i) / (count - 1)),
+                        centre = height / 2.f + std::sin(phase(i)) * height * .34f * (.65f + level * .5f);
             const int half = 7 + int(level * 7 + flash * 3);
             const float h = hue_clock + float(i) / count * 1.1f + .02f * std::sin(clock + float(i));
             for (int dy = -half; dy <= half; dy++) {
@@ -862,8 +886,8 @@ private:
         clock += dt * (.4f + loudness(in) * 1.6f);
         hue_clock += dt * .004f;
         flash = std::max(in.beat, flash - dt * 4);
-        const float horizon = height * .56f, cx = width / 2.f, sun_r = height * .3f * (1 + in.bass * .1f + flash * .04f),
-                    sun_y = horizon - sun_r * .38f;
+        const float horizon = height * .56f, cx = width / 2.f,
+                    sun_r = height * .3f * (1 + in.bass * .1f + flash * .04f), sun_y = horizon - sun_r * .38f;
         std::vector<int> ridge_top(static_cast<size_t>(width), 0);
         for (int x = 0; x < width; x++) {
             const float place = std::fabs(2.f * float(x) / float(width - 1) - 1);
@@ -897,8 +921,11 @@ private:
                     const float z = 70.f / (row + .6f), u = (float(x) - cx) / (row + .6f) * .5f;
                     const float line_z = fract(z - clock * .9f), line_u = std::fabs(fract(u) - .5f);
                     const float thickness = .07f + t * .06f;
-                    const float cover = std::max(line_z < thickness ? 1.f : 0.f, line_u > .5f - thickness * 1.5f ? 1.f : 0.f);
-                    if (cover > 0) colour = mix(colour, mix(hue(.88f + hue_clock, .85f), hue(.5f + hue_clock, .8f), t), (.55f + t * .45f + flash * .25f));
+                    const float cover =
+                        std::max(line_z < thickness ? 1.f : 0.f, line_u > .5f - thickness * 1.5f ? 1.f : 0.f);
+                    if (cover > 0)
+                        colour = mix(colour, mix(hue(.88f + hue_clock, .85f), hue(.5f + hue_clock, .8f), t),
+                                     (.55f + t * .45f + flash * .25f));
                     if (y == int(horizon)) colour = hue(.9f, .5f);
                 }
                 pixels[size_t(y) * width + size_t(x)] = colour;
@@ -967,7 +994,8 @@ private:
                 const bool check = (int(std::floor(u)) + int(std::floor(v))) & 1;
                 const float h = hue_clock + u * .03f + v * .02f + (check ? .5f : 0.f);
                 const float d = std::hypot(dx, dy) / float(width);
-                const uint32_t colour = hue(h, check ? .8f : .6f, (check ? .95f : .5f) * loud * (1 - d * .5f) + flash * .1f);
+                const uint32_t colour =
+                    hue(h, check ? .8f : .6f, (check ? .95f : .5f) * loud * (1 - d * .5f) + flash * .1f);
                 const size_t at = size_t(y) * width + size_t(x);
                 pixels[at] = colour;
                 if (x + 1 < width) pixels[at + 1] = colour;

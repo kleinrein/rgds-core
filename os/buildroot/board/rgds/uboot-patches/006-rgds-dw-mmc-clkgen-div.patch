@@ -1,0 +1,24 @@
+RG DS OS: run the SD card at the clock U-Boot asks for, not half of it.
+
+Rockchip's dw_mmc (rk3288 and later, the RK3568 included) divides its input clock by 2 in its CLKGEN before the
+core's CLKDIV, which is why Linux's dw_mmc-rockchip asks the CRU for twice the card clock (RK3288_CLKGEN_DIV).
+U-Boot asks for the card clock itself, so with CLKDIV bypassed a 50 MHz high-speed card ran at 25 MHz: on the RG DS
+a raw 10 MiB read took 0.872 s (12.0 MB/s, the 25 MHz limit), with the CRU at 50 MHz (CLKSEL_CON30 0x5420) and
+CLKDIV 0 read back before boot (docs/OWN_BSP_PLAN.md, Phase E). A rate the CRU cannot make (800 kHz for the 400 kHz
+identification clock) falls back to the old request, which the CRU rounds to 750 kHz as before.
+
+--- a/drivers/mmc/rockchip_dw_mmc.c
++++ b/drivers/mmc/rockchip_dw_mmc.c
+@@ -48,7 +48,11 @@
+ 	if (host->mmc->selected_mode == MMC_DDR_52 && host->mmc->bus_width == 8)
+ 		freq *= 2;
+
+-	ret = clk_set_rate(&priv->clk, freq);
++	/* the controller's CLKGEN halves its input: ask the CRU for twice the clock (Linux's RK3288_CLKGEN_DIV) */
++	ret = clk_set_rate(&priv->clk, freq * 2);
++	if (ret < 0)
++		ret = clk_set_rate(&priv->clk, freq);
++
+ 	if (ret < 0) {
+ 		debug("%s: err=%d\n", __func__, ret);
+ 		return 0;

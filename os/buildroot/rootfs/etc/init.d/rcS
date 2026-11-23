@@ -69,6 +69,10 @@ mkdir -p /data/rgds/userdata /data/rgds/logs /data/rgds/cache/mesa /data/rgds/ss
 # the 3DS folder where the engine is (emulators.tanuki_engine: in the image since 0.9.1, or on the data partition)
 for e in /data/rgds/engines/tanuki3ds /usr/share/rgds/engines/tanuki3ds; do [ -f $e/run.sh ] && mkdir -p /data/roms/3ds; done
 mark "rcS: data ready"
+# last boot's system and kernel logs become *.prev.txt; from here they are copied to the card every minute
+# (usr/libexec/rgds/logs), and compressed swap in RAM is set up (usr/libexec/rgds/zram)
+/usr/libexec/rgds/logs boot
+/usr/libexec/rgds/zram 2>> /run/rgds/messages &
 # saves RG DS Flasher kept from an old card, at the end of a new one: copied in once, on the first boot
 [ -b "$DISK" ] && [ ! -f /run/rgds/data-failed ] && /usr/libexec/rgds/handoff "$DISK"
 /usr/libexec/rgds/saved-brightness
@@ -122,6 +126,7 @@ hardware() {
       for m in /sys/class/drm/card*-DSI-*/modes; do echo "${m%/modes}: $(head -n 1 "$m")"; done
       echo; cat /run/rgds/messages; } > /data/rgds/logs/hardware.txt 2>&1
 }
-( sleep 20; cp /run/rgds/boot-times /data/rgds/logs/boot.txt; dmesg > /data/rgds/logs/dmesg.txt; hardware
+( sleep 20; cp /run/rgds/boot-times /data/rgds/logs/boot.txt; /usr/libexec/rgds/logs save; hardware
   sleep 100; hardware ) &
+nice -n 19 /usr/libexec/rgds/logs watch &
 exit 0

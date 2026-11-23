@@ -57,7 +57,7 @@ define RGDS_LINUX_SLEEP_CONFIG
 	cp $(RGDS_BOARD)/kernel/rockchip-rk3568-suspend.h $(LINUX_DIR)/include/dt-bindings/suspend/rockchip-rk3568.h
 endef
 # The device trees again before every kernel build, like the drivers: board/rgds/dts copied afresh and the dts
-# patches re-applied (a patch already in the tree, such as 0005 on rk356x-base.dtsi, is skipped; a patch that no
+# patches re-applied (a patch already in the tree is skipped; a patch that no
 # longer fits fails the build).
 define RGDS_LINUX_DTS_REFRESH
 	cp $(RGDS_BOARD)/dts/*.dts $(RGDS_BOARD)/dts/*.dtsi $(LINUX_DIR)/arch/arm64/boot/dts/rockchip/

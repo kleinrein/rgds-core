@@ -90,16 +90,22 @@ def probe(sim, play_shot, core, work):
     for key in KEYS:
         commands += ["gameshot b%s" % key, "run 6 %s" % key, "gameshot k%s" % key, "run 30 -"]
     commands += ["run 15 L", "run 300 -", "gameshot game", "quit"]
-    subprocess.run([
-        str(play_shot), "--rom", str(sim), "--data", str(data), "--profiles", str(work), "--fonts",
-        str(ROOT / "assets/fonts"), "--core", str(core), "--system", "gw", "--drive", "--out", str(work),
-        "--no-companion"
-    ],
-                   input="\n".join(commands) + "\n",
-                   capture_output=True,
-                   text=True,
-                   timeout=300,
-                   check=True)
+    subprocess.run(
+        [
+            str(play_shot), "--rom",
+            str(sim), "--data",
+            str(data), "--profiles",
+            str(work), "--fonts",
+            str(ROOT / "assets/fonts"), "--core",
+            str(core), "--system", "gw", "--drive", "--out",
+            str(work), "--no-companion"
+        ],
+        input="\n".join(commands) + "\n",
+        capture_output=True,
+        text=True,
+        timeout=300,
+        check=True
+    )
     boot = read_bmp(work / "boot.bmp")
     w, h = boot[0], boot[1]
     # Whatever has changed once a key is let go (its button is up again), in large clusters, is the LCD or each of
@@ -129,15 +135,17 @@ def layout(w, h, lcds):
     """(top, bottom), each (x, y, w, h[, keep_from, keep_to]): a panel's rectangle of the picture."""
     if len(lcds) >= 2:
         a, b = sorted(lcds, key=lambda c: (c[1], c[0]))[:2]
-        if b[1] >= a[3]: # one over the other: the machine's own two halves, meeting at the hinge
+        if b[1] >= a[3]:  # one over the other: the machine's own two halves, meeting at the hinge
             hinge = (a[3] + b[1]) // 2
             return (0, hinge - four_three(w), w, four_three(w)), (0, hinge, w, four_three(w))
         a, b = sorted(lcds, key=lambda c: c[0])[:2]
         # side by side: left half above, right half below, each whole; the other half's edge kept off by keep
         middle = (a[2] + b[0]) // 2
         panel_w = h * 4 // 3
-        return ((middle // 2 - panel_w // 2, 0, panel_w, h, 0, middle), (middle + (w - middle) // 2 - panel_w // 2, 0, panel_w, h,
-                                                                         middle, w))
+        return (
+            (middle // 2 - panel_w // 2, 0, panel_w, h, 0, middle),
+            (middle + (w - middle) // 2 - panel_w // 2, 0, panel_w, h, middle, w)
+        )
     if not lcds: return (0, (h - four_three(w)) // 2, w, four_three(w)), (0, (h - four_three(w)) // 2, w, four_three(w))
     x0, y0, x1, y1, _ = lcds[0]
     # The LCD large on the top screen, a little of the machine's frame round it.
@@ -145,7 +153,7 @@ def layout(w, h, lcds):
     tw = max(x1 - x0 + pad * 2, (y1 - y0 + pad * 2) * 4 // 3)
     th = four_three(tw)
     top = ((x0 + x1 - tw) // 2, (y0 + y1 - th) // 2, tw, th)
-    if h * 5 <= w * 4: # a machine lying flat: all of it on the second screen, its buttons round its LCD
+    if h * 5 <= w * 4:  # a machine lying flat: all of it on the second screen, its buttons round its LCD
         return top, (0, (h - four_three(w)) // 2, w, four_three(w))
     # A tall one: what is under the LCD, its controls, on the second screen.
     from_y = min(y1 + pad, h - 1)
@@ -177,7 +185,7 @@ def zones(pressed):
         elif set(keys) >= {"UP", "DOWN"}:
             lines.append((x0, y0, w, h // 2, "UP"))
             lines.append((x0, y0 + h // 2, w, h - h // 2, "DOWN"))
-        elif set(keys) >= {"X", "B"}: # the second rocker (Mario's)
+        elif set(keys) >= {"X", "B"}:  # the second rocker (Mario's)
             lines.append((x0, y0, w, h // 2, "X"))
             lines.append((x0, y0 + h // 2, w, h - h // 2, "B"))
         else:
@@ -202,10 +210,13 @@ def slug(name):
 def profile_text(title, crc, w, h, lcds, pressed):
     top, bottom = layout(w, h, lcds)
     lines = [
-        "# %s: written by tools/gw_layouts.py from the simulator itself." % title, "# Picture %d x %d, LCD %s." %
-        (w, h, " and ".join("%d %d %d %d" % c[:4] for c in lcds) or "not found"), "[game]", "system = gw",
-        "title = %s" % title.split(" (")[0], "codes = CRC_%s" % crc, "", "[screens]",
-        "top = %s" % " ".join(map(str, top)), "bottom = %s" % " ".join(map(str, bottom))
+        "# %s: written by tools/gw_layouts.py from the simulator itself." % title,
+        "# Picture %d x %d, LCD %s." % (w, h, " and ".join("%d %d %d %d" % c[:4] for c in lcds) or "not found"),
+        "[game]", "system = gw",
+        "title = %s" % title.split(" (")[0],
+        "codes = CRC_%s" % crc, "", "[screens]",
+        "top = %s" % " ".join(map(str, top)),
+        "bottom = %s" % " ".join(map(str, bottom))
     ]
     if same_action(pressed): lines.append("same = A+B")
     lines += ["touch = %d %d %d %d %s" % z for z in zones(pressed)]

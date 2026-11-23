@@ -41,8 +41,14 @@ class AccountTest(unittest.TestCase):
         self.temp.cleanup()
 
     def test_login_keeps_the_token_not_the_password(self):
-        site = FakeSite(lambda r: Reply(json.dumps({"Success": True, "User": "Tester", "Token": "tok", "Score": 12})
-                                        .encode()))
+        site = FakeSite(
+            lambda r: Reply(json.dumps({
+                "Success": True,
+                "User": "Tester",
+                "Token": "tok",
+                "Score": 12
+            }).encode())
+        )
         name = achievements.login(self.data, "tester", "s3cret pass", self.private, opener=site)
         self.assertEqual(name, "Tester")
         sent = site.requests[0].data.decode()
@@ -60,7 +66,9 @@ class AccountTest(unittest.TestCase):
         self.assertFalse((self.data / "achievements/account.ini").exists())
 
     def test_wrong_password(self):
-        refused = urllib.error.HTTPError("u", 401, "no", {}, io.BytesIO(b'{"Success":false,"Code":"invalid_credentials"}'))
+        refused = urllib.error.HTTPError(
+            "u", 401, "no", {}, io.BytesIO(b'{"Success":false,"Code":"invalid_credentials"}')
+        )
         with self.assertRaisesRegex(achievements.AchievementsError, "Wrong username or password"):
             achievements.login(self.data, "t", "p", self.private, opener=FakeSite(lambda r: refused))
         self.assertEqual(achievements.read_account(self.data, self.private), {})
@@ -86,11 +94,13 @@ class ServeTest(unittest.TestCase):
                 return Reply(b"{\"Success\":true}\n2nd line" + (request.data or b""))
 
             site = FakeSite(answer)
-            lines = ("1\thttps://retroachievements.org/dorequest.php\tr=login2&u=a\tapplication/x-www-form-urlencoded\t\n"
-                     "2\thttps://media.retroachievements.org/Badge/1.png\t\t\t%s\n"
-                     "3\thttps://example.com/x\t\t\t\n"
-                     "4\thttps://media.retroachievements.org/Badge/2.png\t\t\t%s\n" %
-                     (badges / "1.png", Path(folder) / "outside.png"))
+            lines = (
+                "1\thttps://retroachievements.org/dorequest.php\tr=login2&u=a\tapplication/x-www-form-urlencoded\t\n"
+                "2\thttps://media.retroachievements.org/Badge/1.png\t\t\t%s\n"
+                "3\thttps://example.com/x\t\t\t\n"
+                "4\thttps://media.retroachievements.org/Badge/2.png\t\t\t%s\n" %
+                (badges / "1.png", Path(folder) / "outside.png")
+            )
             out = io.BytesIO()
             achievements.serve(badges, io.BytesIO(lines.encode()), out, opener=site, workers=1)
             answers, data = {}, out.getvalue()

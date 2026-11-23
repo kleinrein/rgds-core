@@ -32,7 +32,7 @@ class LiveShaderTests(unittest.TestCase):
 std::string result(){std::ifstream f(control+".result");return std::string(std::istreambuf_iterator<char>(f),{});}
 void choose(int selected){std::ofstream f(control);f<<selected<<" shader:"<<selected<<'\n';f.close();test_time+=30;tick();}
 int main(int argc,char** argv){
- assert(argc==2);setenv("RGDS_CORE","drastic",1);setenv("RGDS_SHARED_MENU","1",1);setenv("RGDS_CONTROL_FILE",(std::string(argv[1])+"/control").c_str(),1);initialize();
+ assert(argc==2);setenv("RGDS_CORE","dsperate",1);setenv("RGDS_SHARED_MENU","1",1);setenv("RGDS_CONTROL_FILE",(std::string(argv[1])+"/control").c_str(),1);initialize();
  auto init=rgds::overlay_sdl<decltype(&SDL_Init)>("SDL_Init");assert(init(0)==0);
  auto bitmap=rgds::overlay_sdl<decltype(&SDL_CreateRGBSurfaceWithFormat)>("SDL_CreateRGBSurfaceWithFormat")(0,640,480,32,SDL_PIXELFORMAT_RGBA32);
  auto renderer=rgds::overlay_sdl<decltype(&SDL_CreateSoftwareRenderer)>("SDL_CreateSoftwareRenderer")(bitmap);assert(renderer);

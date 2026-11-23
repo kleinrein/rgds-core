@@ -137,8 +137,8 @@ Button layout	Disposition des boutons
 Button {0}	Bouton {0}
 Buttons and the game menu shortcut	Boutons et raccourci du menu du jeu
 Cancel	Annuler
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Annuler la mise à jour
+Cancel the update? Anything already downloaded is removed.	Annuler la mise à jour ? Ce qui est déjà téléchargé sera supprimé.
 Carousel	Carrousel
 Carried	En poche
 Cartridges	Cartouches
@@ -160,10 +160,10 @@ Checking PortMaster	Vérification de PortMaster
 Checking the new version…	Vérification de la nouvelle version…
 Checkpoint loaded	Sauvegarde chargée
 Checkpoint loaded (preview)	Sauvegarde chargée (aperçu)
-Checkpoint loaded.	Sauvegarde chargée
+Checkpoint loaded.	Sauvegarde chargée.
 Checkpoint saved	Sauvegarde créée
 Checkpoint saved (preview)	Sauvegarde créée (aperçu)
-Checkpoint saved.	Sauvegarde créée
+Checkpoint saved.	Sauvegarde créée.
 Choose a chat room to join	Choisissez un salon à rejoindre
 Choose a network from the list	Choisissez un réseau dans la liste
 Choose an option	Choisir une option
@@ -977,7 +977,7 @@ Stop fetching before editing the match.	Arrêtez le téléchargement avant de mo
 Stop scraping	Arrêter la recherche
 Stop scraping before changing source	Arrêtez la recherche avant de changer de source
 Stopping after this request	Arrêt après cette demande
-Stopping after this request.	Arrêt après cette demande
+Stopping after this request.	Arrêt après cette demande.
 Storage read-only - use internal RGDS	Stockage en lecture seule – utiliser RGDS interne
 Su	Di
 Subtle	Discret
@@ -1467,16 +1467,16 @@ Vectorscope	Vectorscope
 Radial spectrum	Spectre circulaire
 Waterfall	Cascade
 Tunnel	Tunnel
-Prism	Prism
+Prism	Prisme
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
+Matrix rain	Pluie Matrix
+Kaleidoscope	Kaléidoscope
+Fireworks	Feu d'artifice
+Lava lamp	Lampe à lave
+Aurora	Aurore boréale
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Ondulations
 Rotozoom	Rotozoom
 ScreenScraper account	Compte ScreenScraper
 Not signed in	Non connecté
@@ -1636,7 +1636,7 @@ Everything else on the card, with the file system's own overhead.	Tout le reste 
 Room for more games.	De la place pour d'autres jeux.
 Console switches	Interrupteurs de la console
 VMU screen	Écran de la VMU
-3D: one eye each	3D : un œil par écran
+3D: one eye each	3D : un oeil par écran
 Mouse	Souris
 RetroAchievements	RetroAchievements
 Account	Compte
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Enregistrement de la capture…
 Screenshot saved to the Album.	Capture enregistrée dans l'album.
 Still saving the last screenshot.	La dernière capture est encore en cours d'enregistrement.
 No picture to save. Resume the game and press Menu + R.	Aucune image à enregistrer. Reprenez le jeu et appuyez sur Menu + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Afficher le choix du profil à chaque démarrage de la console.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	Le dernier joueur a un code PIN, le démarrage le demande donc toujours. B sur cet écran change de profil.
+Switch profile	Changer de profil
 Photo mode	Mode photo
 Leave photo mode?	Quitter le mode photo ?
 Keep editing	Continuer
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Joyeux anniversaire, {0} !
 Last played {0}	Dernière partie : {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Les couleurs et la musique du menu suivent l'heure : soirées plus chaudes, nuits plus calmes
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Les jeux DS le connaissent, comme sur l'original. Ce jour-là, la console vous salue à sa façon.
+Looking for videos and books…	Recherche de vidéos et de livres…
+Play from the start	Lire depuis le début
+Start from the beginning	Recommencer au début
+Mark as finished	Marquer comme terminé
+Mark as not finished	Marquer comme non terminé
+{0} artist	{0} artiste
+{0} artists	{0} artistes
+{0} item	{0} élément
+{0} items	{0} éléments
+Add network place	Ajouter un emplacement réseau
+Added.	Ajouté.
+Cancel paste	Annuler le collage
+Card	Carte
+Choose a share	Choisir un partage
+Clear marks	Effacer les marques
+Copied.	Copié.
+Copy	Copier
+Delete for good	Supprimer définitivement
+Delete these for good?	Supprimer définitivement ces éléments ?
+Delete this for good?	Supprimer définitivement cet élément ?
+Empty the trash for good?	Vider définitivement la corbeille ?
+Empty trash	Vider la corbeille
+Extract here	Extraire ici
+Folder	Dossier
+Getting it…	Récupération…
+Getting them…	Récupération des fichiers…
+Go ahead	Continuer
+Inbox	Boîte de réception
+Keep it anyway	Garder quand même
+Marked	Marqué
+Move	Déplacer
+Move here	Déplacer ici
+Move these to the trash?	Mettre ces éléments à la corbeille ?
+Move this to the trash?	Mettre cet élément à la corbeille ?
+Moved to the trash.	Mis à la corbeille.
+Moved.	Déplacé.
+Network	Réseau
+New folder	Nouveau dossier
+No servers found	Aucun serveur trouvé
+Open the folder to copy to, then press Y.	Ouvrez le dossier de destination, puis appuyez sur Y.
+Open the folder to move to, then press Y.	Ouvrez le dossier de destination, puis appuyez sur Y.
+Paste here	Coller ici
+Put this key on the server	Placez cette clé sur le serveur
+Remove	Retirer
+Remove it	Le retirer
+Remove this place	Retirer cet emplacement
+Remove this place?	Retirer cet emplacement ?
+Removed.	Retiré.
+Rename	Renommer
+Servers on this network	Serveurs sur ce réseau
+Sign in with	Se connecter avec
+That did not work.	Cela n'a pas fonctionné.
+That server shares no folders.	Ce serveur ne partage aucun dossier.
+The trash is empty.	La corbeille est vide.
+This handheld's key	Clé de cette console
+Trash	Corbeille
+Type an address	Saisir une adresse
+Wait a moment, then try again.	Patientez un instant, puis réessayez.
+{0} marked	{0} marqués
+{0} more	{0} de plus
+Getting {0}	Récupération de {0}
+Waiting to retry {0}	En attente de réessai : {0}
+until restart	jusqu'au redémarrage
+Future	Futur
+Lap	Tour
+Earlier	Plus tôt
+Where you are	Où vous êtes
+Rewind	Retour arrière
+Mark	Marquer
+Draw	Dessiner
+Stamp	Tampon
+Lift pen	Lever le stylet
+Pen down	Poser le stylet
+Screen	Écran
+Check panel order and controller input	Vérifiez l'ordre des écrans et les commandes
+Upper screen	Haut
+Lower screen	Bas
+Kind	Type
+Size	Taille
+Modified	Modifié
+Where	Emplacement
+Archive	Archive
+Text	Texte
+Save data	Sauvegarde
+File	Fichier
+{0} file	Fichier {0}
+{0} free	{0} libres
+Sort by	Trier par
+Could not open it	Impossible de l'ouvrir
+This folder is empty	Ce dossier est vide
+The trash is empty	La corbeille est vide
+No network places yet	Aucun emplacement réseau

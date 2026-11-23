@@ -1,0 +1,174 @@
+# Measuring edits for Flycast (not a package patch): RGDS_FLYCAST_STATS=1 times each draw list on the GPU (a fence
+# wait after each), =2 only counts draws, indices and the guest frames a second; logs "rgds-stats" every 300 frames.
+# Also logs the internal resolution the core reads. Apply on top of package patches 0001-0004 (2026-11-23), build with
+# make flycast_libretro in the VM build tree. Used by os/device-bench/dc_run_*.sh as flycast_stats.so.
+
+--- a/core/rend/gles/gldraw.cpp	2026-11-23 11:42:03.771256804 +0100
++++ b/core/rend/gles/gldraw.cpp	2026-11-23 11:42:03.772259957 +0100
+@@ -11,6 +11,55 @@
+ #include <algorithm>
+ #include <cstring>
+ #include <memory>
++#include <cstdio>
++#include <cstdlib>
++#include <ctime>
++
++// RG DS: RGDS_FLYCAST_STATS=1 times each list of each frame on the GPU (a fence wait between them, so the frame gets
++// slower, but each list's GPU work is attributed to it); =2 only counts draws and indices. Logs every 300 frames.
++enum { RS_SETUP, RS_OP, RS_PT, RS_MV, RS_TR, RS_POST, RS_RTT, RS_N };
++static int rs_mode = -1, rs_slot = RS_SETUP, rs_frames, rs_rtts, rs_passes, rs_w, rs_h;
++static bool rs_rtt;
++static double rs_us[RS_N], rs_last;
++static unsigned long long rs_draws[RS_N], rs_idx[RS_N];
++static double rs_now() { timespec t; clock_gettime(CLOCK_MONOTONIC, &t); return t.tv_sec * 1e6 + t.tv_nsec / 1e3; }
++void rgds_stats_mark(int slot)
++{
++	if (rs_mode < 0) { const char *e = getenv("RGDS_FLYCAST_STATS"); rs_mode = e ? atoi(e) : 0; }
++	if (!rs_mode) return;
++	if (rs_rtt) slot = RS_RTT;
++	if (rs_mode == 1) { void *f = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0); glClientWaitSync(f, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000000ull); glDeleteSync(f); double t = rs_now(); rs_us[rs_slot] += t - rs_last; rs_last = t; }
++	rs_slot = slot;
++}
++static void rs_count(u32 count) { if (rs_mode > 0) { rs_draws[rs_slot]++; rs_idx[rs_slot] += count; } }
++void rgds_stats_begin(bool rtt, int w, int h)
++{
++	rgds_stats_mark(RS_SETUP);
++	if (!rs_mode) return;
++	rs_rtt = rtt; rs_slot = rtt ? RS_RTT : RS_SETUP; rs_last = rs_now();
++	if (rtt) rs_rtts++; else { rs_w = w; rs_h = h; }
++}
++void rgds_stats_end()
++{
++	if (!rs_mode) return;
++	rgds_stats_mark(RS_SETUP);
++	bool rtt = rs_rtt; rs_rtt = false; rs_slot = RS_SETUP;
++	if (rtt || ++rs_frames < 300) return;
++	static const char *names[RS_N] = { "setup", "opaque", "punch", "modvol", "transl", "post", "rtt" };
++	extern unsigned rgds_vblanks;
++	static double rs_t0; static unsigned rs_v0;
++	const double t1 = rs_now(); double rs_guest = 0, rs_shown = 0;
++	if (rs_t0 > 0) { rs_guest = (rgds_vblanks - rs_v0) / ((t1 - rs_t0) / 1e6); rs_shown = rs_frames / ((t1 - rs_t0) / 1e6); }
++	rs_t0 = t1; rs_v0 = rgds_vblanks;
++	char line[512]; int n = snprintf(line, sizeof(line), "rgds-stats res %d %dx%d guest %.1f/s shown %.1f/s per frame: passes %.1f rtt %.2f |", (int)config::RenderResolution, rs_w, rs_h, rs_guest, rs_shown,
++			(double)rs_passes / rs_frames, (double)rs_rtts / rs_frames);
++	for (int i = 0; i < RS_N; i++)
++		n += snprintf(line + n, sizeof(line) - n, " %s %.2fms %.0fd %.0fi", names[i], rs_us[i] / 1e3 / rs_frames,
++				(double)rs_draws[i] / rs_frames, (double)rs_idx[i] / rs_frames);
++	fprintf(stderr, "%s\n", line);
++	rs_frames = rs_rtts = rs_passes = 0;
++	for (int i = 0; i < RS_N; i++) rs_us[i] = 0, rs_draws[i] = rs_idx[i] = 0;
++}
+ 
+ /*
+ 
+@@ -315,6 +364,7 @@
+ // the drawing thread on the RG DS (Mali-G52). The range comes from the same indices in ordinary memory.
+ static void drawIndexed(GLenum mode, u32 first, u32 count)
+ {
++	rs_count(count);
+ #ifndef GLES2
+ 	if (gl.gl_major >= 3)
+ 	{
+@@ -606,12 +656,14 @@
+ 		else
+ 			SetMVS_Mode(Xor, param.isp);	// XOR'ing (closed volume)
+ 
++		rs_count(param.count * 3);
+ 		glDrawArrays(GL_TRIANGLES, param.first * 3, param.count * 3);
+ 
+ 		if (mv_mode == 1 || mv_mode == 2)
+ 		{
+ 			// Sum the area
+ 			SetMVS_Mode(mv_mode == 1 ? Inclusion : Exclusion, param.isp);
++			rs_count((param.first + param.count - mod_base) * 3);
+ 			glDrawArrays(GL_TRIANGLES, mod_base * 3, (param.first + param.count - mod_base) * 3);
+ 			mod_base = -1;
+ 		}
+@@ -666,17 +718,22 @@
+ 		glcache.Enable(GL_DEPTH_TEST);
+ 		glcache.DepthMask(GL_TRUE);
+ 
++		rs_passes++;
+ 		//Opaque
++		rgds_stats_mark(RS_OP);
+ 		DrawList<ListType_Opaque,false>(gl.rendContext->global_param_op, previous_pass.op_count, current_pass.op_count - previous_pass.op_count);
+ 
+ 		//Alpha tested
++		rgds_stats_mark(RS_PT);
+ 		DrawList<ListType_Punch_Through,false>(gl.rendContext->global_param_pt, previous_pass.pt_count, current_pass.pt_count - previous_pass.pt_count);
+ 
+ 		// Modifier volumes
++		rgds_stats_mark(RS_MV);
+ 		if (config::ModifierVolumes)
+ 			DrawModVols(previous_pass.mvo_count, current_pass.mvo_count - previous_pass.mvo_count);
+ 
+ 		//Alpha blended
++		rgds_stats_mark(RS_TR);
+ 		{
+ 			if (current_pass.autosort)
+             {
+--- a/core/rend/gles/gles.cpp	2026-11-23 11:42:03.785300936 +0100
++++ b/core/rend/gles/gles.cpp	2026-11-23 11:42:03.786304089 +0100
+@@ -1099,6 +1099,10 @@
+ 	glCheck();
+ }
+ 
++void rgds_stats_mark(int slot);
++void rgds_stats_begin(bool rtt, int w, int h);
++void rgds_stats_end();
++
+ bool OpenGLRenderer::renderFrame(int width, int height)
+ {
+ 	if (!config::EmulateFramebuffer)
+@@ -1194,6 +1198,7 @@
+ 	}
+ #endif
+ #endif
++	rgds_stats_begin(is_rtt, width, height);
+ 	//setup render target first
+ 	if (is_rtt)
+ 	{
+@@ -1274,6 +1279,7 @@
+ 	}
+ 
+ 	DrawStrips();
++	rgds_stats_mark(5);
+ #ifdef LIBRETRO
+ 	if (!is_rtt && !config::EmulateFramebuffer)
+ 		postProcessor.render(glsm_get_current_framebuffer());
+@@ -1291,6 +1297,7 @@
+ #endif
+ 	}
+ 	GlVertexArray::unbind();
++	rgds_stats_end();
+ 
+ 	return !is_rtt;
+ }
+--- a/core/hw/pvr/spg.cpp	2026-11-23 11:42:03.774266261 +0100
++++ b/core/hw/pvr/spg.cpp	2026-11-23 11:42:03.775269414 +0100
+@@ -35,6 +35,7 @@
+ static std::array<u64, 4> cpu_cycles;
+ static u32 cpu_time_idx;
+ bool SH4FastEnough;
++unsigned rgds_vblanks; // RG DS: guest frames, read by the renderer's stats line
+ u32 fskip;
+ 
+ static u32 lightgun_line = 0xffff;
+@@ -163,6 +164,7 @@
+ 				SPG_STATUS.fieldnum = 0;
+ 
+ 			rend_vblank();
++			rgds_vblanks++;
+ 
+ 			u64 now = getTimeMs();
+ 			cpu_time_idx = (cpu_time_idx + 1) % cpu_cycles.size();
+--- a/shell/libretro/libretro.cpp	2026-11-23 11:42:03.781288327 +0100
++++ b/shell/libretro/libretro.cpp	2026-11-23 11:42:03.783294632 +0100
+@@ -883,6 +883,7 @@
+ 			config::RenderResolution = strtoul(pch, NULL, 0);
+ 
+ 		DEBUG_LOG(COMMON, "Got height: %u", (int)config::RenderResolution);
++		fprintf(stderr, "rgds-res option %s -> %d\n", var.value, (int)config::RenderResolution);
+ 	}
+ 
+ 	var.key   = CORE_OPTION_NAME "_coin_limit";

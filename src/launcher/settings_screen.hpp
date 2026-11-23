@@ -696,6 +696,10 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         render_shader_carousel(r, y);
         return;
     }
+    if (settings.page == Page::Files) {
+        files_bottom(r, y); // its own desktop-style layout
+        return;
+    }
     sync_list();
     int count = list_count();
     // Pages that keep their header and controls while their list is empty.
@@ -1214,17 +1218,20 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         // One rule for the page: wide tiles on the top and bottom rows, a 3x3 grid between them,
         // 16 px between tiles. Cheats stays muted outside DSCore or without a database entry.
         // The top row is Resume, Rewind (tile 13) and Screenshot (tile 12), over the grid's three columns.
+        const bool three_top = rewind_tile_shown(); // else Resume and Screenshot, as wide as the bottom row's
         for (int i = 0; i < 14; i++) {
+            if (i == 13 && !three_top) continue;
             const bool wide = i == 0 || i >= 10;
             int x = i == 0    ? 28
                     : i == 13 ? 228
-                    : i == 12 ? 428
+                    : i == 12 ? (three_top ? 428 : 328)
                     : i >= 10 ? (i == 10 ? 28 : 328)
                               : 28 + ((i - 1) % 3) * 200,
                 row = y + (i == 0 || i == 12 || i == 13 ? quick_top
                            : i >= 10         ? quick_bottom_top
                                              : quick_grid_top + ((i - 1) / 3) * quick_grid_pitch);
-            const int width = i == 0 || i == 12 || i == 13 ? 184
+            const int width = (i == 0 || i == 12) && !three_top ? 284
+                              : i == 0 || i == 12 || i == 13 ? 184
                               : wide    ? 284
                                         : 184,
                       height = wide ? quick_wide_height : quick_tile_height;

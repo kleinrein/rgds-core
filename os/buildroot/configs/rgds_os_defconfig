@@ -33,7 +33,7 @@ BR2_LINUX_KERNEL=y
 BR2_LINUX_KERNEL_CUSTOM_TARBALL=y
 BR2_LINUX_KERNEL_CUSTOM_TARBALL_LOCATION="https://github.com/gregkh/linux/archive/refs/tags/v7.2.7.tar.gz"
 BR2_LINUX_KERNEL_USE_CUSTOM_CONFIG=y
-BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/linux-rocknix.config"
+BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/linux-rgds_defconfig"
 BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/linux-rgds.fragment $(BR2_EXTERNAL_RGDS_PATH)/board/rgds/linux-board.fragment"
 BR2_LINUX_KERNEL_DTS_SUPPORT=y
 # both handhelds: U-Boot picks the one it finds itself in (uboot-rgds.fragment, post-image.sh)

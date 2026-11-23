@@ -172,7 +172,8 @@ static inline u32 score_paced(const PacedRun* r, int scaled) {
     v = q_mul(v, factor_audio(r->audio_dry, r->frames));
     v = q_mul(v, factor_latency(r->latency_p99_us));
     const u32 product = (u32)(((u64)v * SCORE_FULL) >> 16);
-    const u32 climb = q_mul(score_climb(div_u32(uncapped_fps_q16(r->uncapped_frames, r->uncapped_wall_us), 60)), factor_sharp(r->hires, r->frames, scaled));
+    const u32 climb = q_mul(score_climb(div_u32(uncapped_fps_q16(r->uncapped_frames, r->uncapped_wall_us), 60)),
+                            factor_sharp(r->hires, r->frames, scaled));
     return product > climb ? product : climb;
 }
 

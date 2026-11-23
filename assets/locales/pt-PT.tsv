@@ -137,8 +137,8 @@ Button layout	Disposição dos botões
 Button {0}	Botão {0}
 Buttons and the game menu shortcut	Botões e atalho do menu do jogo
 Cancel	Cancelar
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Cancelar atualização
+Cancel the update? Anything already downloaded is removed.	Cancelar a atualização? O que já foi transferido será removido.
 Carousel	Carrossel
 Carried	Contigo
 Cartridges	Cartuchos
@@ -160,10 +160,10 @@ Checking PortMaster	A verificar o PortMaster
 Checking the new version…	A verificar a nova versão…
 Checkpoint loaded	Estado carregado
 Checkpoint loaded (preview)	Estado carregado (pré-visualização)
-Checkpoint loaded.	Estado carregado
+Checkpoint loaded.	Estado carregado.
 Checkpoint saved	Estado guardado
 Checkpoint saved (preview)	Estado guardado (pré-visualização)
-Checkpoint saved.	Estado guardado
+Checkpoint saved.	Estado guardado.
 Choose a chat room to join	Escolhe uma sala de conversa para entrar
 Choose a network from the list	Escolha uma rede da lista
 Choose an option	Escolha uma opção
@@ -1467,16 +1467,16 @@ Vectorscope	Vectorscópio
 Radial spectrum	Espectro circular
 Waterfall	Cascata
 Tunnel	Túnel
-Prism	Prism
+Prism	Prisma
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
+Matrix rain	Chuva Matrix
+Kaleidoscope	Caleidoscópio
+Fireworks	Fogo de artifício
+Lava lamp	Candeeiro de lava
 Aurora	Aurora
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Ondulações
 Rotozoom	Rotozoom
 ScreenScraper account	Conta do ScreenScraper
 Not signed in	Sessão não iniciada
@@ -1686,9 +1686,9 @@ Saving the screenshot…	A guardar a captura…
 Screenshot saved to the Album.	Captura guardada no álbum.
 Still saving the last screenshot.	Ainda a guardar a última captura.
 No picture to save. Resume the game and press Menu + R.	Sem imagem para guardar. Retome o jogo e prima Menu + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Mostrar a escolha de perfil sempre que a consola arrancar.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	O último jogador tem PIN, por isso o arranque continua a pedi-lo. B nesse ecrã muda de perfil.
+Switch profile	Mudar de perfil
 Photo mode	Modo fotografia
 Leave photo mode?	Sair do modo fotografia?
 Keep editing	Continuar a editar
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Feliz aniversário, {0}!
 Last played {0}	Jogado pela última vez: {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	As cores e a música do menu seguem o relógio: fins de tarde mais quentes, noites mais calmas
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Os jogos DS ficam a saber, como no original. No dia, a consola cumprimenta-te à sua maneira.
+Looking for videos and books…	A procurar vídeos e livros…
+Play from the start	Reproduzir do início
+Start from the beginning	Começar do início
+Mark as finished	Marcar como concluído
+Mark as not finished	Marcar como não concluído
+{0} artist	{0} artista
+{0} artists	{0} artistas
+{0} item	{0} item
+{0} items	{0} itens
+Add network place	Adicionar local de rede
+Added.	Adicionado.
+Cancel paste	Cancelar colagem
+Card	Cartão
+Choose a share	Escolha uma partilha
+Clear marks	Limpar marcações
+Copied.	Copiado.
+Copy	Copiar
+Delete for good	Eliminar de vez
+Delete these for good?	Eliminar estes itens de vez?
+Delete this for good?	Eliminar este item de vez?
+Empty the trash for good?	Esvaziar o lixo de vez?
+Empty trash	Esvaziar lixo
+Extract here	Extrair aqui
+Folder	Pasta
+Getting it…	A transferir…
+Getting them…	A transferir os ficheiros…
+Go ahead	Continuar
+Inbox	Caixa de entrada
+Keep it anyway	Manter na mesma
+Marked	Marcado
+Move	Mover
+Move here	Mover para aqui
+Move these to the trash?	Mover estes itens para o lixo?
+Move this to the trash?	Mover este item para o lixo?
+Moved to the trash.	Movido para o lixo.
+Moved.	Movido.
+Network	Rede
+New folder	Nova pasta
+No servers found	Nenhum servidor encontrado
+Open the folder to copy to, then press Y.	Abra a pasta de destino e prima Y.
+Open the folder to move to, then press Y.	Abra a pasta de destino e prima Y.
+Paste here	Colar aqui
+Put this key on the server	Coloque esta chave no servidor
+Remove	Remover
+Remove it	Remover
+Remove this place	Remover este local
+Remove this place?	Remover este local?
+Removed.	Removido.
+Rename	Mudar o nome
+Servers on this network	Servidores nesta rede
+Sign in with	Iniciar sessão com
+That did not work.	Não resultou.
+That server shares no folders.	Esse servidor não partilha pastas.
+The trash is empty.	O lixo está vazio.
+This handheld's key	Chave desta consola
+Trash	Lixo
+Type an address	Escrever um endereço
+Wait a moment, then try again.	Aguarde um momento e tente novamente.
+{0} marked	{0} marcados
+{0} more	mais {0}
+Getting {0}	A transferir {0}
+Waiting to retry {0}	A aguardar nova tentativa: {0}
+until restart	até reiniciar
+Future	Futuro
+Lap	Volta
+Earlier	Antes
+Where you are	Onde está
+Rewind	Recuar
+Mark	Marcar
+Draw	Desenhar
+Stamp	Carimbo
+Lift pen	Levantar caneta
+Pen down	Baixar caneta
+Screen	Ecrã
+Check panel order and controller input	Verifique a ordem dos ecrãs e os comandos
+Upper screen	Superior
+Lower screen	Inferior
+Kind	Tipo
+Size	Tamanho
+Modified	Modificado
+Where	Localização
+Archive	Arquivo comprimido
+Text	Texto
+Save data	Dados guardados
+File	Ficheiro
+{0} file	Ficheiro {0}
+{0} free	{0} livres
+Sort by	Ordenar por
+Could not open it	Não foi possível abrir
+This folder is empty	Esta pasta está vazia
+The trash is empty	O lixo está vazio
+No network places yet	Ainda não há locais de rede

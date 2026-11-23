@@ -67,7 +67,6 @@ Known, not fixed:
 
 ## Docs (README install section)
 
-- [ ] Tell users to ignore "RG-DS-Core-..." on the releases page
-- [ ] Install path: Application > Apps > TF Card > Install RG DS Core
-- [ ] Say to launch "RG DS Core" after install completes
-- [ ] Mention internet connection if one is required
+Superseded (2026-11-23): these four items were for the v0.7.0 add-on installed from the stock firmware. Since 0.8.0
+the README installs RG DS OS with RG DS Flasher or a card image, and the stock install path is gone. The stock-only
+items above (FW 1.1 autostart hook) are moot for the same reason.

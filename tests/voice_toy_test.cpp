@@ -221,7 +221,8 @@ int main() {
 
     // Drawing columns.
     const auto columns = voice_toy::peaks(prepared, 96);
-    check(columns.size() == 96 && *std::max_element(columns.begin(), columns.end()) > .45f, "the outline has its peaks");
+    check(columns.size() == 96 && *std::max_element(columns.begin(), columns.end()) > .45f,
+          "the outline has its peaks");
     check(voice_toy::peaks({}, 10).size() == 10, "an empty outline keeps its columns");
     const auto small = voice_toy::fewer(columns, 18);
     check(small.size() == 18 &&

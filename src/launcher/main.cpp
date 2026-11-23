@@ -404,13 +404,16 @@ class App {
     std::tuple<int, bool, int, int, bool, std::string, int> last_view;
     uint64_t view_transitions = 0, view_animation_frames = 0;
     void sync_view_motion(Uint32 now);
-    // PictoChat is a level of its own over the page it was opened from, so opening and closing it travels.
-    // So is the music player.
+    // PictoChat is a level of its own over the page it was opened from, so opening and closing it travels, and its
+    // Lobby, Room and name entry are levels of that stack. So is the music player.
     // The music player's own pages are levels of the same stack: a library level, then the player, then the queue
     // or the equaliser, so going in travels forward and Back travels out, as between the launcher's pages.
     int music_view_depth() const {
         switch (mu.view) {
-        case MusicUi::View::Browse: return int(std::min<size_t>(std::max<size_t>(mu.levels.size(), 1) - 1, 40));
+        case MusicUi::View::Browse:
+            // Videos and Books: the folders opened; the sections themselves are side by side (sync_view_motion).
+            if (mu.section != 0) return int(std::min<size_t>(mu.shelves[mu.section == 2 ? 1 : 0].path.size(), 40));
+            return int(std::min<size_t>(std::max<size_t>(mu.levels.size(), 1) - 1, 40));
         case MusicUi::View::Player: return 50;
         case MusicUi::View::Queue: return 60;
         case MusicUi::View::Equaliser: return 61;
@@ -418,7 +421,8 @@ class App {
         return 0;
     }
     int view_page() const {
-        return int(settings.page) + (chat_open ? 1000 : 0) + (music_open ? 2000 + music_view_depth() : 0) +
+        return int(settings.page) + (chat_open ? 1000 + 100 * int(chat.view) : 0) +
+               (music_open ? 2000 + music_view_depth() : 0) +
                (vt.open ? 3000 : 0) + (sn.open ? 4000 : 0);
     }
     struct SoundState {
@@ -585,6 +589,10 @@ class App {
     int list_scroll = 0, list_focus = -1;
     Page list_page = Page::Library;
     static constexpr int list_top = 96, list_height = 316, list_stride = 82;
+    // Files lists like a desktop file manager: short rows packed edge to edge (files_screen.hpp).
+    static constexpr int files_row_height = 38;
+    int list_row_height() const { return settings.page == Page::Files ? files_row_height : 66; }
+    int row_pitch() const { return settings.page == Page::Files ? files_row_height : list_stride; }
     // Sound and brightness: the slider's vertical span (touch and drawing agree). On Sound it is the first
     // row of the shared list, so it scrolls with it.
     std::pair<int, int> slider_band() const {
@@ -719,7 +727,7 @@ class App {
     static constexpr int group_caption = 30, group_gap = 14;
     // A row's card top inside the list's content, captions included (index * list_stride on an ungrouped page).
     int row_top(int row) const {
-        int top = row * list_stride;
+        int top = row * row_pitch();
         for (int i = 0; i <= row; i++)
             if (const char* group = list_group(i)) top += *group ? group_caption : group_gap;
         return top;
@@ -729,13 +737,13 @@ class App {
         for (int i = 0, count = list_count(); i < count; i++) {
             const int top = row_top(i);
             if (local < top) return -1;
-            if (local < top + 66) return i;
+            if (local < top + list_row_height()) return i;
         }
         return -1;
     }
     int list_content() const {
         const int count = list_count();
-        return count > 0 ? row_top(count - 1) + 66 : 0;
+        return count > 0 ? row_top(count - 1) + list_row_height() : 0;
     }
     int list_max_scroll() const { return std::max(0, list_content() - list_height); }
     void sync_list() {
@@ -750,7 +758,7 @@ class App {
             list_focus = focus;
             // A row that opens a group brings its caption into view with it.
             const char* group = list_group(focus);
-            int bottom = row_top(focus) + 66, top = row_top(focus) - (group && *group ? group_caption : 0);
+            int bottom = row_top(focus) + list_row_height(), top = row_top(focus) - (group && *group ? group_caption : 0);
             if (top < list_scroll) list_scroll = top;
             if (bottom > list_scroll + list_height) list_scroll = bottom - list_height;
             list_scroll = std::clamp(list_scroll, 0, list_max_scroll());
@@ -1906,13 +1914,30 @@ class App {
     void files_setup_begin();
     void files_setup_next();
     void files_show_place(const std::string& source);
-    void files_transfer_strip(SDL_Renderer* r, int y);
+    bool files_transfer_strip(SDL_Renderer* r, int y);
+    // The desktop-style lower screen: path bar, places sidebar, columns (files_bottom).
+    int files_sort = 0; // 0 name, 1 size, 2 modified; folders always first
+    bool files_sort_down = false;
+    uintmax_t files_free = 0;
+    std::vector<std::pair<SDL_Rect, int>> files_crumbs; // the path bar's parts as drawn, and their depth
+    void files_bottom(SDL_Renderer* r, int y);
+    void files_path_bar(SDL_Renderer* r, int y);
+    void files_sidebar(SDL_Renderer* r, int y);
+    int files_place_top(int index) const;
+    bool files_touch(int x, int y);
+    void files_go_up(bool leave);
+    void files_jump(int depth);
+    void files_sort_rows();
+    void files_set_sort(int column, bool title = true);
+    int files_tapped = -1; // the row the last tap chose: a tap on it again opens it
+    std::string files_kind(const FileRow& row, const Game* game) const;
+    SettingsIcon files_place_icon(const FilesRoot& root) const;
     std::vector<FilesRoot> files_roots;
     int files_root = 0;
     fs::path files_dir, files_edit_target, files_peeked, files_peek_wanted;
     std::vector<FileRow> files_rows;
     std::set<std::string> files_marked;
-    std::map<std::string, int> files_memory;
+    std::map<std::string, std::string> files_memory; // each folder's selected name, for coming back to it
     std::vector<fs::path> files_clip;
     bool files_clip_move = false, files_peek_picture = false, files_library_changed = false;
     pid_t files_child = -1, files_peek_child = -1;
@@ -2005,23 +2030,28 @@ class App {
     // Game menu > Rewind (rewind_menu.hpp): the engine's moments on the player's own Rewind screen.
     play::RewindScreen rewind_screen;
     play::MomentList rewind_moments;
-    play::ShownMoment rewind_shown;
     play::Words rewind_words;
-    play::Look rewind_look;
-    play::Canvas rewind_canvas, rewind_top_canvas;
-    std::map<std::pair<SDL_Renderer*, bool>, SDL_Texture*> rewind_textures;
-    std::map<std::pair<SDL_Renderer*, bool>, uint64_t> rewind_uploaded;
-    uint64_t rewind_top_version = 0;
-    uint32_t rewind_asked = 0, rewind_shown_id = 0;
+    // Each moment's picture as a texture, made once when its card first shows (per renderer: one window a panel).
+    std::map<std::pair<SDL_Renderer*, uint64_t>, SDL_Texture*> rewind_textures; // per moment and drawn size
     bool rewind_opening = false, rewind_open_ = false;
-    std::string rewind_final, rewind_files; // the next request to send; where the engine's pictures are
-    bool rewind_available() const { return experimental_game() || active_engine() == play_core; }
+    std::string rewind_final; // the request to send once the menu is free
+    bool rewind_available() const {
+        return rewind_tile_shown() && (experimental_game() || active_engine() == play_core);
+    }
+    // The game menu's Rewind tile: gone for a game that keeps no moments (Flash, ScummVM, Game & Watch:
+    // play_options.NO_CHECKPOINTS), Resume and Screenshot then sharing the top row.
+    bool rewind_tile_shown() const {
+        if (!o.game_menu || model.games.empty()) return true;
+        const std::string& system = model.games[0].system;
+        return system != "flash" && system != "scummvm" && system != "gw";
+    }
     void open_rewind();
     void rewind_poll();
     void rewind_action(int code);
     void rewind_pointer(int x, int y, int phase);
-    SDL_Texture* rewind_texture(SDL_Renderer* r, bool top);
-    void rewind_draw_top(play::Canvas& out);
+    void rewind_drop_textures();
+    SDL_Texture* rewind_texture(SDL_Renderer* r, uint32_t id, int w, int h);
+    void rewind_picture(SDL_Renderer* r, uint32_t id, const play::Box& box);
     void rewind_top(SDL_Renderer* r, int y);
     void rewind_bottom(SDL_Renderer* r, int y);
     // Album > Send to phone (runtime/album_share.py): a read-only page with every picture, while the sheet is open.
@@ -2482,9 +2512,10 @@ class App {
     // RGDS_FRAME_LOG=FILE: one line a second of where frame time goes (ms; average and worst), for the handheld.
     struct FrameLog {
         std::FILE* file = nullptr;
-        enum { Interval, Prepare, TopDraw, TopPresent, BottomDraw, BottomPresent, Count };
-        double sum[Count]{}, peak[Count]{}, last = 0, began = 0;
-        int frames = 0, top_frames = 0;
+        enum { Interval, Prepare, TopDraw, TopPresent, BottomDraw, BottomPresent, Work, Wait, Count };
+        double sum[Count]{}, peak[Count]{}, last = 0, began = 0, loop_top = 0, waited = 0;
+        int frames = 0, top_frames = 0, touches = 0, top_touches = 0;
+        int gaps[5]{}; // frame intervals: up to 18, 34, 50, 100 ms, longer
         static double clock() {
             return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch())
                 .count();
@@ -3514,6 +3545,60 @@ class App {
     void music_press(int x, int y);
     void music_drag(int x, int y);
     void music_release(int x, int y);
+    void music_sync_layout();
+    // ---- Media (media_shelf.hpp): Videos and Books beside Music in one level, when RG DS Media is installed.
+    pid_t media_indexer = -1; // rgds-media --index, making posters
+    bool media_index_started = false, media_section_read = false;
+    std::string media_launch_file; // the film or book launch_media hands to rgds-media
+    bool media_sections() const;
+    bool media_indexes() const;
+    std::vector<int> media_section_list() const;
+    bool media_shelf_open() const;
+    fs::path media_state_dir() const;
+    std::vector<fs::path> media_roots(bool books) const;
+    fs::path media_binary() const;
+    void media_load_section();
+    void media_save_section();
+    void media_fit_section();
+    void media_set_section(int section);
+    void media_step_section(int delta);
+    void media_start_index(bool again);
+    bool media_poll(Uint32 now, bool force);
+    std::string media_focused_path();
+    MediaPlace media_place(const MediaEntry& e) const;
+    MediaShelf& media_shelf();
+    void media_build(bool books);
+    MediaGrid media_grid() const;
+    SDL_Rect media_tile_box(int i) const;
+    int media_max_scroll();
+    void media_place_focus(bool snap);
+    void media_move(int dx, int dy);
+    int media_hit(int x, int y);
+    void media_activate(int index);
+    void media_open_file(const std::string& path);
+    void media_resume_latest();
+    void media_set_place(const MediaEntry& e, double position);
+    void media_options(int index);
+    bool media_back();
+    bool media_tick(Uint32 now);
+    int media_wrapped(SDL_Renderer* r, const std::string& value, int x, int y, int pixels, int width, int rows,
+                      Color ink);
+    void media_pill_row(SDL_Renderer* r, int left, int top, int width, int height, int gap,
+                        const std::vector<std::string>& names, const std::vector<MusicGlyph>& glyphs, double lit,
+                        int pressed, int size);
+    void media_section_pills(SDL_Renderer* r, int y);
+    void media_tab_pills(SDL_Renderer* r, int y);
+    void media_header(SDL_Renderer* r, int y, int rule);
+    void media_folder_header(SDL_Renderer* r, int y);
+    void media_tile(SDL_Renderer* r, SDL_Rect b, const MediaEntry& e, bool pressed);
+    void media_corners(SDL_Renderer* r, double x, double y, double w, double h);
+    void media_bottom(SDL_Renderer* r, int y);
+    void media_hero(SDL_Renderer* r, int y, const MediaEntry& e, int alpha);
+    void media_top(SDL_Renderer* r, int y);
+    int media_header_button(int x, int y);
+    bool media_action(int code);
+    void media_hero_hints(SDL_Renderer* r, int y, const std::vector<KeyHint>& hints);
+    void music_hero(SDL_Renderer* r, int y);
     int chat_focus = 0; // the lobby row a controller would open (4 is the profile)
     int chat_shoulder = 0;
     Uint32 chat_shoulder_at = 0; // L (+1, older) or R (-1, newer) held on a controller
@@ -3628,6 +3713,7 @@ class App {
     void launch_media();         // the Media tile: rgds-media on both panels, as a game is started
     bool media_launch = false;   // the launch running is RG DS Media's
     mutable int media_found = -1; // the program is installed (-1: not looked yet)
+    mutable int media_index_found = -1; // ...and new enough for `--index` (the shelves in the launcher)
     void media_home_top(SDL_Renderer* r, int y);
     void poll_launch(Uint32 now);
     void stop_launch();
@@ -3798,6 +3884,7 @@ public:
 #include "launcher/update_banner.hpp"
 #include "launcher/pictochat_screen.hpp"
 #include "launcher/music_screen.hpp"
+#include "launcher/media_shelf.hpp"
 #include "launcher/voice_toy_screen.hpp"
 #include "launcher/snake_screen.hpp"
 #include "launcher/panels.hpp"

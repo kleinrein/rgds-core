@@ -20,3 +20,5 @@ vendor/engines/
 vendor/drastic/
 carts/
 !tests/resume-fixtures/**
+# DSCore writes Impeccable benchmark results here when run from the repo root
+/rgds-bench/

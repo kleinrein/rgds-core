@@ -8,3 +8,6 @@ runs/**
 # The prebuilt PanVK driver (build/panvk-private/build.json) pins this script's exact
 # bytes; reformatting it forces a full Mesa rebuild in the Lima VM.
 tools/build_panvk.py
+# Same for these two: their build records (rgds-play build.json, vulkan-build.json) pin the script bytes.
+tools/build_play.py
+tools/package_rgds_vulkan.py

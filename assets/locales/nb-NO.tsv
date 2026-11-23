@@ -1467,16 +1467,16 @@ Vectorscope	Vektorskop
 Radial spectrum	Rundt spektrum
 Waterfall	Foss
 Tunnel	Tunnel
-Prism	Prism
+Prism	Prisme
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
+Matrix rain	Matrix-regn
+Kaleidoscope	Kaleidoskop
+Fireworks	Fyrverkeri
+Lava lamp	Lavalampe
+Aurora	Nordlys
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Krusninger
 Rotozoom	Rotozoom
 ScreenScraper account	ScreenScraper-konto
 Not signed in	Ikke logget inn
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Lagrer skjermbildet…
 Screenshot saved to the Album.	Skjermbilde lagret i albumet.
 Still saving the last screenshot.	Lagrer fortsatt det forrige skjermbildet.
 No picture to save. Resume the game and press Menu + R.	Ingen bilde å lagre. Fortsett spillet og trykk Meny + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Vis profilvalget hver gang konsollen starter.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	Den siste spilleren har PIN-kode, så oppstarten spør fortsatt om den. B på den skjermen bytter profil.
+Switch profile	Bytt profil
 Photo mode	Fotomodus
 Leave photo mode?	Gå ut av fotomodus?
 Keep editing	Fortsett å redigere
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Gratulerer med dagen, {0}!
 Last played {0}	Sist spilt {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Farger og menymusikk følger klokka: varmere kvelder, roligere netter
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	DS-spill får vite den, som på originalen. På dagen hilser maskinen på sin egen måte.
+Looking for videos and books…	Ser etter videoer og bøker…
+Play from the start	Spill av fra starten
+Start from the beginning	Begynn fra starten
+Mark as finished	Merk som ferdig
+Mark as not finished	Merk som ikke ferdig
+{0} artist	{0} artist
+{0} artists	{0} artister
+{0} item	{0} element
+{0} items	{0} elementer
+Add network place	Legg til nettverkssted
+Added.	Lagt til.
+Cancel paste	Avbryt innliming
+Card	Kort
+Choose a share	Velg en deling
+Clear marks	Fjern merking
+Copied.	Kopiert.
+Copy	Kopier
+Delete for good	Slett for godt
+Delete these for good?	Slette disse for godt?
+Delete this for good?	Slette dette for godt?
+Empty the trash for good?	Tømme papirkurven for godt?
+Empty trash	Tøm papirkurven
+Extract here	Pakk ut her
+Folder	Mappe
+Getting it…	Henter den …
+Getting them…	Henter dem …
+Go ahead	Fortsett
+Inbox	Innboks
+Keep it anyway	Behold likevel
+Marked	Merket
+Move	Flytt
+Move here	Flytt hit
+Move these to the trash?	Flytte disse til papirkurven?
+Move this to the trash?	Flytte dette til papirkurven?
+Moved to the trash.	Flyttet til papirkurven.
+Moved.	Flyttet.
+Network	Nettverk
+New folder	Ny mappe
+No servers found	Fant ingen servere
+Open the folder to copy to, then press Y.	Åpne mappen du vil kopiere til, og trykk Y.
+Open the folder to move to, then press Y.	Åpne mappen du vil flytte til, og trykk Y.
+Paste here	Lim inn her
+Put this key on the server	Legg denne nøkkelen på serveren
+Remove	Fjern
+Remove it	Fjern det
+Remove this place	Fjern dette stedet
+Remove this place?	Fjerne dette stedet?
+Removed.	Fjernet.
+Rename	Gi nytt navn
+Servers on this network	Servere på dette nettverket
+Sign in with	Logg inn med
+That did not work.	Det fungerte ikke.
+That server shares no folders.	Den serveren deler ingen mapper.
+The trash is empty.	Papirkurven er tom.
+This handheld's key	Nøkkelen til denne konsollen
+Trash	Papirkurv
+Type an address	Skriv inn en adresse
+Wait a moment, then try again.	Vent litt, og prøv igjen.
+{0} marked	{0} merket
+{0} more	{0} til
+Getting {0}	Henter {0}
+Waiting to retry {0}	Venter på nytt forsøk: {0}
+until restart	til omstart
+Future	Framtid
+Lap	Runde
+Earlier	Tidligere
+Where you are	Der du er
+Rewind	Spol tilbake
+Mark	Merk
+Draw	Tegn
+Stamp	Stempel
+Lift pen	Løft pennen
+Pen down	Sett ned pennen
+Screen	Skjerm
+Check panel order and controller input	Sjekk skjermrekkefølgen og kontrollerinndata
+Upper screen	Øvre
+Lower screen	Nedre
+Kind	Type
+Size	Størrelse
+Modified	Endret
+Where	Plassering
+Archive	Arkiv
+Text	Tekst
+Save data	Lagringsdata
+File	Fil
+{0} file	{0}-fil
+{0} free	{0} ledig
+Sort by	Sorter etter
+Could not open it	Kunne ikke åpne den
+This folder is empty	Denne mappen er tom
+The trash is empty	Papirkurven er tom
+No network places yet	Ingen nettverkssteder ennå

@@ -1,0 +1,50 @@
+[package]
+name = "ruffle_render_wgpu"
+# Ruffle v0.8.0's render/wgpu, vendored for the RG DS: ChunkBuffers is a ring (src/surface/buffers.rs), so a chunk's
+# copy never lands on a buffer the GPU still reads; on Panfrost GL each such copy flushed and waited for the GPU.
+authors = ["Nathan Adams <dinnerbone@dinnerbone.com>"]
+edition = "2024"
+homepage = "https://ruffle.rs"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ruffle-rs/ruffle"
+version = "0.8.0"
+
+[dependencies]
+wgpu = { version = "30.0.2", features = ["naga-ir"] }
+tracing = "0.1.43"
+ruffle_render = { git = "https://github.com/ruffle-rs/ruffle", tag = "v0.8.0", features = ["tessellator", "wgpu"] }
+bytemuck = { version = "1.25.0", features = ["derive"] }
+clap = { version = "4.6.1", features = ["derive"], optional = true }
+enum-map = "2.7.3"
+fnv = "1.0.7"
+swf = { git = "https://github.com/ruffle-rs/ruffle", tag = "v0.8.0" }
+image = { version = "0.25.10", default-features = false }
+naga-agal = { git = "https://github.com/ruffle-rs/ruffle", tag = "v0.8.0" }
+naga-pixelbender = { git = "https://github.com/ruffle-rs/ruffle", tag = "v0.8.0" }
+profiling = { version = "1.0", default-features = false, optional = true }
+lru = "0.18.2"
+naga = { version = "30.0.2", features = ["wgsl-out"] }
+indexmap = "2.13.0"
+smallvec = { version = "1.15.1", features = ["const_new", "union"] }
+wgpu-profiler = "0.28.0"
+
+# desktop
+[target.'cfg(not(target_family = "wasm"))'.dependencies.futures]
+version = "0.3.32"
+
+# wasm
+[target.'cfg(target_family = "wasm")'.dependencies.web-sys]
+version = "0.3.97"
+features = ["HtmlCanvasElement"]
+
+[features]
+render_debug_labels = []
+webgl = ["wgpu/webgl"]
+profile-with-tracy = ["profiling", "profiling/profile-with-tracy", "wgpu-profiler/tracy"]
+tracy_images = ["profile-with-tracy"]
+
+[package.metadata.cargo-machete]
+ignored = [
+    # Not used directly, declared only to enable its `profile-with-tracy` feature.
+    "profiling"
+]

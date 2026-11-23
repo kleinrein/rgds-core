@@ -69,23 +69,31 @@ inline const std::array<SystemInfo, 37>& systems() {
          {".tap", ".m3u"}},
         {"3ds", "Nintendo 3DS", "3DS", {".3ds", ".cci", ".cxi", ".3dsx"}}, // Tanuki3DS (emulators.tanuki_plan)
         {"psp", "PlayStation Portable", "PSP", {".iso", ".cso"}, {".pbp", ".chd"}},
-        {"dc", "Dreamcast", "DC", {".gdi", ".cdi"}, {".chd", ".cue", ".m3u"}}, // Flycast
-        {"coleco", "ColecoVision", "COLECO", {".col", ".cv"}, {".rom", ".bin"}},  // Gearcoleco
-        {"intellivision", "Intellivision", "INT", {".int"}, {".rom", ".bin"}},    // FreeIntv
+        {"dc", "Dreamcast", "DC", {".gdi", ".cdi"}, {".chd", ".cue", ".m3u"}},     // Flycast
+        {"coleco", "ColecoVision", "COLECO", {".col", ".cv"}, {".rom", ".bin"}},   // Gearcoleco
+        {"intellivision", "Intellivision", "INT", {".int"}, {".rom", ".bin"}},     // FreeIntv
         {"msx", "MSX", "MSX", {".mx1", ".mx2", ".cas"}, {".rom", ".dsk", ".m3u"}}, // blueMSX
-        {"cpc", "Amstrad CPC", "CPC", {".cdt", ".cpr"}, {".dsk", ".sna", ".m3u"}}, // Caprice32: a .dsk/.sna in its folder
-        {"atari", "Atari 2600", "2600", {".a26"}, {".bin"}},                       // Stella 2014
-        {"atari7800", "Atari 7800", "7800", {".a78"}, {".bin"}},                   // ProSystem
-        {"atari5200", "Atari 5200", "5200", {".a52"}, {".bin"}},                   // a5200
-        {"lynx", "Atari Lynx", "LYNX", {".lnx"}},                                  // Handy
-        {"wonderswan", "WonderSwan", "WS", {".ws", ".wsc", ".pc2"}},               // Beetle WonderSwan, and the Color
-        {"ngp", "Neo Geo Pocket", "NGP", {".ngp", ".ngc", ".ngpc", ".npc"}},       // Beetle NeoPop, and the Color
-        {"vb", "Virtual Boy", "VB", {".vb", ".vboy"}, {".bin"}},                   // Beetle VB
+        {"cpc",
+         "Amstrad CPC",
+         "CPC",
+         {".cdt", ".cpr"},
+         {".dsk", ".sna", ".m3u"}},                                          // Caprice32: a .dsk/.sna in its folder
+        {"atari", "Atari 2600", "2600", {".a26"}, {".bin"}},                 // Stella 2014
+        {"atari7800", "Atari 7800", "7800", {".a78"}, {".bin"}},             // ProSystem
+        {"atari5200", "Atari 5200", "5200", {".a52"}, {".bin"}},             // a5200
+        {"lynx", "Atari Lynx", "LYNX", {".lnx"}},                            // Handy
+        {"wonderswan", "WonderSwan", "WS", {".ws", ".wsc", ".pc2"}},         // Beetle WonderSwan, and the Color
+        {"ngp", "Neo Geo Pocket", "NGP", {".ngp", ".ngc", ".ngpc", ".npc"}}, // Beetle NeoPop, and the Color
+        {"vb", "Virtual Boy", "VB", {".vb", ".vboy"}, {".bin"}},             // Beetle VB
         {"amiga", "Amiga", "AMIGA", {".adf", ".adz", ".dms", ".ipf", ".hdf", ".hdz", ".lha", ".uae"}, {".m3u"}}, // PUAE
         // DOSBox Pure: a game's zipped folder (only in a DOS folder: a zip elsewhere is a DS game's), CD and floppy images
-        {"dos", "DOS", "DOS", {".dosz"}, {".zip", ".iso", ".cue", ".chd", ".ins", ".img", ".ima", ".vhd", ".m3u", ".m3u8"}},
+        {"dos",
+         "DOS",
+         "DOS",
+         {".dosz"},
+         {".zip", ".iso", ".cue", ".chd", ".ins", ".img", ".ima", ".vhd", ".m3u", ".m3u8"}},
         {"pico8", "PICO-8", "P8", {".p8"}, {".png"}}, // fake-08: .p8 carts, and .p8.png picture carts in its folder
-        {"gw", "Game & Watch", "G&W", {".mgw"}}, // and other LCD games: MADrigal's simulators (gw-libretro)
+        {"gw", "Game & Watch", "G&W", {".mgw"}},      // and other LCD games: MADrigal's simulators (gw-libretro)
         // Nintendo's two-monitor cabinets (mame2003-plus, built with only those): a set is a .zip, the system's only in
         // an arcade folder, and only the sets of arcade_sets() are listed
         {"arcade", "Arcade", "ARC", {}, {".zip"}},
@@ -406,7 +414,8 @@ inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const s
                 fs::path first;
                 int first_depth = 0;
                 std::error_code walk;
-                fs::recursive_directory_iterator it(folder.path(), fs::directory_options::skip_permission_denied, walk), end;
+                fs::recursive_directory_iterator it(folder.path(), fs::directory_options::skip_permission_denied, walk),
+                    end;
                 for (; !walk && it != end; it.increment(walk)) {
                     const auto name = it->path().filename().string();
                     if (!it->is_regular_file(walk) || name.rfind(".", 0) == 0) continue;
@@ -426,7 +435,8 @@ inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const s
                 }
             }
         }
-        std::sort(games.begin(), games.end(), [](const Game& a, const Game& b) { return lower(a.title) < lower(b.title); });
+        std::sort(games.begin(), games.end(),
+                  [](const Game& a, const Game& b) { return lower(a.title) < lower(b.title); });
         return games;
     }
     std::map<std::string, Game> unique;
@@ -467,7 +477,8 @@ inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const s
                     // A PICO-8 picture cart is name.p8.png: its title is the name.
                     std::string title =
                         std::string(info.id) == "arcade" ? arcade_set->second : entry.path().stem().string();
-                    if (title.size() > 3 && lower(title.substr(title.size() - 3)) == ".p8") title.resize(title.size() - 3);
+                    if (title.size() > 3 && lower(title.substr(title.size() - 3)) == ".p8")
+                        title.resize(title.size() - 3);
                     if (!ec) unique[canonical.string()] = {title, canonical, false, info.id};
                 }
             }

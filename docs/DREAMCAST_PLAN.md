@@ -86,21 +86,26 @@ faster and our Mesa is tuned further than stock ROCKNIX's.
 
 | Option | Upstream default | Ours | Why |
 |---|---|---|---|
-| `flycast_internal_resolution` | 640x480 | 640x480 | 1:1 on the RG DS; anything higher only costs fragment time |
-| `flycast_threaded_rendering` | enabled | enabled | CPU and GL overlap; the main speed lever |
-| `flycast_auto_skip_frame` | disabled | some | drops a frame only when the SH4 falls behind |
-| `flycast_alpha_sorting` | per-triangle | per-triangle | per-pixel (OIT) needs more than GLES 3.1 |
-| `flycast_anisotropic_filtering` | 4 | off | made no difference on PSP (G52) |
-| `flycast_emulate_framebuffer` | disabled | disabled | slower, and N64's framebuffer copies crashed Panfrost |
-| `flycast_texupscale` | 1 (off) | 1 (off) | xBRZ costs CPU and memory |
-| `flycast_gdrom_fast_loading` | disabled | enabled | shorter loads; small accuracy cost |
-| `flycast_digital_triggers` | disabled | enabled | the handheld's L2/R2 are buttons |
-| `flycast_per_content_vmus` | disabled | VMU A1 | each game's saves in its own VMU file in the save folder, not the BIOS folder |
-| `flycast_vmuN_screen_display` | (per VMU) | disabled | the VMU goes to the second screen, not over the game |
+| `reicast_internal_resolution` | 640x480 | 640x480 | 1:1 on the RG DS; anything higher only costs fragment time |
+| `reicast_threaded_rendering` | enabled | enabled | CPU and GL overlap; the main speed lever |
+| `reicast_auto_skip_frame` | disabled | some | drops a frame only when the SH4 falls behind |
+| `reicast_alpha_sorting` | per-triangle | per-strip | per-pixel (OIT) needs more than GLES 3.1; per-strip halves the translucent draws (Crazy Taxi ~52 -> ~57 game fps) |
+| `reicast_anisotropic_filtering` | 4 | off | made no difference on PSP (G52) |
+| `reicast_emulate_framebuffer` | disabled | disabled | slower, and N64's framebuffer copies crashed Panfrost |
+| `reicast_texupscale` | 1 (off) | 1 (off) | xBRZ costs CPU and memory |
+| `reicast_gdrom_fast_loading` | disabled | enabled | shorter loads; small accuracy cost |
+| `reicast_digital_triggers` | disabled | enabled | the handheld's L2/R2 are buttons |
+| `reicast_per_content_vmus` | disabled | VMU A1 | each game's saves in its own VMU file in the save folder, not the BIOS folder |
+| `reicast_vmuN_screen_display` | (per VMU) | disabled | the VMU goes to the second screen, not over the game |
 
-To try others without a rebuild: `RGDS_PLAY_CORE_OPTIONS="flycast_alpha_sorting=per-strip (fast, least accurate);flycast_enable_dsp=disabled"`.
-Left at upstream for the spike to judge: `flycast_enable_dsp` (on), `flycast_delay_frame_swapping` (on),
-`flycast_mipmapping` (on), `flycast_sh4clock` (200).
+**The keys are `reicast_...`** (Flycast's libretro `CORE_OPTION_NAME`, kept for old configs). Until 2026-11-23 the
+player sent `flycast_...` keys, so none of the settings above reached the core: it ran on Flycast's own defaults (no
+frameskip, analogue triggers, shared VMUs), and every option test in "Spike results" before that date (frameskip,
+SH4 clock, threading, DSP, sorting, resolution) measured the same unchanged core.
+
+To try others without a rebuild: `RGDS_PLAY_CORE_OPTIONS="reicast_alpha_sorting=per-strip (fast, least accurate);reicast_enable_dsp=disabled"`.
+Left at upstream for the spike to judge: `reicast_enable_dsp` (on), `reicast_delay_frame_swapping` (on),
+`reicast_mipmapping` (on), `reicast_sh4clock` (200).
 
 ### Player and runtime
 
@@ -297,6 +302,60 @@ e10c53c2f8b90bab96ead2d368858623, no `dc_flash.bin`), player built from this che
   merges consecutive polys with equivalent state into one strip draw (`makePrimRestartIndex`, restart index between
   them), so the remaining draws differ in state. Next measured: half resolution again (the 11-19 test ran while the
   upload stall hid the GPU) and per-strip translucent sorting (fewer draws than per-triangle).
+- **GPU time measured, 2026-11-23** (image 0.9.1-os0daf9ef0, same 0004 core and drive, `os/device-bench/dc_run_m.sh`:
+  Panfrost's per-process engine time from `/proc/PID/fdinfo` with `.../fde60000.gpu/profiling` = 1, sampled by
+  `dc_gpu.py`). In the drive the **fragment engine is busy ~780 ms of every second** (~17 ms per shown frame at ~45 fps)
+  and the vertex/tiler engine ~145 ms/s (~3 ms). The results screen after the drive: 210 + 19 ms/s. **320x240 gives the
+  same 775 ms/s fragment**. That looked like "not pixels", but **the option never applied** (see the `reicast_`
+  note under the settings table): the stats core printed a 640x480 target with 320x240 asked for. Core interval in the drive per case: baseline
+  22.4 ms, 320x240 22.1, per-strip sorting 23, `auto_skip_frame=more` 23: no setting moves it. Frameskip can't help as
+  built: `retro_run` loops until a frame is rendered and the SH4 waits on that, so game speed follows the GPU. A
+  1280x960 run didn't start (another session had bind-mounted a new `rgds-play` over the release's, which fails the
+  release SHA-256 check).
+- **With the options really applied (2026-11-23, image 0.9.1-os0daf9ef0, same drive, `dc_run_o.sh`; stats core
+  `RGDS_FLYCAST_STATS=2` counting guest vblanks per second = game speed, 59.94 = full):**
+
+  | Settings (plus the player's set) | Game fps | Shown fps | Translucent draws | GPU fragment ms/s |
+  |---|---|---|---|---|
+  | frameskip off (what ran before 11-23) | ~45 | ~45 | ~750 | 821 |
+  | frameskip some (the intent) | ~52 | ~44 | ~750 | 741 |
+  | per-strip, frameskip off | ~54 | ~54 | ~365 | 775 |
+  | **per-strip + some (new default)** | **~57** | ~53 | ~365 | 726-740 |
+  | per-strip + some + DSP off | ~58.5 | ~54 | | 695 |
+  | 320x240 + some | ~57.5 | ~56 | ~750 | 247 |
+
+  320x240 cuts the fragment time by 70%, so the pixels are most of the GPU's cost after all, yet the game stays at
+  ~57: past the GPU the **SH4 thread is the limit** (`Flycast-emu` 82-89% of a core, the drawing thread 64-66%). A timed
+  split per list (`RGDS_FLYCAST_STATS=1`, a fence wait after each list) gave translucent ~53%, opaque ~30%, modifier
+  volumes ~14%, final blit ~1.2 ms. The stats core is a hand edit in the VM's build tree (`*.pre-stats` beside each
+  file), not a package patch.
+- **The owner's own drive, 2026-11-23 09:43** (launched from the launcher, image 0.9.2-os2f9cf014 with the
+  `reicast_` player, watched read-only by `os/device-bench/dc_watch_wait.sh`): the same picture as the scripted drive,
+  only heavier. `Flycast-emu` (SH4) 90-97% of a core, the drawing thread 63-66%, the GPU 840-905 ms/s, nothing else
+  busy (rgds-music 2-3%, the session's python 6%), all threads on CPUs 0-3 at normal priority, 1992 MHz performance,
+  GPU 800 MHz, 57-64 C. The presentation stats (`RGDS_FRAME_STATS`): average 42 fps over 147 s, p50 16.7 ms but p95
+  64 ms and p99 83 ms, 2,004 of 6,042 frames over 20 ms. So the shown frames come in bursts with gaps of 3-5 vblanks
+  (frameskip "some" dropping draws while the SH4 is behind), which reads as 20-30 fps. Both the SH4 thread and the GPU
+  are at their limit in the drive; no setting left gets both under 16.7 ms.
+- **Where the SH4 thread goes (2026-11-23, rgds_prof on the drive, unstripped Flycast):** SH4 JIT code 63%, the sound
+  chip ~25% (DSP `DynCode` 7.7% + pack/unpack 1.5%, `AICA_Sample` 6.6% + channel steps ~1.5%, the ARM7 recompiler 4.9%
+  + its interpreter and memory ops ~2.5%), the scheduler and interrupts ~3%. Underclocking the SH4
+  (`reicast_sh4clock` 180 or 160) changed the game speed by only ~0.5 frames a second. The drawing thread: Mesa 38%, kernel
+  time in `ioctl` ~20% (~10 GPU job submits a frame at ~100 us, ~20 `WAIT_BO` busy checks a frame), Flycast's TA
+  parsing and sorting ~10%.
+- **One option per drive (2026-11-23, per-strip + frameskip some):** `delay_frame_swapping` off and fog off change
+  nothing; DSP off 58.1 game / ~54 shown; **modifier volumes off 58.3 / 57.8** (GPU fragment 539 vs ~650-730 ms/s).
+- **Patch 0005, depth from the vertex shader (2026-11-23):** every GLES 3 pixel shader wrote `gl_FragDepth` (log2 of
+  1/w), which turns off Mali's early depth test and hidden-pixel removal for every draw. The vertex shader now writes
+  1/w scaled by `depth_scale` (already computed for the GLES 2 path), linear on screen because w is 1. Drive: game 57 ->
+  58.8, shown 54 -> 58; captures at 95 s identical (shadow, hedges, road). Linear depth in 24 bits may z-fight far away
+  in other games: `RGDS_FLYCAST_VTXDEPTH=0` turns it off. Package patch written and dry-run applied on 0001-0004; not
+  in an image yet. Built with 0001-0005 after a dirclean on 2026-11-23 (md5 be4f8708...; the VM's build tree now holds
+  the package build, the measuring edits are kept as `os/device-bench/flycast-stats.patch`) and bound over
+  `/usr/lib/libretro/flycast_libretro.so` from `/data/rgds/dc-core/` on the handheld until the next reboot (launches only
+  verify the release folder, not `/usr/lib/libretro`). A direct `make` in the VM must set
+  `BR2_DL_DIR=$HOME/own-os/dl` as `own_os_build.py` does: without it Buildroot cloned Flycast's 1.4 GB repository into
+  `buildroot/dl` and filled the VM disk (removed).
 - **Next fixes, in order:** (1) and the buffer stall done, above. (The `u_vbuf` name in the first profile was Panfrost borrowing u_vbuf's
   scan helper, not the vertex-translation path; no layout change needed.) (2) Cut redundant per-poly state in
   `SetGPState`: skip texture binds, `glTexParameter` calls and uniform updates when they equal the previous poly's

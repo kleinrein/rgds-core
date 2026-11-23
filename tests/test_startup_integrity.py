@@ -27,10 +27,9 @@ class StartupIntegrityTests(unittest.TestCase):
             "themes/default/light.ini": b"palette",
             "assets/fonts/rounded-20.rgf": b"font",
             "emulators/hooks/librgdsbridge.so": b"owned integration",
-            "emulators/dsperate/dsperate": b"external DSperate",
-            "emulators/dsperate/source.tar.gz": b"corresponding engine source",
-            "emulators/dsperate/rgds-build/tools/build_engines.py": b"host rebuild tools",
-            "emulators/nnddss/nnddss": b"external NNDS",
+            "emulators/rgds-experimental/rgds-experimental": b"DSCore",
+            "emulators/rgds-experimental/source.tar.gz": b"corresponding engine source",
+            "emulators/rgds-play/rgds-play": b"RG DS Play",
         }
         for name, content in self.payload.items():
             path = self.app / name
@@ -52,11 +51,11 @@ class StartupIntegrityTests(unittest.TestCase):
         (self.app / "manifest.json").write_text(json.dumps(self.manifest))
 
     def test_engine_hash_is_deferred_and_verified_before_selected_engine_launch(self):
-        (self.app / "emulators/nnddss/nnddss").write_bytes(b"damaged engine")
+        (self.app / "emulators/rgds-play/rgds-play").write_bytes(b"damaged engine")
         activate.verify_startup(self.app)
-        activate.verify_engine(self.app, "dsperate")
+        activate.verify_engine(self.app, "rgds-experimental")
         with self.assertRaisesRegex(ValueError, "SHA-256"):
-            activate.verify_engine(self.app, "nnddss")
+            activate.verify_engine(self.app, "rgds-play")
         with self.assertRaisesRegex(ValueError, "SHA-256"):
             activate.verify_release(self.app)
 
@@ -70,14 +69,13 @@ class StartupIntegrityTests(unittest.TestCase):
 
     def test_shared_bridge_is_checked_for_every_engine(self):
         (self.app / "emulators/hooks/librgdsbridge.so").write_bytes(b"damaged bridge")
-        for core in ("drastic", "dsperate", "nnddss"):
+        for core in ("rgds-experimental", "rgds-play"):
             with self.subTest(core=core), self.assertRaisesRegex(ValueError, "SHA-256"):
                 activate.verify_engine(self.app, core)
 
     def test_engine_launch_defers_corresponding_source_but_install_verifies_it(self):
-        for name in ("emulators/dsperate/source.tar.gz", "emulators/dsperate/rgds-build/tools/build_engines.py"):
-            (self.app / name).write_bytes(b"changed source")
-        activate.verify_engine(self.app, "dsperate")
+        (self.app / "emulators/rgds-experimental/source.tar.gz").write_bytes(b"changed source")
+        activate.verify_engine(self.app, "rgds-experimental")
         with self.assertRaisesRegex(ValueError, "SHA-256"):
             activate.verify_release(self.app)
 
@@ -87,7 +85,7 @@ class StartupIntegrityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unlisted"):
             activate.verify_startup(self.app)
         extra.unlink()
-        engine = self.app / "emulators/nnddss/nnddss"
+        engine = self.app / "emulators/rgds-play/rgds-play"
         engine.unlink()
         with self.assertRaisesRegex(ValueError, "Missing or unsafe"):
             activate.verify_startup(self.app)
@@ -135,12 +133,12 @@ class StartupIntegrityTests(unittest.TestCase):
         # Engine payloads are no longer stat'ed on the boot path; their bytes
         # are checked by the selected engine's launch verification instead.
         receipt = activate.verify_startup(self.app, receipt=True)
-        engine = self.app / "emulators/nnddss/nnddss"
+        engine = self.app / "emulators/rgds-play/rgds-play"
         before = engine.read_bytes()
         engine.write_bytes(bytes((before[0] ^ 1,)) + before[1:])
         activate.verify_startup_receipt(self.app, receipt)
         with self.assertRaisesRegex(ValueError, "SHA-256"):
-            activate.verify_engine(self.app, "nnddss")
+            activate.verify_engine(self.app, "rgds-play")
         engine.write_bytes(before)
 
     def installed(self):
@@ -154,12 +152,12 @@ class StartupIntegrityTests(unittest.TestCase):
     def test_installed_release_memoizes_unchanged_hashes_across_processes(self):
         root = self.installed()
         activate.verify_startup(self.app)
-        activate.verify_engine(self.app, "dsperate")
+        activate.verify_engine(self.app, "rgds-experimental")
         memo = root / "userdata/cache/verified" / (self.app.name + ".json")
         self.assertTrue(memo.is_file())
         with patch("activate.hashlib.sha256", wraps=hashlib.sha256) as hashes:
             activate.verify_startup(self.app)
-            activate.verify_engine(self.app, "dsperate")
+            activate.verify_engine(self.app, "rgds-experimental")
         # Only the two manifest digests; no payload was read again.
         self.assertEqual(hashes.call_count, 2)
         # A changed size/time is re-hashed and a mismatch is rejected.
@@ -170,8 +168,8 @@ class StartupIntegrityTests(unittest.TestCase):
         (self.app / "runtime/session.py").write_bytes(self.payload["runtime/session.py"])
         activate.verify_startup(self.app)
         # A manifest change invalidates every memoized entry.
-        self.manifest["files"]["emulators/nnddss/nnddss"] = hashlib.sha256(b"new engine").hexdigest()
-        (self.app / "emulators/nnddss/nnddss").write_bytes(b"new engine")
+        self.manifest["files"]["emulators/rgds-play/rgds-play"] = hashlib.sha256(b"new engine").hexdigest()
+        (self.app / "emulators/rgds-play/rgds-play").write_bytes(b"new engine")
         self.save()
         with patch("activate.hashlib.sha256", wraps=hashlib.sha256) as hashes:
             activate.verify_startup(self.app)
@@ -211,7 +209,7 @@ class StartupIntegrityTests(unittest.TestCase):
     def test_inventory_is_one_walk_without_resolving_each_payload(self):
         with patch.object(Path, "resolve", side_effect=AssertionError("per-file resolve")):
             activate.verify_startup(self.app)
-        source = self.app / "emulators/nnddss"
+        source = self.app / "emulators/rgds-play"
         destination = self.app.parent / "external-engine"
         source.rename(destination)
         source.symlink_to(destination, target_is_directory=True)

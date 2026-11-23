@@ -271,14 +271,16 @@ void App::action(int code) {
             else if (code == 12) return_without_saving();
             else if (code == 8 || code == 9) {
                 // The top row: Resume, Rewind (13), Screenshot (12) over the grid's columns.
-                const std::array<int, 14> up = {0, 0, 13, 12, 1, 2, 3, 4, 5, 6, 7, 9, 12, 13},
-                                          down = {1, 4, 5, 6, 7, 8, 9, 10, 11, 11, 10, 11, 3, 2};
+                std::array<int, 14> up = {0, 0, 13, 12, 1, 2, 3, 4, 5, 6, 7, 9, 12, 13},
+                                    down = {1, 4, 5, 6, 7, 8, 9, 10, 11, 11, 10, 11, 3, 2};
+                if (!rewind_tile_shown()) up[2] = 12; // no Rewind: Resume over the left column, Screenshot the rest
                 settings.focus = (code == 8 ? up : down).at(settings.focus);
             } else if (code == 0 || code == 1) {
                 if (settings.focus == 0 || settings.focus == 12 || settings.focus == 13) {
-                    const std::array<int, 3> row = {0, 13, 12};
+                    const std::vector<int> row =
+                        rewind_tile_shown() ? std::vector<int>{0, 13, 12} : std::vector<int>{0, 12};
                     const int at = int(std::find(row.begin(), row.end(), settings.focus) - row.begin());
-                    settings.focus = row[size_t(std::clamp(at + (code == 0 ? -1 : 1), 0, 2))];
+                    settings.focus = row[size_t(std::clamp(at + (code == 0 ? -1 : 1), 0, int(row.size()) - 1))];
                 }
                 else if (settings.focus >= 10) settings.focus = code == 0 ? 10 : 11;
                 else if (settings.focus != 0) {
@@ -762,6 +764,7 @@ void App::touch(int x, int y) {
         action(3);
         return;
     }
+    if (settings.page == Page::Files && files_touch(x, y)) return;
     if (settings.page == Page::ShaderPicker) {
         if (y >= 24 && y <= 66) {
             if (x >= 368 && x <= 488) change_shader_preview(11);
@@ -919,8 +922,13 @@ void App::touch(int x, int y) {
         }
         if (x >= 28 && x <= 612) {
             if (y >= quick_top && y < quick_top + quick_wide_height) {
-                if ((x - 28) % 200 >= 184) return; // between the tiles
-                settings.focus = x >= 428 ? 12 : x >= 228 ? 13 : 0;
+                if (!rewind_tile_shown()) { // two wide tiles, as the bottom row
+                    if (x > 312 && x < 328) return;
+                    settings.focus = x >= 328 ? 12 : 0;
+                } else {
+                    if ((x - 28) % 200 >= 184) return; // between the tiles
+                    settings.focus = x >= 428 ? 12 : x >= 228 ? 13 : 0;
+                }
             } else if (y >= quick_grid_top && y < quick_grid_top + 3 * quick_grid_pitch &&
                        (y - quick_grid_top) % quick_grid_pitch < quick_tile_height && (x - 28) % 200 < 184)
                 settings.focus = 1 + ((y - quick_grid_top) / quick_grid_pitch) * 3 + (x - 28) / 200;
@@ -1451,9 +1459,9 @@ void App::pointer_move(int x, int y) {
         if (std::abs(y - down_y) > 8) list_swipe = true;
         if (list_swipe) {
             tap_pending = false;
-            const int row = list_scroll / list_stride;
+            const int row = list_scroll / row_pitch();
             list_scroll = list_motion.drag(s.GetTicks(), gesture_scroll + down_y - y, 0, list_max_scroll());
-            if (list_scroll / list_stride != row) haptic_detent();
+            if (list_scroll / row_pitch() != row) haptic_detent();
             dirty = true;
         }
         return;

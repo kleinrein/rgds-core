@@ -37,8 +37,7 @@ def engine_libraries(environment, private=(), vendor=(), stock_independent=False
         )
     if selected is not None:
         environment["RGDS_SDL_LIBRARY"] = str(selected)
-        # Pin SDL first, then resolve engine-private dependencies. The verified
-        # NNDDSS payload has shims, but deliberately contains no replacement SDL.
+        # Pin SDL first, then resolve engine-private dependencies.
         directories.insert(0, selected.parent)
     else:
         environment.pop("RGDS_SDL_LIBRARY", None)

@@ -137,8 +137,8 @@ Button layout	Layout dos botões
 Button {0}	Botão {0}
 Buttons and the game menu shortcut	Botões e atalho do menu do jogo
 Cancel	Cancelar
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Cancelar atualização
+Cancel the update? Anything already downloaded is removed.	Cancelar a atualização? O que já foi baixado será removido.
 Carousel	Carrossel
 Carried	Com você
 Cartridges	Cartuchos
@@ -160,10 +160,10 @@ Checking PortMaster	Verificando o PortMaster
 Checking the new version…	Verificando a nova versão…
 Checkpoint loaded	Estado carregado
 Checkpoint loaded (preview)	Estado carregado (prévia)
-Checkpoint loaded.	Estado carregado
+Checkpoint loaded.	Estado carregado.
 Checkpoint saved	Estado salvo
 Checkpoint saved (preview)	Estado salvo (prévia)
-Checkpoint saved.	Estado salvo
+Checkpoint saved.	Estado salvo.
 Choose a chat room to join	Escolha uma sala de bate-papo para entrar
 Choose a network from the list	Escolha uma rede na lista
 Choose an option	Escolha uma opção
@@ -977,7 +977,7 @@ Stop fetching before editing the match.	Pare o download antes de editar a corres
 Stop scraping	Parar busca
 Stop scraping before changing source	Pare a busca antes de mudar a fonte
 Stopping after this request	Parando após esta solicitação
-Stopping after this request.	Parando após esta solicitação
+Stopping after this request.	Parando após esta solicitação.
 Storage read-only - use internal RGDS	Armazenamento somente leitura – use RGDS interno
 Su	Do
 Subtle	Sutil
@@ -1467,16 +1467,16 @@ Vectorscope	Vetorscópio
 Radial spectrum	Espectro circular
 Waterfall	Cascata
 Tunnel	Túnel
-Prism	Prism
+Prism	Prisma
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
+Matrix rain	Chuva Matrix
+Kaleidoscope	Caleidoscópio
+Fireworks	Fogos de artifício
+Lava lamp	Lâmpada de lava
 Aurora	Aurora
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Ondulações
 Rotozoom	Rotozoom
 ScreenScraper account	Conta do ScreenScraper
 Not signed in	Não conectado
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Salvando a captura…
 Screenshot saved to the Album.	Captura salva no álbum.
 Still saving the last screenshot.	Ainda salvando a última captura.
 No picture to save. Resume the game and press Menu + R.	Nenhuma imagem para salvar. Retome o jogo e aperte Menu + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Mostrar a escolha de perfil sempre que o console iniciar.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	O último jogador tem PIN, então a inicialização ainda vai pedir. B nessa tela troca de perfil.
+Switch profile	Trocar perfil
 Photo mode	Modo foto
 Leave photo mode?	Sair do modo foto?
 Keep editing	Continuar editando
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Feliz aniversário, {0}!
 Last played {0}	Jogado pela última vez: {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Cores e música do menu seguem o relógio: fins de tarde mais quentes, noites mais calmas
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Os jogos de DS ficam sabendo, como no original. No dia, o portátil te cumprimenta do jeito dele.
+Looking for videos and books…	Procurando vídeos e livros…
+Play from the start	Reproduzir do início
+Start from the beginning	Começar do início
+Mark as finished	Marcar como concluído
+Mark as not finished	Marcar como não concluído
+{0} artist	{0} artista
+{0} artists	{0} artistas
+{0} item	{0} item
+{0} items	{0} itens
+Add network place	Adicionar local de rede
+Added.	Adicionado.
+Cancel paste	Cancelar colagem
+Card	Cartão
+Choose a share	Escolha um compartilhamento
+Clear marks	Limpar marcações
+Copied.	Copiado.
+Copy	Copiar
+Delete for good	Excluir para sempre
+Delete these for good?	Excluir estes itens para sempre?
+Delete this for good?	Excluir este item para sempre?
+Empty the trash for good?	Esvaziar a lixeira para sempre?
+Empty trash	Esvaziar lixeira
+Extract here	Extrair aqui
+Folder	Pasta
+Getting it…	Baixando…
+Getting them…	Baixando os arquivos…
+Go ahead	Continuar
+Inbox	Caixa de entrada
+Keep it anyway	Manter mesmo assim
+Marked	Marcado
+Move	Mover
+Move here	Mover para cá
+Move these to the trash?	Mover estes itens para a lixeira?
+Move this to the trash?	Mover este item para a lixeira?
+Moved to the trash.	Movido para a lixeira.
+Moved.	Movido.
+Network	Rede
+New folder	Nova pasta
+No servers found	Nenhum servidor encontrado
+Open the folder to copy to, then press Y.	Abra a pasta de destino e aperte Y.
+Open the folder to move to, then press Y.	Abra a pasta de destino e aperte Y.
+Paste here	Colar aqui
+Put this key on the server	Coloque esta chave no servidor
+Remove	Remover
+Remove it	Remover
+Remove this place	Remover este local
+Remove this place?	Remover este local?
+Removed.	Removido.
+Rename	Renomear
+Servers on this network	Servidores nesta rede
+Sign in with	Entrar com
+That did not work.	Não deu certo.
+That server shares no folders.	Esse servidor não compartilha pastas.
+The trash is empty.	A lixeira está vazia.
+This handheld's key	Chave deste console
+Trash	Lixeira
+Type an address	Digitar um endereço
+Wait a moment, then try again.	Aguarde um momento e tente de novo.
+{0} marked	{0} marcados
+{0} more	mais {0}
+Getting {0}	Baixando {0}
+Waiting to retry {0}	Aguardando nova tentativa: {0}
+until restart	até reiniciar
+Future	Futuro
+Lap	Volta
+Earlier	Antes
+Where you are	Onde você está
+Rewind	Voltar no tempo
+Mark	Marcar
+Draw	Desenhar
+Stamp	Carimbo
+Lift pen	Levantar caneta
+Pen down	Baixar caneta
+Screen	Tela
+Check panel order and controller input	Verifique a ordem das telas e os controles
+Upper screen	Superior
+Lower screen	Inferior
+Kind	Tipo
+Size	Tamanho
+Modified	Modificado
+Where	Local
+Archive	Arquivo compactado
+Text	Texto
+Save data	Dados salvos
+File	Arquivo
+{0} file	Arquivo {0}
+{0} free	{0} livres
+Sort by	Ordenar por
+Could not open it	Não foi possível abrir
+This folder is empty	Esta pasta está vazia
+The trash is empty	A lixeira está vazia
+No network places yet	Nenhum local de rede ainda

@@ -280,11 +280,13 @@ public:
             pen += g.advance / 64.0f;
         }
     }
+    int opacity = 255; // text that fades (the Media hero's cross-fade); back to 255 after
     void draw(SDL_Renderer* r, const std::string& value, int x, int y, int size, Color color, int limit,
               int max_width) {
         auto& a = atlas(size);
         auto* image = texture(r, size);
         s.SetTextureColorMod(image, color.r, color.g, color.b);
+        s.SetTextureAlphaMod(image, Uint8(std::clamp(opacity, 0, 255)));
         auto chars = codepoints(value, limit);
         float total = width(value, size, limit), scale = float(size) / baked_size(size);
         const bool clipped = total > max_width;
@@ -306,6 +308,7 @@ public:
                 else {
                     auto slot = cached(r, size, cp, found);
                     s.SetTextureColorMod(slot.first, color.r, color.g, color.b);
+                    s.SetTextureAlphaMod(slot.first, Uint8(std::clamp(opacity, 0, 255)));
                     s.RenderCopy(r, slot.first, &slot.second, &dest);
                 }
             }

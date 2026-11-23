@@ -20,7 +20,7 @@ const Uint8* fake_keys(int* count){static Uint8 keys[512]{};*count=512;return ke
 extern "C" void* dlsym(void*,const char* name){return !std::strcmp(name,"SDL_GetKeyboardState")?reinterpret_cast<void*>(&fake_keys):nullptr;}
 int main(int argc,char** argv){
  if(argc!=2)return 2;fs::path root=argv[1];fs::create_directories(root/"session");fs::create_directories(root/"states");
- setenv("RGDS_CORE","drastic",1);setenv("RGDS_SHARED_MENU","1",1);setenv("RGDS_VOLUME_DATA",argv[1],1);
+ setenv("RGDS_CORE","dsperate",1);setenv("RGDS_SHARED_MENU","1",1);setenv("RGDS_VOLUME_DATA",argv[1],1);
  setenv("RGDS_CONTROL_FILE",(root/"session/control").c_str(),1);setenv("RGDS_STATE_DIR",(root/"states").c_str(),1);setenv("RGDS_STATE_SLOT",(root/"states/slot.dss").c_str(),1);
  std::ofstream(root/"session/control")<<"old fast-forward\n";std::ofstream(root/"volume.ini")<<"schema=1\nvolume=25\n";
  initialize();tick();input_blocked();int count=0;SDL_GetKeyboardState(&count);

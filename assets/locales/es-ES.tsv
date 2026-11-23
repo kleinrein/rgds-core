@@ -137,8 +137,8 @@ Button layout	Distribución de botones
 Button {0}	Botón {0}
 Buttons and the game menu shortcut	Botones y atajo del menú del juego
 Cancel	Cancelar
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Cancelar actualización
+Cancel the update? Anything already downloaded is removed.	¿Cancelar la actualización? Se borrará lo ya descargado.
 Carousel	Carrusel
 Carried	Llevas
 Cartridges	Cartuchos
@@ -160,10 +160,10 @@ Checking PortMaster	Comprobando PortMaster
 Checking the new version…	Comprobando la nueva versión…
 Checkpoint loaded	Estado cargado
 Checkpoint loaded (preview)	Estado cargado (vista previa)
-Checkpoint loaded.	Estado cargado
+Checkpoint loaded.	Estado cargado.
 Checkpoint saved	Estado guardado
 Checkpoint saved (preview)	Estado guardado (vista previa)
-Checkpoint saved.	Estado guardado
+Checkpoint saved.	Estado guardado.
 Choose a chat room to join	Elige una sala de chat a la que unirte
 Choose a network from the list	Elige una red de la lista
 Choose an option	Elige una opción
@@ -977,7 +977,7 @@ Stop fetching before editing the match.	Detén la descarga antes de editar la co
 Stop scraping	Detener búsqueda
 Stop scraping before changing source	Detén la búsqueda antes de cambiar la fuente
 Stopping after this request	Se detendrá tras esta solicitud
-Stopping after this request.	Se detendrá tras esta solicitud
+Stopping after this request.	Se detendrá tras esta solicitud.
 Storage read-only - use internal RGDS	Almacenamiento de solo lectura – usa RGDS interno
 Su	Do
 Subtle	Sutil
@@ -1467,16 +1467,16 @@ Vectorscope	Vectorscopio
 Radial spectrum	Espectro circular
 Waterfall	Cascada
 Tunnel	Túnel
-Prism	Prism
+Prism	Prisma
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
+Matrix rain	Lluvia de Matrix
+Kaleidoscope	Caleidoscopio
+Fireworks	Fuegos artificiales
+Lava lamp	Lámpara de lava
 Aurora	Aurora
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Ondas
 Rotozoom	Rotozoom
 ScreenScraper account	Cuenta de ScreenScraper
 Not signed in	Sin iniciar sesión
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Guardando la captura…
 Screenshot saved to the Album.	Captura guardada en el álbum.
 Still saving the last screenshot.	Aún se está guardando la última captura.
 No picture to save. Resume the game and press Menu + R.	No hay imagen que guardar. Reanuda el juego y pulsa Menú + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Mostrar el selector de perfiles cada vez que se inicia la consola.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	El último jugador tiene PIN, así que el inicio lo seguirá pidiendo. B en esa pantalla cambia de perfil.
+Switch profile	Cambiar perfil
 Photo mode	Modo foto
 Leave photo mode?	¿Salir del modo foto?
 Keep editing	Seguir editando
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	¡Feliz cumpleaños, {0}!
 Last played {0}	Última partida: {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Los colores y la música del menú siguen al reloj: tardes más cálidas, noches más tranquilas
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Los juegos de DS lo conocen, como en la original. Ese día, la consola te saluda a su manera.
+Looking for videos and books…	Buscando vídeos y libros…
+Play from the start	Reproducir desde el principio
+Start from the beginning	Empezar desde el principio
+Mark as finished	Marcar como terminado
+Mark as not finished	Marcar como no terminado
+{0} artist	{0} artista
+{0} artists	{0} artistas
+{0} item	{0} elemento
+{0} items	{0} elementos
+Add network place	Añadir ubicación de red
+Added.	Añadido.
+Cancel paste	Cancelar pegado
+Card	Tarjeta
+Choose a share	Elige un recurso compartido
+Clear marks	Quitar marcas
+Copied.	Copiado.
+Copy	Copiar
+Delete for good	Eliminar para siempre
+Delete these for good?	¿Eliminar estos para siempre?
+Delete this for good?	¿Eliminar esto para siempre?
+Empty the trash for good?	¿Vaciar la papelera para siempre?
+Empty trash	Vaciar papelera
+Extract here	Extraer aquí
+Folder	Carpeta
+Getting it…	Descargando…
+Getting them…	Descargándolos…
+Go ahead	Adelante
+Inbox	Bandeja de entrada
+Keep it anyway	Conservar de todos modos
+Marked	Marcado
+Move	Mover
+Move here	Mover aquí
+Move these to the trash?	¿Mover estos a la papelera?
+Move this to the trash?	¿Mover esto a la papelera?
+Moved to the trash.	Movido a la papelera.
+Moved.	Movido.
+Network	Red
+New folder	Nueva carpeta
+No servers found	No se encontraron servidores
+Open the folder to copy to, then press Y.	Abre la carpeta de destino y pulsa Y.
+Open the folder to move to, then press Y.	Abre la carpeta de destino y pulsa Y.
+Paste here	Pegar aquí
+Put this key on the server	Pon esta clave en el servidor
+Remove	Quitar
+Remove it	Quitarlo
+Remove this place	Quitar esta ubicación
+Remove this place?	¿Quitar esta ubicación?
+Removed.	Quitado.
+Rename	Cambiar nombre
+Servers on this network	Servidores en esta red
+Sign in with	Iniciar sesión con
+That did not work.	No ha funcionado.
+That server shares no folders.	Ese servidor no comparte carpetas.
+The trash is empty.	La papelera está vacía.
+This handheld's key	Clave de esta consola
+Trash	Papelera
+Type an address	Escribe una dirección
+Wait a moment, then try again.	Espera un momento y vuelve a intentarlo.
+{0} marked	{0} marcados
+{0} more	{0} más
+Getting {0}	Descargando {0}
+Waiting to retry {0}	Esperando para reintentar {0}
+until restart	hasta reiniciar
+Future	Futuro
+Lap	Vuelta
+Earlier	Antes
+Where you are	Donde estás
+Rewind	Rebobinar
+Mark	Marcar
+Draw	Dibujar
+Stamp	Sello
+Lift pen	Levantar lápiz
+Pen down	Bajar lápiz
+Screen	Pantalla
+Check panel order and controller input	Comprueba el orden de las pantallas y los controles
+Upper screen	Superior
+Lower screen	Inferior
+Kind	Tipo
+Size	Tamaño
+Modified	Modificado
+Where	Ubicación
+Archive	Archivo comprimido
+Text	Texto
+Save data	Datos guardados
+File	Archivo
+{0} file	Archivo {0}
+{0} free	{0} libres
+Sort by	Ordenar por
+Could not open it	No se pudo abrir
+This folder is empty	Esta carpeta está vacía
+The trash is empty	La papelera está vacía
+No network places yet	Aún no hay lugares de red

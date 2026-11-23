@@ -162,8 +162,9 @@ class StopOutsideMixerTests(unittest.TestCase):
         # without a key, both RG DS streams (the RG DS Plus's jack has its own): a holder in either wins
         answers = {shared_audio.MIXER_KEY: 0, shared_audio.MIXER_KEY + 1: 4242}
         original = shared_audio.mixer_holder
-        with patch.object(shared_audio, 'mixer_holder',
-                          side_effect=lambda key=None: original(key) if key is None else answers[key]):
+        with patch.object(
+            shared_audio, 'mixer_holder', side_effect=lambda key=None: original(key) if key is None else answers[key]
+        ):
             self.assertEqual(shared_audio.mixer_holder(), 4242)
             answers[shared_audio.MIXER_KEY + 1] = None
             self.assertEqual(shared_audio.mixer_holder(), 0)

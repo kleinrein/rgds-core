@@ -28,7 +28,6 @@ struct HudPicture {
     std::function<uint32_t(uint32_t)> tint;
 };
 
-
 class View {
 public:
     virtual ~View() = default;

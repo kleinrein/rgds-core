@@ -26,7 +26,7 @@ int checks = 0, failures = 0;
         ++checks;                                                                                                      \
         if (!(x)) {                                                                                                    \
             ++failures;                                                                                                \
-            std::fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, #x);                                         \
+            std::fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, #x);                                          \
         }                                                                                                              \
     } while (0)
 
@@ -138,7 +138,8 @@ void test_unlock(const std::string& dir) {
     CHECK(fake->asked_for("startsession"));
     CHECK(a.game_title() == "Sample Game");
     AchievementNotice n;
-    CHECK(a.take_notice(n) && n.kind == AchievementNotice::GameReady && n.title == "Sample Game" && n.detail == "0 / 2");
+    CHECK(a.take_notice(n) && n.kind == AchievementNotice::GameReady && n.title == "Sample Game" &&
+          n.detail == "0 / 2");
     CHECK(fake->saved.size() == 3); // the game's badge and both achievements'
     const auto entries = a.entries();
     CHECK(entries.size() == 2);

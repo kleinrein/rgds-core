@@ -137,8 +137,8 @@ Button layout	Knapplayout
 Button {0}	Knapp {0}
 Buttons and the game menu shortcut	Knappar och genväg till spelmenyn
 Cancel	Avbryt
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Avbryt uppdatering
+Cancel the update? Anything already downloaded is removed.	Avbryta uppdateringen? Det som redan hämtats tas bort.
 Carousel	Karusell
 Carried	Med dig
 Cartridges	Kassetter
@@ -1467,16 +1467,16 @@ Vectorscope	Vektorskop
 Radial spectrum	Runt spektrum
 Waterfall	Vattenfall
 Tunnel	Tunnel
-Prism	Prism
+Prism	Prisma
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
+Matrix rain	Matrix-regn
+Kaleidoscope	Kalejdoskop
+Fireworks	Fyrverkeri
+Lava lamp	Lavalampa
+Aurora	Norrsken
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Krusningar
 Rotozoom	Rotozoom
 ScreenScraper account	ScreenScraper-konto
 Not signed in	Inte inloggad
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Sparar skärmbilden…
 Screenshot saved to the Album.	Skärmbild sparad i albumet.
 Still saving the last screenshot.	Sparar fortfarande den förra skärmbilden.
 No picture to save. Resume the game and press Menu + R.	Ingen bild att spara. Fortsätt spelet och tryck Meny + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Visa profilvalet varje gång konsolen startar.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	Den senaste spelaren har en PIN-kod, så starten frågar ändå efter den. B på den skärmen byter profil.
+Switch profile	Byt profil
 Photo mode	Fotoläge
 Leave photo mode?	Lämna fotoläget?
 Keep editing	Fortsätt redigera
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Grattis på födelsedagen, {0}!
 Last played {0}	Senast spelat {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Färger och menymusik följer klockan: varmare kvällar, lugnare nätter
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	DS-spel får veta den, som på originalet. På dagen hälsar enheten på sitt eget sätt.
+Looking for videos and books…	Letar efter videor och böcker…
+Play from the start	Spela upp från början
+Start from the beginning	Börja från början
+Mark as finished	Markera som klar
+Mark as not finished	Markera som inte klar
+{0} artist	{0} artist
+{0} artists	{0} artister
+{0} item	{0} objekt
+{0} items	{0} objekt
+Add network place	Lägg till nätverksplats
+Added.	Tillagd.
+Cancel paste	Avbryt inklistring
+Card	Kort
+Choose a share	Välj en delning
+Clear marks	Rensa markeringar
+Copied.	Kopierad.
+Copy	Kopiera
+Delete for good	Radera permanent
+Delete these for good?	Radera dessa permanent?
+Delete this for good?	Radera detta permanent?
+Empty the trash for good?	Töm papperskorgen permanent?
+Empty trash	Töm papperskorgen
+Extract here	Packa upp här
+Folder	Mapp
+Getting it…	Hämtar…
+Getting them…	Hämtar dem…
+Go ahead	Fortsätt
+Inbox	Inkorg
+Keep it anyway	Behåll ändå
+Marked	Markerad
+Move	Flytta
+Move here	Flytta hit
+Move these to the trash?	Flytta dessa till papperskorgen?
+Move this to the trash?	Flytta detta till papperskorgen?
+Moved to the trash.	Flyttad till papperskorgen.
+Moved.	Flyttad.
+Network	Nätverk
+New folder	Ny mapp
+No servers found	Inga servrar hittades
+Open the folder to copy to, then press Y.	Öppna mappen du vill kopiera till och tryck på Y.
+Open the folder to move to, then press Y.	Öppna mappen du vill flytta till och tryck på Y.
+Paste here	Klistra in här
+Put this key on the server	Lägg den här nyckeln på servern
+Remove	Ta bort
+Remove it	Ta bort
+Remove this place	Ta bort den här platsen
+Remove this place?	Ta bort den här platsen?
+Removed.	Borttagen.
+Rename	Byt namn
+Servers on this network	Servrar i det här nätverket
+Sign in with	Logga in med
+That did not work.	Det fungerade inte.
+That server shares no folders.	Den servern delar inga mappar.
+The trash is empty.	Papperskorgen är tom.
+This handheld's key	Den här konsolens nyckel
+Trash	Papperskorg
+Type an address	Skriv en adress
+Wait a moment, then try again.	Vänta en stund och försök igen.
+{0} marked	{0} markerade
+{0} more	{0} till
+Getting {0}	Hämtar {0}
+Waiting to retry {0}	Väntar på nytt försök: {0}
+until restart	tills omstart
+Future	Framtid
+Lap	Varv
+Earlier	Tidigare
+Where you are	Där du är
+Rewind	Spola tillbaka
+Mark	Markera
+Draw	Rita
+Stamp	Stämpel
+Lift pen	Lyft pennan
+Pen down	Sänk pennan
+Screen	Skärm
+Check panel order and controller input	Kontrollera skärmordning och kontrollinmatning
+Upper screen	Övre
+Lower screen	Nedre
+Kind	Typ
+Size	Storlek
+Modified	Ändrad
+Where	Plats
+Archive	Arkiv
+Text	Text
+Save data	Sparad data
+File	Fil
+{0} file	{0}-fil
+{0} free	{0} ledigt
+Sort by	Sortera efter
+Could not open it	Kunde inte öppna den
+This folder is empty	Den här mappen är tom
+The trash is empty	Papperskorgen är tom
+No network places yet	Inga nätverksplatser än

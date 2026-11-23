@@ -78,7 +78,8 @@ class ShaderTests(unittest.TestCase):
             write_fields(data / "library" / game_key(rom) / "game.ini", dict(schema=1, filter=13))
             self.assertEqual(display_filter(data, rom), 13)
         self.assertEqual(
-            [index for index in range(len(SHADERS)) if supported("rgds-experimental", index)], list(range(len(SHADERS)))
+            [index for index in range(len(SHADERS)) if supported("rgds-experimental", index)],
+            list(range(len(SHADERS)))
         )
         self.assertFalse(supported("unknown", 1))
 

@@ -534,9 +534,9 @@ class Updater:
         try:
             self.check()
             seen = read_fields(self.folder / 'status.ini')
-            if seen.get('state') == 'available' and seen.get('version') and seen.get(
-                'version'
-            ) == self.guard.read(self.root / 'state/update-dismissed.json').get('version'):
+            if seen.get('state') == 'available' and seen.get('version') and seen.get('version') == self.guard.read(
+                self.root / 'state/update-dismissed.json'
+            ).get('version'):
                 self.publish('idle', 'Check for updates when you are ready.', progress=0, offer='', received=0)
                 return
             if mode == '2' and read_fields(self.folder / 'status.ini').get('state') == 'available': self.download()

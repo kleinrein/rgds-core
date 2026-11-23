@@ -178,6 +178,10 @@ GLYPHS = {
         '.....#######', '.....#######', '.....#.....#', '.....#.....#', '.....#.....#', '.....#.....#', '.....#..####',
         '.###.#.#####', '#####..#####', '#####...###.', '.###........', '............'
     ],
+    'Folder': [
+        '............', '.####.......', '#....#######', '#++++++++++#', '############', '#..........#', '#..........#',
+        '#..........#', '#..........#', '#..........#', '############', '............'
+    ],
     # Status bar (sound / Wi-Fi strength) for the pixel theme.
     'StatusSound': [
         '............', '.....#......', '....##...#..', '...###.#..#.', '####.#..#.#.', '####.#..#.#.', '####.#..#.#.',
@@ -209,7 +213,7 @@ SYMBOLS = [
     'Display', 'Power', 'Cartridge', 'Volume', 'Wifi', 'System', 'Controller', 'Sun', 'Moon', 'Type', 'Spark', 'Shader',
     'Heart', 'Save', 'Load', 'Play', 'Home', 'Refresh', 'Back', 'Chevron', 'Clock', 'Info', 'Key', 'Art', 'Check',
     'Touch', 'Battery', 'Sleep', 'Trash', 'Logout', 'Fast', 'Sliders', 'Shutdown', 'Library', 'Restart', 'Contrast',
-    'Palette', 'Chat', 'Vibrate', 'Music'
+    'Palette', 'Chat', 'Vibrate', 'Music', 'Folder'
 ]
 STATUS = ['StatusSound', 'StatusMuted', 'StatusWifi0', 'StatusWifi1', 'StatusWifi2', 'StatusWifi3', 'StatusWifiOff']
 

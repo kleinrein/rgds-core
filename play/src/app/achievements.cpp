@@ -192,7 +192,9 @@ void server_call(const rc_api_request_t* request, rc_client_server_callback_t ca
 void event_handler(const rc_client_event_t* event, rc_client_t* client) {
     if (Achievements* a = owner(client)) a->event(event);
 }
-void log_message(const char* message, const rc_client_t*) { std::fprintf(stderr, "rgds-play: rcheevos: %s\n", message); }
+void log_message(const char* message, const rc_client_t*) {
+    std::fprintf(stderr, "rgds-play: rcheevos: %s\n", message);
+}
 void login_done(int result, const char* error, rc_client_t*, void* userdata) {
     static_cast<Achievements*>(userdata)->signed_in(result, error);
 }
@@ -235,7 +237,9 @@ bool json_string(const std::string& text, const std::string& key, std::string& o
                 i += 4;
                 if (v < 0x80) out += char(v);
                 else if (v < 0x800) out += char(0xC0 | (v >> 6)), out += char(0x80 | (v & 0x3F));
-                else out += char(0xE0 | (v >> 12)), out += char(0x80 | ((v >> 6) & 0x3F)), out += char(0x80 | (v & 0x3F));
+                else
+                    out += char(0xE0 | (v >> 12)), out += char(0x80 | ((v >> 6) & 0x3F)),
+                        out += char(0x80 | (v & 0x3F));
             } else out += e == 'n' ? '\n' : e == 't' ? '\t' : e;
         } else out += c;
     }
@@ -402,8 +406,8 @@ void Achievements::loaded(int result, const char* error) {
     AchievementNotice n{AchievementNotice::GameReady, game && game->title ? game->title : "", "", 0, ""};
     if (!summary.num_core_achievements) n.kind = AchievementNotice::NoSet, n.detail = "No achievements yet";
     else
-        n.detail = std::to_string(summary.num_unlocked_achievements) + " / " +
-                   std::to_string(summary.num_core_achievements);
+        n.detail =
+            std::to_string(summary.num_unlocked_achievements) + " / " + std::to_string(summary.num_core_achievements);
     if (game && game->badge_name && *game->badge_name && game->badge_url) {
         const std::string name = std::string("game-") + game->badge_name;
         fetch_badge(name, game->badge_url);
@@ -440,9 +444,8 @@ void Achievements::server_call(const void* request, void* callback, void* callba
     const auto* r = static_cast<const rc_api_request_t*>(request);
     const uint64_t id = next_id_++;
     pending_[id] = Pending{callback, callback_data, ""};
-    if (!transport_ ||
-        !transport_->send(id, r->url ? r->url : "", r->post_data ? r->post_data : "",
-                          r->content_type ? r->content_type : "", "")) {
+    if (!transport_ || !transport_->send(id, r->url ? r->url : "", r->post_data ? r->post_data : "",
+                                         r->content_type ? r->content_type : "", "")) {
         pending_.erase(id);
         rc_api_server_response_t response{};
         response.http_status_code = RC_API_SERVER_RESPONSE_RETRYABLE_CLIENT_ERROR;
@@ -556,9 +559,8 @@ std::vector<AchievementEntry> Achievements::entries() const {
     std::vector<AchievementEntry> out;
     if (!client_ || !game_ready_) return out;
     auto* client = static_cast<rc_client_t*>(client_);
-    rc_client_achievement_list_t* list =
-        rc_client_create_achievement_list(client, RC_CLIENT_ACHIEVEMENT_CATEGORY_CORE,
-                                          RC_CLIENT_ACHIEVEMENT_LIST_GROUPING_LOCK_STATE);
+    rc_client_achievement_list_t* list = rc_client_create_achievement_list(
+        client, RC_CLIENT_ACHIEVEMENT_CATEGORY_CORE, RC_CLIENT_ACHIEVEMENT_LIST_GROUPING_LOCK_STATE);
     if (!list) return out;
     for (uint32_t b = 0; b < list->num_buckets; ++b) {
         const rc_client_achievement_bucket_t& bucket = list->buckets[b];
@@ -590,9 +592,9 @@ void Achievements::write_list() {
     std::ostringstream out;
     out << "#rgds-achievements 1\n";
     out << "game\t" << (game ? game->id : 0) << '\t' << one_line(game ? game->title : "") << '\t'
-        << summary.num_unlocked_achievements << '\t' << summary.num_core_achievements << '\t'
-        << summary.points_unlocked << '\t' << summary.points_core << '\t' << one_line(options_.user.c_str()) << '\t'
-        << int64_t(std::time(nullptr)) << '\n';
+        << summary.num_unlocked_achievements << '\t' << summary.num_core_achievements << '\t' << summary.points_unlocked
+        << '\t' << summary.points_core << '\t' << one_line(options_.user.c_str()) << '\t' << int64_t(std::time(nullptr))
+        << '\n';
     for (const auto& e : entries()) {
         char rarity[16] = "";
         if (e.rarity >= 0) std::snprintf(rarity, sizeof rarity, "%.1f", double(e.rarity));

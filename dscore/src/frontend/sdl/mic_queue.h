@@ -79,12 +79,14 @@ private:
   }
 
   static Biquad lowpass(double cutoff, double rate) {
-    const double w = 2 * 3.14159265358979 * cutoff / rate, c = std::cos(w), a = std::sin(w) / std::sqrt(2.0), a0 = 1 + a;
+    const double w = 2 * 3.14159265358979 * cutoff / rate, c = std::cos(w), a = std::sin(w) / std::sqrt(2.0),
+                 a0 = 1 + a;
     return {(1 - c) / 2 / a0, (1 - c) / a0, (1 - c) / 2 / a0, -2 * c / a0, (1 - a) / a0};
   }
 
   static Biquad highpass(double cutoff, double rate) {
-    const double w = 2 * 3.14159265358979 * cutoff / rate, c = std::cos(w), a = std::sin(w) / std::sqrt(2.0), a0 = 1 + a;
+    const double w = 2 * 3.14159265358979 * cutoff / rate, c = std::cos(w), a = std::sin(w) / std::sqrt(2.0),
+                 a0 = 1 + a;
     return {(1 + c) / 2 / a0, -(1 + c) / a0, (1 + c) / 2 / a0, -2 * c / a0, (1 - a) / a0};
   }
 

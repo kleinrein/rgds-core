@@ -137,8 +137,8 @@ Button layout	Knaplayout
 Button {0}	Knap {0}
 Buttons and the game menu shortcut	Knapper og genvej til spilmenuen
 Cancel	Annuller
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Annuller opdatering
+Cancel the update? Anything already downloaded is removed.	Annuller opdateringen? Alt, der allerede er hentet, fjernes.
 Carousel	Karrusel
 Carried	Medbragt
 Cartridges	Spilkassetter
@@ -1467,16 +1467,16 @@ Vectorscope	Vektorskop
 Radial spectrum	Rundt spektrum
 Waterfall	Vandfald
 Tunnel	Tunnel
-Prism	Prism
+Prism	Prisme
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
+Matrix rain	Matrix-regn
+Kaleidoscope	Kalejdoskop
+Fireworks	Fyrværkeri
+Lava lamp	Lavalampe
+Aurora	Nordlys
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Krusninger
 Rotozoom	Rotozoom
 ScreenScraper account	ScreenScraper-konto
 Not signed in	Ikke logget ind
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Gemmer skærmbilledet…
 Screenshot saved to the Album.	Skærmbillede gemt i albummet.
 Still saving the last screenshot.	Gemmer stadig det sidste skærmbillede.
 No picture to save. Resume the game and press Menu + R.	Intet billede at gemme. Genoptag spillet, og tryk Menu + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Vis profilvalget hver gang konsollen starter.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	Den seneste spiller har en PIN-kode, så opstarten beder stadig om den. B på den skærm skifter profil.
+Switch profile	Skift profil
 Photo mode	Fototilstand
 Leave photo mode?	Forlad fototilstand?
 Keep editing	Fortsæt redigering
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Tillykke med fødselsdagen, {0}!
 Last played {0}	Sidst spillet {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Farver og menumusik følger uret: varmere aftener, roligere nætter
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	DS-spil får den at vide, som på originalen. På dagen siger konsollen hej på sin egen måde.
+Looking for videos and books…	Leder efter videoer og bøger…
+Play from the start	Afspil fra starten
+Start from the beginning	Start forfra
+Mark as finished	Markér som færdig
+Mark as not finished	Markér som ikke færdig
+{0} artist	{0} kunstner
+{0} artists	{0} kunstnere
+{0} item	{0} element
+{0} items	{0} elementer
+Add network place	Tilføj netværkssted
+Added.	Tilføjet.
+Cancel paste	Annuller indsæt
+Card	Kort
+Choose a share	Vælg en deling
+Clear marks	Fjern markeringer
+Copied.	Kopieret.
+Copy	Kopiér
+Delete for good	Slet permanent
+Delete these for good?	Slet disse permanent?
+Delete this for good?	Slet dette permanent?
+Empty the trash for good?	Tøm papirkurven permanent?
+Empty trash	Tøm papirkurv
+Extract here	Udpak her
+Folder	Mappe
+Getting it…	Henter den…
+Getting them…	Henter dem…
+Go ahead	Fortsæt
+Inbox	Indbakke
+Keep it anyway	Behold alligevel
+Marked	Markeret
+Move	Flyt
+Move here	Flyt hertil
+Move these to the trash?	Flyt disse til papirkurven?
+Move this to the trash?	Flyt dette til papirkurven?
+Moved to the trash.	Flyttet til papirkurven.
+Moved.	Flyttet.
+Network	Netværk
+New folder	Ny mappe
+No servers found	Ingen servere fundet
+Open the folder to copy to, then press Y.	Åbn mappen, der skal kopieres til, og tryk på Y.
+Open the folder to move to, then press Y.	Åbn mappen, der skal flyttes til, og tryk på Y.
+Paste here	Indsæt her
+Put this key on the server	Læg denne nøgle på serveren
+Remove	Fjern
+Remove it	Fjern det
+Remove this place	Fjern dette sted
+Remove this place?	Fjern dette sted?
+Removed.	Fjernet.
+Rename	Omdøb
+Servers on this network	Servere på dette netværk
+Sign in with	Log ind med
+That did not work.	Det virkede ikke.
+That server shares no folders.	Den server deler ingen mapper.
+The trash is empty.	Papirkurven er tom.
+This handheld's key	Denne konsols nøgle
+Trash	Papirkurv
+Type an address	Skriv en adresse
+Wait a moment, then try again.	Vent et øjeblik, og prøv igen.
+{0} marked	{0} markeret
+{0} more	{0} mere
+Getting {0}	Henter {0}
+Waiting to retry {0}	Venter på at prøve {0} igen
+until restart	indtil genstart
+Future	Fremtid
+Lap	Omgang
+Earlier	Tidligere
+Where you are	Hvor du er
+Rewind	Spol tilbage
+Mark	Markér
+Draw	Tegn
+Stamp	Stempel
+Lift pen	Løft pennen
+Pen down	Sæt pennen ned
+Screen	Skærm
+Check panel order and controller input	Tjek skærmrækkefølge og controller-input
+Upper screen	Øverst
+Lower screen	Nederst
+Kind	Type
+Size	Størrelse
+Modified	Ændret
+Where	Placering
+Archive	Arkiv
+Text	Tekst
+Save data	Gemte data
+File	Fil
+{0} file	{0}-fil
+{0} free	{0} ledig
+Sort by	Sortér efter
+Could not open it	Kunne ikke åbne den
+This folder is empty	Denne mappe er tom
+The trash is empty	Papirkurven er tom
+No network places yet	Ingen netværkssteder endnu

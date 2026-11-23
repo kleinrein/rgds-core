@@ -137,8 +137,8 @@ Button layout	Раскладка кнопок
 Button {0}	Кнопка {0}
 Buttons and the game menu shortcut	Кнопки и вызов игрового меню
 Cancel	Отмена
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Отменить обновление
+Cancel the update? Anything already downloaded is removed.	Отменить обновление? Уже загруженное будет удалено.
 Carousel	Карусель
 Carried	С собой
 Cartridges	Картриджи
@@ -1467,17 +1467,17 @@ Vectorscope	Векторскоп
 Radial spectrum	Круговой спектр
 Waterfall	Водопад
 Tunnel	Туннель
-Prism	Prism
-Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
-Copper bars	Copper bars
-Synthwave	Synthwave
-Ripples	Ripples
-Rotozoom	Rotozoom
+Prism	Призма
+Lissajous	Лиссажу
+Matrix rain	Дождь Матрицы
+Kaleidoscope	Калейдоскоп
+Fireworks	Фейерверк
+Lava lamp	Лава-лампа
+Aurora	Северное сияние
+Copper bars	Копперные полосы
+Synthwave	Синтвейв
+Ripples	Рябь
+Rotozoom	Ротозум
 ScreenScraper account	Аккаунт ScreenScraper
 Not signed in	Вход не выполнен
 Change account	Сменить аккаунт
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Сохранение скриншота…
 Screenshot saved to the Album.	Скриншот сохранён в альбом.
 Still saving the last screenshot.	Предыдущий скриншот ещё сохраняется.
 No picture to save. Resume the game and press Menu + R.	Нечего сохранять. Вернитесь в игру и нажмите Меню + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Показывать выбор профиля при каждом запуске консоли.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	У последнего игрока есть PIN, поэтому при запуске его всё равно спросят. B на том экране меняет профиль.
+Switch profile	Сменить профиль
 Photo mode	Фоторежим
 Leave photo mode?	Выйти из фоторежима?
 Keep editing	Продолжить
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	С днём рождения, {0}!
 Last played {0}	Последняя игра: {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Цвета и музыка меню следуют за часами: тёплые вечера, тихие ночи
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Его узнают игры DS, как на оригинале. В этот день консоль поздоровается по-своему.
+Looking for videos and books…	Поиск видео и книг…
+Play from the start	Воспроизвести с начала
+Start from the beginning	Начать сначала
+Mark as finished	Отметить как завершённое
+Mark as not finished	Отметить как незавершённое
+{0} artist	{0} исполнитель
+{0} artists	Исполнителей: {0}
+{0} item	{0} элемент
+{0} items	Элементов: {0}
+Add network place	Добавить сетевое место
+Added.	Добавлено.
+Cancel paste	Отменить вставку
+Card	Карта
+Choose a share	Выберите общую папку
+Clear marks	Снять отметки
+Copied.	Скопировано.
+Copy	Копировать
+Delete for good	Удалить навсегда
+Delete these for good?	Удалить их навсегда?
+Delete this for good?	Удалить навсегда?
+Empty the trash for good?	Очистить корзину навсегда?
+Empty trash	Очистить корзину
+Extract here	Распаковать сюда
+Folder	Папка
+Getting it…	Загрузка…
+Getting them…	Загрузка файлов…
+Go ahead	Продолжить
+Inbox	Входящие
+Keep it anyway	Всё равно оставить
+Marked	Отмечено
+Move	Переместить
+Move here	Переместить сюда
+Move these to the trash?	Переместить их в корзину?
+Move this to the trash?	Переместить в корзину?
+Moved to the trash.	Перемещено в корзину.
+Moved.	Перемещено.
+Network	Сеть
+New folder	Новая папка
+No servers found	Серверы не найдены
+Open the folder to copy to, then press Y.	Откройте папку назначения и нажмите Y.
+Open the folder to move to, then press Y.	Откройте папку назначения и нажмите Y.
+Paste here	Вставить сюда
+Put this key on the server	Добавьте этот ключ на сервер
+Remove	Убрать
+Remove it	Убрать
+Remove this place	Убрать это место
+Remove this place?	Убрать это место?
+Removed.	Убрано.
+Rename	Переименовать
+Servers on this network	Серверы в этой сети
+Sign in with	Вход через
+That did not work.	Не получилось.
+That server shares no folders.	Этот сервер не открывает папок.
+The trash is empty.	Корзина пуста.
+This handheld's key	Ключ этой консоли
+Trash	Корзина
+Type an address	Ввести адрес
+Wait a moment, then try again.	Подождите немного и попробуйте снова.
+{0} marked	Отмечено: {0}
+{0} more	ещё {0}
+Getting {0}	Загрузка: {0}
+Waiting to retry {0}	Ожидание повтора: {0}
+until restart	до перезапуска
+Future	Будущее
+Lap	Круг
+Earlier	Ранее
+Where you are	Где вы сейчас
+Rewind	Перемотка назад
+Mark	Отметить
+Draw	Рисовать
+Stamp	Штамп
+Lift pen	Поднять перо
+Pen down	Опустить перо
+Screen	Экран
+Check panel order and controller input	Проверьте порядок экранов и ввод контроллера
+Upper screen	Верхний
+Lower screen	Нижний
+Kind	Тип
+Size	Размер
+Modified	Изменён
+Where	Расположение
+Archive	Архив
+Text	Текст
+Save data	Сохранения
+File	Файл
+{0} file	Файл {0}
+{0} free	Свободно: {0}
+Sort by	Сортировать по
+Could not open it	Не удалось открыть
+This folder is empty	Эта папка пуста
+The trash is empty	Корзина пуста
+No network places yet	Сетевых мест пока нет

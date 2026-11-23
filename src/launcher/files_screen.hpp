@@ -93,19 +93,19 @@ bool App::files_at_root() const {
 }
 
 void App::files_enter(const fs::path& dir, const std::string& select) {
-    files_memory[files_dir.string()] = settings.focus;
+    if (const auto* row = files_focused()) files_memory[files_dir.string()] = row->name;
     files_dir = dir;
     files_marked.clear();
-    files_load(select);
-    if (select.empty()) {
-        const auto remembered = files_memory.find(dir.string());
-        settings.focus = remembered == files_memory.end() ? 0 : remembered->second;
-    }
+    std::string want = select;
+    if (const auto remembered = files_memory.find(dir.string()); want.empty() && remembered != files_memory.end())
+        want = remembered->second; // by name, so a different sort since still finds it
+    settings.focus = 0;
+    files_load(want);
     settings.focus = files_rows.empty() ? 0 : std::clamp(settings.focus, 0, int(files_rows.size()) - 1);
     files_peek_request();
 }
 
-// Folders first, then files, each by name ignoring case; dot files, macOS clutter and half-written .part files hide.
+// Dot files, macOS clutter and half-written .part files hide; files_sort_rows puts the rest in order.
 void App::files_load(const std::string& select) {
     std::vector<FileRow> rows;
     std::error_code ec;
@@ -124,15 +124,11 @@ void App::files_load(const std::string& select) {
                     written - fs::file_time_type::clock::now() + std::chrono::system_clock::now()));
         rows.push_back(std::move(row));
     }
-    auto lowered = [](std::string text) {
-        for (auto& c : text) c = char(std::tolower(static_cast<unsigned char>(c)));
-        return text;
-    };
-    std::sort(rows.begin(), rows.end(), [&](const FileRow& a, const FileRow& b) {
-        if (a.dir != b.dir) return a.dir;
-        return lowered(a.name) < lowered(b.name);
-    });
     files_rows = std::move(rows);
+    files_sort_rows();
+    files_tapped = -1;
+    const auto space = fs::space(files_dir, ec);
+    files_free = ec ? 0 : space.available;
     for (auto it = files_marked.begin(); it != files_marked.end();)
         it = std::any_of(files_rows.begin(), files_rows.end(), [&](const FileRow& row) { return row.name == *it; })
                  ? std::next(it)
@@ -147,7 +143,8 @@ void App::files_load(const std::string& select) {
 
 // A network place's folder: net_sources.py ls answers in session/files-ls.tsv; the rows arrive in files_net_done.
 void App::files_remote_enter(const std::string& relative, const std::string& select) {
-    files_memory["net:" + files_roots[size_t(files_root)].source + ":" + files_remote] = settings.focus;
+    if (const auto* row = files_focused())
+        files_memory["net:" + files_roots[size_t(files_root)].source + ":" + files_remote] = row->name;
     files_remote = relative;
     files_rows.clear();
     files_marked.clear();
@@ -338,17 +335,10 @@ void App::files_action(int code) {
     }
     if (code == 3) {
         if (!files_marked.empty()) files_marked.clear();
-        else if (files_remote_root() && !files_remote.empty()) {
-            const auto cut = files_remote.rfind('/');
-            files_remote_enter(cut == std::string::npos ? "" : files_remote.substr(0, cut),
-                               cut == std::string::npos ? files_remote : files_remote.substr(cut + 1));
-        } else if (!files_at_root()) files_enter(files_dir.parent_path(), files_dir.filename().string());
-        else {
-            back_to(Page::LibraryOptions);
-            settings.focus = library_row_count() - 1;
-            if (files_library_changed) rescan_games(true);
-            files_library_changed = false;
-        }
+        else files_go_up(true);
+    } else if (code == 0) files_go_up(false); // Left: the folder above, as in a desktop file manager
+    else if (code == 1) {                     // Right: into the selected folder
+        if (const auto* row = files_focused(); row && row->dir) files_action(2);
     } else if (code == 13 || code == 14) {
         if (files_roots.size() > 1) {
             const int n = int(files_roots.size());
@@ -413,10 +403,11 @@ void App::files_more() {
         if (ext == ".zip") actions.push_back("Extract here");
     }
     if (!trash) actions.push_back("New folder");
+    if (files_rows.size() > 1) actions.push_back("Sort by");
     if (!files_marked.empty()) actions.push_back("Clear marks");
     if (!files_clip.empty()) actions.push_back("Cancel paste");
     if (trash && !files_rows.empty()) actions.push_back("Empty trash");
-    const std::string title = files_marked.size() > 1 ? std::to_string(files_marked.size()) + " " + locale.text("items")
+    const std::string title = files_marked.size() > 1 ? locale.text(std::to_string(files_marked.size()) + " items")
                               : chosen.size() == 1    ? chosen.front().filename().string()
                                                       : files_roots[size_t(files_root)].name;
     show_picker(title, actions, 0, [this, actions, chosen](int choice) {
@@ -444,6 +435,7 @@ void App::files_more() {
             files_clip_remote.clear();
             files_clip_source.clear();
         } else if (action == "Clear marks") files_marked.clear();
+        else if (action == "Sort by") files_set_sort(-1);
         else if (action == "Rename") {
             files_edit_target = chosen.front();
             files_edit_seed = chosen.front().filename().string();
@@ -484,7 +476,8 @@ void App::files_remote_more() {
     if (root.source != "+" && !files_loading) actions.push_back("Refresh");
     actions.push_back("Add network place");
     if (root.source != "+") actions.push_back("Remove this place");
-    const std::string title = files_marked.size() > 1 ? std::to_string(files_marked.size()) + " " + locale.text("items")
+    if (root.source != "+" && files_rows.size() > 1) actions.push_back("Sort by");
+    const std::string title = files_marked.size() > 1 ? locale.text(std::to_string(files_marked.size()) + " items")
                               : chosen.size() == 1 && root.source != "+"
                                   ? chosen.front().substr(chosen.front().rfind('/') + 1)
                                   : root.name;
@@ -505,6 +498,7 @@ void App::files_remote_more() {
             status = locale.text("Open the folder to copy to, then press Y.");
         } else if (action == "Clear marks") files_marked.clear();
         else if (action == "Refresh") files_remote_enter(files_remote);
+        else if (action == "Sort by") files_set_sort(-1);
         else if (action == "Add network place") files_setup_begin();
         else if (action == "Remove this place")
             show_picker("Remove this place?", {"Cancel", "Remove"}, 0, [this, source](int yes) {
@@ -589,8 +583,12 @@ void App::files_net_done() {
             files_rows.push_back({cells[0], cells[1] == "1", uintmax_t(std::strtoull(cells[2].c_str(), nullptr, 10)),
                                   std::time_t(std::strtoll(cells[3].c_str(), nullptr, 10))});
         }
+        files_sort_rows();
+        files_free = 0;
         const auto remembered = files_memory.find("net:" + files_roots[size_t(files_root)].source + ":" + files_remote);
-        settings.focus = remembered == files_memory.end() ? 0 : remembered->second;
+        if (files_select_after.empty() && remembered != files_memory.end()) files_select_after = remembered->second;
+        settings.focus = 0;
+        files_tapped = -1;
         for (size_t i = 0; i < files_rows.size(); i++)
             if (files_rows[i].name == files_select_after) settings.focus = int(i);
         files_select_after.clear();
@@ -925,7 +923,20 @@ void App::files_top(SDL_Renderer* r, int screen) {
     }
     const int y = screen + top_card_y;
     raw_label(r, files_place(), 44, y + 20, 18, "muted", 552);
-    files_transfer_strip(r, y + top_card_h - 46);
+    // Along the bottom, a desktop window's status bar: how many things, how many marked, the room left; a download
+    // under way takes its place.
+    const bool listing = !files_remote_root() ||
+                         (files_list_error.empty() && files_roots[size_t(files_root)].source != "+");
+    if (!files_transfer_strip(r, y + top_card_h - 62) && files_setup.step == FilesSetup::None && files_child <= 0 &&
+        !files_loading && listing) {
+        const int n = int(files_rows.size());
+        std::string line = locale.text(std::to_string(n) + (n == 1 ? " item" : " items"));
+        if (!files_marked.empty()) line += " · " + locale.text(std::to_string(files_marked.size()) + " marked");
+        if (files_free) line += " · " + locale.text(files_size(files_free) + " free");
+        rect(r, 44, y + top_card_h - 72, 552, 1, "line");
+        raw_label(r, line, 320 - std::min(400, label_width(line, 15, false)) / 2, y + top_card_h - 62, 15, "muted",
+                  400);
+    }
     if (files_setup.step == FilesSetup::Key) {
         label(r, "Put this key on the server", 44, y + 60, 24, "ink", 552);
         wrapped(r,
@@ -966,7 +977,7 @@ void App::files_top(SDL_Renderer* r, int screen) {
             raw_wrapped(r, files_list_error, 64, y + 200, 20, 512, 3);
             wrapped(r, "Y > Refresh tries again.", 64, y + 290, 16, 512, 1);
         } else {
-            ui_icon(r, SettingsIcon::Library, 320, y + 150, 64, "muted");
+            ui_icon(r, SettingsIcon::Folder, 320, y + 150, 64, "muted");
             centered(r, "This folder is empty", y + 206, 2, "ink");
         }
         return;
@@ -997,7 +1008,7 @@ void App::files_top(SDL_Renderer* r, int screen) {
     }
     const auto* row = files_focused();
     if (!row) {
-        ui_icon(r, files_roots[size_t(files_root)].name == "Trash" ? SettingsIcon::Trash : SettingsIcon::Library, 320,
+        ui_icon(r, files_roots[size_t(files_root)].name == "Trash" ? SettingsIcon::Trash : SettingsIcon::Folder, 320,
                 y + 150, 64, "muted");
         centered(r, files_roots[size_t(files_root)].name == "Trash" ? "The trash is empty" : "Nothing here yet",
                  y + 206, 2, "ink");
@@ -1007,44 +1018,48 @@ void App::files_top(SDL_Renderer* r, int screen) {
         return;
     }
     const auto path = files_dir / row->name;
-    const int tx = 300, tw = 600 - tx - 8;
+    const int tx = 268, tw = 600 - tx - 8;
     const Game* game = row->dir || files_remote_root() ? nullptr : files_game(path);
     // The picture side: the game's own art, the picture itself, or the kind of thing it is.
-    SDL_Rect box{44, y + 56, 232, 232};
+    SDL_Rect box{44, y + 56, 200, 200};
     if (game) game_icon(r, *game, box.x, box.y, box.w);
     else if (files_peek_picture && files_peeked == path && media.draw(r, o.data / "session/files-peek.bmp", box)) {
     } else {
         round_rect(r, box.x, box.y, box.w, box.h, 16, "slot");
-        ui_icon(r, row->dir ? SettingsIcon::Library : files_icon(row->name), box.x + box.w / 2, box.y + box.h / 2, 72,
-                "muted");
+        ui_icon(r, row->dir ? SettingsIcon::Folder : files_icon(row->name), box.x + box.w / 2, box.y + box.h / 2, 72,
+                row->dir ? "accent" : "muted");
     }
-    raw_wrapped(r, game ? game->title : row->name, tx, y + 60, 24, tw, 3);
-    int line = y + 150;
-    if (game) {
-        label(r, system_info(game->system).name, tx, line, 18, "accent", tw);
-        line += 28;
-        raw_label(r, row->name, tx, line, 16, "muted", tw);
-        line += 26;
-    }
-    if (row->dir && files_remote_root()) label(r, "Folder", tx, line, 18, "accent", tw);
-    else if (row->dir) {
+    raw_wrapped(r, game ? game->title : row->name, tx, y + 56, 22, tw, 2);
+    // Get Info: what it is, how big, when it changed, where it lives. Labels on the left, values beside them.
+    std::string size;
+    if (row->dir && !files_remote_root()) {
         std::error_code ec;
         int count = 0;
         for (fs::directory_iterator it(path, ec), end; !ec && it != end && count < 10000; it.increment(ec))
             if (it->path().filename().string().rfind('.', 0) != 0) count++;
-        raw_label(r, std::to_string(count) + " " + locale.text(count == 1 ? "item" : "items"), tx, line, 18, "accent",
-                  tw);
-    } else {
-        raw_label(r, files_size(row->size), tx, line, 18, "accent", tw);
-        if (row->mtime) raw_label(r, achievement_date(row->mtime), tx, line + 28, 16, "muted", tw);
+        size = locale.text(std::to_string(count) + (count == 1 ? " item" : " items"));
+    } else if (!row->dir) size = files_size(row->size);
+    const std::vector<std::pair<std::string, std::string>> facts = {
+        {"Kind", files_kind(*row, game)},
+        {"Size", size},
+        {"Modified", row->mtime ? achievement_date(row->mtime) : ""},
+        {"Where", files_place()}};
+    int line = y + 124;
+    for (const auto& [name, value] : facts) {
+        if (value.empty()) continue;
+        label(r, name, tx, line + 2, 15, "muted", 84);
+        raw_label(r, value, tx + 90, line, 17, "ink", tw - 90);
+        line += 30;
     }
-    if (!files_marked.empty()) {
-        raw_label(r, std::to_string(files_marked.size()) + " " + locale.text("marked"), tx, y + 262, 16, "accent", tw);
+    if (files_marked.count(row->name)) {
+        round_rect(r, tx, line + 6, 96, 28, 14, "focus");
+        ui_icon(r, SettingsIcon::Check, tx + 18, line + 20, 14, "accent");
+        label(r, "Marked", tx + 32, centred_label_y(locale.text("Marked"), 15, line + 20), 15, "accent", 60);
     }
     // Under the picture: a zip's contents or a text's first lines.
-    int text_y = y + 300;
+    int text_y = y + 270;
     if (files_peeked == path && !files_peek_lines.empty() && !game)
-        for (size_t i = 0; i < files_peek_lines.size() && text_y < y + top_card_h - 24; i++, text_y += 20)
+        for (size_t i = 0; i < files_peek_lines.size() && text_y < y + top_card_h - 90; i++, text_y += 20)
             raw_label(r, files_peek_lines[i], 44, text_y, 15, i == 0 ? "ink" : "muted", 552);
     else if (!files_clip.empty())
         raw_wrapped(r,
@@ -1052,24 +1067,24 @@ void App::files_top(SDL_Renderer* r, int screen) {
                         locale.text(files_clip_move ? "to move. Open a folder and press Y."
                                                     : "to paste. Open a folder and press Y."),
                     44, text_y, 16, 552, 2);
-    else if (!status.empty() && status != "READY") raw_wrapped(r, status, 44, text_y, 16, 552, 3);
+    else if (!status.empty() && status != "READY") raw_wrapped(r, status, 44, text_y, 16, 552, 2);
 }
 
 // A download under way (or one that stopped): its name, how far, and why it is waiting.
-void App::files_transfer_strip(SDL_Renderer* r, int y) {
+bool App::files_transfer_strip(SDL_Renderer* r, int y) {
     const auto at = [&](const char* key) {
         const auto found = files_transfer.find(key);
         return found == files_transfer.end() ? std::string() : found->second;
     };
     const auto state = at("state");
     const int failed = std::atoi(at("failed").c_str());
-    if (state != "running" && state != "waiting" && !failed) return;
+    if (state != "running" && state != "waiting" && !failed) return false;
     if (state == "running" || state == "waiting") {
         const double size = std::atof(at("size").c_str()), received = std::atof(at("received").c_str());
         const int queued = std::atoi(at("queued").c_str());
         std::string text =
-            (state == "waiting" ? locale.text("Waiting to retry") : locale.text("Getting")) + " " + at("name");
-        if (queued > 1) text += " · " + std::to_string(queued - 1) + " " + locale.text("more");
+            locale.text((state == "waiting" ? "Waiting to retry " : "Getting ") + at("name"));
+        if (queued > 1) text += " · " + locale.text(std::to_string(queued - 1) + " more");
         raw_label(r, text, 44, y, 15, state == "waiting" ? "muted" : "ink", 360);
         if (size > 0) {
             sunken_track(r, 412, y + 4, 184, 10, 5);
@@ -1079,6 +1094,7 @@ void App::files_transfer_strip(SDL_Renderer* r, int y) {
     } else
         raw_label(r, std::to_string(failed) + " " + locale.text(failed == 1 ? "download stopped" : "downloads stopped"),
                   44, y, 15, "muted", 552);
+    return true;
 }
 
 SettingsIcon App::files_icon(const std::string& name) const {
@@ -1096,14 +1112,373 @@ SettingsIcon App::files_icon(const std::string& name) const {
 SettingsIcon App::files_row_icon(int index) const {
     if (index < 0 || index >= int(files_rows.size())) return SettingsIcon::Cartridge;
     const auto& row = files_rows[size_t(index)];
-    return row.dir ? SettingsIcon::Library : files_icon(row.name);
+    return row.dir ? SettingsIcon::Folder : files_icon(row.name);
+}
+
+// ---- The lower screen, laid out like a desktop file manager ----
+// Back and the path bar along the top, the places (the roots L and R step through) in a sidebar, and the folder as a
+// list with Name, Size and Modified columns whose titles sort it. The rows are the shared list's (row_top, row_at,
+// scrolling and flicks) at files_row_height instead of the settings cards' 66.
+namespace files_layout {
+constexpr int bar_x = 84, bar_y = 20, bar_h = 44; // the path bar, beside Back
+constexpr int side_x = 16, side_w = 136;          // places
+constexpr int pane_x = 160, pane_r = 590;         // the listing, up to the scroll rail
+constexpr int head_y = 66;                        // column titles over the rows at list_top
+constexpr int place_h = 36, place_gap = 10;
+constexpr int size_w = 74, date_w = 96; // right-hand columns, right-aligned size and left-aligned date
+inline int date_x() { return pane_r - 8 - date_w; }
+inline int size_right() { return date_x() - 14; }
+inline int name_w() { return size_right() - size_w - (pane_x + 44); }
+} // namespace files_layout
+
+SettingsIcon App::files_place_icon(const FilesRoot& root) const {
+    if (!root.source.empty()) return SettingsIcon::Wifi;
+    if (root.name == "Games") return SettingsIcon::Cartridge;
+    if (root.name == "Inbox") return SettingsIcon::Load;
+    if (root.name == "Screenshots") return SettingsIcon::Art;
+    if (root.name == "Music") return SettingsIcon::Music;
+    if (root.name == "Trash") return SettingsIcon::Trash;
+    if (root.name == "Card") return SettingsIcon::Save;
+    return SettingsIcon::Folder;
+}
+
+// A place's top inside the sidebar: the card's folders, then a gap before the network places, another before Trash.
+int App::files_place_top(int index) const {
+    using namespace files_layout;
+    int top = 8;
+    for (int i = 0; i < index && i < int(files_roots.size()); i++) {
+        top += place_h;
+        const bool next_remote = i + 1 < int(files_roots.size()) && !files_roots[size_t(i + 1)].source.empty();
+        const bool next_trash = i + 1 == int(files_roots.size()) - 1 && files_roots.back().name == "Trash";
+        if ((next_remote && files_roots[size_t(i)].source.empty()) || next_trash) top += place_gap;
+    }
+    return top;
+}
+
+void App::files_sidebar(SDL_Renderer* r, int y) {
+    using namespace files_layout;
+    const int top = y + head_y, height = list_top + list_height - head_y;
+    alpha_round(r, side_x, top, side_w, height, card_radius, theme.at("panel"), 150);
+    // Keep the open place in view when there are more than fit.
+    const int n = int(files_roots.size()), last = n ? files_place_top(n - 1) + place_h + 8 : 0;
+    const int scroll =
+        std::clamp(files_place_top(files_root) + place_h + 8 - height, 0, std::max(0, last - height));
+    SDL_Rect clip{side_x, top, side_w, height};
+    s.RenderSetClipRect(r, &clip);
+    for (int i = 0; i < n; i++) {
+        const auto& root = files_roots[size_t(i)];
+        const int iy = top + files_place_top(i) - scroll;
+        const bool open = i == files_root;
+        const bool pressed = pointer_down && contact_x >= side_x && contact_x < side_x + side_w &&
+                             contact_y >= iy - y && contact_y < iy - y + place_h;
+        if (open) round_rect(r, side_x + 6, iy, side_w - 12, place_h - 2, 10, "accent");
+        else if (pressed) alpha_round(r, side_x + 6, iy, side_w - 12, place_h - 2, 10, theme.at("accent"), 40);
+        ui_icon(r, files_place_icon(root), side_x + 24, iy + place_h / 2 - 1, 18, open ? "on_accent" : "accent");
+        const std::string name = root.source.empty() || root.source == "+" ? locale.text(root.name) : root.name;
+        raw_label(r, name, side_x + 40, centred_label_y(name, 16, iy + place_h / 2 - 1), 16, open ? "on_accent" : "ink",
+                  side_w - 50);
+    }
+    s.RenderSetClipRect(r, nullptr);
+}
+
+// The path as parts to tap, like a desktop window's path bar: the place, then each folder inside it. When it does not
+// fit, the parts nearest the place give way to "…".
+void App::files_path_bar(SDL_Renderer* r, int y) {
+    using namespace files_layout;
+    files_crumbs.clear();
+    const int w = 616 - bar_x;
+    sunken_track(r, bar_x, y + bar_y, w, bar_h, 12);
+    if (files_roots.empty()) return;
+    const auto& root = files_roots[size_t(files_root)];
+    std::vector<std::string> parts = {root.source.empty() || root.source == "+" ? locale.text(root.name) : root.name};
+    if (!root.source.empty()) {
+        std::stringstream split(files_remote);
+        for (std::string part; std::getline(split, part, '/');)
+            if (!part.empty()) parts.push_back(part);
+    } else {
+        std::error_code ec;
+        const auto inside = fs::relative(files_dir, root.path, ec);
+        if (!ec && inside != ".")
+            for (const auto& part : inside)
+                if (!part.empty() && part != ".") parts.push_back(part.string());
+    }
+    constexpr int size = 17, gap = 22, icon = 26;
+    const int room = w - 24 - icon;
+    // Widest first from the end: the folder you are in always shows.
+    std::vector<int> widths;
+    for (size_t i = 0; i < parts.size(); i++)
+        widths.push_back(std::min(label_width(parts[i], size, false), i + 1 == parts.size() ? room : 150));
+    size_t first = parts.size() - 1;
+    int used = widths.back();
+    const int ellipsis = label_width("…", size, false) + gap;
+    while (first > 0 && used + gap + widths[first - 1] + (first - 1 > 0 ? ellipsis : 0) <= room) {
+        first--;
+        used += gap + widths[first];
+    }
+    int x = bar_x + 12;
+    const int cy = y + bar_y + bar_h / 2;
+    ui_icon(r, files_place_icon(root), x + 10, cy, 18, "accent");
+    x += icon;
+    if (first > 0) {
+        raw_label(r, "…", x, centred_label_y("…", size, cy), size, "muted", 30);
+        x += ellipsis - gap;
+        ui_icon(r, SettingsIcon::Chevron, x + gap / 2, cy, 10, "muted");
+        x += gap;
+    }
+    for (size_t i = first; i < parts.size(); i++) {
+        const bool here = i + 1 == parts.size();
+        const bool pressed = !here && pointer_down && contact_x >= x - 4 && contact_x < x + widths[i] + 4 &&
+                             contact_y >= bar_y && contact_y < bar_y + bar_h;
+        if (pressed) alpha_round(r, x - 6, y + bar_y + 6, widths[i] + 12, bar_h - 12, 8, theme.at("accent"), 40);
+        raw_label(r, parts[i], x, centred_label_y(parts[i], size, cy), size, here ? "ink" : "accent", widths[i]);
+        if (!here) files_crumbs.push_back({SDL_Rect{x - 6, bar_y, widths[i] + 12, bar_h}, int(i)});
+        x += widths[i];
+        if (!here) {
+            ui_icon(r, SettingsIcon::Chevron, x + gap / 2, cy, 10, "muted");
+            x += gap;
+        }
+    }
 }
 
 void App::files_row(SDL_Renderer* r, int y, int i) {
+    using namespace files_layout;
     const auto& row = files_rows[size_t(i)];
-    std::string value = row.dir ? "" : files_size(row.size);
-    if (files_marked.count(row.name)) value = locale.text("Marked") + (value.empty() ? "" : " · " + value);
-    list_row(r, y, i, row.name, value, true, nullptr, false);
+    const int h = files_row_height, top = y + list_top + row_top(i) - list_scroll - list_shift();
+    const bool focused = i == settings.focus, marked = files_marked.count(row.name) > 0;
+    const int x = pane_x + 6, w = pane_r - pane_x - 12, cy = top + h / 2;
+    // Striped like a desktop list; the selection is a solid bar, marked rows a tint of it.
+    if (focused) round_rect(r, x, top + 1, w, h - 2, 8, "accent");
+    else if (marked) alpha_round(r, x, top + 1, w, h - 2, 8, theme.at("accent"), 46);
+    else if (i % 2) alpha_round(r, x, top + 1, w, h - 2, 8, theme.at("slot"), 120);
+    const std::string ink = focused ? "on_accent" : "ink", soft = focused ? "on_accent" : "muted";
+    if (marked) ui_icon(r, SettingsIcon::Check, x + 18, cy, 16, focused ? "on_accent" : "accent");
+    else
+        ui_icon(r, row.dir ? SettingsIcon::Folder : files_icon(row.name), x + 18, cy, 20,
+                focused ? "on_accent" : row.dir ? "accent" : "muted");
+    raw_label(r, row.name, pane_x + 44, centred_label_y(row.name, 17, cy), 17, ink, name_w());
+    const std::string size = row.dir ? "--" : files_size(row.size);
+    const int size_px = label_width(size, 15, false);
+    raw_label(r, size, size_right() - size_px, centred_label_y(size, 15, cy), 15, soft, size_w);
+    if (row.mtime) {
+        const auto date = achievement_date(row.mtime);
+        raw_label(r, date, date_x(), centred_label_y(date, 15, cy), 15, soft, date_w);
+    }
+}
+
+void App::files_bottom(SDL_Renderer* r, int y) {
+    using namespace files_layout;
+    sync_list();
+    back_button(r, 28, y + 20, pointer_down && contact_x < 80 && contact_y < 78);
+    files_path_bar(r, y);
+    files_sidebar(r, y);
+    // The listing: a card with the column titles at its head.
+    const int card_top = y + head_y, card_h = list_top + list_height - head_y;
+    round_rect(r, pane_x, card_top + 3, pane_r - pane_x, card_h, card_radius, "slot");
+    round_rect(r, pane_x, card_top, pane_r - pane_x, card_h, card_radius, "panel");
+    const std::array<std::pair<const char*, int>, 3> columns = {
+        {{"Name", pane_x + 44}, {"Size", size_right() - size_w}, {"Modified", date_x()}}};
+    for (int c = 0; c < 3; c++) {
+        const bool sorted = c == files_sort;
+        const int cx = columns[size_t(c)].second, cy = card_top + (list_top - head_y) / 2 + 1;
+        // Size is right-aligned under its title's right edge, like its numbers.
+        const int width = label_width(columns[size_t(c)].first, 14);
+        const int lx = c == 1 ? size_right() - width - (sorted ? 14 : 0) : cx;
+        label(r, columns[size_t(c)].first, lx, centred_label_y(locale.text(columns[size_t(c)].first), 14, cy), 14,
+              sorted ? "accent" : "muted", 120);
+        if (sorted) {
+            // A small arrow after the sorted column's title: up for A to Z, oldest or smallest first.
+            const Color ink = theme.at("accent");
+            s.SetRenderDrawColor(r, ink.r, ink.g, ink.b, 255);
+            const int ax = lx + width + 9;
+            for (int row = 0; row < 5; row++) {
+                const int half = files_sort_down ? 4 - row : row;
+                s.RenderDrawLine(r, ax - half, cy - 2 + row, ax + half, cy - 2 + row);
+            }
+        }
+    }
+    rect(r, pane_x + 10, y + list_top - 1, pane_r - pane_x - 20, 1, "line");
+    SDL_Rect clip{pane_x, y + list_top, pane_r - pane_x, list_height - 4};
+    s.RenderSetClipRect(r, &clip);
+    for (int i = 0; i < int(files_rows.size()); i++) {
+        const int top = row_top(i) - list_scroll - list_shift();
+        if (top + files_row_height < 0 || top > list_height) continue;
+        files_row(r, y, i);
+    }
+    s.RenderSetClipRect(r, nullptr);
+    if (files_rows.empty()) {
+        const int mid = (pane_x + pane_r) / 2, cy = y + list_top + 110;
+        if (files_loading) busy_ring(r, mid, cy, 22, 4);
+        else {
+            const bool trash = !files_roots.empty() && files_roots[size_t(files_root)].name == "Trash";
+            const std::string empty = !files_list_error.empty()                                  ? "Could not open it"
+                                      : !files_roots.empty() && files_roots[size_t(files_root)].source == "+"
+                                          ? "No network places yet"
+                                      : trash ? "The trash is empty"
+                                              : "This folder is empty";
+            ui_icon(r, trash ? SettingsIcon::Trash : SettingsIcon::Folder, mid, cy - 14, 40, "line");
+            const int width = label_width(empty, 17);
+            label(r, empty, mid - std::min(width, 400) / 2, cy + 22, 17, "muted", 400);
+        }
+    }
+    list_scrollbar(r, y);
+}
+
+// Taps: a part of the path opens that folder, a place opens it, a column title sorts by it, and a row is chosen by the
+// first tap and opened by a tap on the chosen row (a desktop's click, then double-click).
+bool App::files_touch(int x, int y) {
+    using namespace files_layout;
+    if (files_setup.step == FilesSetup::Key) return false;
+    for (const auto& [box, depth] : files_crumbs)
+        if (x >= box.x && x < box.x + box.w && y >= box.y && y < box.y + box.h) {
+            files_jump(depth);
+            emit_sound(MenuCue::Navigate);
+            return true;
+        }
+    if (x >= bar_x && y >= bar_y && y < bar_y + bar_h) return true;
+    const int bottom = list_top + list_height;
+    if (x >= side_x && x < side_x + side_w && y >= head_y && y < bottom) {
+        const int height = bottom - head_y, n = int(files_roots.size());
+        const int last = n ? files_place_top(n - 1) + place_h + 8 : 0;
+        const int scroll =
+            std::clamp(files_place_top(files_root) + place_h + 8 - height, 0, std::max(0, last - height));
+        const int local = y - head_y + scroll;
+        for (int i = 0; i < n; i++)
+            if (local >= files_place_top(i) && local < files_place_top(i) + place_h) {
+                if (i != files_root) {
+                    files_open_root(i);
+                    emit_sound(MenuCue::Navigate);
+                }
+                break;
+            }
+        return true;
+    }
+    if (x >= pane_x && x < pane_r && y >= head_y && y < list_top) {
+        files_set_sort(x >= date_x() ? 2 : x >= size_right() - size_w ? 1 : 0);
+        return true;
+    }
+    if (x >= pane_x && x < pane_r && y >= list_top && y < bottom) {
+        const int index = row_at(y - list_top + list_scroll);
+        if (index < 0) return true;
+        // Only a row an earlier tap chose opens, so the row already selected on arrival needs two taps like the rest.
+        if (index == settings.focus && index == files_tapped) {
+            files_tapped = -1;
+            action(2);
+        } else {
+            if (index != settings.focus) {
+                settings.focus = index;
+                files_peek_request();
+                emit_sound(MenuCue::Navigate);
+            }
+            files_tapped = index;
+        }
+        return true;
+    }
+    return x < pane_x && y >= head_y && y < bottom; // the gap beside the sidebar does nothing
+}
+
+// Up one folder (B, Left, Back); B at a place's top leaves the page, Left stays.
+void App::files_go_up(bool leave) {
+    if (files_remote_root() && !files_remote.empty()) {
+        const auto cut = files_remote.rfind('/');
+        files_remote_enter(cut == std::string::npos ? "" : files_remote.substr(0, cut),
+                           cut == std::string::npos ? files_remote : files_remote.substr(cut + 1));
+    } else if (!files_remote_root() && !files_at_root())
+        files_enter(files_dir.parent_path(), files_dir.filename().string());
+    else if (leave) {
+        back_to(Page::LibraryOptions);
+        settings.focus = library_row_count() - 1;
+        if (files_library_changed) rescan_games(true);
+        files_library_changed = false;
+    }
+}
+
+// A part of the path bar: depth 0 is the place itself, 1 the first folder in it, and so on.
+void App::files_jump(int depth) {
+    if (files_roots.empty()) return;
+    const auto& root = files_roots[size_t(files_root)];
+    if (!root.source.empty()) {
+        std::string path, next;
+        std::stringstream split(files_remote);
+        int at = 0;
+        for (std::string part; std::getline(split, part, '/');) {
+            if (part.empty()) continue;
+            if (at < depth) path += (path.empty() ? "" : "/") + part;
+            else if (at == depth) next = part;
+            at++;
+        }
+        files_remote_enter(path, next);
+        return;
+    }
+    std::error_code ec;
+    const auto inside = fs::relative(files_dir, root.path, ec);
+    fs::path target = root.path;
+    std::string next;
+    int at = 0;
+    if (!ec)
+        for (const auto& part : inside) {
+            if (part.empty() || part == ".") continue;
+            if (at < depth) target /= part;
+            else if (at == depth) next = part.string();
+            at++;
+        }
+    files_enter(target, next);
+}
+
+// Folders stay on top; then by name (A to Z), size (biggest first) or date (newest first), a second choice of the same
+// column turning it round.
+void App::files_sort_rows() {
+    auto lowered = [](std::string text) {
+        for (auto& c : text) c = char(std::tolower(static_cast<unsigned char>(c)));
+        return text;
+    };
+    std::stable_sort(files_rows.begin(), files_rows.end(), [&](const FileRow& a, const FileRow& b) {
+        if (a.dir != b.dir) return a.dir;
+        const auto an = lowered(a.name), bn = lowered(b.name);
+        if (files_sort == 1 && !a.dir && a.size != b.size) return files_sort_down ? a.size > b.size : a.size < b.size;
+        if (files_sort == 2 && a.mtime != b.mtime) return files_sort_down ? a.mtime > b.mtime : a.mtime < b.mtime;
+        if (files_sort == 0 && files_sort_down) return an > bn;
+        return an < bn;
+    });
+}
+
+// A column title (or Y > Sort by, column -1, which asks). A second tap on the same title turns the order round; the
+// menu only picks the column, so choosing the current one changes nothing.
+void App::files_set_sort(int column, bool title) {
+    if (column < 0) {
+        show_picker("Sort by", {"Name", "Size", "Modified"}, files_sort,
+                    [this](int choice) { files_set_sort(choice, false); });
+        return;
+    }
+    if (column == files_sort) {
+        if (!title) return;
+        files_sort_down = !files_sort_down;
+    } else {
+        files_sort = column;
+        files_sort_down = column != 0; // sizes and dates read best biggest and newest first
+    }
+    const std::string keep = files_focused() ? files_focused()->name : ""; // the selection stays on its row
+    files_sort_rows();
+    files_tapped = -1;
+    for (size_t i = 0; i < files_rows.size(); i++)
+        if (files_rows[i].name == keep) settings.focus = int(i);
+    emit_sound(MenuCue::Navigate);
+    dirty = true;
+}
+
+std::string App::files_kind(const FileRow& row, const Game* game) const {
+    if (row.dir) return locale.text("Folder");
+    if (game) return system_info(game->system).name;
+    auto ext = fs::path(row.name).extension().string();
+    for (auto& c : ext) c = char(std::tolower(static_cast<unsigned char>(c)));
+    if (ext == ".png" || ext == ".bmp" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif") return locale.text("Picture");
+    if (ext == ".mp3" || ext == ".ogg" || ext == ".flac" || ext == ".wav" || ext == ".opus") return locale.text("Music");
+    if (ext == ".zip" || ext == ".7z" || ext == ".rar") return locale.text("Archive");
+    if (ext == ".txt" || ext == ".md" || ext == ".nfo" || ext == ".log") return locale.text("Text");
+    if (ext == ".sav" || ext == ".srm" || ext == ".dss" || ext == ".state") return locale.text("Save data");
+    if (ext.size() < 2) return locale.text("File");
+    auto upper = ext.substr(1);
+    for (auto& c : upper) c = char(std::toupper(static_cast<unsigned char>(c)));
+    return locale.text(upper + " file");
 }
 
 void App::files_warm() {

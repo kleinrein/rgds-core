@@ -137,8 +137,8 @@ Button layout	Розкладка кнопок
 Button {0}	Кнопка {0}
 Buttons and the game menu shortcut	Кнопки та виклик ігрового меню
 Cancel	Скасувати
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Скасувати оновлення
+Cancel the update? Anything already downloaded is removed.	Скасувати оновлення? Уже завантажене буде видалено.
 Carousel	Карусель
 Carried	З собою
 Cartridges	Картриджі
@@ -1467,17 +1467,17 @@ Vectorscope	Векторскоп
 Radial spectrum	Круговий спектр
 Waterfall	Водоспад
 Tunnel	Тунель
-Prism	Prism
-Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
-Copper bars	Copper bars
-Synthwave	Synthwave
-Ripples	Ripples
-Rotozoom	Rotozoom
+Prism	Призма
+Lissajous	Ліссажу
+Matrix rain	Дощ Матриці
+Kaleidoscope	Калейдоскоп
+Fireworks	Феєрверк
+Lava lamp	Лава-лампа
+Aurora	Полярне сяйво
+Copper bars	Копперні смуги
+Synthwave	Синтвейв
+Ripples	Брижі
+Rotozoom	Ротозум
 ScreenScraper account	Обліковий запис ScreenScraper
 Not signed in	Вхід не виконано
 Change account	Змінити обліковий запис
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Збереження знімка екрана…
 Screenshot saved to the Album.	Знімок екрана збережено в альбом.
 Still saving the last screenshot.	Попередній знімок екрана ще зберігається.
 No picture to save. Resume the game and press Menu + R.	Немає що зберегти. Поверніться в гру й натисніть Меню + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Показувати вибір профілю під час кожного запуску консолі.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	Останній гравець має PIN, тож під час запуску його все одно спитають. B на тому екрані змінює профіль.
+Switch profile	Змінити профіль
 Photo mode	Фоторежим
 Leave photo mode?	Вийти з фоторежиму?
 Keep editing	Продовжити
@@ -1904,7 +1904,7 @@ Monday	понеділок
 Tuesday	вівторок
 Wednesday	середа
 Thursday	четвер
-Friday	пʼятниця
+Friday	п'ятниця
 Saturday	субота
 January	січень
 February	лютий
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	З днем народження, {0}!
 Last played {0}	Остання гра: {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Кольори й музика меню стежать за годинником: тепліші вечори, тихіші ночі
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Його знають ігри DS, як на оригіналі. Цього дня консоль привітається по-своєму.
+Looking for videos and books…	Пошук відео й книжок…
+Play from the start	Відтворити з початку
+Start from the beginning	Почати спочатку
+Mark as finished	Позначити як завершене
+Mark as not finished	Позначити як незавершене
+{0} artist	{0} виконавець
+{0} artists	Виконавців: {0}
+{0} item	{0} елемент
+{0} items	Елементів: {0}
+Add network place	Додати мережеве місце
+Added.	Додано.
+Cancel paste	Скасувати вставлення
+Card	Картка
+Choose a share	Виберіть спільну папку
+Clear marks	Зняти позначки
+Copied.	Скопійовано.
+Copy	Копіювати
+Delete for good	Видалити назавжди
+Delete these for good?	Видалити їх назавжди?
+Delete this for good?	Видалити назавжди?
+Empty the trash for good?	Очистити кошик назавжди?
+Empty trash	Очистити кошик
+Extract here	Розпакувати сюди
+Folder	Папка
+Getting it…	Завантаження…
+Getting them…	Завантаження файлів…
+Go ahead	Продовжити
+Inbox	Вхідні
+Keep it anyway	Усе одно залишити
+Marked	Позначено
+Move	Перемістити
+Move here	Перемістити сюди
+Move these to the trash?	Перемістити їх у кошик?
+Move this to the trash?	Перемістити в кошик?
+Moved to the trash.	Переміщено в кошик.
+Moved.	Переміщено.
+Network	Мережа
+New folder	Нова папка
+No servers found	Сервери не знайдено
+Open the folder to copy to, then press Y.	Відкрийте папку призначення й натисніть Y.
+Open the folder to move to, then press Y.	Відкрийте папку призначення й натисніть Y.
+Paste here	Вставити сюди
+Put this key on the server	Додайте цей ключ на сервер
+Remove	Прибрати
+Remove it	Прибрати
+Remove this place	Прибрати це місце
+Remove this place?	Прибрати це місце?
+Removed.	Прибрано.
+Rename	Перейменувати
+Servers on this network	Сервери в цій мережі
+Sign in with	Вхід через
+That did not work.	Не вдалося.
+That server shares no folders.	Цей сервер не має спільних папок.
+The trash is empty.	Кошик порожній.
+This handheld's key	Ключ цієї консолі
+Trash	Кошик
+Type an address	Ввести адресу
+Wait a moment, then try again.	Зачекайте трохи й спробуйте ще раз.
+{0} marked	Позначено: {0}
+{0} more	ще {0}
+Getting {0}	Завантаження: {0}
+Waiting to retry {0}	Очікування повтору: {0}
+until restart	до перезапуску
+Future	Майбутнє
+Lap	Коло
+Earlier	Раніше
+Where you are	Де ви зараз
+Rewind	Перемотка назад
+Mark	Позначити
+Draw	Малювати
+Stamp	Штамп
+Lift pen	Підняти перо
+Pen down	Опустити перо
+Screen	Екран
+Check panel order and controller input	Перевірте порядок екранів і введення контролера
+Upper screen	Верхній
+Lower screen	Нижній
+Kind	Тип
+Size	Розмір
+Modified	Змінено
+Where	Розташування
+Archive	Архів
+Text	Текст
+Save data	Збереження
+File	Файл
+{0} file	Файл {0}
+{0} free	Вільно: {0}
+Sort by	Сортувати за
+Could not open it	Не вдалося відкрити
+This folder is empty	Ця папка порожня
+The trash is empty	Кошик порожній
+No network places yet	Мережевих місць ще немає

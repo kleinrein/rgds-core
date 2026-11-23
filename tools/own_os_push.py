@@ -122,9 +122,11 @@ def main():
             cmdline = ssh(args.host, 'cat /proc/cmdline', capture_output=True, text=True).stdout
             compatible = ssh(args.host, 'cat /proc/device-tree/compatible', capture_output=True).stdout
             template = fit_label(template, cmdline, compatible)
-            print(f'{board(compatible)}: the new slot loads ' + (
-                'the device tree U-Boot picks' if 'FDTDIR' in template else 'its own device tree'
-            ), flush=True)
+            print(
+                f'{board(compatible)}: the new slot loads ' +
+                ('the device tree U-Boot picks' if 'FDTDIR' in template else 'its own device tree'),
+                flush=True
+            )
         current = replace_label(current, slot, template)
     current = '\n'.join(
         f'DEFAULT {slot}' if line.startswith('DEFAULT ') else line for line in current.splitlines()

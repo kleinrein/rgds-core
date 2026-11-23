@@ -1,4 +1,4 @@
-# RG DS OS on top of ROCKNIX's RG DS kernel configuration (linux-rocknix.config)
+# RG DS OS's settings over its kernel configuration (linux-rgds_defconfig), each with its reason
 CONFIG_LOCALVERSION="-rgds"
 CONFIG_DEFAULT_HOSTNAME="rgds"
 CONFIG_INITRAMFS_SOURCE=""

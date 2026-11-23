@@ -12,4 +12,5 @@ src/launcher/pixel_icons.hpp
 play/src/ui/icons.hpp
 # Vendored from upstream projects (libretro API header, ROCKNIX kernel drivers).
 play/src/core/libretro/libretro.h
+play/src/third_party/**
 os/buildroot/board/rgds/kernel/**

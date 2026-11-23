@@ -3,6 +3,7 @@
 Buttons: A B SELECT START RIGHT LEFT UP DOWN R L X Y, or "-" for none; "FRAME touch X Y" presses the pen for 6 frames.
 usage: dsin.py OUT.dsin TOTAL_FRAMES < script"""
 import struct, sys
+
 BITS = {n: i for i, n in enumerate("A B SELECT START RIGHT LEFT UP DOWN R L X Y".split())}
 out, total = sys.argv[1], int(sys.argv[2])
 events = []

@@ -137,8 +137,8 @@ Button layout	Knopindeling
 Button {0}	Knop {0}
 Buttons and the game menu shortcut	Knoppen en sneltoets voor het spelmenu
 Cancel	Annuleren
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Update annuleren
+Cancel the update? Anything already downloaded is removed.	Update annuleren? Wat al is gedownload, wordt verwijderd.
 Carousel	Carrousel
 Carried	Bij je
 Cartridges	Cartridges
@@ -1467,16 +1467,16 @@ Vectorscope	Vectorscoop
 Radial spectrum	Rond spectrum
 Waterfall	Waterval
 Tunnel	Tunnel
-Prism	Prism
+Prism	Prisma
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
+Matrix rain	Matrix-regen
+Kaleidoscope	Caleidoscoop
+Fireworks	Vuurwerk
+Lava lamp	Lavalamp
+Aurora	Noorderlicht
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Rimpelingen
 Rotozoom	Rotozoom
 ScreenScraper account	ScreenScraper-account
 Not signed in	Niet ingelogd
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Schermafbeelding opslaan…
 Screenshot saved to the Album.	Schermafbeelding opgeslagen in het album.
 Still saving the last screenshot.	De vorige schermafbeelding wordt nog opgeslagen.
 No picture to save. Resume the game and press Menu + R.	Geen afbeelding om op te slaan. Hervat de game en druk op Menu + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Toon de profielkeuze telkens als de console start.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	De laatste speler heeft een pincode, dus bij het opstarten wordt die nog steeds gevraagd. B op dat scherm wisselt van profiel.
+Switch profile	Ander profiel
 Photo mode	Fotomodus
 Leave photo mode?	Fotomodus verlaten?
 Keep editing	Verder bewerken
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Gefeliciteerd, {0}!
 Last played {0}	Laatst gespeeld {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Kleuren en menumuziek volgen de klok: warmere avonden, rustigere nachten
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	DS-games krijgen hem te horen, zoals op het origineel. Op de dag zegt de handheld op zijn eigen manier hallo.
+Looking for videos and books…	Zoeken naar video's en boeken…
+Play from the start	Vanaf het begin afspelen
+Start from the beginning	Vanaf het begin beginnen
+Mark as finished	Markeren als klaar
+Mark as not finished	Markeren als niet klaar
+{0} artist	{0} artiest
+{0} artists	{0} artiesten
+{0} item	{0} item
+{0} items	{0} items
+Add network place	Netwerklocatie toevoegen
+Added.	Toegevoegd.
+Cancel paste	Plakken annuleren
+Card	Kaart
+Choose a share	Kies een share
+Clear marks	Markeringen wissen
+Copied.	Gekopieerd.
+Copy	Kopiëren
+Delete for good	Definitief verwijderen
+Delete these for good?	Deze definitief verwijderen?
+Delete this for good?	Dit definitief verwijderen?
+Empty the trash for good?	Prullenbak definitief legen?
+Empty trash	Prullenbak legen
+Extract here	Hier uitpakken
+Folder	Map
+Getting it…	Ophalen…
+Getting them…	Bestanden ophalen…
+Go ahead	Doorgaan
+Inbox	Inbox
+Keep it anyway	Toch bewaren
+Marked	Gemarkeerd
+Move	Verplaatsen
+Move here	Hierheen verplaatsen
+Move these to the trash?	Deze naar de prullenbak verplaatsen?
+Move this to the trash?	Dit naar de prullenbak verplaatsen?
+Moved to the trash.	Naar de prullenbak verplaatst.
+Moved.	Verplaatst.
+Network	Netwerk
+New folder	Nieuwe map
+No servers found	Geen servers gevonden
+Open the folder to copy to, then press Y.	Open de doelmap en druk op Y.
+Open the folder to move to, then press Y.	Open de doelmap en druk op Y.
+Paste here	Hier plakken
+Put this key on the server	Zet deze sleutel op de server
+Remove	Verwijderen
+Remove it	Verwijderen
+Remove this place	Deze locatie verwijderen
+Remove this place?	Deze locatie verwijderen?
+Removed.	Verwijderd.
+Rename	Naam wijzigen
+Servers on this network	Servers op dit netwerk
+Sign in with	Inloggen met
+That did not work.	Dat is niet gelukt.
+That server shares no folders.	Die server deelt geen mappen.
+The trash is empty.	De prullenbak is leeg.
+This handheld's key	Sleutel van deze console
+Trash	Prullenbak
+Type an address	Typ een adres
+Wait a moment, then try again.	Wacht even en probeer het opnieuw.
+{0} marked	{0} gemarkeerd
+{0} more	nog {0}
+Getting {0}	{0} ophalen
+Waiting to retry {0}	Wachten op nieuwe poging: {0}
+until restart	tot herstart
+Future	Toekomst
+Lap	Ronde
+Earlier	Eerder
+Where you are	Waar je bent
+Rewind	Terugspoelen
+Mark	Markeren
+Draw	Tekenen
+Stamp	Stempel
+Lift pen	Pen optillen
+Pen down	Pen neerzetten
+Screen	Scherm
+Check panel order and controller input	Controleer de schermvolgorde en controllerinvoer
+Upper screen	Boven
+Lower screen	Onder
+Kind	Soort
+Size	Grootte
+Modified	Gewijzigd
+Where	Locatie
+Archive	Archief
+Text	Tekst
+Save data	Opslagdata
+File	Bestand
+{0} file	{0}-bestand
+{0} free	{0} vrij
+Sort by	Sorteren op
+Could not open it	Kon het niet openen
+This folder is empty	Deze map is leeg
+The trash is empty	De prullenbak is leeg
+No network places yet	Nog geen netwerklocaties

@@ -168,9 +168,9 @@ class OTATests(unittest.TestCase):
         (self.updater.folder / 'abc.part').write_bytes(b'x')
         self.updater.discard()
         self.assertEqual(list(self.updater.folder.glob('*.part')), [])
-        with patch('emulators.core_running', return_value=False), patch.object(
-            self.updater, 'check', side_effect=checked
-        ), patch.object(self.updater, 'download') as download:
+        with patch('emulators.core_running',
+                   return_value=False), patch.object(self.updater, 'check', side_effect=checked
+                                                     ), patch.object(self.updater, 'download') as download:
             self.updater.auto()
             download.assert_not_called()
         from fields import read_fields

@@ -172,9 +172,12 @@ public:
                     error = "[view] board: " + name + " needs 'hud X Y W H'";
                     return false;
                 }
-            } else if (!(words >> address >> t.size) || (t.kind != "bcd" && t.kind != "num" && t.kind != "bits" && t.kind != "count") ||
+            } else if (!(words >> address >> t.size) ||
+                       (t.kind != "bcd" && t.kind != "num" && t.kind != "bits" && t.kind != "count") ||
                        !parse_address(address, t.address) || t.size < 1 ||
-                       t.size > (t.kind == "bits" ? 32 : t.kind == "count" ? 64 : 4)) {
+                       t.size > (t.kind == "bits"    ? 32
+                                 : t.kind == "count" ? 64
+                                                     : 4)) {
                 error = "[view] board: " + name + " has a bad kind, address or size";
                 return false;
             }
@@ -190,8 +193,7 @@ public:
                         return false;
                     }
                     t.others.push_back(o);
-                }
-                else if (word == "clock") t.clock = true;
+                } else if (word == "clock") t.clock = true;
                 else if (word == "big") t.big = true;
                 else if (word == "low") t.low = true;
                 else if (word == "mask" && words >> arg && !arg.empty() &&

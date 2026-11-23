@@ -78,12 +78,13 @@ void App::start_media_runner(Uint32 now) {
                                      o.data.string(),
                                      "--display-handoff-fd",
                                      std::to_string(channel[1])};
-    // The Music tab only where the music player is on.
-    const bool music = music_available();
+    if (!media_launch_file.empty()) args.insert(args.end(), {"--open", media_launch_file});
+    // An rgds-media of its own shelves (no --index) has its own Music tab, only where the music player is on.
+    const bool music_tab = !media_indexes() && music_available();
     save_state();
     launch_child = fork();
     if (launch_child == 0) {
-        if (music) setenv("RGDS_MEDIA_MUSIC_TAB", "1", 1);
+        if (music_tab) setenv("RGDS_MEDIA_MUSIC_TAB", "1", 1);
         // Where each film and book was left is the profile's; the look is the one the launcher draws.
         setenv("RGDS_MEDIA_STATE", (o.player / "media").c_str(), 1);
         setenv("RGDS_MEDIA_PREFERENCES", o.preferences.c_str(), 1);

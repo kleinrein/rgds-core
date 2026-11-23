@@ -215,7 +215,11 @@ def sdl_sdk(fetch=False, jobs=4):
     env = cross_environment("zig-sdl")
     chain = toolchain(scratch / "toolchain", tools["zig"], source, source)
     build = scratch / "sdl"
-    configure(tools["cmake"], tools["ninja"], source, build, chain, {**SDL_OPTIONS, "CMAKE_INSTALL_PREFIX": str(SDL_SDK)}, env)
+    configure(
+        tools["cmake"], tools["ninja"], source, build, chain, {
+            **SDL_OPTIONS, "CMAKE_INSTALL_PREFIX": str(SDL_SDK)
+        }, env
+    )
     run([tools["cmake"], "--build", build, "--parallel", jobs], env=env)
     run([tools["cmake"], "--install", build], env=env)
     return SDL_SDK

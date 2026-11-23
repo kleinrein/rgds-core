@@ -137,8 +137,8 @@ Button layout	Układ przycisków
 Button {0}	Przycisk {0}
 Buttons and the game menu shortcut	Przyciski i skrót menu gry
 Cancel	Anuluj
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Anuluj aktualizację
+Cancel the update? Anything already downloaded is removed.	Anulować aktualizację? Pobrane dane zostaną usunięte.
 Carousel	Karuzela
 Carried	Przy sobie
 Cartridges	Kartridże
@@ -1467,16 +1467,16 @@ Vectorscope	Wektoroskop
 Radial spectrum	Widmo kołowe
 Waterfall	Wodospad
 Tunnel	Tunel
-Prism	Prism
+Prism	Pryzmat
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
+Matrix rain	Deszcz Matriksa
+Kaleidoscope	Kalejdoskop
+Fireworks	Fajerwerki
+Lava lamp	Lampa lava
+Aurora	Zorza polarna
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Zmarszczki
 Rotozoom	Rotozoom
 ScreenScraper account	Konto ScreenScraper
 Not signed in	Nie zalogowano
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Zapisywanie zrzutu ekranu…
 Screenshot saved to the Album.	Zrzut ekranu zapisany w albumie.
 Still saving the last screenshot.	Poprzedni zrzut ekranu wciąż się zapisuje.
 No picture to save. Resume the game and press Menu + R.	Brak obrazu do zapisania. Wznów grę i naciśnij Menu + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Pokazuj wybór profilu przy każdym uruchomieniu konsoli.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	Ostatni gracz ma PIN, więc przy starcie nadal trzeba go podać. B na tym ekranie zmienia profil.
+Switch profile	Zmień profil
 Photo mode	Tryb zdjęć
 Leave photo mode?	Wyjść z trybu zdjęć?
 Keep editing	Edytuj dalej
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Wszystkiego najlepszego, {0}!
 Last played {0}	Ostatnio grane: {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Kolory i muzyka menu podążają za zegarem: cieplejsze wieczory, cichsze noce
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Gry DS je znają, jak w oryginale. Tego dnia konsola przywita się po swojemu.
+Looking for videos and books…	Szukanie filmów i książek…
+Play from the start	Odtwórz od początku
+Start from the beginning	Zacznij od początku
+Mark as finished	Oznacz jako ukończone
+Mark as not finished	Oznacz jako nieukończone
+{0} artist	{0} wykonawca
+{0} artists	{0} wykonawców
+{0} item	{0} element
+{0} items	{0} elementów
+Add network place	Dodaj miejsce sieciowe
+Added.	Dodano.
+Cancel paste	Anuluj wklejanie
+Card	Karta
+Choose a share	Wybierz udział
+Clear marks	Wyczyść zaznaczenie
+Copied.	Skopiowano.
+Copy	Kopiuj
+Delete for good	Usuń na zawsze
+Delete these for good?	Usunąć je na zawsze?
+Delete this for good?	Usunąć na zawsze?
+Empty the trash for good?	Opróżnić kosz na zawsze?
+Empty trash	Opróżnij kosz
+Extract here	Wypakuj tutaj
+Folder	Folder
+Getting it…	Pobieranie…
+Getting them…	Pobieranie plików…
+Go ahead	Kontynuuj
+Inbox	Odebrane
+Keep it anyway	Zachowaj mimo to
+Marked	Zaznaczone
+Move	Przenieś
+Move here	Przenieś tutaj
+Move these to the trash?	Przenieść je do kosza?
+Move this to the trash?	Przenieść do kosza?
+Moved to the trash.	Przeniesiono do kosza.
+Moved.	Przeniesiono.
+Network	Sieć
+New folder	Nowy folder
+No servers found	Nie znaleziono serwerów
+Open the folder to copy to, then press Y.	Otwórz folder docelowy i naciśnij Y.
+Open the folder to move to, then press Y.	Otwórz folder docelowy i naciśnij Y.
+Paste here	Wklej tutaj
+Put this key on the server	Dodaj ten klucz na serwerze
+Remove	Usuń
+Remove it	Usuń
+Remove this place	Usuń to miejsce
+Remove this place?	Usunąć to miejsce?
+Removed.	Usunięto.
+Rename	Zmień nazwę
+Servers on this network	Serwery w tej sieci
+Sign in with	Zaloguj przez
+That did not work.	To się nie udało.
+That server shares no folders.	Ten serwer nie udostępnia folderów.
+The trash is empty.	Kosz jest pusty.
+This handheld's key	Klucz tej konsoli
+Trash	Kosz
+Type an address	Wpisz adres
+Wait a moment, then try again.	Poczekaj chwilę i spróbuj ponownie.
+{0} marked	Zaznaczono: {0}
+{0} more	jeszcze {0}
+Getting {0}	Pobieranie: {0}
+Waiting to retry {0}	Oczekiwanie na ponowienie: {0}
+until restart	do ponownego uruchomienia
+Future	Przyszłość
+Lap	Okrążenie
+Earlier	Wcześniej
+Where you are	Tu jesteś
+Rewind	Przewiń wstecz
+Mark	Zaznacz
+Draw	Rysuj
+Stamp	Stempel
+Lift pen	Podnieś pióro
+Pen down	Opuść pióro
+Screen	Ekran
+Check panel order and controller input	Sprawdź kolejność ekranów i sterowanie
+Upper screen	Górny
+Lower screen	Dolny
+Kind	Rodzaj
+Size	Rozmiar
+Modified	Zmodyfikowano
+Where	Położenie
+Archive	Archiwum
+Text	Tekst
+Save data	Dane zapisu
+File	Plik
+{0} file	Plik {0}
+{0} free	Wolne: {0}
+Sort by	Sortuj według
+Could not open it	Nie udało się otworzyć
+This folder is empty	Ten folder jest pusty
+The trash is empty	Kosz jest pusty
+No network places yet	Brak miejsc sieciowych

@@ -58,8 +58,8 @@ static bool load(const char* path) {
             char* s = malloc(len + 1);
             if (fread(s, 1, len, fp) != len) break;
             s[len] = 0;
-            if (type == 'V' && nvs < 4096) vs[nvs++] = (Src) {h, s};
-            if (type == 'F' && nfs < 16384) fs[nfs++] = (Src) {h, s};
+            if (type == 'V' && nvs < 4096) vs[nvs++] = (Src){h, s};
+            if (type == 'F' && nfs < 16384) fs[nfs++] = (Src){h, s};
         } else if (type == 'P') {
             unsigned long long h[2];
             if (fread(h, 16, 1, fp) != 1) break;
@@ -114,9 +114,7 @@ static void draw(void) {
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glFinish();
 }
-static void grab(unsigned char* out) {
-    glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, out);
-}
+static void grab(unsigned char* out) { glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, out); }
 static void clear(void) {
     glClearColor(0.25f, 0.5f, 0.75f, 1);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -130,9 +128,9 @@ int main(int argc, char** argv) {
     EGLDisplay d = eglGetPlatformDisplay(0x31DD, EGL_DEFAULT_DISPLAY, NULL);
     if (!eglInitialize(d, NULL, NULL)) return puts("no egl"), 1;
     eglBindAPI(EGL_OPENGL_API);
-    EGLint xa[] = {EGL_CONTEXT_MAJOR_VERSION, 3, EGL_CONTEXT_MINOR_VERSION, 3,
-                   EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
-                   EGL_NONE};
+    EGLint xa[] = {
+        EGL_CONTEXT_MAJOR_VERSION,           3,       EGL_CONTEXT_MINOR_VERSION, 3, EGL_CONTEXT_OPENGL_PROFILE_MASK,
+        EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT, EGL_NONE};
     EGLint ca[] = {EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT, EGL_NONE};
     EGLConfig cfg;
     EGLint ncfg = 0;
@@ -140,14 +138,14 @@ int main(int argc, char** argv) {
     EGLContext ctx = eglCreateContext(d, ncfg ? cfg : NULL, EGL_NO_CONTEXT, xa);
     if (ctx == EGL_NO_CONTEXT) return puts("no context"), 1;
     if (!eglMakeCurrent(d, EGL_NO_SURFACE, EGL_NO_SURFACE, ctx)) return puts("no ctx"), 1;
-    gladLoadGLLoader((GLADloadproc) eglGetProcAddress);
+    gladLoadGLLoader((GLADloadproc)eglGetProcAddress);
     printf("%s | %s\n", glGetString(GL_RENDERER), glGetString(GL_VERSION));
-    pProgramParameteri = (void*) eglGetProcAddress("glProgramParameteri");
+    pProgramParameteri = (void*)eglGetProcAddress("glProgramParameteri");
     bool has_sso = false;
     GLint next = 0;
     glGetIntegerv(GL_NUM_EXTENSIONS, &next);
     for (int i = 0; i < next; i++)
-        has_sso |= !strcmp((const char*) glGetStringi(GL_EXTENSIONS, i), "GL_ARB_separate_shader_objects");
+        has_sso |= !strcmp((const char*)glGetStringi(GL_EXTENSIONS, i), "GL_ARB_separate_shader_objects");
     printf("GL_ARB_separate_shader_objects: %s\n", has_sso ? "yes" : "no");
     printf("list: %d vertex, %d fragment sources, %d pairs\n", nvs, nfs, npairs);
 
@@ -178,8 +176,7 @@ int main(int argc, char** argv) {
     int pick[4096], n = 0;
     for (int i = 0; i < npairs && n < want; i++) {
         bool seen = false;
-        for (int j = 0; j < n; j++)
-            seen |= !strcmp(fs[pairs[pick[j]].f].src, fs[pairs[i].f].src);
+        for (int j = 0; j < n; j++) seen |= !strcmp(fs[pairs[pick[j]].f].src, fs[pairs[i].f].src);
         if (!seen) pick[n++] = i;
     }
 
@@ -208,9 +205,9 @@ int main(int argc, char** argv) {
     // B: separate programs; a vertex program is built once and kept
     GLuint vprog[4096] = {0};
     GLuint pipe;
-    pGenProgramPipelines = (void*) eglGetProcAddress("glGenProgramPipelines");
-    pBindProgramPipeline = (void*) eglGetProcAddress("glBindProgramPipeline");
-    pUseProgramStages = (void*) eglGetProcAddress("glUseProgramStages");
+    pGenProgramPipelines = (void*)eglGetProcAddress("glGenProgramPipelines");
+    pBindProgramPipeline = (void*)eglGetProcAddress("glBindProgramPipeline");
+    pUseProgramStages = (void*)eglGetProcAddress("glUseProgramStages");
     if (!pGenProgramPipelines || !pBindProgramPipeline || !pUseProgramStages || !pProgramParameteri)
         return puts("separate-program entry points missing"), 1;
     pGenProgramPipelines(1, &pipe);
@@ -239,9 +236,8 @@ int main(int argc, char** argv) {
         double t = now_ms() - t1;
         GLenum e1 = glGetError();
         if ((e0 || e1) && !reported++) {
-            void (*validate)(GLuint) = (void*) eglGetProcAddress("glValidateProgramPipeline");
-            void (*plog)(GLuint, GLsizei, GLsizei*, char*) =
-                (void*) eglGetProcAddress("glGetProgramPipelineInfoLog");
+            void (*validate)(GLuint) = (void*)eglGetProcAddress("glValidateProgramPipeline");
+            void (*plog)(GLuint, GLsizei, GLsizei*, char*) = (void*)eglGetProcAddress("glGetProgramPipelineInfoLog");
             char log[1024] = "";
             if (validate && plog) {
                 validate(pipe);
@@ -268,10 +264,10 @@ int main(int argc, char** argv) {
         glDeleteProgram(fp);
         glDeleteShader(f);
     }
-    printf("separate: %d vertex programs %.1f ms each; fragment %.1f ms each, worst %.1f ms\n",
-           vbuilt, vbuilt ? v_total / vbuilt : 0, b_total / n, b_max);
-    printf("pictures: %d of %d pairs drew anything; %d differ from the together build (worst %d/255)\n",
-           drawn, n, mism, worst);
+    printf("separate: %d vertex programs %.1f ms each; fragment %.1f ms each, worst %.1f ms\n", vbuilt,
+           vbuilt ? v_total / vbuilt : 0, b_total / n, b_max);
+    printf("pictures: %d of %d pairs drew anything; %d differ from the together build (worst %d/255)\n", drawn, n, mism,
+           worst);
     // a second draw with known stages: does the driver still build anything per pair?
     double c0 = now_ms();
     for (int i = 0; i < n && i < 20; i++) draw();

@@ -1,0 +1,14 @@
+RG DS OS: build the LZ4 decompressor for speed, with its code aligned.
+
+U-Boot builds lib/ with -Os, under which GCC ignores alignment, so how fast the kernel unpacks (10 MB of LZ4, at
+816 MHz) depended on where ulz4fn happened to land: 0.444 s at 0x857050, 0.558 s when another patch moved it to
+0x857074. Built -O2 with 64-byte functions and 32-byte loops it takes 0.409 s whatever precedes it (three boots,
+2026-11-23; docs/OWN_BSP_PLAN.md, Phase E). About 0.5 KiB more code.
+
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -178,3 +178,4 @@
+ clean-files     += oid_registry_data.c
+ 
+ subdir-ccflags-$(CONFIG_CC_OPTIMIZE_LIBS_FOR_SPEED) += -O2
++CFLAGS_lz4_wrapper.o += -O2 -falign-functions=64 -falign-loops=32

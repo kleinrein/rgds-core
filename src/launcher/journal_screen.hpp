@@ -339,6 +339,15 @@ void App::prepare_left_off(const Game& game, const std::string& core) {
         const auto state_time = fs::last_write_time(checkpoint, ec);
         if (!ec && frame_time + std::chrono::minutes(2) >= state_time) left_off.frame = frame;
     }
+    // Without it: a picture taken in that sitting, then the game's own screenshot, title screen or cover.
+    if (left_off.frame.empty() && !entry.photo.empty() && fs::is_regular_file(entry.photo, ec))
+        left_off.frame = entry.photo;
+    if (left_off.frame.empty())
+        for (const char* name : {"snap.bmp", "title.bmp", "box.bmp"})
+            if (fs::is_regular_file(folder_for_game(game) / name, ec)) {
+                left_off.frame = folder_for_game(game) / name;
+                break;
+            }
     left_off.shown = true;
 }
 

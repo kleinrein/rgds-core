@@ -557,14 +557,14 @@ int main() {
     const u64 late0 = lock.late();
     const int repeats0 = sim.repeats;
     sim.run(3000);
-    std::fprintf(stderr, "phase lock: a 4.2 ms flip deadline, %s floor: %llu late, %d repeats in 3000 frames, band %.2f ms\n",
-                 floor ? "with" : "without", static_cast<unsigned long long>(lock.late() - late0), sim.repeats - repeats0,
-                 lock.band_ns() / MS);
+    std::fprintf(stderr,
+                 "phase lock: a 4.2 ms flip deadline, %s floor: %llu late, %d repeats in 3000 frames, band %.2f ms\n",
+                 floor ? "with" : "without", static_cast<unsigned long long>(lock.late() - late0),
+                 sim.repeats - repeats0, lock.band_ns() / MS);
     if (floor) {
       CHECK(lock.late() - late0 <= 1);
       CHECK(lock.band_ns() > 4.2 * MS);
-    } else
-      CHECK(lock.late() - late0 >= 5);
+    } else CHECK(lock.late() - late0 >= 5);
   }
 
   std::fprintf(stderr, "phase_lock: ok\n");

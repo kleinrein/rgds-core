@@ -243,7 +243,9 @@ class PlayRuntimeTests(unittest.TestCase):
         for folder in ("msx", "MSX2"):
             self.assertEqual(play_options.system_of(roms / folder / "Game.rom"), "msx", folder)
             self.assertEqual(play_options.system_of(roms / folder / "Game.dsk"), "msx", folder)
-        self.assertEqual(play_options.system_of(roms / "zx" / "Game.dsk"), "zx")  # a .dsk elsewhere stays the Spectrum's
+        self.assertEqual(
+            play_options.system_of(roms / "zx" / "Game.dsk"), "zx"
+        )  # a .dsk elsewhere stays the Spectrum's
         for folder in ("cpc", "Amstrad CPC"):
             for name in ("Game.dsk", "Game.sna", "Game.m3u"):
                 self.assertEqual(play_options.system_of(roms / folder / name), "cpc", folder + "/" + name)

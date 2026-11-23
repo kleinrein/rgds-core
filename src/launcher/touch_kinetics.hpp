@@ -17,9 +17,9 @@ bool App::kinetics_update(Uint32 now) {
     if (list_motion.active()) {
         if (settings.page == Page::Library || picker_open) list_motion.stop();
         else {
-            const int row = list_scroll / list_stride;
+            const int row = list_scroll / row_pitch();
             moving |= list_motion.step(now, list_scroll, 0, list_max_scroll());
-            if (list_motion.ticking() && list_scroll / list_stride != row) haptic_detent();
+            if (list_motion.ticking() && list_scroll / row_pitch() != row) haptic_detent();
         }
     }
     if (picker_motion.active()) {

@@ -319,10 +319,12 @@ class AudioTests(unittest.TestCase):
             run.assert_not_called()
             conf.write_text("pcm.rgds_in {\n    type plug\n    slave { pcm \"hw:1,0\" format S16_LE }\n}\n")
             microphone_levels(conf, run)
-        self.assertEqual([call.args[0] for call in run.call_args_list], [
-            ["amixer", "-q", "-c", "1", "cset", "name=Master Capture Volume", "255,255"],
-            ["amixer", "-q", "-c", "1", "cset", "name=Mic Capture Gain", f"{MIC_GAIN},{MIC_GAIN}"],
-        ])
+        self.assertEqual(
+            [call.args[0] for call in run.call_args_list], [
+                ["amixer", "-q", "-c", "1", "cset", "name=Master Capture Volume", "255,255"],
+                ["amixer", "-q", "-c", "1", "cset", "name=Mic Capture Gain", f"{MIC_GAIN},{MIC_GAIN}"],
+            ]
+        )
 
     def test_microphone_levels_never_stop_a_launch(self):
         with tempfile.TemporaryDirectory() as folder:

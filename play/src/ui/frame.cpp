@@ -891,8 +891,7 @@ void draw_wide_handheld(Canvas& out, const FrameLayout& screen, const Style& s, 
         cap(out, right - r * 0.5, cy + r * 0.55, r * 0.55, dark, u);
         name(out, font, "A", right + r * 0.5, font.centred(16, int(cy - r * 0.55)), 16, 0, Rgb::hex(0xE8E8EC), {});
         name(out, font, "B", right - r * 0.5, font.centred(16, int(cy + r * 0.55)), 16, 0, Rgb::hex(0xE8E8EC), {});
-        for (int i = 0; i < 3; ++i)
-            rounded(out, left - 14 * u + i * 10 * u, cy + r * 1.7, 7 * u, 4 * u, 2 * u, dark);
+        for (int i = 0; i < 3; ++i) rounded(out, left - 14 * u + i * 10 * u, cy + r * 1.7, 7 * u, 4 * u, 2 * u, dark);
         for (int row = 0; row < 3; ++row)
             for (int col = 0; col < 4; ++col)
                 if (right - 18 * u + col * 11 * u < out.w())

@@ -38,10 +38,10 @@ std::unique_ptr<AchievementTransport> start_achievement_helper(const std::vector
                                                                const std::string& user_agent);
 
 struct AchievementOptions {
-    std::string user, token;          // the launcher's sign-in (read_achievement_account)
-    std::string list_path;            // achievements.tsv for Game info ("" for none)
-    std::string badges;               // folder for badge pictures ("" for none)
-    std::vector<std::string> helper;  // the helper's argv
+    std::string user, token;         // the launcher's sign-in (read_achievement_account)
+    std::string list_path;           // achievements.tsv for Game info ("" for none)
+    std::string badges;              // folder for badge pictures ("" for none)
+    std::vector<std::string> helper; // the helper's argv
     std::string client_name = "RGDS-Play";
     std::string client_version = "0";
 };
@@ -99,7 +99,9 @@ public:
     // Called by the rcheevos callbacks (C), public for that reason only.
     void server_call(const void* request, void* callback, void* callback_data);
     void event(const void* event);
-    uint32_t read(uint32_t address, uint8_t* buffer, uint32_t bytes) { return read_ ? read_(address, buffer, bytes) : 0; }
+    uint32_t read(uint32_t address, uint8_t* buffer, uint32_t bytes) {
+        return read_ ? read_(address, buffer, bytes) : 0;
+    }
     void signed_in(int result, const char* error);
     void loaded(int result, const char* error);
 
@@ -111,7 +113,7 @@ private:
     void finish(uint64_t id, int status, const std::string& body);
 
     struct Pending {
-        void* callback = nullptr, *data = nullptr;
+        void *callback = nullptr, *data = nullptr;
         std::string badge; // a badge download: its picture's name
     };
     void* client_ = nullptr; // rc_client_t*

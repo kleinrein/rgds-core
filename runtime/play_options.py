@@ -280,6 +280,8 @@ def provide_system_files(system, bios):
                 shutil.copyfile(path, target)
         except OSError:
             pass  # a full or read-only card: the core says what it misses
+
+
 MGBA_SYSTEMS = ("gba", "gbc", "gb")
 # Systems whose core cannot save its state (gw-libretro runs Lua): no checkpoints, their scores are their own saves.
 # Ruffle (Flash) has no save states: Flash games keep their own saves (SharedObjects).

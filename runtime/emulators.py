@@ -990,22 +990,32 @@ def keep_resume_note(plan):
     if not resumes: env.pop('RGDS_RESUME_NOTE', None)
 
 
-def keep_last_frame(data, player, rom, since):
+def keep_last_frame(data, player, rom, since, core=None):
     """The frame a game was left on, kept beside its checkpoint as last-frame.bmp for the launcher's resume card.
 
-    Leaving a game always opens the shared menu first (Return home, the Home shortcut), and the menu captures the
-    upper panel as it opens: session/menu-background.bmp. A capture older than this session is not this game's.
+    In order: the engine's own (RG DS Play writes it as it quits), the shared menu's capture as it opened for
+    Return home (session/menu-background.bmp), then the top-screen picture a DSCore checkpoint carries. Anything
+    older than this session belongs to an earlier one and is left alone.
     """
-    source = Path(data) / 'session/menu-background.bmp'
+    folder = Path(player) / 'library' / game_key(rom)
+    target = folder / 'last-frame.bmp'
     try:
-        if not source.is_file() or source.stat().st_mtime < since: return None
-        target = Path(player) / 'library' / game_key(rom) / 'last-frame.bmp'
-        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.is_file() and target.stat().st_mtime >= since: return target
+        folder.mkdir(parents=True, exist_ok=True)
         pending = target.with_name('.last-frame.pending')
-        shutil.copyfile(source, pending)
+        source = Path(data) / 'session/menu-background.bmp'
+        if source.is_file() and source.stat().st_mtime >= since:
+            shutil.copyfile(source, pending)
+        else:
+            checkpoint = folder / ('auto-' + core + '.dss') if core else None
+            if not checkpoint or not checkpoint.is_file() or checkpoint.stat().st_mtime < since: return None
+            from save_library import state_thumbnail
+            picture = state_thumbnail(checkpoint)
+            if picture is None: return None
+            pending.write_bytes(picture)
         pending.replace(target)
         return target
-    except OSError:
+    except (OSError, ValueError):
         return None
 
 
@@ -1151,7 +1161,7 @@ def _run_once(core, app, data, rom, display_handoff=None, fresh_start=False, dis
         if result:
             print(f"{core} exited with code {result}. Diagnostics: {engine_log.path}", file=sys.stderr, flush=True)
         if result == 0 and core != 'portmaster':  # quick resume reopens engines, not ports
-            keep_last_frame(data, player, original_rom, datetime.fromisoformat(started).timestamp())
+            keep_last_frame(data, player, original_rom, datetime.fromisoformat(started).timestamp(), core)
             from quick_resume import record_exit
             try:
                 record_exit(player, original_rom, core, datetime.fromisoformat(started).timestamp())

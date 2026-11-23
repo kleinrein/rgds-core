@@ -1,4 +1,4 @@
-# RG DS / RG DS Plus board trim on top of ROCKNIX's handheld config (docs/OWN_BSP_PLAN.md, Phase D).
+# RG DS / RG DS Plus board trim (docs/OWN_BSP_PLAN.md, Phase D), first written over ROCKNIX's handheld config.
 # Off: built-in code for hardware neither board has, or kernel features nothing in RG DS OS uses. Every line here
 # shrinks the kernel the U-Boot has to read (14.1 MB LZ4, ~1.5 s on 2026-11-20) and the initcalls it has to run.
 # RG DS OS has no udev/mdev: a driver built as a module only loads when something calls modprobe, so devices people
@@ -104,3 +104,14 @@ CONFIG_ARM64_POE=n
 # lever 2 (a quiet emulation core): compiled in, inert until nohz_full=/rcu_nocbs= go on the command line
 CONFIG_NO_HZ_FULL=y
 CONFIG_RCU_NOCB_CPU=y
+
+# ROCKNIX's debug checks: no safety on a shipped handheld, only slower kernel paths (a cross-CPU wakeup 6.5 % slower,
+# no measurable game time; docs/OWN_BSP_PLAN.md "ROCKNIX's debug defaults on trial", 2026-11-23)
+CONFIG_DEBUG_SPINLOCK=n
+CONFIG_SCHEDSTATS=n
+CONFIG_DEBUG_DEVRES=n
+CONFIG_REGULATOR_DEBUG=n
+# no wiping of pages on allocation and on free: -2.7 % emulation work in Mario Kart DS, at the cost of that hardening
+# (owner's choice, 2026-11-23); `init_on_alloc=1 init_on_free=1` on the boot line puts it back without a build
+CONFIG_INIT_ON_ALLOC_DEFAULT_ON=n
+CONFIG_INIT_ON_FREE_DEFAULT_ON=n

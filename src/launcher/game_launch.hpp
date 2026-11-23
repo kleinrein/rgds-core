@@ -72,7 +72,8 @@ void App::launch(bool from_home) {
     launch_result = 0;
     {
         std::error_code ignored;
-        fs::remove(o.player / "emulators/rgds-play/launch-message.txt", ignored); // a refusal's words, if this one has any
+        fs::remove(o.player / "emulators/rgds-play/launch-message.txt",
+                   ignored); // a refusal's words, if this one has any
     }
     launch_drawn_head = -1;
     cancel_navigation();
@@ -162,7 +163,14 @@ void App::finish_launch(bool reopen) {
     else if (reopen) emit_sound(MenuCue::Back);
     if (media_launch) {
         media_launch = false;
+        media_launch_file.clear();
         if (media_music && music_available()) open_music();
+        // Back from a film or a book: where it was left moved on; the shelf and the hero say so.
+        if (music_open) {
+            mu.places_seen = -2;
+            media_poll(s.GetTicks(), true);
+            mu.hero_prev.clear();
+        }
     }
     dirty = true;
 }

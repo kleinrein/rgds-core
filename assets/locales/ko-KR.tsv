@@ -137,8 +137,8 @@ Button layout	버튼 배치
 Button {0}	버튼 {0}
 Buttons and the game menu shortcut	버튼과 게임 메뉴 단축키
 Cancel	취소
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	업데이트 취소
+Cancel the update? Anything already downloaded is removed.	업데이트를 취소할까요? 이미 받은 내용은 삭제됩니다.
 Carousel	캐러셀
 Carried	소지
 Cartridges	카트리지
@@ -1467,17 +1467,17 @@ Vectorscope	벡터스코프
 Radial spectrum	원형 스펙트럼
 Waterfall	워터폴
 Tunnel	터널
-Prism	Prism
-Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
-Copper bars	Copper bars
-Synthwave	Synthwave
-Ripples	Ripples
-Rotozoom	Rotozoom
+Prism	프리즘
+Lissajous	리사주
+Matrix rain	매트릭스 비
+Kaleidoscope	만화경
+Fireworks	불꽃놀이
+Lava lamp	라바 램프
+Aurora	오로라
+Copper bars	코퍼 바
+Synthwave	신스웨이브
+Ripples	물결
+Rotozoom	로토줌
 ScreenScraper account	ScreenScraper 계정
 Not signed in	로그인하지 않음
 Change account	계정 변경
@@ -1686,9 +1686,9 @@ Saving the screenshot…	스크린샷 저장 중…
 Screenshot saved to the Album.	스크린샷을 앨범에 저장했습니다.
 Still saving the last screenshot.	이전 스크린샷을 아직 저장하고 있습니다.
 No picture to save. Resume the game and press Menu + R.	저장할 그림이 없습니다. 게임으로 돌아가 Menu + R을 누르세요.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	기기를 켤 때마다 프로필 선택 화면을 표시합니다.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	마지막 플레이어에게 PIN이 있어 시작할 때 계속 묻습니다. 그 화면에서 B를 누르면 프로필을 전환합니다.
+Switch profile	프로필 전환
 Photo mode	사진 모드
 Leave photo mode?	사진 모드를 나갈까요?
 Keep editing	계속 편집
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	{0}님, 생일 축하해요!
 Last played {0}	마지막 플레이: {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	색과 메뉴 음악이 시계를 따라갑니다: 따뜻한 저녁, 조용한 밤
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	원래 DS처럼 DS 게임에 전달됩니다. 그날에는 기기가 나름의 방식으로 인사합니다.
+Looking for videos and books…	동영상과 책을 찾는 중…
+Play from the start	처음부터 재생
+Start from the beginning	처음부터 읽기
+Mark as finished	완료로 표시
+Mark as not finished	미완료로 표시
+{0} artist	아티스트 {0}명
+{0} artists	아티스트 {0}명
+{0} item	항목 {0}개
+{0} items	항목 {0}개
+Add network place	네트워크 위치 추가
+Added.	추가했습니다.
+Cancel paste	붙여넣기 취소
+Card	카드
+Choose a share	공유 폴더 선택
+Clear marks	표시 지우기
+Copied.	복사했습니다.
+Copy	복사
+Delete for good	영구 삭제
+Delete these for good?	이 항목들을 영구 삭제할까요?
+Delete this for good?	이 항목을 영구 삭제할까요?
+Empty the trash for good?	휴지통을 영구히 비울까요?
+Empty trash	휴지통 비우기
+Extract here	여기에 압축 풀기
+Folder	폴더
+Getting it…	가져오는 중…
+Getting them…	모두 가져오는 중…
+Go ahead	진행
+Inbox	받은 편지함
+Keep it anyway	그래도 유지
+Marked	표시됨
+Move	이동
+Move here	여기로 이동
+Move these to the trash?	이 항목들을 휴지통으로 옮길까요?
+Move this to the trash?	이 항목을 휴지통으로 옮길까요?
+Moved to the trash.	휴지통으로 옮겼습니다.
+Moved.	이동했습니다.
+Network	네트워크
+New folder	새 폴더
+No servers found	서버를 찾지 못했습니다
+Open the folder to copy to, then press Y.	복사할 폴더를 연 다음 Y를 누르세요.
+Open the folder to move to, then press Y.	옮길 폴더를 연 다음 Y를 누르세요.
+Paste here	여기에 붙여넣기
+Put this key on the server	이 키를 서버에 등록하세요
+Remove	제거
+Remove it	제거
+Remove this place	이 위치 제거
+Remove this place?	이 위치를 제거할까요?
+Removed.	제거했습니다.
+Rename	이름 바꾸기
+Servers on this network	이 네트워크의 서버
+Sign in with	로그인 방법
+That did not work.	실패했습니다.
+That server shares no folders.	이 서버에는 공유 폴더가 없습니다.
+The trash is empty.	휴지통이 비어 있습니다.
+This handheld's key	이 기기의 키
+Trash	휴지통
+Type an address	주소 입력
+Wait a moment, then try again.	잠시 후 다시 시도하세요.
+{0} marked	{0}개 표시됨
+{0} more	외 {0}개
+Getting {0}	{0} 가져오는 중
+Waiting to retry {0}	재시도 대기 중: {0}
+until restart	다시 시작할 때까지
+Future	미래
+Lap	랩
+Earlier	이전
+Where you are	현재 위치
+Rewind	되감기
+Mark	표시
+Draw	그리기
+Stamp	스탬프
+Lift pen	펜 들기
+Pen down	펜 내리기
+Screen	화면
+Check panel order and controller input	화면 순서와 컨트롤러 입력을 확인하세요
+Upper screen	위 화면
+Lower screen	아래 화면
+Kind	종류
+Size	크기
+Modified	수정한 날짜
+Where	위치
+Archive	압축 파일
+Text	텍스트
+Save data	저장 데이터
+File	파일
+{0} file	{0} 파일
+{0} free	{0} 남음
+Sort by	정렬 기준
+Could not open it	열 수 없습니다
+This folder is empty	이 폴더는 비어 있습니다
+The trash is empty	휴지통이 비어 있습니다
+No network places yet	아직 네트워크 위치가 없습니다

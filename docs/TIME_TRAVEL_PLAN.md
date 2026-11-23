@@ -31,21 +31,23 @@ only (the DSCore build is cross-compiled, not run). Nothing on the handheld yet.
 
 One screen, two ways in, every engine behind the same hooks.
 
-**The screen** (`play/src/companion/rewind.{hpp,cpp}`) is Cover Flow meets Time
-Machine: the moments as pictures on a dark stage under faint stars, the chosen
-one facing you, the rest turned away in perspective on both sides, each with a
-reflection on the floor. Above it the time from now (`-0:42`, `+0:10` on a future
-you left, `Now`); below it an Aqua scrubber with a dot wherever the line
-branches, and two gel buttons, **Back to now** and **Play from here** (Time
-Machine's Cancel and Restore). Everything moves on springs: a flick coasts and
-settles on a picture, the ends give like a rubber band, the strip flies in from
-the right as it opens. Drag the strip or the scrubber and let go: it settles and
-plays from there. A tap (on a picture or the track) glides there, to look; A and
-Play from here play the moment the strip is heading for, even mid-glide. The
-top screen loads a moment only once the strip rests on it. Where a moment has several futures a
-pill switches the strip to the other one. Pad: Left/Right, L/R by ten, Up/Down
-the branch, A play, B back. The screen reads moments through `MomentTree`
-(`play/src/app/moments.hpp`), so it works the same from either source below.
+**The screen** (`play/src/companion/rewind.{hpp,cpp}`) is a launcher page like
+the others: the header with the back arrow, a row of settings cards (the middle
+one larger and focused, the time from now under each: `-0:42`, `+0:10` on a
+future you left, `Now`), a row for the other future where a moment has one, and
+the footer's Back and A (**Play from here**). In the game menu the top screen is
+the Save gallery's card: the moment's picture, how long ago, what to do. The row
+moves on the launcher's spring: a flick coasts and settles, the ends give a
+little. Dragging, flicking and tapping only look; A or **Play from here** plays.
+In the game menu (a software canvas) there is no glide: a flick lands as far as
+it would have coasted, at once. Pad:
+Left/Right, L/R by ten, Up/Down the future, A play, B back.
+
+The first version (a Cover Flow stage with perspective, reflections and stars)
+was out of place next to the rest of RG DS and slow on the handheld: per-pixel
+drawing of the whole screen every frame. It was replaced on 2026-11-22. The game
+menu now draws each picture as a texture made once, so scrolling only moves
+textures.
 
 **The moments.**
 
@@ -56,10 +58,19 @@ the branch, A play, B back. The screen reads moments through `MomentTree`
   parent. States over 24 MiB (PSP, Dreamcast) get no rewind; between 512 KiB and
   24 MiB the step widens with the size (N64 ~ one per 30 s).
 - DSCore: `dscore/src/frontend/sdl/rewind_ring.h`, the same tree. A moment
-  every 2 s (`DS_REWIND_SECONDS`), 64 MiB (`DS_REWIND_MB`), `DS_REWIND=0` off;
-  none during a replay, a recording or a network session. Deflated with the
-  vendored miniz. The picture is both screens stacked, a portrait DS, taken from
-  what was last presented, so it works on every present tier.
+  every 2 s (`DS_REWIND_SECONDS`), 128 MiB (`DS_REWIND_MB`), `DS_REWIND=0` off;
+  none during a replay, a recording or a network session. Kept raw, not
+  deflated: the deflate worker cost ~510 dropped frames in 45 s of Mario Kart 2x
+  on the handheld (23 Nov 2026); a raw moment is one copy, ~20 moments ~ 40 s. The picture is both screens at their own size (256x384), the
+  top over the bottom, taken from what was last presented (every present tier).
+  A DS state deflates to about 2.4 MB, so 96 MiB holds roughly a minute; delta
+  against the previous moment is the way to more.
+- **No look runs anything in DSCore.** The first version loaded a moment and ran
+  one unscaled frame for each look while the game was held. On the Vulkan engine
+  that frame's GPU work was never collected, and the first real frame after
+  Play from here hung waiting for it (Mario Kart DS on the handheld,
+  2026-11-22). The menu now shows the moment's stored picture; only Play from
+  here and Back load anything, as a checkpoint load does.
 
 **Two ways in.**
 

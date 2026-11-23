@@ -14,11 +14,38 @@
 // libretro hands its structs over as raw pointers to safe-looking C entry points.
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 mod content;
+#[cfg(target_os = "linux")]
+mod gl;
+#[cfg(not(target_os = "linux"))]
+mod gl {
+    //! No GLES context from the player off Linux (a Mac's Play has none): the picture is always read back.
+    #[derive(Clone, Copy)]
+    pub struct Host;
+    pub struct Output;
+    impl Output {
+        pub fn present(
+            &mut self,
+            _t: &ruffle_render_wgpu::wgpu::Texture,
+            _w: u32,
+            _h: u32,
+            _smooth: bool,
+            _drawn: (u32, u32),
+            _p: Option<(i64, i64)>,
+        ) -> bool {
+            false
+        }
+    }
+}
 mod keys;
 pub mod libretro;
 mod navigator;
 mod storage;
+mod target;
 mod ui;
 
 use std::ffi::{CStr, CString, c_char, c_uint, c_void};
@@ -38,12 +65,12 @@ use ruffle_core::{FloatDuration, Player, PlayerBuilder, impl_audio_mixer_backend
 use ruffle_render::quality::StageQuality;
 use ruffle_render_wgpu::backend::{WgpuRenderBackend, create_wgpu_instance, request_adapter_and_device};
 use ruffle_render_wgpu::descriptors::Descriptors;
-use ruffle_render_wgpu::target::TextureTarget;
 use ruffle_render_wgpu::wgpu;
 
 use crate::content::Content;
 use crate::keys::Bind;
 use crate::libretro as lr;
+use crate::target::FlashTarget;
 
 const SAMPLE_RATE: u32 = 44100;
 const FPS: f64 = 60.0;
@@ -211,6 +238,19 @@ struct Game {
     shared: Arc<ui::Shared>,
     width: u32,
     height: u32,
+    /// Anti-aliased by FXAA as the picture goes to the player (gl.rs), the renderer itself never multisampled: on the
+    /// RG DS's Panfrost wgpu's GL MSAA made a HappyWheels level 30 ms of drawing a frame, none 1.1 ms.
+    smooth: bool,
+    /// The size Ruffle draws at, the picture's own unless RGDS_FLASH_RES (a percentage, measuring) shrinks it; the
+    /// blit scales it up.
+    drawn: (u32, u32),
+    /// Frame skip: when the last call came, how far behind real time the movie is (seconds), and pictures left out
+    /// in a row. The movie still advances every call, so a game too heavy to draw every picture keeps its speed.
+    last_call: Option<Instant>,
+    behind: f64,
+    skipped: u32,
+    /// The stage's quality last seen: when a game sets its own, the renderer is put back to no MSAA.
+    seen_quality: Option<StageQuality>,
     /// The last picture read from the GPU; `frame` is it with the stick's pointer drawn over.
     clean: Vec<u32>,
     frame: Vec<u32>,
@@ -232,9 +272,11 @@ struct Game {
     right_down: bool,
     pad_left: bool,
     pad_right: bool,
+    /// The player's framebuffer, when Ruffle draws on its GLES context: the picture is blitted there, never read.
+    out: Option<gl::Output>,
     frames: u32,
-    /// Time spent drawing and reading back since the last report (RGDS_FLASH_LOG=debug), and how many draws.
-    spent: (Duration, Duration, u32),
+    /// Where the time went since the last report (RGDS_FLASH_LOG=debug).
+    spent: Spent,
     audio: Vec<i16>,
 }
 
@@ -285,12 +327,29 @@ fn gpu() -> Result<Arc<Descriptors>, String> {
     Err(format!("no GPU for Flash ({last})"))
 }
 
+/// Pictures frame skip may leave out in a row: at least every fourth is drawn.
+const MAX_SKIPPED: u32 = 3;
+
+/// Frame skip is on unless RGDS_FLASH_FRAMESKIP=0.
+fn frame_skip() -> bool {
+    static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ON.get_or_init(|| std::env::var("RGDS_FLASH_FRAMESKIP").as_deref() != Ok("0"))
+}
+
+/// RGDS_FLASH_SKIP, a part of the picture left out to measure the rest: "render" or "present".
+fn skip() -> Option<&'static str> {
+    static SKIP: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+    SKIP.get_or_init(|| std::env::var("RGDS_FLASH_SKIP").ok()).as_deref()
+}
+
 fn quality(name: &str) -> StageQuality {
     match name {
+        // High is Flash's own default, what the games were made to look like (4x anti-aliasing, smoothed bitmaps);
+        // on the player's context it costs about what Medium does (HappyWheels 2.8 ms a picture on the RG DS).
         "low" => StageQuality::Low,
-        "high" => StageQuality::High,
+        "medium" => StageQuality::Medium,
         "best" => StageQuality::Best,
-        _ => StageQuality::Medium,
+        _ => StageQuality::High,
     }
 }
 
@@ -300,17 +359,37 @@ fn save_root(content_path: &Path) -> PathBuf {
     base.join(stem)
 }
 
+/// The picture's size for a movie: its stage fitted into the panel.
+fn picture_size(content: &Content) -> Result<(u32, u32), String> {
+    let header = ruffle_core::swf::decompress_swf(&content.movie[..]).map_err(|e| format!("not a Flash movie: {e}"))?;
+    let stage = header.header.stage_size();
+    Ok(fit(stage.width().to_pixels(), stage.height().to_pixels()))
+}
+
 impl Game {
-    fn load(path: &Path) -> Result<Game, String> {
+    /// `on_player`: wgpu on the player's GLES context and the blit into its framebuffer; None draws with a GPU device
+    /// of the core's own and reads each picture back.
+    fn load(path: &Path, on_player: Option<(Arc<Descriptors>, gl::Output)>) -> Result<Game, String> {
         let content = Arc::new(Content::open(path)?);
-        let header =
-            ruffle_core::swf::decompress_swf(&content.movie[..]).map_err(|e| format!("not a Flash movie: {e}"))?;
-        let stage = header.header.stage_size();
-        let (width, height) = fit(stage.width().to_pixels(), stage.height().to_pixels());
+        let (width, height) = picture_size(&content)?;
         tracing::info!("flash: {} at {width}x{height} from {}", content.launch, path.display());
 
-        let descriptors = gpu()?;
-        let target = TextureTarget::new(&descriptors.device, (width, height)).map_err(|e| e.to_string())?;
+        let (descriptors, out) = match on_player {
+            Some((descriptors, out)) => (descriptors, Some(out)),
+            None => (gpu()?, None),
+        };
+        // RGDS_FLASH_NO_COPY=1 (measuring only): drawn on a device of its own, never copied back.
+        let copy_back = out.is_none() && std::env::var_os("RGDS_FLASH_NO_COPY").is_none();
+        // A game's own lines in its .flashpoint (`touch=hover`, `btn_a=up`, `quality=low`...) before the options.
+        let option =
+            |key: &str| content.details.get(key.trim_start_matches("ruffle_")).cloned().or_else(|| variable(key));
+        let q = quality(&option("ruffle_quality").unwrap_or_default());
+        // On the player's context anti-aliasing is FXAA (`smooth`); drawn on a device of its own (a Mac) Ruffle's MSAA
+        // as it is. Low: neither. RGDS_FLASH_MSAA=1 keeps Ruffle's MSAA on the context too (measuring).
+        let smooth = out.is_some() && q != StageQuality::Low && std::env::var_os("RGDS_FLASH_MSAA").is_none();
+        let res = std::env::var("RGDS_FLASH_RES").ok().and_then(|s| s.parse::<u32>().ok()).unwrap_or(100).clamp(25, 100);
+        let drawn = if out.is_some() { ((width * res / 100).max(1), (height * res / 100).max(1)) } else { (width, height) };
+        let target = FlashTarget::new(&descriptors.device, drawn, copy_back);
         let renderer = WgpuRenderBackend::new(descriptors, target).map_err(|e| e.to_string())?;
 
         let executor = NullExecutor::new();
@@ -319,11 +398,6 @@ impl Game {
         let proxy = mixer.proxy();
         let shared = Arc::new(ui::Shared::default());
         let storage = storage::FolderStorage::new(save_root(path));
-        // A game's own lines in its .flashpoint (`touch=hover`, `btn_a=up`, `quality=low`...) before the options.
-        let option =
-            |key: &str| content.details.get(key.trim_start_matches("ruffle_")).cloned().or_else(|| variable(key));
-        let q = quality(&option("ruffle_quality").unwrap_or_default());
-
         let player = PlayerBuilder::new()
             .with_renderer(renderer)
             .with_audio(PulledAudio { mixer })
@@ -336,7 +410,7 @@ impl Game {
             .with_letterbox(Letterbox::On)
             .with_quality(q)
             .with_max_execution_duration(Duration::from_secs(10))
-            .with_viewport_dimensions(width, height, 1.0)
+            .with_viewport_dimensions(drawn.0, drawn.1, drawn.0 as f64 / width as f64)
             .with_page_url(Some(content.launch.clone()))
             .build();
         {
@@ -354,12 +428,19 @@ impl Game {
         }
         Ok(Game {
             path: path.to_path_buf(),
+            out,
             player,
             executor,
             mixer: proxy,
             shared,
             width,
             height,
+            smooth,
+            drawn,
+            last_call: None,
+            behind: 0.0,
+            skipped: 0,
+            seen_quality: None,
             clean: vec![0; (width * height) as usize],
             frame: vec![0; (width * height) as usize],
             drawn_pointer: None,
@@ -390,14 +471,19 @@ impl Game {
         }
     }
 
+    /// A point on the picture in the pixels Ruffle draws.
+    fn on_drawn(&self, (x, y): (f64, f64)) -> (f64, f64) {
+        (x * self.drawn.0 as f64 / self.width as f64, y * self.drawn.1 as f64 / self.height as f64)
+    }
+
     fn mouse_to(&mut self, x: f64, y: f64) {
         self.cursor = (x.clamp(0.0, self.width as f64 - 1.0), y.clamp(0.0, self.height as f64 - 1.0));
-        let (x, y) = self.cursor;
+        let (x, y) = self.on_drawn(self.cursor);
         self.send(PlayerEvent::MouseMove { x, y });
     }
 
     fn button(&mut self, button: MouseButton, down: bool) {
-        let (x, y) = self.cursor;
+        let (x, y) = self.on_drawn(self.cursor);
         let held = match button {
             MouseButton::Right => &mut self.right_down,
             _ => &mut self.left_down,
@@ -563,6 +649,13 @@ impl Game {
 
     fn run(&mut self) {
         self.frames = self.frames.wrapping_add(1);
+        let now = Instant::now();
+        if let Some(last) = self.last_call {
+            let gap = (now - last).as_secs_f64();
+            // A gap of more than a quarter second is a pause (the menu), not lateness.
+            self.behind = if gap > 0.25 { 0.0 } else { (self.behind + gap - 1.0 / FPS).clamp(0.0, 0.25) };
+        }
+        self.last_call = Some(now);
         self.poll_typed();
         self.poll_touch();
         self.poll_pad();
@@ -570,43 +663,92 @@ impl Game {
 
         let mut drew = false;
         if let Ok(mut p) = self.player.lock() {
+            let at = Instant::now();
             p.tick(FloatDuration::from_secs(1.0 / FPS));
+            self.spent.add(0, at);
+            // A game that sets its own quality keeps it on the stage (text, its own checks); the renderer stays
+            // without MSAA.
+            if self.smooth {
+                let q = p.quality();
+                if self.seen_quality != Some(q) {
+                    self.seen_quality = Some(q);
+                    p.renderer_mut().set_quality(StageQuality::Low);
+                }
+            }
             drop(p);
+            let at = Instant::now();
             self.executor.run();
+            self.spent.add(1, at);
             let mut p = self.player.lock().unwrap();
-            if p.needs_render() || self.frames < 3 {
+            // Behind by more than a frame: this picture is left out (the next one is drawn), at most MAX_SKIPPED in a
+            // row. needs_render stays set, so the skipped change shows in the next picture.
+            let late = frame_skip() && self.behind > 1.0 / FPS && self.skipped < MAX_SKIPPED;
+            if p.needs_render() && late && self.frames >= 3 {
+                self.skipped += 1;
+                self.spent.skipped += 1;
+            } else if p.needs_render() || self.frames < 3 {
+                self.skipped = 0;
                 let at = Instant::now();
-                p.render();
-                self.spent.0 += at.elapsed();
+                let cpu = thread_cpu();
+                // RGDS_FLASH_SKIP=render (measuring): the movie runs, Ruffle draws nothing, the last picture is shown.
+                if skip() != Some("render") {
+                    p.render();
+                }
+                self.spent.add(2, at);
+                self.spent.draw_cpu += thread_cpu().saturating_sub(cpu);
                 drew = true;
             }
         }
+        let at = Instant::now();
         if drew {
-            let at = Instant::now();
-            self.capture();
-            self.spent.1 += at.elapsed();
-            self.spent.2 += 1;
+            if self.out.is_none() {
+                self.capture();
+            }
+            self.spent.pictures += 1;
         }
-        if self.frames.is_multiple_of(600) && self.spent.2 > 0 {
-            let (draw, read, n) = std::mem::take(&mut self.spent);
+        if self.frames.is_multiple_of(600) {
+            let s = std::mem::take(&mut self.spent);
+            let ms = |d: Duration| d.as_secs_f64() * 1e3;
+            let part = |i: usize| format!("{:.2} (worst {:.1})", ms(s.parts[i].0) / 600.0, ms(s.parts[i].1));
             tracing::debug!(
-                "flash: {n} pictures in 600 frames, {:.2} ms drawing and {:.2} ms reading back each",
-                draw.as_secs_f64() * 1e3 / n as f64,
-                read.as_secs_f64() * 1e3 / n as f64
+                "flash: {} pictures ({} skipped) in 600 frames; ms a frame: movie {}, loaders {}, drawing {} (CPU {:.2}), {} {} (copy {:.2}), sound {}",
+                s.pictures,
+                s.skipped,
+                part(0),
+                part(1),
+                part(2),
+                ms(s.draw_cpu) / 600.0,
+                if self.out.is_some() { "blit" } else { "read-back" },
+                part(3),
+                ms(s.copy) / 600.0,
+                part(4)
             );
         }
-        // The stick's pointer is drawn over the last picture: moving it costs a copy, not a render.
+        // The stick's pointer is drawn over the last picture: moving it costs a copy (or a blit), not a render.
         let pointer = (self.cursor_shown > 0 && self.shared.mouse_visible.load(Ordering::Relaxed))
             .then_some((self.cursor.0 as i64, self.cursor.1 as i64));
         let present = drew || pointer != self.drawn_pointer;
+        let mut on_player = false;
         if present {
-            self.frame.copy_from_slice(&self.clean);
-            if let Some(at) = pointer {
-                draw_pointer(&mut self.frame, self.width, self.height, at);
+            if self.out.is_some()
+                && let Some(texture) = self.texture()
+            {
+                let (w, h) = (self.width, self.height);
+                // RGDS_FLASH_SKIP=present (measuring): drawn but not put on the player's framebuffer.
+                on_player = skip() == Some("present")
+                    || self.out.as_mut().is_some_and(|out| out.present(&texture, w, h, self.smooth, self.drawn, pointer));
+            }
+            if !on_player {
+                self.frame.copy_from_slice(&self.clean);
+                if let Some(at) = pointer {
+                    draw_pointer(&mut self.frame, self.width, self.height, at);
+                }
             }
             self.drawn_pointer = pointer;
         }
+        self.spent.add(3, at);
 
+        let at = Instant::now();
         // 44.1 kHz at 60 frames a second is 735 sample pairs a frame.
         let pairs = (SAMPLE_RATE as f64 / FPS).round() as usize;
         self.audio.resize(pairs * 2, 0);
@@ -616,11 +758,14 @@ impl Game {
             let f: lr::AudioSampleBatchFn = unsafe { std::mem::transmute(f) };
             unsafe { f(self.audio.as_ptr(), pairs) };
         }
+        self.spent.add(4, at);
 
         let f = VIDEO.load(Ordering::Acquire);
         if f != 0 {
             let f: lr::VideoRefreshFn = unsafe { std::mem::transmute(f) };
-            if present {
+            if on_player {
+                unsafe { f(lr::HW_FRAME_BUFFER_VALID, self.width, self.height, 0) };
+            } else if present {
                 unsafe { f(self.frame.as_ptr() as *const c_void, self.width, self.height, self.width as usize * 4) };
             } else {
                 unsafe { f(std::ptr::null(), self.width, self.height, self.width as usize * 4) };
@@ -629,47 +774,89 @@ impl Game {
         self.cursor_shown = self.cursor_shown.saturating_sub(1);
     }
 
+    /// The texture Ruffle draws into.
+    fn texture(&self) -> Option<wgpu::Texture> {
+        let mut p = self.player.lock().ok()?;
+        let r = <dyn std::any::Any>::downcast_mut::<WgpuRenderBackend<FlashTarget>>(p.renderer_mut())?;
+        Some(r.target().texture.clone())
+    }
+
     /// Reads the picture just drawn into `clean`, in one pass straight from the mapped buffer. The movie is drawn
     /// opaque (letterbox and stage both), so its premultiplied RGBA is already the colour; Ruffle's own capture would
     /// copy it twice and divide every pixel by its alpha.
     fn capture(&mut self) {
         let player = self.player.clone();
         let mut p = player.lock().unwrap();
-        let Some(r) = <dyn std::any::Any>::downcast_mut::<WgpuRenderBackend<TextureTarget>>(p.renderer_mut()) else {
+        let Some(r) = <dyn std::any::Any>::downcast_mut::<WgpuRenderBackend<FlashTarget>>(p.renderer_mut()) else {
             return;
         };
-        let Some(info) = &r.target().buffer else { return };
-        let (buffer, dims) = info.buffer.inner();
+        let Some((buffer, dims)) = &r.target().buffer else { return };
         let (w, h) = (dims.width.min(self.width as usize), dims.height.min(self.height as usize));
         let stride = self.width as usize;
         let clean = &mut self.clean;
+        let mut copy = Duration::ZERO;
         ruffle_render_wgpu::utils::capture_image(r.device(), buffer, dims, None, |rgba, padded| {
+            let at = Instant::now();
             for (y, row) in rgba.chunks(padded as usize).take(h).enumerate() {
                 let out = &mut clean[y * stride..y * stride + w];
                 for (d, px) in out.iter_mut().zip(row[..w * 4].as_chunks::<4>().0) {
                     *d = (px[0] as u32) << 16 | (px[1] as u32) << 8 | px[2] as u32;
                 }
             }
+            copy = at.elapsed();
         });
+        self.spent.copy += copy;
     }
 }
 
+/// Time spent in each part of a frame, and the worst frame of each, since the last report.
+#[derive(Default)]
+struct Spent {
+    /// running the movie, its loaders, drawing, reading back or blitting, mixing the sound
+    parts: [(Duration, Duration); 5],
+    pictures: u32,
+    /// pictures frame skip left out
+    skipped: u32,
+    /// CPU time of the drawing part (the rest of its wall time is waiting)
+    draw_cpu: Duration,
+    /// of reading back: copying the mapped picture (the rest is waiting for the GPU)
+    copy: Duration,
+}
+
+/// CPU time this thread has used.
+fn thread_cpu() -> Duration {
+    let mut t = libc::timespec { tv_sec: 0, tv_nsec: 0 };
+    unsafe { libc::clock_gettime(libc::CLOCK_THREAD_CPUTIME_ID, &mut t) };
+    Duration::new(t.tv_sec as u64, t.tv_nsec as u32)
+}
+
+impl Spent {
+    fn add(&mut self, part: usize, since: Instant) {
+        let d = since.elapsed();
+        let p = &mut self.parts[part];
+        p.0 += d;
+        p.1 = p.1.max(d);
+    }
+}
+
+/// The stick's pointer, row by row: X the rim, o the inside.
+pub(crate) const ARROW: [&str; 12] = [
+    "X.........",
+    "XX........",
+    "XoX.......",
+    "XooX......",
+    "XoooX.....",
+    "XooooX....",
+    "XoooooX...",
+    "XooooooX..",
+    "XoooXXXXX.",
+    "XooX......",
+    "XoX.......",
+    "XX........",
+];
+
 /// A small arrow at the stick's pointer (a finger needs none), white with a dark rim.
 fn draw_pointer(frame: &mut [u32], w: u32, h: u32, at: (i64, i64)) {
-    const ARROW: [&str; 12] = [
-        "X.........",
-        "XX........",
-        "XoX.......",
-        "XooX......",
-        "XoooX.....",
-        "XooooX....",
-        "XoooooX...",
-        "XooooooX..",
-        "XoooXXXXX.",
-        "XooX......",
-        "XoX.......",
-        "XX........",
-    ];
     let scale = 2usize;
     let (cx, cy) = at;
     for (row, line) in ARROW.iter().enumerate() {
@@ -721,7 +908,7 @@ pub extern "C" fn retro_set_environment(f: lr::EnvironmentFn) {
         let keys = "space|z|x|c|v|enter|shift|ctrl|alt|escape|tab|backspace|up|down|left|right|w|a|s|d|q|e|r|f|p|m|1|2|3|mouse|right click|none";
         let mut owned = Vec::new();
         let mut add = |k: &str, v: String| owned.push((CString::new(k).unwrap(), CString::new(v).unwrap()));
-        add("ruffle_quality", "Picture quality; medium|low|high|best".into());
+        add("ruffle_quality", "Picture quality; high|low|medium|best".into());
         add("ruffle_touch", "Touch; direct|hover".into());
         add("ruffle_stick", "Left stick; auto|pointer|arrows|wasd".into());
         add("ruffle_cursor_speed", "Stick pointer speed; 6|3|4|5|7|8|10|12".into());
@@ -789,7 +976,10 @@ pub extern "C" fn retro_get_system_info(info: *mut lr::SystemInfo) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn retro_get_system_av_info(info: *mut lr::SystemAvInfo) {
-    let (w, h) = GAME.lock().ok().and_then(|g| g.0.as_ref().map(|g| (g.width, g.height))).unwrap_or((MAX_W, MAX_H));
+    // Before the context comes (a game drawn on the player's), the size its movie will have.
+    let pending = PENDING.lock().ok().and_then(|p| p.as_ref().map(|p| p.size));
+    let (w, h) =
+        GAME.lock().ok().and_then(|g| g.0.as_ref().map(|g| (g.width, g.height))).or(pending).unwrap_or((MAX_W, MAX_H));
     if let Some(info) = unsafe { info.as_mut() } {
         info.geometry = lr::GameGeometry {
             base_width: w,
@@ -809,13 +999,19 @@ pub extern "C" fn retro_set_controller_port_device(_port: c_uint, _device: c_uin
 pub extern "C" fn retro_reset() {
     // Flash has no reset line: the movie is loaded again from the start, its saves written first.
     let Ok(mut slot) = GAME.lock() else { return };
-    let Some(game) = slot.0.take() else { return };
+    let Some(mut game) = slot.0.take() else { return };
     if let Ok(mut p) = game.player.lock() {
         p.flush_shared_objects();
     }
     let path = game.path.clone();
+    // On the player's context: the same device and framebuffer again.
+    let on_player = game.out.take().and_then(|out| {
+        let mut p = game.player.lock().ok()?;
+        let r = <dyn std::any::Any>::downcast_mut::<WgpuRenderBackend<FlashTarget>>(p.renderer_mut())?;
+        Some((r.descriptors().clone(), out))
+    });
     drop(game);
-    match Game::load(&path) {
+    match Game::load(&path, on_player) {
         Ok(g) => slot.0 = Some(g),
         Err(e) => tracing::error!("flash: reset: {e}"),
     }
@@ -864,7 +1060,35 @@ pub extern "C" fn retro_load_game(game: *const lr::GameInfo) -> bool {
         tracing::error!("flash: the player refused XRGB8888");
         return false;
     }
-    match std::panic::catch_unwind(|| Game::load(&path)) {
+    // On the handheld: Ruffle draws on the player's GLES context, the game made when the context comes
+    // (context_reset); RGDS_FLASH_SOFTWARE=1 keeps the read-back.
+    if cfg!(target_os = "linux") && std::env::var_os("RGDS_FLASH_SOFTWARE").is_none() {
+        let size = Content::open(&path).and_then(|c| picture_size(&c));
+        let mut hw = lr::HwRenderCallback {
+            context_type: lr::HW_CONTEXT_OPENGLES3,
+            context_reset: Some(context_reset),
+            get_current_framebuffer: None,
+            get_proc_address: None,
+            depth: false,
+            stencil: false,
+            bottom_left_origin: false,
+            version_major: 3,
+            version_minor: 0,
+            cache_context: false,
+            context_destroy: Some(context_destroy),
+            debug_context: false,
+        };
+        if let Ok(size) = size
+            && env(lr::ENV_SET_HW_RENDER, &mut hw as *mut _ as *mut c_void)
+            && let (Some(framebuffer), Some(proc_address)) = (hw.get_current_framebuffer, hw.get_proc_address)
+        {
+            if let Ok(mut p) = PENDING.lock() {
+                *p = Some(Pending { path, size, host: gl_host(framebuffer, proc_address) });
+            }
+            return true;
+        }
+    }
+    match std::panic::catch_unwind(|| Game::load(&path, None)) {
         Ok(Ok(g)) => {
             if let Ok(mut slot) = GAME.lock() {
                 slot.0 = Some(g);
@@ -882,6 +1106,63 @@ pub extern "C" fn retro_load_game(game: *const lr::GameInfo) -> bool {
     }
 }
 
+/// A game waiting for the player's context.
+struct Pending {
+    path: PathBuf,
+    size: (u32, u32),
+    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+    host: Option<gl::Host>,
+}
+static PENDING: Mutex<Option<Pending>> = Mutex::new(None);
+
+#[cfg(target_os = "linux")]
+fn gl_host(framebuffer: lr::HwGetCurrentFramebufferFn, proc_address: lr::HwGetProcAddressFn) -> Option<gl::Host> {
+    Some(gl::Host { framebuffer, proc_address })
+}
+#[cfg(not(target_os = "linux"))]
+fn gl_host(_f: lr::HwGetCurrentFramebufferFn, _p: lr::HwGetProcAddressFn) -> Option<gl::Host> {
+    None
+}
+
+/// The player's context is current: the game is made on it (or, when wgpu can't use it, with a device of its own,
+/// its pictures read back and handed over as before).
+unsafe extern "C" fn context_reset() {
+    let Some(pending) = PENDING.lock().ok().and_then(|mut p| p.take()) else { return };
+    let path = pending.path.clone();
+    let made = std::panic::catch_unwind(|| {
+        #[cfg(target_os = "linux")]
+        if let Some(host) = pending.host {
+            match gl::adopt(host).and_then(|d| Game::load(&path, Some((d, gl::Output::new(host))))) {
+                Ok(g) => return Ok(g),
+                Err(e) => tracing::warn!("flash: {e}; reading the pictures back instead"),
+            }
+        }
+        let _ = &pending;
+        Game::load(&path, None)
+    });
+    match made {
+        Ok(Ok(g)) => {
+            if let Ok(mut slot) = GAME.lock() {
+                slot.0 = Some(g);
+            }
+        }
+        Ok(Err(e)) => tracing::error!("flash: {e}"),
+        Err(_) => tracing::error!("flash: the player crashed loading {}", pending.path.display()),
+    }
+}
+
+/// The context goes away: the saves written, the game (and its GL objects, the context still current) let go.
+unsafe extern "C" fn context_destroy() {
+    if let Ok(mut slot) = GAME.lock()
+        && let Some(game) = slot.0.take()
+    {
+        if let Ok(mut p) = game.player.lock() {
+            p.flush_shared_objects();
+        }
+        drop(game);
+    }
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn retro_load_game_special(_type: c_uint, _info: *const lr::GameInfo, _num: usize) -> bool {
     false
@@ -889,6 +1170,9 @@ pub extern "C" fn retro_load_game_special(_type: c_uint, _info: *const lr::GameI
 
 #[unsafe(no_mangle)]
 pub extern "C" fn retro_unload_game() {
+    if let Ok(mut p) = PENDING.lock() {
+        *p = None;
+    }
     if let Ok(mut slot) = GAME.lock()
         && let Some(game) = slot.0.take()
     {

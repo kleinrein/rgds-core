@@ -92,6 +92,45 @@ namespace {
 std::atomic<bool> stop_requested{false};
 void request_stop(int) { stop_requested = true; }
 
+// The frame the game was left on, as last-frame.bmp beside its automatic checkpoint (RGDS_AUTOSTATE_FILE): the
+// launcher's "Where you left off" card shows it as the game starts again. A 24-bit BMP of the core's own picture,
+// written aside and renamed. Engines that draw through GL hand no picture; runtime/emulators.py falls back then.
+void keep_last_frame(const Picture& game) {
+    const char* state = std::getenv("RGDS_AUTOSTATE_FILE");
+    if (!state || !*state || !game.px || game.w <= 0 || game.h <= 0 || game.w > 4096 || game.h > 4096) return;
+    const std::filesystem::path target = std::filesystem::path(state).parent_path() / "last-frame.bmp";
+    const int row = (game.w * 3 + 3) & ~3;
+    std::vector<uint8_t> file(54 + size_t(row) * size_t(game.h), 0);
+    auto put32 = [&](size_t at, uint32_t v) {
+        for (int i = 0; i < 4; ++i) file[at + i] = uint8_t(v >> (8 * i));
+    };
+    file[0] = 'B';
+    file[1] = 'M';
+    put32(2, uint32_t(file.size()));
+    put32(10, 54);
+    put32(14, 40);
+    put32(18, uint32_t(game.w));
+    put32(22, uint32_t(game.h));
+    file[26] = 1;
+    file[28] = 24;
+    put32(34, uint32_t(row * game.h));
+    for (int y = 0; y < game.h; ++y) {
+        uint8_t* out = &file[54 + size_t(game.h - 1 - y) * size_t(row)];
+        for (int x = 0; x < game.w; ++x) {
+            const uint32_t v = game.at(x, y); // 0xAABBGGRR
+            out[x * 3] = uint8_t(v >> 16);
+            out[x * 3 + 1] = uint8_t(v >> 8);
+            out[x * 3 + 2] = uint8_t(v);
+        }
+    }
+    const std::string pending = target.string() + ".pending";
+    FILE* f = std::fopen(pending.c_str(), "wb");
+    if (!f) return;
+    const bool written = std::fwrite(file.data(), 1, file.size(), f) == file.size();
+    if (std::fclose(f) == 0 && written) std::rename(pending.c_str(), target.c_str());
+    else std::remove(pending.c_str());
+}
+
 enum FitMode { FitSharp = 0, FitInteger = 1, FitSmooth = 2 };
 enum SecondMode { SecondCompanion = 0, SecondOff = 1, SecondSwap = 2, SecondInfo = 3, SecondKeyboard = 4 };
 
@@ -187,6 +226,8 @@ bool gpu_core_begin(int major, int minor) {
             gpu_core_context = SDL_GL_CreateContext(gpu_core_window);
             SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
             gpu_core_shared = gpu_core_context != nullptr;
+            if (!gpu_core_shared)
+                std::fprintf(stderr, "rgds-play: no context shared with the panel: %s\n", SDL_GetError());
         }
         if (!gpu_core_context) gpu_core_context = SDL_GL_CreateContext(gpu_core_window);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, profile);
@@ -733,12 +774,14 @@ int main(int argc, char** argv) {
         lower.area = {0, ph, pw, ph};
     }
     if (upper.gl) gpu_core_window = upper.window;
-    // The PSP's, N64's and Dreamcast's frames go straight into the top panel's texture (Mario Kart 64's frame on the
-    // main thread: 7 ms read back, about 2 this way); RGDS_PLAY_DIRECT=0 or 1 says so for any GPU core.
+    // The PSP's, N64's, Dreamcast's and Flash's frames go straight into the game panel's texture (Mario Kart 64's
+    // frame on the main thread: 7 ms read back, about 2 this way; a Flash picture 15-30 ms read back on the RG DS);
+    // RGDS_PLAY_DIRECT=0 or 1 says so for any GPU core. The core's context shares the textures of the panel the game
+    // starts on (set below, once the screens are settled); on the other one its frames are read back.
     const char* direct_env = std::getenv("RGDS_PLAY_DIRECT");
-    const bool gpu_direct =
-        direct_env ? *direct_env == '1' : o.system == "psp" || o.system == "n64" || o.system == "dc";
-    if (upper.gl && gpu_direct) gpu_core_share = upper.gl;
+    const bool gpu_direct = direct_env ? *direct_env == '1'
+                                       : o.system == "psp" || o.system == "n64" || o.system == "dc" || o.system == "flash";
+    Panel* gpu_panel = &upper; // the panel whose texture the core's frames go into
     Picture first = session.game();
     use_panel(upper);
     make_textures(upper, first.w, first.h, pw, ph);
@@ -756,7 +799,7 @@ int main(int argc, char** argv) {
     if (session.companion()) session.companion()->set_colour(colour);
     // A light-gun game is played by touching it: it starts on the touch screen.
     // A light gun or a mouse game is played on the touch screen: it starts there, a finger aims or draws.
-    // So is a ScummVM game or a Flash game: played by touch, unless a profile splits it across both panels.
+    // So is a ScummVM game; a Flash game is played by touch too, but on the top screen (below).
     const bool lightgun = session.profile() ? session.profile()->lightgun || session.profile()->mouse
                                             : o.system == "scummvm" || o.system == "flash";
     // The keyboard first (ZX, C64): the companion, opened on the keyboard until the game's own view is switched back
@@ -768,7 +811,14 @@ int main(int argc, char** argv) {
     bool stereo = second == SecondKeyboard && stereo_game;
     if (second == SecondKeyboard) second = SecondCompanion;
     if (session.companion() && keyboard_first) session.companion()->set_keyboard_first(true, false);
-    if (lightgun && second == SecondCompanion) second = SecondSwap;
+    // A Flash game stays on the top screen, the big picture, touched there; the touch pad and keyboard below.
+    if (lightgun && second == SecondCompanion && o.system != "flash") second = SecondSwap;
+    // A game starting on the touch screen (swapped) shares the lower panel's textures instead.
+    if (second == SecondSwap && lower.gl && lower.window) {
+        gpu_panel = &lower;
+        gpu_core_window = lower.window;
+    }
+    if (gpu_panel->gl && gpu_direct) gpu_core_share = gpu_panel->gl;
     std::fprintf(stderr, "rgds-play: game screen %s, second screen %s, frame %s\n", fit_name(fit),
                  stereo ? "3d" : second_name(second), frame.name.c_str());
 
@@ -1028,6 +1078,21 @@ int main(int argc, char** argv) {
                     aim((e.motion.x - lower.area.x) * pw / std::max(1, lower.area.w),
                         (e.motion.y - lower.area.y) * ph / std::max(1, lower.area.h), true);
                 }
+                // A desktop's mouse on the top panel: the second screen shown there (the top touch screen below).
+                if ((e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP ||
+                     (e.type == SDL_MOUSEMOTION && (e.motion.state & SDL_BUTTON_LMASK))) &&
+                    e.button.which != SDL_TOUCH_MOUSEID && upper.window &&
+                    e.button.windowID == SDL_GetWindowID(upper.window) && session.companion() && !stereo) {
+                    const int mx = e.type == SDL_MOUSEMOTION ? e.motion.x : e.button.x,
+                              my = e.type == SDL_MOUSEMOTION ? e.motion.y : e.button.y;
+                    const SDL_Rect& a = upper.area;
+                    if (mx >= a.x && my >= a.y && mx < a.x + a.w && my < a.y + a.h &&
+                        session.touch(Touch{e.type == SDL_MOUSEBUTTONDOWN ? Touch::Down
+                                            : e.type == SDL_MOUSEBUTTONUP ? Touch::Up
+                                                                          : Touch::Move,
+                                            (mx - a.x) * pw / std::max(1, a.w), (my - a.y) * ph / std::max(1, a.h)}))
+                        drawn_key = ~0ull;
+                }
                 continue;
             }
             if (lightgun && upper.window &&
@@ -1079,7 +1144,15 @@ int main(int argc, char** argv) {
         }
         for (const auto& point : top_touch.poll())
             if (point.kind < 3 && lightgun && second != SecondSwap) aim_top(point.x, point.y, point.kind != 2);
-            else if (point.kind < 3 && session.companion())
+            // The game on the touch screen below, the second screen (its keyboard, its touch pad) on the top one:
+            // that is touched too.
+            else if (point.kind < 3 && second == SecondSwap && session.companion() && !stereo) {
+                if (session.touch(Touch{point.kind == 0   ? Touch::Down
+                                        : point.kind == 1 ? Touch::Move
+                                                          : Touch::Up,
+                                        point.x, point.y}))
+                    drawn_key = ~0ull;
+            } else if (point.kind < 3 && session.companion())
                 session.companion()->touch_top(Touch{point.kind == 0   ? Touch::Down
                                                      : point.kind == 1 ? Touch::Move
                                                                        : Touch::Up,
@@ -1207,6 +1280,10 @@ int main(int argc, char** argv) {
                     if (got <= 0) break;
                     SDL_QueueAudio(audio, out.data(), Uint32(got));
                 }
+            } else {
+                // No sound device or converter: the core's sound still has to go somewhere, or a libretro core's
+                // buffer grows by ~11 MB a minute until the game runs out of memory.
+                while (session.audio(samples.data(), samples.size() / 2) > 0) {}
             }
         }
 
@@ -1280,7 +1357,7 @@ int main(int argc, char** argv) {
                 if (p != window && !one_window) continue;
                 if (p == &game_panel) {
                     const Picture shown = colour.apply(session.game(shader_live() && !play_screen()));
-                    const bool on_top = p == &upper && gpu_core_shared;
+                    const bool on_top = p == gpu_panel && gpu_core_shared; // the panel the core's context shares
                     draw_game(*p, shown, fit, frame, session.font(),
                               on_top && session.core().drew_gl_target() && shown.w == p->game_w &&
                                   shown.h == p->game_h);
@@ -1310,6 +1387,7 @@ int main(int argc, char** argv) {
         }
     }
     if (stop_requested) std::fprintf(stderr, "rgds-play: quit: asked to stop (signal)\n");
+    else keep_last_frame(session.core().picture());
     device_pad.close();
     session.flush();
     std::fprintf(stderr, "rgds-play: saved, %llu frames\n", (unsigned long long)session.frames());

@@ -137,8 +137,8 @@ Button layout	ボタン配置
 Button {0}	ボタン {0}
 Buttons and the game menu shortcut	ボタンとゲームメニューのショートカット
 Cancel	キャンセル
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	更新を中止
+Cancel the update? Anything already downloaded is removed.	更新を中止しますか？ダウンロード済みのデータは削除されます。
 Carousel	カルーセル
 Carried	所持
 Cartridges	カートリッジ
@@ -1467,17 +1467,17 @@ Vectorscope	ベクトルスコープ
 Radial spectrum	円形スペクトラム
 Waterfall	ウォーターフォール
 Tunnel	トンネル
-Prism	Prism
-Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
-Copper bars	Copper bars
-Synthwave	Synthwave
-Ripples	Ripples
-Rotozoom	Rotozoom
+Prism	プリズム
+Lissajous	リサージュ
+Matrix rain	マトリックスの雨
+Kaleidoscope	万華鏡
+Fireworks	花火
+Lava lamp	ラバランプ
+Aurora	オーロラ
+Copper bars	コッパーバー
+Synthwave	シンセウェイヴ
+Ripples	波紋
+Rotozoom	ロトズーム
 ScreenScraper account	ScreenScraperアカウント
 Not signed in	サインインしていません
 Change account	アカウントを変更
@@ -1686,9 +1686,9 @@ Saving the screenshot…	スクリーンショットを保存しています…
 Screenshot saved to the Album.	スクリーンショットをアルバムに保存しました。
 Still saving the last screenshot.	前のスクリーンショットを保存中です。
 No picture to save. Resume the game and press Menu + R.	保存する画像がありません。ゲームに戻って Menu + R を押してください。
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	起動するたびにプロフィールの選択画面を表示します。
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	最後のプレイヤーにPINがあるため、起動時に入力を求められます。その画面でBを押すとプロフィールを切り替えます。
+Switch profile	プロフィールを切り替え
 Photo mode	フォトモード
 Leave photo mode?	フォトモードを終了しますか？
 Keep editing	編集を続ける
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	{0}さん、誕生日おめでとう！
 Last played {0}	最後に遊んだ日：{0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	色とメニュー音楽が時刻に合わせて変わります：夕方は暖かく、夜は静かに
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	オリジナルと同じく、DSのゲームに伝えられます。当日は本体がちょっとしたあいさつをします。
+Looking for videos and books…	ビデオと本を探しています…
+Play from the start	最初から再生
+Start from the beginning	最初から読む
+Mark as finished	完了にする
+Mark as not finished	未完了にする
+{0} artist	{0}人のアーティスト
+{0} artists	{0}人のアーティスト
+{0} item	{0}項目
+{0} items	{0}項目
+Add network place	ネットワークの場所を追加
+Added.	追加しました。
+Cancel paste	貼り付けを中止
+Card	カード
+Choose a share	共有を選択
+Clear marks	選択を解除
+Copied.	コピーしました。
+Copy	コピー
+Delete for good	完全に削除
+Delete these for good?	これらを完全に削除しますか？
+Delete this for good?	これを完全に削除しますか？
+Empty the trash for good?	ごみ箱を完全に空にしますか？
+Empty trash	ごみ箱を空にする
+Extract here	ここに展開
+Folder	フォルダー
+Getting it…	取得中…
+Getting them…	まとめて取得中…
+Go ahead	実行
+Inbox	受信
+Keep it anyway	このまま残す
+Marked	選択済み
+Move	移動
+Move here	ここに移動
+Move these to the trash?	これらをごみ箱に移動しますか？
+Move this to the trash?	これをごみ箱に移動しますか？
+Moved to the trash.	ごみ箱に移動しました。
+Moved.	移動しました。
+Network	ネットワーク
+New folder	新しいフォルダー
+No servers found	サーバーが見つかりません
+Open the folder to copy to, then press Y.	コピー先のフォルダーを開いてYを押してください。
+Open the folder to move to, then press Y.	移動先のフォルダーを開いてYを押してください。
+Paste here	ここに貼り付け
+Put this key on the server	この鍵をサーバーに登録してください
+Remove	削除
+Remove it	削除する
+Remove this place	この場所を削除
+Remove this place?	この場所を削除しますか？
+Removed.	削除しました。
+Rename	名前を変更
+Servers on this network	このネットワークのサーバー
+Sign in with	サインイン方法
+That did not work.	うまくいきませんでした。
+That server shares no folders.	このサーバーには共有フォルダーがありません。
+The trash is empty.	ごみ箱は空です。
+This handheld's key	この本体の鍵
+Trash	ごみ箱
+Type an address	アドレスを入力
+Wait a moment, then try again.	少し待ってからもう一度お試しください。
+{0} marked	{0}件選択中
+{0} more	他{0}件
+Getting {0}	{0}を取得中
+Waiting to retry {0}	再試行待ち: {0}
+until restart	再起動まで
+Future	未来
+Lap	ラップ
+Earlier	少し前
+Where you are	現在地
+Rewind	巻き戻し
+Mark	選択
+Draw	描く
+Stamp	スタンプ
+Lift pen	ペンを離す
+Pen down	ペンを下ろす
+Screen	画面
+Check panel order and controller input	画面の順番とコントローラー入力を確認してください
+Upper screen	上画面
+Lower screen	下画面
+Kind	種類
+Size	サイズ
+Modified	変更日
+Where	場所
+Archive	アーカイブ
+Text	テキスト
+Save data	セーブデータ
+File	ファイル
+{0} file	{0}ファイル
+{0} free	空き {0}
+Sort by	並べ替え
+Could not open it	開けませんでした
+This folder is empty	このフォルダは空です
+The trash is empty	ゴミ箱は空です
+No network places yet	ネットワークの場所はまだありません

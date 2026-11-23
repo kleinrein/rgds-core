@@ -48,10 +48,10 @@ bool g_infologs;
 #define NVARIANT 4
 #define SLOT_BYTES (24u << 20)
 
-static int o_draws = 400, o_frames = 300, o_progs = 40, o_tiny, o_texupdates = 4, o_dmabuf,
-           o_compile_only, o_warm = 20, o_ibuf_exact = 1, o_nonindexed;
+static int o_draws = 400, o_frames = 300, o_progs = 40, o_tiny, o_texupdates = 4, o_dmabuf, o_compile_only, o_warm = 20,
+           o_ibuf_exact = 1, o_nonindexed;
 static const char *o_list, *o_vert = "gpu.vert", *o_cache, *o_shots, *o_mode = "both",
-                   *o_icd = "/usr/lib/rgds-panvk/libvulkan_panfrost.so";
+                           *o_icd = "/usr/lib/rgds-panvk/libvulkan_panfrost.so";
 
 static double now_ms(void) {
     struct timespec ts;
@@ -68,7 +68,7 @@ static uint32_t rnd(void) {
     rs ^= rs << 13;
     rs ^= rs >> 7;
     rs ^= rs << 17;
-    return (uint32_t) (rs >> 16);
+    return (uint32_t)(rs >> 16);
 }
 static float frnd(void) { return (rnd() & 0xffff) / 65535.0f; }
 
@@ -79,7 +79,7 @@ static char* read_file(const char* path, size_t* n) {
     long sz = ftell(f);
     fseek(f, 0, SEEK_SET);
     char* p = malloc(sz + 1);
-    if (fread(p, 1, sz, f) != (size_t) sz) sz = 0;
+    if (fread(p, 1, sz, f) != (size_t)sz) sz = 0;
     p[sz] = 0;
     fclose(f);
     if (n) *n = sz;
@@ -142,7 +142,7 @@ static Src* g_fs;
 static int g_nfs;
 static struct {
     int v, f;
-} *g_pairs;
+}* g_pairs;
 static int g_npairs;
 static char* g_drawvs; // the vertex shader the draws use (hostshaders/gpu.vert)
 
@@ -178,7 +178,7 @@ static void load_list(const char* path) {
             Src** tab = type == 'V' ? &g_vs : &g_fs;
             int* cnt = type == 'V' ? &g_nvs : &g_nfs;
             *tab = realloc(*tab, (*cnt + 1) * sizeof(Src));
-            (*tab)[(*cnt)++] = (Src) {s, h};
+            (*tab)[(*cnt)++] = (Src){s, h};
         } else if (type == 'P') {
             uint64_t h[2];
             if (p + 16 > n) break;
@@ -195,8 +195,7 @@ static void load_list(const char* path) {
             break;
         }
     }
-    fprintf(stderr, "list %s: %d vertex, %d fragment sources, %d programs\n", path, g_nvs, g_nfs,
-            g_npairs);
+    fprintf(stderr, "list %s: %d vertex, %d fragment sources, %d programs\n", path, g_nvs, g_nfs, g_npairs);
 }
 
 static uint32_t* glsl_to_spirv(const char* src, int stage, size_t* words, double* ms);
@@ -204,8 +203,8 @@ static uint32_t* glsl_to_spirv(const char* src, int stage, size_t* words, double
 static void synth_fs(int n) {
     for (int i = 0; i < n; i++) {
         FragConfig c = {};
-        static const int srcs[] = {TEVSRC_COLOR, TEVSRC_TEX0, TEVSRC_TEX1, TEVSRC_TEX2,
-                                   TEVSRC_CONSTANT, TEVSRC_PREVIOUS};
+        static const int srcs[] = {TEVSRC_COLOR, TEVSRC_TEX0,     TEVSRC_TEX1,
+                                   TEVSRC_TEX2,  TEVSRC_CONSTANT, TEVSRC_PREVIOUS};
         int stages = 1 + rnd() % 4;
         for (int s = 0; s < 6; s++) {
             if (s < stages) {
@@ -244,7 +243,7 @@ static void synth_fs(int n) {
         }
         free(spv);
         g_fs = realloc(g_fs, (g_nfs + 1) * sizeof(Src));
-        g_fs[g_nfs++] = (Src) {s, i};
+        g_fs[g_nfs++] = (Src){s, i};
     }
 }
 
@@ -327,7 +326,7 @@ static void scene_build(void) {
         w->tex[0] = (d * 7) % NTEX;
         w->tex[1] = (d * 3 + 1) % NTEX;
         w->tex[2] = (d + 5) % NTEX;
-        float* f = (float*) &w->fu;
+        float* f = (float*)&w->fu;
         for (size_t i = 0; i < sizeof w->fu / 4; i++) f[i] = frnd();
         w->fu.alpharef = 0.1f;
         for (int l = 0; l < 8; l++) {
@@ -335,13 +334,13 @@ static void scene_build(void) {
             w->fu.light[l].attn_scale = 1;
         }
         // a patch of the screen, about 45x45 pixels on average
-        float cx = frnd() * 2 - 1, cy = frnd() * 2 - 1, sx = 0.1f + frnd() * 0.35f,
-              sy = 0.06f + frnd() * 0.2f, z = -(0.1f + 0.8f * frnd());
+        float cx = frnd() * 2 - 1, cy = frnd() * 2 - 1, sx = 0.1f + frnd() * 0.35f, sy = 0.06f + frnd() * 0.2f,
+              z = -(0.1f + 0.8f * frnd());
         float col[4] = {frnd(), frnd(), frnd(), 0.4f + 0.6f * frnd()};
         for (int y = 0; y <= GRID; y++)
             for (int x = 0; x <= GRID; x++) {
                 int i = y * (GRID + 1) + x;
-                float u = (float) x / GRID, v = (float) y / GRID;
+                float u = (float)x / GRID, v = (float)y / GRID;
                 VA* a = &w->va[i];
                 VB* b = &w->vb[i];
                 a->pos[0] = cx + (u - 0.5f) * 2 * sx;
@@ -381,8 +380,8 @@ static void scene_build(void) {
         }
     }
     for (int l = 0; l < 32; l++)
-        for (int i = 0; i < 256; i++) g_lightlut[l][i] = (uint16_t) (i * 257 * (l % 3 + 1) / 3);
-    for (int i = 0; i < 129; i++) g_foglut[i] = (uint16_t) (i * 500);
+        for (int i = 0; i < 256; i++) g_lightlut[l][i] = (uint16_t)(i * 257 * (l % 3 + 1) / 3);
+    for (int i = 0; i < 129; i++) g_foglut[i] = (uint16_t)(i * 500);
     for (int i = 0; i < 128; i++) {
         g_ptnoise[i] = rnd();
         g_ptmap[i][0] = i * 512;
@@ -445,8 +444,8 @@ static GLuint gl_link(GLuint vs, GLuint fs, bool hw) {
         return 0;
     }
     glUseProgram(p);
-    static const char* names[] = {"tex0", "tex0shadow", "tex1", "tex2", "tex3", "lightLuts",
-                                  "fogLut", "proctexMapLut", "proctexNoiseLut"};
+    static const char* names[] = {"tex0",      "tex0shadow", "tex1",          "tex2",           "tex3",
+                                  "lightLuts", "fogLut",     "proctexMapLut", "proctexNoiseLut"};
     static const int units[] = {0, 0, 1, 2, 3, 4, 5, 6, 7};
     for (int i = 0; i < 9; i++) glUniform1i(glGetUniformLocation(p, names[i]), units[i]);
     if (hw) {
@@ -458,8 +457,8 @@ static GLuint gl_link(GLuint vs, GLuint fs, bool hw) {
     return p;
 }
 
-static void gl_tex(GLenum target, GLuint* t, GLint ifmt, int w, int h, GLenum fmt, GLenum ty,
-                   const void* data, GLint wrap) {
+static void gl_tex(GLenum target, GLuint* t, GLint ifmt, int w, int h, GLenum fmt, GLenum ty, const void* data,
+                   GLint wrap) {
     glGenTextures(1, t);
     glBindTexture(target, *t);
     glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -467,32 +466,30 @@ static void gl_tex(GLenum target, GLuint* t, GLint ifmt, int w, int h, GLenum fm
     glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, 0);
     glTexParameteri(target, GL_TEXTURE_WRAP_S, wrap);
     glTexParameteri(target, GL_TEXTURE_WRAP_T, wrap);
-    if (target == GL_TEXTURE_1D)
-        glTexImage1D(target, 0, ifmt, w, 0, fmt, ty, data);
-    else
-        glTexImage2D(target, 0, ifmt, w, h, 0, fmt, ty, data);
+    if (target == GL_TEXTURE_1D) glTexImage1D(target, 0, ifmt, w, 0, fmt, ty, data);
+    else glTexImage2D(target, 0, ifmt, w, h, 0, fmt, ty, data);
 }
 
 static EGLDisplay g_egl;
 static EGLContext g_eglctx;
 static bool gl_up(void) {
     if (g_eglctx) return true;
-    PFNEGLGETPLATFORMDISPLAYEXTPROC gpd =
-        (void*) eglGetProcAddress("eglGetPlatformDisplayEXT");
+    PFNEGLGETPLATFORMDISPLAYEXTPROC gpd = (void*)eglGetProcAddress("eglGetPlatformDisplayEXT");
     g_egl = gpd ? gpd(EGL_PLATFORM_SURFACELESS_MESA, EGL_DEFAULT_DISPLAY, 0) : EGL_NO_DISPLAY;
     if (!g_egl || !eglInitialize(g_egl, 0, 0)) {
         fprintf(stderr, "EGL: no surfaceless display\n");
         return false;
     }
     eglBindAPI(EGL_OPENGL_API);
-    EGLint ca[] = {EGL_CONTEXT_MAJOR_VERSION, 3, EGL_CONTEXT_MINOR_VERSION, 3,
-                   EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT, EGL_NONE};
-    g_eglctx = eglCreateContext(g_egl, (EGLConfig) 0, EGL_NO_CONTEXT, ca);
+    EGLint ca[] = {
+        EGL_CONTEXT_MAJOR_VERSION,           3,       EGL_CONTEXT_MINOR_VERSION, 3, EGL_CONTEXT_OPENGL_PROFILE_MASK,
+        EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT, EGL_NONE};
+    g_eglctx = eglCreateContext(g_egl, (EGLConfig)0, EGL_NO_CONTEXT, ca);
     if (!g_eglctx || !eglMakeCurrent(g_egl, EGL_NO_SURFACE, EGL_NO_SURFACE, g_eglctx)) {
         fprintf(stderr, "EGL: no GL 3.3 core context (0x%x)\n", eglGetError());
         return false;
     }
-    gladLoadGLLoader((GLADloadproc) eglGetProcAddress);
+    gladLoadGLLoader((GLADloadproc)eglGetProcAddress);
     fprintf(stderr, "GL: %s / %s\n", glGetString(GL_RENDERER), glGetString(GL_VERSION));
     return true;
 }
@@ -523,8 +520,7 @@ static void run_gl(Result* r) {
             if (vsh[v] && fs) gl_link(vsh[v], fs, true);
         }
         glFinish();
-        fprintf(stderr, "GL: %d list programs (hw vertex shaders) built in %.0f ms\n", n,
-                now_ms() - t0);
+        fprintf(stderr, "GL: %d list programs (hw vertex shaders) built in %.0f ms\n", n, now_ms() - t0);
     }
     if (o_compile_only) {
         r->ok = 1;
@@ -534,33 +530,26 @@ static void run_gl(Result* r) {
     GLuint fbo, color, depth;
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    gl_tex(GL_TEXTURE_2D, &color, GL_RGBA8, FBW, FBH, GL_RGBA, GL_UNSIGNED_BYTE, 0,
-           GL_CLAMP_TO_EDGE);
+    gl_tex(GL_TEXTURE_2D, &color, GL_RGBA8, FBW, FBH, GL_RGBA, GL_UNSIGNED_BYTE, 0, GL_CLAMP_TO_EDGE);
     glGenTextures(1, &depth);
     glBindTexture(GL_TEXTURE_2D, depth);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, FBW, FBH, 0, GL_DEPTH_STENCIL,
-                 GL_UNSIGNED_INT_24_8, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, FBW, FBH, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
 
     GLuint tex[NTEX], lightlut, foglut, ptmap, ptnoise, proctex;
     for (int t = 0; t < NTEX; t++)
-        gl_tex(GL_TEXTURE_2D, &tex[t], GL_RGBA8, TEXSZ, TEXSZ, GL_RGBA, GL_UNSIGNED_BYTE,
-               g_texels[t], GL_REPEAT);
+        gl_tex(GL_TEXTURE_2D, &tex[t], GL_RGBA8, TEXSZ, TEXSZ, GL_RGBA, GL_UNSIGNED_BYTE, g_texels[t], GL_REPEAT);
     glGenTextures(1, &lightlut);
     glBindTexture(GL_TEXTURE_1D_ARRAY, lightlut);
     glTexParameteri(GL_TEXTURE_1D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_1D_ARRAY, GL_TEXTURE_MAX_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_1D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_1D_ARRAY, 0, GL_R16, 256, 32, 0, GL_RED, GL_UNSIGNED_SHORT, g_lightlut);
-    gl_tex(GL_TEXTURE_1D, &foglut, GL_R16, 129, 1, GL_RED, GL_UNSIGNED_SHORT, g_foglut,
-           GL_CLAMP_TO_EDGE);
-    gl_tex(GL_TEXTURE_1D, &ptmap, GL_RG16, 128, 1, GL_RG, GL_UNSIGNED_SHORT, g_ptmap,
-           GL_CLAMP_TO_EDGE);
-    gl_tex(GL_TEXTURE_1D, &ptnoise, GL_R16, 128, 1, GL_RED, GL_UNSIGNED_SHORT, g_ptnoise,
-           GL_MIRRORED_REPEAT);
-    gl_tex(GL_TEXTURE_1D, &proctex, GL_RGBA8, 256, 1, GL_RGBA, GL_UNSIGNED_BYTE, g_proctex,
-           GL_CLAMP_TO_EDGE);
+    gl_tex(GL_TEXTURE_1D, &foglut, GL_R16, 129, 1, GL_RED, GL_UNSIGNED_SHORT, g_foglut, GL_CLAMP_TO_EDGE);
+    gl_tex(GL_TEXTURE_1D, &ptmap, GL_RG16, 128, 1, GL_RG, GL_UNSIGNED_SHORT, g_ptmap, GL_CLAMP_TO_EDGE);
+    gl_tex(GL_TEXTURE_1D, &ptnoise, GL_R16, 128, 1, GL_RED, GL_UNSIGNED_SHORT, g_ptnoise, GL_MIRRORED_REPEAT);
+    gl_tex(GL_TEXTURE_1D, &proctex, GL_RGBA8, 256, 1, GL_RGBA, GL_UNSIGNED_BYTE, g_proctex, GL_CLAMP_TO_EDGE);
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_1D, proctex);
     glActiveTexture(GL_TEXTURE4);
@@ -580,8 +569,7 @@ static void run_gl(Result* r) {
     glBindBuffer(GL_ARRAY_BUFFER, stream);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, stream);
     const GLbitfield fl = GL_MAP_WRITE_BIT | 0x40 | 0x80;
-    void (*bufferStorage)(GLenum, GLsizeiptr, const void*, GLbitfield) =
-        (void*) eglGetProcAddress("glBufferStorage");
+    void (*bufferStorage)(GLenum, GLsizeiptr, const void*, GLbitfield) = (void*)eglGetProcAddress("glBufferStorage");
     bufferStorage(GL_ARRAY_BUFFER, 2 * SLOT_BYTES, 0, fl);
     uint8_t* sp = glMapBufferRange(GL_ARRAY_BUFFER, 0, 2 * SLOT_BYTES, fl);
     GLint ualign = 256;
@@ -611,8 +599,7 @@ static void run_gl(Result* r) {
             tex_update_rect(frame, k, &t, &x, &y);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, tex[t]);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, 32, 32, GL_RGBA, GL_UNSIGNED_BYTE,
-                            g_upd[(frame + k) & 63]);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, 32, 32, GL_RGBA, GL_UNSIGNED_BYTE, g_upd[(frame + k) & 63]);
         }
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
         glViewport(0, 0, FBW, FBH);
@@ -639,7 +626,7 @@ static void run_gl(Result* r) {
             memcpy(sp + vb, w->vb, sizeof w->vb);
             size_t io = vb + sizeof w->vb;
             memcpy(sp + io, g_idx, sizeof g_idx);
-            size_t uo = (io + sizeof g_idx + ualign - 1) & ~(size_t) (ualign - 1);
+            size_t uo = (io + sizeof g_idx + ualign - 1) & ~(size_t)(ualign - 1);
             memcpy(sp + uo, &w->fu, sizeof w->fu);
             off = uo + sizeof w->fu;
 
@@ -684,16 +671,15 @@ static void run_gl(Result* r) {
                 bound[u] = w->tex[u];
             }
             glBindBufferRange(GL_UNIFORM_BUFFER, 2, stream, uo, sizeof w->fu);
-            glVertexAttribPointer(0, 4, GL_FLOAT, 0, sizeof(VA), (void*) (va + 0));
-            glVertexAttribPointer(6, 4, GL_FLOAT, 0, sizeof(VA), (void*) (va + 16));
-            glVertexAttribPointer(1, 4, GL_FLOAT, 0, sizeof(VB), (void*) (vb + 0));
-            glVertexAttribPointer(2, 2, GL_FLOAT, 0, sizeof(VB), (void*) (vb + 16));
-            glVertexAttribPointer(3, 2, GL_FLOAT, 0, sizeof(VB), (void*) (vb + 24));
-            glVertexAttribPointer(4, 2, GL_FLOAT, 0, sizeof(VB), (void*) (vb + 32));
-            glVertexAttribPointer(5, 1, GL_FLOAT, 0, sizeof(VB), (void*) (vb + 40));
-            glVertexAttribPointer(7, 3, GL_FLOAT, 0, sizeof(VB), (void*) (vb + 44));
-            glDrawRangeElementsBaseVertex(GL_TRIANGLES, 0, NVERT - 1, NIDX, GL_UNSIGNED_SHORT,
-                                          (void*) io, 0);
+            glVertexAttribPointer(0, 4, GL_FLOAT, 0, sizeof(VA), (void*)(va + 0));
+            glVertexAttribPointer(6, 4, GL_FLOAT, 0, sizeof(VA), (void*)(va + 16));
+            glVertexAttribPointer(1, 4, GL_FLOAT, 0, sizeof(VB), (void*)(vb + 0));
+            glVertexAttribPointer(2, 2, GL_FLOAT, 0, sizeof(VB), (void*)(vb + 16));
+            glVertexAttribPointer(3, 2, GL_FLOAT, 0, sizeof(VB), (void*)(vb + 24));
+            glVertexAttribPointer(4, 2, GL_FLOAT, 0, sizeof(VB), (void*)(vb + 32));
+            glVertexAttribPointer(5, 1, GL_FLOAT, 0, sizeof(VB), (void*)(vb + 40));
+            glVertexAttribPointer(7, 3, GL_FLOAT, 0, sizeof(VB), (void*)(vb + 44));
+            glDrawRangeElementsBaseVertex(GL_TRIANGLES, 0, NVERT - 1, NIDX, GL_UNSIGNED_SHORT, (void*)io, 0);
         }
         fence[slot] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         glFlush();
@@ -786,13 +772,13 @@ static VkQueue vq;
 static VkPhysicalDeviceMemoryProperties vmem;
 static VkPhysicalDeviceProperties vprops;
 
-#define CK(x)                                                                                    \
-    do {                                                                                         \
-        VkResult _r = (x);                                                                       \
-        if (_r != VK_SUCCESS) {                                                                  \
-            fprintf(stderr, "%s:%d %s = %d\n", __FILE__, __LINE__, #x, _r);                     \
-            return;                                                                              \
-        }                                                                                        \
+#define CK(x)                                                                                                          \
+    do {                                                                                                               \
+        VkResult _r = (x);                                                                                             \
+        if (_r != VK_SUCCESS) {                                                                                        \
+            fprintf(stderr, "%s:%d %s = %d\n", __FILE__, __LINE__, #x, _r);                                            \
+            return;                                                                                                    \
+        }                                                                                                              \
     } while (0)
 
 static int mem_type(uint32_t bits, VkMemoryPropertyFlags want) {
@@ -811,13 +797,11 @@ static bool buf_make(Buf* b, VkDeviceSize size, VkBufferUsageFlags use) {
     if (vkCreateBuffer(vd, &ci, 0, &b->b)) return false;
     VkMemoryRequirements mr;
     vkGetBufferMemoryRequirements(vd, b->b, &mr);
-    int t = mem_type(mr.memoryTypeBits,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, .allocationSize = mr.size,
-                               .memoryTypeIndex = t};
+    int t = mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, .allocationSize = mr.size, .memoryTypeIndex = t};
     if (t < 0 || vkAllocateMemory(vd, &ai, 0, &b->m)) return false;
     vkBindBufferMemory(vd, b->b, b->m, 0);
-    vkMapMemory(vd, b->m, 0, VK_WHOLE_SIZE, 0, (void**) &b->p);
+    vkMapMemory(vd, b->m, 0, VK_WHOLE_SIZE, 0, (void**)&b->p);
     return true;
 }
 
@@ -826,8 +810,8 @@ typedef struct {
     VkDeviceMemory m;
     VkImageView v;
 } Img;
-static bool img_make(Img* im, VkImageType type, VkFormat fmt, int w, int h, int layers,
-                     VkImageUsageFlags use, VkImageAspectFlags aspect) {
+static bool img_make(Img* im, VkImageType type, VkFormat fmt, int w, int h, int layers, VkImageUsageFlags use,
+                     VkImageAspectFlags aspect) {
     VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                             .imageType = type,
                             .format = fmt,
@@ -841,24 +825,19 @@ static bool img_make(Img* im, VkImageType type, VkFormat fmt, int w, int h, int 
     VkMemoryRequirements mr;
     vkGetImageMemoryRequirements(vd, im->i, &mr);
     VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, .allocationSize = mr.size,
-                               .memoryTypeIndex =
-                                   mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)};
+                               .memoryTypeIndex = mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)};
     if (vkAllocateMemory(vd, &ai, 0, &im->m)) return false;
     vkBindImageMemory(vd, im->i, im->m, 0);
-    VkImageViewType vt = type == VK_IMAGE_TYPE_1D
-                             ? (layers > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D)
-                             : VK_IMAGE_VIEW_TYPE_2D;
-    VkImageViewCreateInfo vc = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-                                .image = im->i,
-                                .viewType = vt,
-                                .format = fmt,
+    VkImageViewType vt = type == VK_IMAGE_TYPE_1D ? (layers > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D)
+                                                  : VK_IMAGE_VIEW_TYPE_2D;
+    VkImageViewCreateInfo vc = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = im->i, .viewType = vt, .format = fmt,
                                 .subresourceRange = {aspect, 0, 1, 0, layers}};
     return !vkCreateImageView(vd, &vc, 0, &im->v);
 }
 
-static void barrier(VkCommandBuffer cb, VkImage img, VkImageAspectFlags aspect, int layers,
-                    VkImageLayout from, VkImageLayout to, VkAccessFlags sa, VkAccessFlags da,
-                    VkPipelineStageFlags ss, VkPipelineStageFlags ds) {
+static void barrier(VkCommandBuffer cb, VkImage img, VkImageAspectFlags aspect, int layers, VkImageLayout from,
+                    VkImageLayout to, VkAccessFlags sa, VkAccessFlags da, VkPipelineStageFlags ss,
+                    VkPipelineStageFlags ds) {
     VkImageMemoryBarrier b = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
                               .srcAccessMask = sa,
                               .dstAccessMask = da,
@@ -878,23 +857,37 @@ static bool has_ext(VkExtensionProperties* e, uint32_t n, const char* name) {
 }
 
 static const char* want_exts[] = {
-    "VK_KHR_external_memory_fd",          "VK_EXT_external_memory_dma_buf",
-    "VK_EXT_image_drm_format_modifier",   "VK_KHR_image_format_list",
-    "VK_KHR_bind_memory2",                "VK_KHR_sampler_ycbcr_conversion",
-    "VK_KHR_get_memory_requirements2",    "VK_KHR_maintenance1",
-    "VK_KHR_external_memory",             "VK_KHR_external_semaphore_fd",
-    "VK_KHR_external_semaphore",          "VK_KHR_external_fence_fd",
+    "VK_KHR_external_memory_fd",
+    "VK_EXT_external_memory_dma_buf",
+    "VK_EXT_image_drm_format_modifier",
+    "VK_KHR_image_format_list",
+    "VK_KHR_bind_memory2",
+    "VK_KHR_sampler_ycbcr_conversion",
+    "VK_KHR_get_memory_requirements2",
+    "VK_KHR_maintenance1",
+    "VK_KHR_external_memory",
+    "VK_KHR_external_semaphore_fd",
+    "VK_KHR_external_semaphore",
+    "VK_KHR_external_fence_fd",
     "VK_KHR_dedicated_allocation",
 };
 static const char* report_exts[] = {
-    "VK_KHR_dynamic_rendering",     "VK_EXT_extended_dynamic_state",
-    "VK_EXT_extended_dynamic_state2", "VK_EXT_extended_dynamic_state3",
-    "VK_KHR_push_descriptor",       "VK_EXT_graphics_pipeline_library",
-    "VK_EXT_shader_object",         "VK_EXT_depth_clip_control",
-    "VK_EXT_custom_border_color",   "VK_KHR_timeline_semaphore",
-    "VK_EXT_pipeline_creation_cache_control", "VK_KHR_display",
-    "VK_KHR_swapchain",             "VK_EXT_descriptor_buffer",
-    "VK_KHR_dynamic_rendering_local_read", "VK_EXT_shader_demote_to_helper_invocation",
+    "VK_KHR_dynamic_rendering",
+    "VK_EXT_extended_dynamic_state",
+    "VK_EXT_extended_dynamic_state2",
+    "VK_EXT_extended_dynamic_state3",
+    "VK_KHR_push_descriptor",
+    "VK_EXT_graphics_pipeline_library",
+    "VK_EXT_shader_object",
+    "VK_EXT_depth_clip_control",
+    "VK_EXT_custom_border_color",
+    "VK_KHR_timeline_semaphore",
+    "VK_EXT_pipeline_creation_cache_control",
+    "VK_KHR_display",
+    "VK_KHR_swapchain",
+    "VK_EXT_descriptor_buffer",
+    "VK_KHR_dynamic_rendering_local_read",
+    "VK_EXT_shader_demote_to_helper_invocation",
 };
 
 static bool vk_up(void) {
@@ -904,18 +897,18 @@ static bool vk_up(void) {
         fprintf(stderr, "Vulkan: %s\n", dlerror());
         return false;
     }
-    PFN_vkGetInstanceProcAddr icd = (void*) dlsym(lib, "vk_icdGetInstanceProcAddr");
-    PFN_vkVoidFunction (*neg)(uint32_t*) = (void*) dlsym(lib, "vk_icdNegotiateLoaderICDInterfaceVersion");
+    PFN_vkGetInstanceProcAddr icd = (void*)dlsym(lib, "vk_icdGetInstanceProcAddr");
+    PFN_vkVoidFunction (*neg)(uint32_t*) = (void*)dlsym(lib, "vk_icdNegotiateLoaderICDInterfaceVersion");
     if (neg) {
         uint32_t v = 5;
         neg(&v);
     }
-    if (!icd) icd = (void*) dlsym(lib, "vkGetInstanceProcAddr");
+    if (!icd) icd = (void*)dlsym(lib, "vkGetInstanceProcAddr");
     vkGetInstanceProcAddr = icd;
-#define GI(x) vk##x = (PFN_vk##x) vkGetInstanceProcAddr(vi, "vk" #x)
+#define GI(x) vk##x = (PFN_vk##x)vkGetInstanceProcAddr(vi, "vk" #x)
     GI(CreateInstance);
     GI(EnumerateInstanceExtensionProperties);
-    PFN_vkEnumerateInstanceVersion eiv = (void*) vkGetInstanceProcAddr(0, "vkEnumerateInstanceVersion");
+    PFN_vkEnumerateInstanceVersion eiv = (void*)vkGetInstanceProcAddr(0, "vkEnumerateInstanceVersion");
     uint32_t iver = VK_API_VERSION_1_0;
     if (eiv) eiv(&iver);
     uint32_t nie = 0;
@@ -924,14 +917,12 @@ static bool vk_up(void) {
     vkEnumerateInstanceExtensionProperties(0, &nie, ie);
     const char* iexts[4];
     int niexts = 0;
-    static const char* inames[] = {"VK_KHR_get_physical_device_properties2",
-                                   "VK_KHR_external_memory_capabilities",
+    static const char* inames[] = {"VK_KHR_get_physical_device_properties2", "VK_KHR_external_memory_capabilities",
                                    "VK_KHR_external_semaphore_capabilities"};
     for (int i = 0; i < 3; i++)
         if (has_ext(ie, nie, inames[i])) iexts[niexts++] = inames[i];
     VkApplicationInfo app = {VK_STRUCTURE_TYPE_APPLICATION_INFO, .pApplicationName = "vk_spike",
-                             .apiVersion = iver >= VK_API_VERSION_1_1 ? VK_API_VERSION_1_1
-                                                                      : VK_API_VERSION_1_0};
+                             .apiVersion = iver >= VK_API_VERSION_1_1 ? VK_API_VERSION_1_1 : VK_API_VERSION_1_0};
     VkInstanceCreateInfo ici = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, .pApplicationInfo = &app,
                                 .enabledExtensionCount = niexts, .ppEnabledExtensionNames = iexts};
     double t0 = now_ms();
@@ -958,22 +949,20 @@ static bool vk_up(void) {
     vkGetPhysicalDeviceMemoryProperties(vpd, &vmem);
     VkPhysicalDeviceFeatures feat;
     vkGetPhysicalDeviceFeatures(vpd, &feat);
-    fprintf(stderr, "Vulkan: %s, API %u.%u.%u (instance %u.%u), driver 0x%x\n",
-            vprops.deviceName, VK_VERSION_MAJOR(vprops.apiVersion),
-            VK_VERSION_MINOR(vprops.apiVersion), VK_VERSION_PATCH(vprops.apiVersion),
-            VK_VERSION_MAJOR(iver), VK_VERSION_MINOR(iver), vprops.driverVersion);
+    fprintf(stderr, "Vulkan: %s, API %u.%u.%u (instance %u.%u), driver 0x%x\n", vprops.deviceName,
+            VK_VERSION_MAJOR(vprops.apiVersion), VK_VERSION_MINOR(vprops.apiVersion),
+            VK_VERSION_PATCH(vprops.apiVersion), VK_VERSION_MAJOR(iver), VK_VERSION_MINOR(iver), vprops.driverVersion);
     fprintf(stderr,
             "features: logicOp %d dualSrcBlend %d depthClamp %d fragmentStoresAndAtomics %d "
             "shaderClipDistance %d samplerAnisotropy %d independentBlend %d\n",
-            feat.logicOp, feat.dualSrcBlend, feat.depthClamp, feat.fragmentStoresAndAtomics,
-            feat.shaderClipDistance, feat.samplerAnisotropy, feat.independentBlend);
+            feat.logicOp, feat.dualSrcBlend, feat.depthClamp, feat.fragmentStoresAndAtomics, feat.shaderClipDistance,
+            feat.samplerAnisotropy, feat.independentBlend);
     fprintf(stderr,
             "limits: uboAlign %llu maxBoundSets %u maxPushConstants %u dynUBO %u "
             "timestampPeriod %.2f timestampCompute %d\n",
-            (unsigned long long) vprops.limits.minUniformBufferOffsetAlignment,
-            vprops.limits.maxBoundDescriptorSets, vprops.limits.maxPushConstantsSize,
-            vprops.limits.maxDescriptorSetUniformBuffersDynamic, vprops.limits.timestampPeriod,
-            vprops.limits.timestampComputeAndGraphics);
+            (unsigned long long)vprops.limits.minUniformBufferOffsetAlignment, vprops.limits.maxBoundDescriptorSets,
+            vprops.limits.maxPushConstantsSize, vprops.limits.maxDescriptorSetUniformBuffersDynamic,
+            vprops.limits.timestampPeriod, vprops.limits.timestampComputeAndGraphics);
     for (uint32_t i = 0; i < vmem.memoryTypeCount; i++)
         fprintf(stderr, "memory type %u: flags 0x%x heap %u\n", i, vmem.memoryTypes[i].propertyFlags,
                 vmem.memoryTypes[i].heapIndex);
@@ -990,19 +979,19 @@ static bool vk_up(void) {
     for (size_t i = 0; i < sizeof want_exts / sizeof *want_exts; i++)
         if (has_ext(de, nde, want_exts[i])) dexts[ndexts++] = want_exts[i];
     float prio = 1;
-    VkDeviceQueueCreateInfo qci = {VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, .queueFamilyIndex = 0,
-                                   .queueCount = 1, .pQueuePriorities = &prio};
+    VkDeviceQueueCreateInfo qci = {VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, .queueFamilyIndex = 0, .queueCount = 1,
+                                   .pQueuePriorities = &prio};
     VkPhysicalDeviceFeatures en = {.logicOp = feat.logicOp};
-    VkDeviceCreateInfo dci = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, .queueCreateInfoCount = 1,
-                              .pQueueCreateInfos = &qci, .enabledExtensionCount = ndexts,
-                              .ppEnabledExtensionNames = dexts, .pEnabledFeatures = &en};
+    VkDeviceCreateInfo dci = {
+        VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, .queueCreateInfoCount = 1,        .pQueueCreateInfos = &qci,
+        .enabledExtensionCount = ndexts,      .ppEnabledExtensionNames = dexts, .pEnabledFeatures = &en};
     res = vkCreateDevice(vpd, &dci, 0, &vd);
     if (res) {
         fprintf(stderr, "vkCreateDevice = %d\n", res);
         return false;
     }
     fprintf(stderr, "Vulkan: instance + device in %.1f ms\n", now_ms() - t0);
-#define GD(x) vk##x = (PFN_vk##x) vkGetDeviceProcAddr(vd, "vk" #x)
+#define GD(x) vk##x = (PFN_vk##x)vkGetDeviceProcAddr(vd, "vk" #x)
     GD(GetDeviceQueue);
     GD(CreateBuffer);
     GD(GetBufferMemoryRequirements);
@@ -1051,7 +1040,7 @@ static bool vk_up(void) {
     GD(QueueWaitIdle);
     GD(DeviceWaitIdle);
     GD(GetImageSubresourceLayout);
-    vkGetMemoryFdKHR = (void*) vkGetDeviceProcAddr(vd, "vkGetMemoryFdKHR");
+    vkGetMemoryFdKHR = (void*)vkGetDeviceProcAddr(vd, "vkGetMemoryFdKHR");
     vkGetDeviceQueue(vd, 0, 0, &vq);
     VkFormatProperties fp;
     vkGetPhysicalDeviceFormatProperties(vpd, VK_FORMAT_D24_UNORM_S8_UINT, &fp);
@@ -1061,78 +1050,74 @@ static bool vk_up(void) {
 }
 
 static VkShaderModule vk_module(const uint32_t* code, size_t words) {
-    VkShaderModuleCreateInfo ci = {VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-                                   .codeSize = words * 4, .pCode = code};
+    VkShaderModuleCreateInfo ci = {VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, .codeSize = words * 4, .pCode = code};
     VkShaderModule m = 0;
     vkCreateShaderModule(vd, &ci, 0, &m);
     return m;
 }
 
-static const VkVertexInputBindingDescription vbind[2] = {
-    {0, sizeof(VA), VK_VERTEX_INPUT_RATE_VERTEX}, {1, sizeof(VB), VK_VERTEX_INPUT_RATE_VERTEX}};
+static const VkVertexInputBindingDescription vbind[2] = {{0, sizeof(VA), VK_VERTEX_INPUT_RATE_VERTEX},
+                                                         {1, sizeof(VB), VK_VERTEX_INPUT_RATE_VERTEX}};
 static const VkVertexInputAttributeDescription vattr[8] = {
-    {0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},  {6, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 16},
-    {1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},  {2, 1, VK_FORMAT_R32G32_SFLOAT, 16},
-    {3, 1, VK_FORMAT_R32G32_SFLOAT, 24},       {4, 1, VK_FORMAT_R32G32_SFLOAT, 32},
-    {5, 1, VK_FORMAT_R32_SFLOAT, 40},          {7, 1, VK_FORMAT_R32G32B32_SFLOAT, 44}};
+    {0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0}, {6, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 16},
+    {1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0}, {2, 1, VK_FORMAT_R32G32_SFLOAT, 16},
+    {3, 1, VK_FORMAT_R32G32_SFLOAT, 24},      {4, 1, VK_FORMAT_R32G32_SFLOAT, 32},
+    {5, 1, VK_FORMAT_R32_SFLOAT, 40},         {7, 1, VK_FORMAT_R32G32B32_SFLOAT, 44}};
 
-static VkPipeline vk_pipeline(VkPipelineCache cache, VkPipelineLayout layout, VkRenderPass rp,
-                              VkShaderModule vs, VkShaderModule fs, int variant, bool hw) {
-    VkPipelineShaderStageCreateInfo st[2] = {
-        {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, .stage = VK_SHADER_STAGE_VERTEX_BIT,
-         .module = vs, .pName = "main"},
-        {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-         .module = fs, .pName = "main"}};
+static VkPipeline vk_pipeline(VkPipelineCache cache, VkPipelineLayout layout, VkRenderPass rp, VkShaderModule vs,
+                              VkShaderModule fs, int variant, bool hw) {
+    VkPipelineShaderStageCreateInfo st[2] = {{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                                              .stage = VK_SHADER_STAGE_VERTEX_BIT, .module = vs, .pName = "main"},
+                                             {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                                              .stage = VK_SHADER_STAGE_FRAGMENT_BIT, .module = fs, .pName = "main"}};
     // the hardware vertex shaders take v0..v11 as vec4: give them one float4 buffer each
     VkVertexInputBindingDescription hb[12];
     VkVertexInputAttributeDescription ha[12];
     for (int i = 0; i < 12; i++) {
-        hb[i] = (VkVertexInputBindingDescription) {i, 16, VK_VERTEX_INPUT_RATE_VERTEX};
-        ha[i] = (VkVertexInputAttributeDescription) {i, i, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
+        hb[i] = (VkVertexInputBindingDescription){i, 16, VK_VERTEX_INPUT_RATE_VERTEX};
+        ha[i] = (VkVertexInputAttributeDescription){i, i, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
     }
     VkPipelineVertexInputStateCreateInfo vi_ = {
-        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount = hw ? 12 : 2, .pVertexBindingDescriptions = hw ? hb : vbind,
-        .vertexAttributeDescriptionCount = hw ? 12 : 8,
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, .vertexBindingDescriptionCount = hw ? 12 : 2,
+        .pVertexBindingDescriptions = hw ? hb : vbind, .vertexAttributeDescriptionCount = hw ? 12 : 8,
         .pVertexAttributeDescriptions = hw ? ha : vattr};
-    VkPipelineInputAssemblyStateCreateInfo ia = {
-        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
-    VkPipelineViewportStateCreateInfo vp = {VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-                                            .viewportCount = 1, .scissorCount = 1};
+    VkPipelineInputAssemblyStateCreateInfo ia = {VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                                                 .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
+    VkPipelineViewportStateCreateInfo vp = {VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO, .viewportCount = 1,
+                                            .scissorCount = 1};
     VkPipelineRasterizationStateCreateInfo rs_ = {
-        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        .polygonMode = VK_POLYGON_MODE_FILL,
+        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, .polygonMode = VK_POLYGON_MODE_FILL,
         .cullMode = variants[variant].cull ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE,
         // same memory layout as GL (positive viewport), so GL's CCW is CW here
-        .frontFace = VK_FRONT_FACE_CLOCKWISE,
-        .lineWidth = 1};
-    VkPipelineMultisampleStateCreateInfo ms = {
-        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT};
-    VkPipelineDepthStencilStateCreateInfo ds = {
-        VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO, .depthTestEnable = 1,
-        .depthWriteEnable = variants[variant].depthwrite, .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL};
-    static const VkBlendFactor bs[] = {VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_SRC_ALPHA,
-                                       VK_BLEND_FACTOR_ONE},
-                               bd[] = {VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-                                       VK_BLEND_FACTOR_ONE};
+        .frontFace = VK_FRONT_FACE_CLOCKWISE, .lineWidth = 1};
+    VkPipelineMultisampleStateCreateInfo ms = {VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+                                               .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT};
+    VkPipelineDepthStencilStateCreateInfo ds = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+                                                .depthTestEnable = 1, .depthWriteEnable = variants[variant].depthwrite,
+                                                .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL};
+    static const VkBlendFactor bs[] = {VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE},
+                               bd[] = {VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_FACTOR_ONE};
     int b = variants[variant].blend;
     // logic op COPY (GL's blend-off case) is just no blending: no logic op, which Mali
     // would run as a blend shader
-    VkPipelineColorBlendAttachmentState att = {
-        .blendEnable = b != 0, .srcColorBlendFactor = bs[b], .dstColorBlendFactor = bd[b],
-        .colorBlendOp = VK_BLEND_OP_ADD, .srcAlphaBlendFactor = bs[b], .dstAlphaBlendFactor = bd[b],
-        .alphaBlendOp = VK_BLEND_OP_ADD, .colorWriteMask = 0xf};
-    VkPipelineColorBlendStateCreateInfo cb = {
-        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO, .attachmentCount = 1,
-        .pAttachments = &att};
-    VkDynamicState dyn[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
-                            VK_DYNAMIC_STATE_BLEND_CONSTANTS, VK_DYNAMIC_STATE_STENCIL_REFERENCE,
+    VkPipelineColorBlendAttachmentState att = {.blendEnable = b != 0,
+                                               .srcColorBlendFactor = bs[b],
+                                               .dstColorBlendFactor = bd[b],
+                                               .colorBlendOp = VK_BLEND_OP_ADD,
+                                               .srcAlphaBlendFactor = bs[b],
+                                               .dstAlphaBlendFactor = bd[b],
+                                               .alphaBlendOp = VK_BLEND_OP_ADD,
+                                               .colorWriteMask = 0xf};
+    VkPipelineColorBlendStateCreateInfo cb = {VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+                                              .attachmentCount = 1, .pAttachments = &att};
+    VkDynamicState dyn[] = {VK_DYNAMIC_STATE_VIEWPORT,
+                            VK_DYNAMIC_STATE_SCISSOR,
+                            VK_DYNAMIC_STATE_BLEND_CONSTANTS,
+                            VK_DYNAMIC_STATE_STENCIL_REFERENCE,
                             VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
                             VK_DYNAMIC_STATE_STENCIL_WRITE_MASK};
-    VkPipelineDynamicStateCreateInfo dy = {VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-                                           .dynamicStateCount = 6, .pDynamicStates = dyn};
+    VkPipelineDynamicStateCreateInfo dy = {VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, .dynamicStateCount = 6,
+                                           .pDynamicStates = dyn};
     VkGraphicsPipelineCreateInfo ci = {VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
                                        .stageCount = 2,
                                        .pStages = st,
@@ -1153,24 +1138,22 @@ static VkPipeline vk_pipeline(VkPipelineCache cache, VkPipelineLayout layout, Vk
 }
 
 // one upload to a sampled image through a staging buffer, outside any render pass
-static void vk_upload(VkCommandBuffer cb, Buf* stage, size_t* soff, Img* im, int layers, int x,
-                      int y, int w, int h, const void* data, size_t bytes, bool first) {
+static void vk_upload(VkCommandBuffer cb, Buf* stage, size_t* soff, Img* im, int layers, int x, int y, int w, int h,
+                      const void* data, size_t bytes, bool first) {
     memcpy(stage->p + *soff, data, bytes);
     barrier(cb, im->i, VK_IMAGE_ASPECT_COLOR_BIT, layers,
             first ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
-            VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            VK_PIPELINE_STAGE_TRANSFER_BIT);
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
     VkBufferImageCopy c = {.bufferOffset = *soff,
                            .imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, layers},
                            .imageOffset = {x, y, 0},
                            .imageExtent = {w, h, 1}};
     vkCmdCopyBufferToImage(cb, stage->b, im->i, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &c);
     barrier(cb, im->i, VK_IMAGE_ASPECT_COLOR_BIT, layers, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT,
-            VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-    *soff = (*soff + bytes + 255) & ~(size_t) 255;
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    *soff = (*soff + bytes + 255) & ~(size_t)255;
 }
 
 static void run_vk(Result* r) {
@@ -1179,12 +1162,11 @@ static void run_vk(Result* r) {
     // layout: one set for everything, three dynamic uniform buffers, push constants
     VkDescriptorSetLayoutBinding lb[VKB_COUNT];
     for (int i = 0; i < VKB_COUNT; i++) {
-        lb[i] = (VkDescriptorSetLayoutBinding) {
-            i,
-            i == VKB_FREECAM   ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-            : i < VKB_FREECAM ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
-                              : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT};
+        lb[i] = (VkDescriptorSetLayoutBinding){i,
+                                               i == VKB_FREECAM  ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                                               : i < VKB_FREECAM ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
+                                                                 : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                               1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT};
     }
     VkDescriptorSetLayout dsl;
     VkDescriptorSetLayoutCreateInfo dslc = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -1192,9 +1174,8 @@ static void run_vk(Result* r) {
     CK(vkCreateDescriptorSetLayout(vd, &dslc, 0, &dsl));
     VkPushConstantRange pcr = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VkGlslPush)};
     VkPipelineLayout layout;
-    VkPipelineLayoutCreateInfo plc = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-                                      .setLayoutCount = 1, .pSetLayouts = &dsl,
-                                      .pushConstantRangeCount = 1, .pPushConstantRanges = &pcr};
+    VkPipelineLayoutCreateInfo plc = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, .setLayoutCount = 1,
+                                      .pSetLayouts = &dsl, .pushConstantRangeCount = 1, .pPushConstantRanges = &pcr};
     CK(vkCreatePipelineLayout(vd, &plc, 0, &layout));
 
     VkFormat dfmt = VK_FORMAT_D24_UNORM_S8_UINT;
@@ -1204,19 +1185,19 @@ static void run_vk(Result* r) {
         dfmt = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkAttachmentDescription ad[2] = {
         {0, VK_FORMAT_R8G8B8A8_UNORM, 1, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL},
-        {0, dfmt, 1, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE,
-         VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_UNDEFINED,
-         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL}};
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL},
+        {0, dfmt, 1, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_CLEAR,
+         VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL}};
     VkAttachmentReference cr = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
                           dr = {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
     VkSubpassDescription sp = {.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-                               .colorAttachmentCount = 1, .pColorAttachments = &cr,
+                               .colorAttachmentCount = 1,
+                               .pColorAttachments = &cr,
                                .pDepthStencilAttachment = &dr};
     VkRenderPass rp;
-    VkRenderPassCreateInfo rpc = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, .attachmentCount = 2,
-                                  .pAttachments = ad, .subpassCount = 1, .pSubpasses = &sp};
+    VkRenderPassCreateInfo rpc = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, .attachmentCount = 2, .pAttachments = ad,
+                                  .subpassCount = 1, .pSubpasses = &sp};
     CK(vkCreateRenderPass(vd, &rpc, 0, &rp));
 
     // shaders and pipelines: cold (or from --cache), then the same again from the warm cache
@@ -1224,8 +1205,7 @@ static void run_vk(Result* r) {
     void* cache_data = o_cache ? read_file(o_cache, &cache_n) : 0;
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo pcc = {VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
-                                     .initialDataSize = cache_data ? cache_n : 0,
-                                     .pInitialData = cache_data};
+                                     .initialDataSize = cache_data ? cache_n : 0, .pInitialData = cache_data};
     CK(vkCreatePipelineCache(vd, &pcc, 0, &cache));
     double t0 = now_ms();
     size_t nw;
@@ -1254,28 +1234,25 @@ static void run_vk(Result* r) {
     for (int d = 0; d < o_draws; d++) {
         Draw* w = &g_scene[d];
         if (!pipes[w->prog][w->variant]) {
-            pipes[w->prog][w->variant] =
-                vk_pipeline(cache, layout, rp, vsm, fsm[w->prog], w->variant, false);
+            pipes[w->prog][w->variant] = vk_pipeline(cache, layout, rp, vsm, fsm[w->prog], w->variant, false);
             if (!pipes[w->prog][w->variant]) return;
             npipes++;
         }
     }
     r->build_ms = now_ms() - t0;
-    fprintf(stderr, "Vulkan: %d pipelines for %d programs: %.0f ms (GLSL->SPIR-V %.0f ms of it)\n",
-            npipes, o_progs, r->build_ms, r->spirv_ms);
+    fprintf(stderr, "Vulkan: %d pipelines for %d programs: %.0f ms (GLSL->SPIR-V %.0f ms of it)\n", npipes, o_progs,
+            r->build_ms, r->spirv_ms);
     t0 = now_ms();
     for (int i = 0; i < o_progs; i++)
         for (int v = 0; v < NVARIANT; v++)
             if (pipes[i][v]) vk_pipeline(cache, layout, rp, vsm, fsm[i], v, false);
-    fprintf(stderr, "Vulkan: the same %d pipelines again from the warm cache: %.1f ms\n", npipes,
-            now_ms() - t0);
+    fprintf(stderr, "Vulkan: the same %d pipelines again from the warm cache: %.1f ms\n", npipes, now_ms() - t0);
     // a second blend state on a known shader pair: the price of state baked into pipelines
     t0 = now_ms();
     for (int i = 0; i < o_progs && i < 10; i++)
         for (int v = 0; v < NVARIANT; v++)
             if (!pipes[i][v]) vk_pipeline(cache, layout, rp, vsm, fsm[i], v, false);
-    fprintf(stderr, "Vulkan: new state variants of known shaders (up to 10 programs): %.1f ms\n",
-            now_ms() - t0);
+    fprintf(stderr, "Vulkan: new state variants of known shaders (up to 10 programs): %.1f ms\n", now_ms() - t0);
     if (g_npairs) {
         double sp_ms = 0;
         t0 = now_ms();
@@ -1323,19 +1300,16 @@ static void run_vk(Result* r) {
     // targets, textures, samplers
     Img color, depth, tex[NTEX], lightlut, foglut, ptmap, ptnoise, proctex, shadow;
     if (!img_make(&color, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, FBW, FBH, 1,
-                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                      VK_IMAGE_USAGE_SAMPLED_BIT,
+                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                   VK_IMAGE_ASPECT_COLOR_BIT) ||
-        !img_make(&depth, VK_IMAGE_TYPE_2D, dfmt, FBW, FBH, 1,
-                  VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        !img_make(&depth, VK_IMAGE_TYPE_2D, dfmt, FBW, FBH, 1, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                   VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
         fprintf(stderr, "Vulkan: no render targets\n");
         return;
     }
     const VkImageUsageFlags su = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     for (int t = 0; t < NTEX; t++)
-        img_make(&tex[t], VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, TEXSZ, TEXSZ, 1, su,
-                 VK_IMAGE_ASPECT_COLOR_BIT);
+        img_make(&tex[t], VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, TEXSZ, TEXSZ, 1, su, VK_IMAGE_ASPECT_COLOR_BIT);
     img_make(&lightlut, VK_IMAGE_TYPE_1D, VK_FORMAT_R16_UNORM, 256, 1, 32, su, VK_IMAGE_ASPECT_COLOR_BIT);
     img_make(&foglut, VK_IMAGE_TYPE_1D, VK_FORMAT_R16_UNORM, 129, 1, 1, su, VK_IMAGE_ASPECT_COLOR_BIT);
     img_make(&ptmap, VK_IMAGE_TYPE_1D, VK_FORMAT_R16G16_UNORM, 128, 1, 1, su, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -1343,7 +1317,8 @@ static void run_vk(Result* r) {
     img_make(&proctex, VK_IMAGE_TYPE_1D, VK_FORMAT_R8G8B8A8_UNORM, 256, 1, 1, su, VK_IMAGE_ASPECT_COLOR_BIT);
     img_make(&shadow, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, 8, 8, 1, su, VK_IMAGE_ASPECT_COLOR_BIT);
     VkSampler srep, sclamp, smirror;
-    VkSamplerCreateInfo sci = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, .magFilter = VK_FILTER_LINEAR,
+    VkSamplerCreateInfo sci = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+                               .magFilter = VK_FILTER_LINEAR,
                                .minFilter = VK_FILTER_LINEAR,
                                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
                                .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
@@ -1356,9 +1331,13 @@ static void run_vk(Result* r) {
     CK(vkCreateSampler(vd, &sci, 0, &smirror));
     VkFramebuffer fb;
     VkImageView fbv[2] = {color.v, depth.v};
-    VkFramebufferCreateInfo fbc = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, .renderPass = rp,
-                                   .attachmentCount = 2, .pAttachments = fbv, .width = FBW,
-                                   .height = FBH, .layers = 1};
+    VkFramebufferCreateInfo fbc = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                                   .renderPass = rp,
+                                   .attachmentCount = 2,
+                                   .pAttachments = fbv,
+                                   .width = FBW,
+                                   .height = FBH,
+                                   .layers = 1};
     CK(vkCreateFramebuffer(vd, &fbc, 0, &fb));
 
     // per frame in flight: command pool, fence, one ring for vertices, indices, uniforms
@@ -1370,13 +1349,10 @@ static void run_vk(Result* r) {
         VkCommandPoolCreateInfo cpc = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
                                        .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT};
         CK(vkCreateCommandPool(vd, &cpc, 0, &pool[s]));
-        VkCommandBufferAllocateInfo cai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-                                           .commandPool = pool[s],
-                                           .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-                                           .commandBufferCount = 1};
+        VkCommandBufferAllocateInfo cai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, .commandPool = pool[s],
+                                           .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY, .commandBufferCount = 1};
         CK(vkAllocateCommandBuffers(vd, &cai, &cmd[s]));
-        VkFenceCreateInfo fci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-                                 .flags = VK_FENCE_CREATE_SIGNALED_BIT};
+        VkFenceCreateInfo fci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT};
         CK(vkCreateFence(vd, &fci, 0, &fence[s]));
         if (!buf_make(&stage[s], 4u << 20, VK_BUFFER_USAGE_TRANSFER_SRC_BIT)) {
             fprintf(stderr, "Vulkan: no host-visible buffers\n");
@@ -1394,7 +1370,7 @@ static void run_vk(Result* r) {
     // for the index range over the bound buffer up to ITS END: indices in a big ring cost
     // a scan of megabytes per draw. --ibuf exact gives each draw an index buffer object of
     // its exact size, aliased into the ring's memory (the top of each slot).
-    size_t istride = (sizeof g_idx + 255) & ~(size_t) 255;
+    size_t istride = (sizeof g_idx + 255) & ~(size_t)255;
     VkBuffer* ibufs = 0;
     if (o_ibuf_exact) {
         ibufs = calloc(2 * o_draws, sizeof *ibufs);
@@ -1407,7 +1383,7 @@ static void run_vk(Result* r) {
                 vkGetBufferMemoryRequirements(vd, ibufs[s * o_draws + d], &mr);
                 size_t at = (s + 1) * SLOT_BYTES - (o_draws - d) * istride;
                 if (at % mr.alignment) {
-                    fprintf(stderr, "index buffer alignment %llu\n", (unsigned long long) mr.alignment);
+                    fprintf(stderr, "index buffer alignment %llu\n", (unsigned long long)mr.alignment);
                     return;
                 }
                 CK(vkBindBufferMemory(vd, ibufs[s * o_draws + d], ring.m, at));
@@ -1423,10 +1399,8 @@ static void run_vk(Result* r) {
         vkBeginCommandBuffer(cmd[0], &bi);
         size_t so = 0;
         for (int t = 0; t < NTEX; t++)
-            vk_upload(cmd[0], &stage[0], &so, &tex[t], 1, 0, 0, TEXSZ, TEXSZ, g_texels[t],
-                      TEXSZ * TEXSZ * 4, true);
-        vk_upload(cmd[0], &stage[0], &so, &lightlut, 32, 0, 0, 256, 1, g_lightlut,
-                  sizeof g_lightlut, true);
+            vk_upload(cmd[0], &stage[0], &so, &tex[t], 1, 0, 0, TEXSZ, TEXSZ, g_texels[t], TEXSZ * TEXSZ * 4, true);
+        vk_upload(cmd[0], &stage[0], &so, &lightlut, 32, 0, 0, 256, 1, g_lightlut, sizeof g_lightlut, true);
         vk_upload(cmd[0], &stage[0], &so, &foglut, 1, 0, 0, 129, 1, g_foglut, sizeof g_foglut, true);
         vk_upload(cmd[0], &stage[0], &so, &ptmap, 1, 0, 0, 128, 1, g_ptmap, sizeof g_ptmap, true);
         vk_upload(cmd[0], &stage[0], &so, &ptnoise, 1, 0, 0, 128, 1, g_ptnoise, sizeof g_ptnoise, true);
@@ -1435,8 +1409,7 @@ static void run_vk(Result* r) {
         vk_upload(cmd[0], &stage[0], &so, &shadow, 1, 0, 0, 8, 8, blank, sizeof blank, true);
         vkEndCommandBuffer(cmd[0]);
         vkResetFences(vd, 1, &fence[0]);
-        VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, .commandBufferCount = 1,
-                           .pCommandBuffers = &cmd[0]};
+        VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, .commandBufferCount = 1, .pCommandBuffers = &cmd[0]};
         CK(vkQueueSubmit(vq, 1, &si, fence[0]));
         vkWaitForFences(vd, 1, &fence[0], 1, UINT64_MAX);
     }
@@ -1447,8 +1420,8 @@ static void run_vk(Result* r) {
     VkDescriptorPoolSize ps2 = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1024};
     VkDescriptorPoolSize pss[3] = {ps[0], ps[1], ps2};
     VkDescriptorPool dpool;
-    VkDescriptorPoolCreateInfo dpc = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-                                      .maxSets = 1024, .poolSizeCount = 3, .pPoolSizes = pss};
+    VkDescriptorPoolCreateInfo dpc = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, .maxSets = 1024,
+                                      .poolSizeCount = 3, .pPoolSizes = pss};
     CK(vkCreateDescriptorPool(vd, &dpc, 0, &dpool));
     VkDescriptorSet* sets = calloc(NTEX * NTEX * NTEX, sizeof *sets);
     int nsets = 0;
@@ -1483,17 +1456,16 @@ static void run_vk(Result* r) {
         for (int k = 0; k < o_texupdates; k++) {
             int t, x, y;
             tex_update_rect(frame, k, &t, &x, &y);
-            vk_upload(cb, &stage[s], &so, &tex[t], 1, x, y, 32, 32, g_upd[(frame + k) & 63],
-                      32 * 32 * 4, false);
+            vk_upload(cb, &stage[s], &so, &tex[t], 1, x, y, 32, 32, g_upd[(frame + k) & 63], 32 * 32 * 4, false);
         }
         VkClearValue cv[2] = {{.color = {{0.1f, 0.2f, 0.3f, 1}}}, {.depthStencil = {1, 0}}};
-        VkRenderPassBeginInfo rbi = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, .renderPass = rp,
-                                     .framebuffer = fb, .renderArea = {{0, 0}, {FBW, FBH}},
-                                     .clearValueCount = 2, .pClearValues = cv};
+        VkRenderPassBeginInfo rbi = {
+            VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, .renderPass = rp,     .framebuffer = fb,
+            .renderArea = {{0, 0}, {FBW, FBH}},       .clearValueCount = 2, .pClearValues = cv};
         vkCmdBeginRenderPass(cb, &rbi, VK_SUBPASS_CONTENTS_INLINE);
         VkViewport vp = {0, 0, FBW, FBH, 0, 1};
         vkCmdSetViewport(cb, 0, 1, &vp);
-        VkRect2D sc = o_tiny ? (VkRect2D) {{0, 0}, {1, 1}} : (VkRect2D) {{0, 0}, {FBW, FBH}};
+        VkRect2D sc = o_tiny ? (VkRect2D){{0, 0}, {1, 1}} : (VkRect2D){{0, 0}, {FBW, FBH}};
         vkCmdSetScissor(cb, 0, 1, &sc);
         VkPipeline curpipe = 0;
         size_t off = s * SLOT_BYTES;
@@ -1522,37 +1494,36 @@ static void run_vk(Result* r) {
             VkPipeline p = pipes[w->prog][w->variant];
             if (p != curpipe) {
                 vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, p);
-                if (!curpipe)
-                    vkCmdPushConstants(cb, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof push, &push);
+                if (!curpipe) vkCmdPushConstants(cb, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof push, &push);
                 curpipe = p;
             }
             int key = (w->tex[0] * NTEX + w->tex[1]) * NTEX + w->tex[2];
             if (!sets[key]) {
                 double ts = now_ms();
                 VkDescriptorSetAllocateInfo dai = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-                                                   .descriptorPool = dpool,
-                                                   .descriptorSetCount = 1, .pSetLayouts = &dsl};
+                                                   .descriptorPool = dpool, .descriptorSetCount = 1,
+                                                   .pSetLayouts = &dsl};
                 CK(vkAllocateDescriptorSets(vd, &dai, &sets[key]));
                 VkDescriptorBufferInfo bufi[4];
                 VkDescriptorImageInfo imi[9];
                 VkWriteDescriptorSet wr[VKB_COUNT];
                 for (int b = 0; b < VKB_COUNT; b++) {
-                    wr[b] = (VkWriteDescriptorSet) {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                                                    .dstSet = sets[key], .dstBinding = b,
-                                                    .descriptorCount = 1,
-                                                    .descriptorType = lb[b].descriptorType};
+                    wr[b] = (VkWriteDescriptorSet){VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, .dstSet = sets[key],
+                                                   .dstBinding = b, .descriptorCount = 1,
+                                                   .descriptorType = lb[b].descriptorType};
                     if (b <= VKB_FREECAM) {
-                        bufi[b] = (VkDescriptorBufferInfo) {
-                            b == VKB_FREECAM ? ubo0.b : ring.b, 0,
-                            b == VKB_FRAGUNI ? sizeof(FragUniforms) : b == VKB_VERTUNI ? 1600 : 592};
+                        bufi[b] = (VkDescriptorBufferInfo){b == VKB_FREECAM ? ubo0.b : ring.b, 0,
+                                                           b == VKB_FRAGUNI   ? sizeof(FragUniforms)
+                                                           : b == VKB_VERTUNI ? 1600
+                                                                              : 592};
                         if (b == VKB_FREECAM) bufi[b].range = 80;
                         wr[b].pBufferInfo = &bufi[b];
                     } else {
-                        Img* im[] = {&tex[w->tex[0]], &shadow, &tex[w->tex[1]], &tex[w->tex[2]],
-                                     &proctex, &lightlut, &foglut, &ptmap, &ptnoise};
+                        Img* im[] = {&tex[w->tex[0]], &shadow, &tex[w->tex[1]], &tex[w->tex[2]], &proctex,
+                                     &lightlut,       &foglut, &ptmap,          &ptnoise};
                         VkSampler smp = b <= VKB_TEX2 ? srep : b == VKB_PTNOISE ? smirror : sclamp;
-                        imi[b - VKB_TEX0] = (VkDescriptorImageInfo) {
-                            smp, im[b - VKB_TEX0]->v, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+                        imi[b - VKB_TEX0] =
+                            (VkDescriptorImageInfo){smp, im[b - VKB_TEX0]->v, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
                         wr[b].pImageInfo = &imi[b - VKB_TEX0];
                     }
                 }
@@ -1562,19 +1533,15 @@ static void run_vk(Result* r) {
             }
             // the uniforms sit in the frame's ring: the dynamic offset picks them, so the
             // set only changes with the textures
-            uint32_t dyn[3] = {0, 0, (uint32_t) uo};
-            vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &sets[key],
-                                    3, dyn);
+            uint32_t dyn[3] = {0, 0, (uint32_t)uo};
+            vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &sets[key], 3, dyn);
             VkBuffer vbs[2] = {ring.b, ring.b};
             VkDeviceSize vos[2] = {va, vb};
             vkCmdBindVertexBuffers(cb, 0, 2, vbs, vos);
-            if (o_nonindexed)
-                vkCmdDraw(cb, NIDX, 1, 0, 0);
+            if (o_nonindexed) vkCmdDraw(cb, NIDX, 1, 0, 0);
             else {
-                if (o_ibuf_exact)
-                    vkCmdBindIndexBuffer(cb, ibufs[s * o_draws + d], 0, VK_INDEX_TYPE_UINT16);
-                else
-                    vkCmdBindIndexBuffer(cb, ring.b, io, VK_INDEX_TYPE_UINT16);
+                if (o_ibuf_exact) vkCmdBindIndexBuffer(cb, ibufs[s * o_draws + d], 0, VK_INDEX_TYPE_UINT16);
+                else vkCmdBindIndexBuffer(cb, ring.b, io, VK_INDEX_TYPE_UINT16);
                 vkCmdDrawIndexed(cb, NIDX, 1, 0, 0, 0);
             }
         }
@@ -1587,8 +1554,7 @@ static void run_vk(Result* r) {
         vkEndCommandBuffer(cb);
         double tc = now_ms();
         rec_ms += tc - tb;
-        VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, .commandBufferCount = 1,
-                           .pCommandBuffers = &cb};
+        VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, .commandBufferCount = 1, .pCommandBuffers = &cb};
         CK(vkQueueSubmit(vq, 1, &si, fence[s]));
         sub_ms += now_ms() - tc;
         if (frame == 0 && o_shots) {
@@ -1625,26 +1591,26 @@ static void run_dmabuf(void) {
         return;
     }
     VkExternalMemoryImageCreateInfo ext = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
-                                           .handleTypes =
-                                               VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT};
-    VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, .pNext = &ext,
-                            .imageType = VK_IMAGE_TYPE_2D, .format = VK_FORMAT_R8G8B8A8_UNORM,
-                            .extent = {FBW, FBH, 1}, .mipLevels = 1, .arrayLayers = 1,
-                            .samples = 1, .tiling = VK_IMAGE_TILING_LINEAR,
-                            .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT};
+                                           .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT};
+    VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                            .pNext = &ext,
+                            .imageType = VK_IMAGE_TYPE_2D,
+                            .format = VK_FORMAT_R8G8B8A8_UNORM,
+                            .extent = {FBW, FBH, 1},
+                            .mipLevels = 1,
+                            .arrayLayers = 1,
+                            .samples = 1,
+                            .tiling = VK_IMAGE_TILING_LINEAR,
+                            .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT};
     VkImage img;
     CK(vkCreateImage(vd, &ci, 0, &img));
     VkMemoryRequirements mr;
     vkGetImageMemoryRequirements(vd, img, &mr);
     VkExportMemoryAllocateInfo ex = {VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO,
                                      .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT};
-    VkMemoryDedicatedAllocateInfo ded = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
-                                         .pNext = &ex, .image = img};
-    VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, .pNext = &ded,
-                               .allocationSize = mr.size,
-                               .memoryTypeIndex =
-                                   mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)};
+    VkMemoryDedicatedAllocateInfo ded = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO, .pNext = &ex, .image = img};
+    VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, .pNext = &ded, .allocationSize = mr.size,
+                               .memoryTypeIndex = mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)};
     VkDeviceMemory mem;
     CK(vkAllocateMemory(vd, &ai, 0, &mem));
     vkBindImageMemory(vd, img, mem, 0);
@@ -1658,25 +1624,23 @@ static void run_dmabuf(void) {
     // fill it on the GPU: a clear by copy of a known pattern
     Buf st;
     buf_make(&st, FBW * FBH * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-    for (int i = 0; i < FBW * FBH; i++) ((uint32_t*) st.p)[i] = 0xff000000 | (i * 2654435761u >> 8);
+    for (int i = 0; i < FBW * FBH; i++) ((uint32_t*)st.p)[i] = 0xff000000 | (i * 2654435761u >> 8);
     VkCommandPool pool;
     VkCommandPoolCreateInfo cpc = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
     CK(vkCreateCommandPool(vd, &cpc, 0, &pool));
     VkCommandBuffer cb;
-    VkCommandBufferAllocateInfo cai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-                                       .commandPool = pool, .commandBufferCount = 1};
+    VkCommandBufferAllocateInfo cai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, .commandPool = pool,
+                                       .commandBufferCount = 1};
     CK(vkAllocateCommandBuffers(vd, &cai, &cb));
     VkCommandBufferBeginInfo bi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     vkBeginCommandBuffer(cb, &bi);
-    barrier(cb, img, VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, VK_ACCESS_TRANSFER_WRITE_BIT,
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    VkBufferImageCopy c = {.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-                           .imageExtent = {FBW, FBH, 1}};
+    barrier(cb, img, VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0,
+            VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    VkBufferImageCopy c = {.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}, .imageExtent = {FBW, FBH, 1}};
     vkCmdCopyBufferToImage(cb, st.b, img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &c);
-    barrier(cb, img, VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_MEMORY_READ_BIT,
-            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    barrier(cb, img, VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
+            VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_MEMORY_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     vkEndCommandBuffer(cb);
     VkFence f;
     VkFenceCreateInfo fci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
@@ -1685,11 +1649,21 @@ static void run_dmabuf(void) {
     CK(vkQueueSubmit(vq, 1, &si, f));
     vkWaitForFences(vd, 1, &f, 1, UINT64_MAX);
 
-    PFNEGLCREATEIMAGEKHRPROC ci_ = (void*) eglGetProcAddress("eglCreateImageKHR");
-    void (*target)(GLenum, void*) = (void*) eglGetProcAddress("glEGLImageTargetTexture2DOES");
-    EGLint at[] = {EGL_WIDTH, FBW, EGL_HEIGHT, FBH, EGL_LINUX_DRM_FOURCC_EXT, 0x34324241 /* AB24 */,
-                   EGL_DMA_BUF_PLANE0_FD_EXT, fd, EGL_DMA_BUF_PLANE0_OFFSET_EXT, (EGLint) lay.offset,
-                   EGL_DMA_BUF_PLANE0_PITCH_EXT, (EGLint) lay.rowPitch, EGL_NONE};
+    PFNEGLCREATEIMAGEKHRPROC ci_ = (void*)eglGetProcAddress("eglCreateImageKHR");
+    void (*target)(GLenum, void*) = (void*)eglGetProcAddress("glEGLImageTargetTexture2DOES");
+    EGLint at[] = {EGL_WIDTH,
+                   FBW,
+                   EGL_HEIGHT,
+                   FBH,
+                   EGL_LINUX_DRM_FOURCC_EXT,
+                   0x34324241 /* AB24 */,
+                   EGL_DMA_BUF_PLANE0_FD_EXT,
+                   fd,
+                   EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+                   (EGLint)lay.offset,
+                   EGL_DMA_BUF_PLANE0_PITCH_EXT,
+                   (EGLint)lay.rowPitch,
+                   EGL_NONE};
     double t0 = now_ms();
     EGLImageKHR ei = ci_ ? ci_(g_egl, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, at) : 0;
     if (!ei || !target) {
@@ -1706,12 +1680,11 @@ static void run_dmabuf(void) {
     uint32_t* px = malloc(FBW * FBH * 4);
     glReadPixels(0, 0, FBW, FBH, GL_RGBA, GL_UNSIGNED_BYTE, px);
     int bad = 0;
-    for (int i = 0; i < FBW * FBH; i++) bad += px[i] != ((uint32_t*) st.p)[i];
+    for (int i = 0; i < FBW * FBH; i++) bad += px[i] != ((uint32_t*)st.p)[i];
     fprintf(stderr,
             "dmabuf: Vulkan image (pitch %llu) imported into GL in %.2f ms, %d of %d pixels "
             "differ, framebuffer status 0x%x\n",
-            (unsigned long long) lay.rowPitch, now_ms() - t0, bad, FBW * FBH,
-            glCheckFramebufferStatus(GL_FRAMEBUFFER));
+            (unsigned long long)lay.rowPitch, now_ms() - t0, bad, FBW * FBH, glCheckFramebufferStatus(GL_FRAMEBUFFER));
 }
 
 // ---------------------------------------------------------------- main
@@ -1734,19 +1707,19 @@ static void report(Result* r) {
     }
     printf("%-6s build %7.0f ms | frame wall %6.2f ms, render thread CPU %6.2f ms, process CPU "
            "%6.2f ms = %5.1f us/draw | GPU fragment %5.2f ms, vertex-tiler %5.2f ms\n",
-           r->api, r->build_ms, r->frame_wall, r->frame_thread, r->frame_proc,
-           r->frame_proc * 1000 / o_draws, r->gpu_frag, r->gpu_vt);
+           r->api, r->build_ms, r->frame_wall, r->frame_thread, r->frame_proc, r->frame_proc * 1000 / o_draws,
+           r->gpu_frag, r->gpu_vt);
 }
 
 int main(int argc, char** argv) {
     for (int i = 1; i < argc; i++) {
         const char* a = argv[i];
         const char* v = i + 1 < argc ? argv[i + 1] : "";
-#define OPT(name, dst, conv)                                                                     \
-    if (!strcmp(a, name)) {                                                                      \
-        dst = conv;                                                                              \
-        i++;                                                                                     \
-        continue;                                                                                \
+#define OPT(name, dst, conv)                                                                                           \
+    if (!strcmp(a, name)) {                                                                                            \
+        dst = conv;                                                                                                    \
+        i++;                                                                                                           \
+        continue;                                                                                                      \
     }
         OPT("--mode", o_mode, v);
         OPT("--list", o_list, v);
@@ -1792,8 +1765,9 @@ int main(int argc, char** argv) {
     if (o_list) load_list(o_list);
     if (!g_nfs) synth_fs(o_progs);
     scene_build();
-    fprintf(stderr, "scene: %d draws a frame of %d triangles, %d programs, %d frames (+%d warm-up), "
-                    "%d texture updates a frame%s\n",
+    fprintf(stderr,
+            "scene: %d draws a frame of %d triangles, %d programs, %d frames (+%d warm-up), "
+            "%d texture updates a frame%s\n",
             o_draws, NIDX / 3, o_progs, o_frames, o_warm, o_texupdates, o_tiny ? ", 1-pixel scissor" : "");
     Result g = {.api = "GL"}, k = {.api = "Vulkan"};
     if (o_dmabuf) run_dmabuf();
@@ -1811,8 +1785,8 @@ int main(int argc, char** argv) {
             if (d > maxd) maxd = d;
             if (d > 2) diff++;
         }
-        printf("pictures: %d channel values differ by more than 2 (of %d), largest difference %d\n",
-               diff, FBW * FBH * 3, maxd);
+        printf("pictures: %d channel values differ by more than 2 (of %d), largest difference %d\n", diff,
+               FBW * FBH * 3, maxd);
         save_ppm(o_shots, "gl", g.shot);
         save_ppm(o_shots, "vk", k.shot);
     }

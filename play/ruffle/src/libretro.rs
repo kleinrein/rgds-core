@@ -156,3 +156,30 @@ pub const K_RCTRL: u32 = 305;
 pub const K_LCTRL: u32 = 306;
 pub const K_RALT: u32 = 307;
 pub const K_LALT: u32 = 308;
+
+// Hardware rendering (RETRO_ENVIRONMENT_SET_HW_RENDER): the player's GLES context.
+pub const ENV_SET_HW_RENDER: c_uint = 14;
+pub const HW_CONTEXT_OPENGLES3: c_uint = 4;
+/// RETRO_HW_FRAME_BUFFER_VALID: the frame is in the player's framebuffer.
+pub const HW_FRAME_BUFFER_VALID: *const c_void = usize::MAX as *const c_void;
+
+pub type HwContextResetFn = unsafe extern "C" fn();
+pub type HwGetCurrentFramebufferFn = unsafe extern "C" fn() -> usize;
+pub type ProcAddressFn = unsafe extern "C" fn();
+pub type HwGetProcAddressFn = unsafe extern "C" fn(sym: *const c_char) -> Option<ProcAddressFn>;
+
+#[repr(C)]
+pub struct HwRenderCallback {
+    pub context_type: c_uint,
+    pub context_reset: Option<HwContextResetFn>,
+    pub get_current_framebuffer: Option<HwGetCurrentFramebufferFn>,
+    pub get_proc_address: Option<HwGetProcAddressFn>,
+    pub depth: bool,
+    pub stencil: bool,
+    pub bottom_left_origin: bool,
+    pub version_major: c_uint,
+    pub version_minor: c_uint,
+    pub cache_context: bool,
+    pub context_destroy: Option<HwContextResetFn>,
+    pub debug_context: bool,
+}

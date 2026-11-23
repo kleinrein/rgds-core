@@ -19,8 +19,12 @@ class Timeline(unittest.TestCase):
             rom = testrom.build(Path(temp) / 'Play Test Rooms (World).gba')
             data = Path(temp) / 'userdata/play'
             data.mkdir(parents=True)
-            result = subprocess.run([str(TESTS), str(rom), str(data), str(Path(temp) / 'rewind.bmp')],
-                                    capture_output=True, text=True, timeout=300)
+            result = subprocess.run(
+                [str(TESTS), str(rom), str(data), str(Path(temp) / 'rewind.bmp')],
+                capture_output=True,
+                text=True,
+                timeout=300
+            )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertTrue((Path(temp) / 'rewind.bmp').stat().st_size > 0)
 

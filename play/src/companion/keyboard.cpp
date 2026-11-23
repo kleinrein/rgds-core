@@ -574,12 +574,32 @@ const std::vector<Rows>& pc() {
     return pages;
 }
 
+// Flash's: the PC's, its touch pad page also holding the arrows and Space, what most Flash games play with besides
+// the mouse, so the pad is enough on its own. Flash opens on it.
+const std::vector<Rows>& flash_pc() {
+    static const std::vector<Rows> pages = [] {
+        std::vector<Rows> p = pc();
+        p[to_mouse - 1].back() = {{"Left", 1, 2, Mouse},
+                                  {"Right", 2, 2, Mouse},
+                                  {left_key, RETROK_LEFT},
+                                  {up_key, RETROK_UP},
+                                  {down_key, RETROK_DOWN},
+                                  {right_key, RETROK_RIGHT},
+                                  {"SPACE", RETROK_SPACE, 2},
+                                  {"ABC", to_page_1, 2, Page}};
+        return p;
+    }();
+    return pages;
+}
+
 class Keyboard final : public View {
 public:
     enum Machine { Spectrum, Commodore, Msx, Cpc, Amiga, Pc };
-    Keyboard(const std::vector<Rows>& pages, Machine machine)
+    Keyboard(const std::vector<Rows>& pages, Machine machine, int first_page = 0)
         : pages_(pages), spectrum_(machine == Spectrum), commodore_(machine == Commodore), amiga_(machine == Amiga), cpc_(machine == Cpc),
-          pc_(machine == Pc) {}
+          pc_(machine == Pc) {
+        page_ = first_page;
+    }
 
     void update(Core& live, uint64_t) override {
         if (pc_) update_mouse(live);
@@ -1065,9 +1085,9 @@ std::unique_ptr<View> make_keyboard(const std::string& system) {
     if (system == "cpc") return std::make_unique<Keyboard>(cpc(), Keyboard::Cpc);
     if (system == "amiga") return std::make_unique<Keyboard>(amiga(), Keyboard::Amiga);
     if (system == "dos") return std::make_unique<Keyboard>(pc(), Keyboard::Pc);
-    // Flash: a PC's keys for name entry and keyboard games, and the touch pad, a laptop's, for games that aim with
-    // the pointer while the game is on the top screen.
-    if (system == "flash") return std::make_unique<Keyboard>(pc(), Keyboard::Pc);
+    // Flash: the touch pad first, a laptop's, with the arrows and Space beside its buttons (the game itself is touched
+    // on the top screen); a PC's keys a tap away for name entry and keyboard games.
+    if (system == "flash") return std::make_unique<Keyboard>(flash_pc(), Keyboard::Pc, int(to_mouse - 1));
     return nullptr;
 }
 

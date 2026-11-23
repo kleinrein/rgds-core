@@ -104,8 +104,8 @@ int main(int argc, char** argv) {
             std::getline(in, arg); // the rest of the line: paths may hold spaces
             arg.erase(0, arg.find_first_not_of(" \t"));
             uint32_t buttons;
-            if (what == "shot" || what == "capture" || what == "quit" || what == "status" || what == "hudshot" || what == "gameshot" ||
-                what == "state-save" || what == "state-load")
+            if (what == "shot" || what == "capture" || what == "quit" || what == "status" || what == "hudshot" ||
+                what == "gameshot" || what == "state-save" || what == "state-load")
                 commands.insert({frame, {what, arg}});
             else if (parse_buttons(what, buttons)) holds[frame] = buttons;
             else {

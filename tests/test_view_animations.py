@@ -289,6 +289,23 @@ class ViewAnimationUITests(unittest.TestCase):
         self.assertEqual(report['back_transitions'], 1)
         self.assert_settled(report)
 
+    def test_pictochat_rooms_travel_like_pages(self):
+        # Lobby -> Room A -> Lobby -> out: each step in travels forward, each Back travels out.
+        (self.root / 'state').write_text('1 0 0 ""\nhome 4\n')
+        for style in ('spring', 'push'):
+            (self.root / 'ui.ini').write_text(
+                'schema=1\nhome_layout=carousel\nbackground=plain\nanimations=1\nview_animations=1\n'
+                f'view_transition_style={style}\n'
+            )
+            report = self.run_ui(
+                '100 key A\n160 key-up A\n700 key A\n760 key-up A\n1300 key Escape\n1900 key Escape\n', ('--home',),
+                seconds=3
+            )
+            self.assertFalse(report['chat_open'], style)
+            self.assertEqual(report['view_transitions'], 4, style)
+            self.assertEqual(report['back_transitions'], 2, style)
+            self.assert_settled(report)
+
     def test_push_touch_only_activates_the_incoming_page(self):
         self.enable(style='push')
         report = self.run_ui('100 key A\n130 click 70 50\n')

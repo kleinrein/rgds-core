@@ -130,18 +130,20 @@ void App::slot_more() {
         actions.push_back("Undo last slot change");
         actions.push_back("Undo last load");
     } else actions = {"Import into this slot", "Undo last slot change", "Import help"};
-    show_picker(slot == auto_slot ? locale.text("Auto-save") : locale.text("Slot") + " " + std::to_string(slot + 1), actions, 0, [this, slot, actions](int choice) {
-        const auto& action = actions.at(choice);
-        if (action == "Export slot") menu_request("slot-export:" + std::to_string(slot));
-        else if (action == "Undo last slot change") {
-            if (o.game_menu) menu_request("slot-undo");
-            else slot_worker("undo", slot);
-        } else if (action == "Undo last load") menu_request("slot-undo-load");
-        else if (action == "Import into this slot") slot_import(slot);
-        else
-            show_detail(
-                "Import help",
-                locale.text(
-                    "Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator."));
-    });
+    show_picker(
+        slot == auto_slot ? locale.text("Auto-save") : locale.text("Slot") + " " + std::to_string(slot + 1), actions, 0,
+        [this, slot, actions](int choice) {
+            const auto& action = actions.at(choice);
+            if (action == "Export slot") menu_request("slot-export:" + std::to_string(slot));
+            else if (action == "Undo last slot change") {
+                if (o.game_menu) menu_request("slot-undo");
+                else slot_worker("undo", slot);
+            } else if (action == "Undo last load") menu_request("slot-undo-load");
+            else if (action == "Import into this slot") slot_import(slot);
+            else
+                show_detail(
+                    "Import help",
+                    locale.text(
+                        "Copy .rgdssave.zip files into userdata/imports. Imports must match this game and emulator."));
+        });
 }

@@ -39,6 +39,18 @@ class EngineLogTests(unittest.TestCase):
         self.assertFalse(log.worker.is_alive())
         self.assertTrue(child.stdout.closed)
 
+    def test_a_crash_keeps_its_log_past_the_next_launch(self):
+        crashed = EngineLog(self.data, "rgds-play", ["rgds-play", "a.swf"], self.data)
+        crashed.append(b"segfault here\n")
+        crashed.finish(-11)
+        fine = EngineLog(self.data, "rgds-play", ["rgds-play", "b.swf"], self.data)
+        fine.append(b"all well\n")
+        fine.finish(0)
+        self.assertIn("all well", (self.data / "logs" / "rgds-play.log").read_text())
+        kept = (self.data / "logs" / "rgds-play-crash.log").read_text()
+        self.assertIn("segfault here", kept)
+        self.assertIn("Exit code: -11", kept)
+
     def test_inherited_open_writer_does_not_hang_cleanup(self):
         reader, writer = os.pipe()
         self.addCleanup(os.close, writer)

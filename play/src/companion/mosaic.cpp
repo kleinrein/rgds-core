@@ -55,12 +55,14 @@
 namespace play {
 namespace {
 
-constexpr int tile = 32; // map pixels a side per stored tile
+constexpr int tile = 32;      // map pixels a side per stored tile
 constexpr int move_every = 3; // frames between moves of the player's spot
 // A stored pixel: 0 not seen, `air` seen with nothing there in the foreground plane, else bit 15 and 5 bits each
 // of red, green and blue. Two bytes a pixel: at half size one act of Sonic is a few megabytes.
 constexpr uint16_t air = 1;
-uint16_t pack(unsigned r, unsigned g, unsigned b) { return uint16_t(0x8000 | ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3)); }
+uint16_t pack(unsigned r, unsigned g, unsigned b) {
+    return uint16_t(0x8000 | ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3));
+}
 uint32_t unpack(uint16_t v) {
     const uint32_t r = (v >> 10) & 31, g = (v >> 5) & 31, b = v & 31;
     return ((r << 3) | (r >> 2)) | (((g << 3) | (g >> 2)) << 8) | (((b << 3) | (b >> 2)) << 16) | 0xFF000000u;
@@ -120,7 +122,8 @@ public:
             } else if (key == "plane_offset") {
                 ok = parse_ints(value, v, 2);
                 if (ok) plane_dx_ = v[0], plane_dy_ = v[1];
-            } else if (key == "skip" || (key.size() == 5 && key.rfind("skip", 0) == 0 && key[4] >= '2' && key[4] <= '4')) {
+            } else if (key == "skip" ||
+                       (key.size() == 5 && key.rfind("skip", 0) == 0 && key[4] >= '2' && key[4] <= '4')) {
                 ok = parse_ints(value, v, 4) && v[2] > 0 && v[3] > 0;
                 if (ok) skip_.push_back({v[0], v[1], v[2], v[3]});
             } else if (key == "player_box") {
@@ -355,7 +358,7 @@ private:
         };
         const int dx = settle(cam_x, px0 + plane_dx_, pw), dy = settle(cam_y, py0 + plane_dy_, ph);
         if (std::abs(dx) > 48 || std::abs(dy) > 48) return true; // not this world's scroll: a cutscene, a jump cut
-        const long wx = cam_x + dx, wy = cam_y + dy; // the world under screen pixel 0, 0
+        const long wx = cam_x + dx, wy = cam_y + dy;             // the world under screen pixel 0, 0
         uint32_t colours[64];
         bool lit = false;
         for (int i = 0; i < 64; ++i) {
@@ -370,7 +373,8 @@ private:
             uint32_t* to = shot_.data() + size_t(y) * sw;
             for (int x = c.x; x < c.x + c.w; ++x) {
                 const int px = (px0 + x) & (pw - 1);
-                const unsigned cell = v.vram[(names + unsigned(py >> 3) * unsigned(pw >> 3) + unsigned(px >> 3)) & 0x7FFF];
+                const unsigned cell =
+                    v.vram[(names + unsigned(py >> 3) * unsigned(pw >> 3) + unsigned(px >> 3)) & 0x7FFF];
                 const int fx = (cell & 0x800) ? 7 - (px & 7) : px & 7, fy = (cell & 0x1000) ? 7 - (py & 7) : py & 7;
                 const unsigned word = v.vram[((cell & 0x7FF) * 16 + unsigned(fy) * 2 + unsigned(fx >> 2)) & 0x7FFF];
                 const unsigned ink = (word >> (12 - 4 * (fx & 3))) & 15;
@@ -401,7 +405,8 @@ private:
                     const int fy = (sp.cell & 0x1000) ? sp.h - 1 - (yy - sp.y) : yy - sp.y;
                     // Tiles run down each column of the sprite, then to the next column.
                     const unsigned t = first + unsigned(fx >> 3) * unsigned(sp.h >> 3) + unsigned(fy >> 3);
-                    const unsigned word = v.vram[((t & 0x7FF) * 16 + unsigned(fy & 7) * 2 + unsigned((fx & 7) >> 2)) & 0x7FFF];
+                    const unsigned word =
+                        v.vram[((t & 0x7FF) * 16 + unsigned(fy & 7) * 2 + unsigned((fx & 7) >> 2)) & 0x7FFF];
                     const unsigned ink = (word >> (12 - 4 * (fx & 3))) & 15;
                     if (ink) shot_[size_t(yy) * sw + xx] = pal[ink];
                 }
@@ -409,8 +414,8 @@ private:
         // Parts of the screen that are not the world: the score and the hero.
         std::vector<Rect> holes = skip_;
         if (has_player())
-            holes.push_back({int(player_x_.eval(live) - wx) + player_box_.x, int(player_y_.eval(live) - wy) + player_box_.y,
-                             player_box_.w, player_box_.h});
+            holes.push_back({int(player_x_.eval(live) - wx) + player_box_.x,
+                             int(player_y_.eval(live) - wy) + player_box_.y, player_box_.w, player_box_.h});
         Area& area = areas_[area_now_];
         bool changed = false;
         // Open air is drawn in the colour the game shows most behind the plane (Green Hill's blue), counted in
@@ -445,7 +450,8 @@ private:
                 for (int yy = 0; yy < scale_; ++yy) {
                     const uint32_t* row = shot_.data() + size_t(sy + yy) * sw + sx;
                     for (int xx = 0; xx < scale_; ++xx)
-                        if (row[xx]) r += row[xx] & 0xFF, g += (row[xx] >> 8) & 0xFF, bl += (row[xx] >> 16) & 0xFF, ++solid;
+                        if (row[xx])
+                            r += row[xx] & 0xFF, g += (row[xx] >> 8) & 0xFF, bl += (row[xx] >> 16) & 0xFF, ++solid;
                 }
                 const uint16_t value = int(solid) * 2 >= n ? pack(r / solid, g / solid, bl / solid) : air;
                 uint16_t& dst = area.set(mx, my);
@@ -551,7 +557,7 @@ private:
     std::vector<Rect> skip_;
     int plane_ = 0, plane_dx_ = 0, plane_dy_ = 0; // 1: plane A, 2: plane B
     std::vector<uint32_t> shot_;                  // the screen's part of the plane and the sprites on it
-    std::vector<uint32_t> sky_count_; // how often each shade was behind the plane, in this area
+    std::vector<uint32_t> sky_count_;             // how often each shade was behind the plane, in this area
     long sky_area_ = 0;
     int native_w_ = 0, native_h_ = 0, scale_ = 4, every_ = 6, lag_ = 0, zoom_ = 1;
     struct Seen {

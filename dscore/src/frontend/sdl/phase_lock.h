@@ -52,12 +52,12 @@ public:
     // step, and decayed again, one dropped frame every 5 s on the RG DS bottom panel, whose flip must be issued about
     // 4.2 ms before its vblank (14 November 2026).
     double floor_decay = 1.0 - 1.0 / 32768.0; // per flip; halves in ~6 min at 60 Hz
-    double period_alpha = 1.0 / 32.0;       // period EMA weight
-    double period_tol = 0.02;               // a gap this close to the EMA counts as consistent
-    int settle_flips = 8;                   // consistent gaps before the lock is trusted
-    double work_alpha = 1.0 / 16.0;         // start-to-swap EMA weight (mean and deviation)
-    double work_spread = 2.0;               // deviations above the mean the deadline allows for
-    double work_cap_ns = 4.0e6;             // ... but never more than this
+    double period_alpha = 1.0 / 32.0;         // period EMA weight
+    double period_tol = 0.02;                 // a gap this close to the EMA counts as consistent
+    int settle_flips = 8;                     // consistent gaps before the lock is trusted
+    double work_alpha = 1.0 / 16.0;           // start-to-swap EMA weight (mean and deviation)
+    double work_spread = 2.0;                 // deviations above the mean the deadline allows for
+    double work_cap_ns = 4.0e6;               // ... but never more than this
   };
 
   PhaseLock() : PhaseLock(Params()) {}

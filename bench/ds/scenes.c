@@ -54,15 +54,13 @@ static void burn_batch(void) {
         REG16(0x04000280) = 1;
         *(volatile s64*)0x04000290 = num;
         *(volatile s64*)0x04000298 = den;
-        while (REG16(0x04000280) & 0x8000) {
-        }
+        while (REG16(0x04000280) & 0x8000) {}
         const s64 q = *(volatile s64*)0x040002A0, r = *(volatile s64*)0x040002A8;
         if (q * den + r != num) ++g_wrong;
         const u64 square = (u64)(i * 2654435761u) << 8;
         REG16(0x040002B0) = 1;
         *(volatile u64*)0x040002B8 = square;
-        while (REG16(0x040002B0) & 0x8000) {
-        }
+        while (REG16(0x040002B0) & 0x8000) {}
         const u64 root = REG32(0x040002B4);
         if (root * root > square || (root + 1) * (root + 1) <= square) ++g_wrong;
     }
@@ -132,7 +130,8 @@ static void arm7_load(int on) { IPCSYNC = (u16)((on ? 1 : 0) << 8); }
 /* A bright palette running through the hues. */
 static void fill_palette(volatile u16* to, u32 phase) {
     for (u32 i = 1; i < 256; ++i) {
-        const u32 r = (u32)((sin_q(i * 4 + phase) + 4096) >> 8) & 31, g = (u32)((sin_q(i * 4 + phase + 341) + 4096) >> 8) & 31,
+        const u32 r = (u32)((sin_q(i * 4 + phase) + 4096) >> 8) & 31,
+                  g = (u32)((sin_q(i * 4 + phase + 341) + 4096) >> 8) & 31,
                   b = (u32)((sin_q(i * 4 + phase + 682) + 4096) >> 8) & 31;
         to[i] = RGB5(r, g, b);
     }
@@ -154,7 +153,9 @@ static void fill_palette(volatile u16* to, u32 phase) {
 #define T_POOL 0x8000u /* the churn scene's textures start here */
 static const u32 TEXTURES[7] = {T_COMPRESSED, T_DIRECT, T_A5I3, T_A3I5, T_16C, T_4C, T_256C};
 
-static u32 attr(u32 mode, u32 alpha, u32 id, u32 extra) { return 0xC0u | (mode << 4) | (alpha << 16) | (id << 24) | extra; }
+static u32 attr(u32 mode, u32 alpha, u32 id, u32 extra) {
+    return 0xC0u | (mode << 4) | (alpha << 16) | (id << 24) | extra;
+}
 #define PA_LIGHTS 15u
 #define PA_XLDEPTH (1u << 11)
 #define PA_FOG (1u << 15)
@@ -192,8 +193,7 @@ static void gx_begin_scene(u32 flags) {
     VRAMCNT(BANK_A) = 0x83;
     VRAMCNT(BANK_B) = 0x8B; /* texture slot 1 */
     VRAMCNT(BANK_E) = 0x83;
-    while (GXSTAT & (1u << 27)) {
-    }
+    while (GXSTAT & (1u << 27)) {}
     GXSTAT = 1u << 15; /* acknowledge any matrix stack error */
     DISP3DCNT = (u16)flags;
     CLEAR_COLOR = 0x3F1F0000u | RGB5(1, 2, 6);
@@ -257,7 +257,8 @@ static void build_torus(int columns, int rows) {
             for (int side = 0; side < 2; ++side) {
                 const u32 au = (u32)u * 1024u / (u32)columns, av = (u32)(v + side) * 1024u / (u32)rows;
                 const s32 cu = cos_q(au), su = sin_q(au), cv = cos_q(av), sv = sin_q(av);
-                const s32 x = ((R + ((r * cv) >> 12)) * cu) >> 12, y = (r * sv) >> 12, z = ((R + ((r * cv) >> 12)) * su) >> 12;
+                const s32 x = ((R + ((r * cv) >> 12)) * cu) >> 12, y = (r * sv) >> 12,
+                          z = ((R + ((r * cv) >> 12)) * su) >> 12;
                 *l++ = (u32)GX_NORMAL | (u32)GX_TEXCOORD << 8 | (u32)GX_VTX16 << 16;
                 *l++ = pack_normal((cv * cu) >> 12, sv, (cv * su) >> 12);
                 *l++ = (u32)((u * 32) & 0xFFFF) | (u32)((v + side) * 32) << 16;
@@ -270,8 +271,7 @@ static void build_torus(int columns, int rows) {
 }
 
 static void send_list(void) {
-    while (DMA_CTL(0) & DMA_ON) {
-    }
+    while (DMA_CTL(0) & DMA_ON) {}
     DMA_SRC(0) = (u32)LIST;
     DMA_DST(0) = 0x04000400;
     DMA_CTL(0) = DMA_ON | DMA_32 | DMA_GX | DMA_DST_FIX | list_words;
@@ -295,10 +295,10 @@ static void storm_vram(volatile u16* bg, volatile u16* obj, volatile u16* pal_bg
     fill_palette(pal_bg, phase);
     fill_palette(pal_obj, phase + 200);
     for (int i = 0; i < 1024; ++i) {
-        bg[i] = (u16)(rnd() & 63);        /* BG0/1 maps at 0x0000 and 0x0800 */
+        bg[i] = (u16)(rnd() & 63); /* BG0/1 maps at 0x0000 and 0x0800 */
         bg[0x400 + i] = (u16)(rnd() & 63);
     }
-    for (int i = 0; i < 0x2000; ++i) {    /* 128 x 128 bitmaps at 0x4000 and 0x8000 */
+    for (int i = 0; i < 0x2000; ++i) { /* 128 x 128 bitmaps at 0x4000 and 0x8000 */
         const u32 x = (u32)i & 127, y = (u32)i >> 7;
         bg[0x2000 + i] = (u16)(((x ^ y) * 2 + phase) | ((x * y >> 4) & 255) << 8);
         bg[0x4000 + i] = (u16)((x * x + y * y) >> 4 | (rnd() & 0xFF00));
@@ -368,8 +368,7 @@ static void storm_frame(int e, u32 n, volatile u16* oam) {
     DMA_SRC(3) = (u32)shadow;
     DMA_DST(3) = (u32)oam;
     DMA_CTL(3) = DMA_ON | DMA_32 | 256;
-    while (DMA_CTL(3) & DMA_ON) {
-    }
+    while (DMA_CTL(3) & DMA_ON) {}
 }
 
 volatile u32 g_vblanks;
@@ -431,7 +430,7 @@ static void pace_frame(u32 n) {
 /* SHOWCASE: flat-coloured art with every kind of edge, scrolling on both screens, and next to no other work. What is left
  * of the frame's cost is the filter or shader the test is about. */
 static void showcase_init(void) {
-    static const u16 INKS[8] = {RGB1(31, 31, 28), RGB1(4, 6, 14), RGB1(30, 8, 6), RGB1(6, 22, 10),
+    static const u16 INKS[8] = {RGB1(31, 31, 28), RGB1(4, 6, 14),  RGB1(30, 8, 6),   RGB1(6, 22, 10),
                                 RGB1(28, 24, 4),  RGB1(6, 14, 28), RGB1(24, 10, 26), RGB1(16, 16, 18)};
     bitmap_screens();
     for (int y = 0; y < 256; ++y)
@@ -624,8 +623,7 @@ static void churn_frame(u32 n) {
     DMA_SRC(3) = (u32)(CHURN_POOL + (n * 397 & 0x3FFF));
     DMA_DST(3) = (u32)(odd ? LCDC_B : LCDC_A) + T_POOL;
     DMA_CTL(3) = DMA_ON | DMA_32 | (CHURN_COUNT * 512);
-    while (DMA_CTL(3) & DMA_ON) {
-    }
+    while (DMA_CTL(3) & DMA_ON) {}
     fill_palette(LCDC_E, n * 4);
     VRAMCNT(BANK_E) = 0x83;
     gx_rotate(0, 0, -8192);
@@ -662,8 +660,8 @@ static void spike_init(void) {
 static void spike_frame(u32 n) {
     BG_Y(1, 3) = (n * 2) << 8;
     const u32 state = n / 20;
-    DISP3DCNT = (u16)(1u | (state & 1) << 1 | 1u << 3 | ((state >> 1) & 1) << 2 | ((state >> 2) & 1) << 4 | ((state >> 3) & 1) << 5 |
-                      ((state >> 4) & 1) << 7 | 4u << 8);
+    DISP3DCNT = (u16)(1u | (state & 1) << 1 | 1u << 3 | ((state >> 1) & 1) << 2 | ((state >> 2) & 1) << 4 |
+                      ((state >> 3) & 1) << 5 | ((state >> 4) & 1) << 7 | 4u << 8);
     gx_rotate(0, 0, -8192);
     for (u32 i = 0; i < 24; ++i) {
         const u32 s = state * 3 + i * 5;
@@ -806,11 +804,17 @@ static void gauntlet_frame(u32 n) {
 }
 
 const Scene SCENES[SCENE_COUNT] = {
-    [SC_PACE] = {pace_init, pace_frame},        [SC_ARM9] = {plain_init, cpu_frame},
-    [SC_JIT] = {plain_init, jit_frame},         [SC_ARM7] = {arm7_init, cpu_frame},
-    [SC_STORM] = {storm_init, storm_scene},     [SC_GEOMETRY] = {geometry_init, geometry_frame},
-    [SC_FILL] = {fill_init, fill_frame},        [SC_CHURN] = {churn_init, churn_frame},
-    [SC_SPIKE] = {spike_init, spike_frame},     [SC_DUAL] = {dual_init, dual_frame},
-    [SC_FEEDBACK] = {feedback_init, feedback_frame}, [SC_GAUNTLET] = {gauntlet_init, gauntlet_frame},
+    [SC_PACE] = {pace_init, pace_frame},
+    [SC_ARM9] = {plain_init, cpu_frame},
+    [SC_JIT] = {plain_init, jit_frame},
+    [SC_ARM7] = {arm7_init, cpu_frame},
+    [SC_STORM] = {storm_init, storm_scene},
+    [SC_GEOMETRY] = {geometry_init, geometry_frame},
+    [SC_FILL] = {fill_init, fill_frame},
+    [SC_CHURN] = {churn_init, churn_frame},
+    [SC_SPIKE] = {spike_init, spike_frame},
+    [SC_DUAL] = {dual_init, dual_frame},
+    [SC_FEEDBACK] = {feedback_init, feedback_frame},
+    [SC_GAUNTLET] = {gauntlet_init, gauntlet_frame},
     [SC_SHOWCASE] = {showcase_init, showcase_frame},
 };

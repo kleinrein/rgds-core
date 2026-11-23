@@ -64,8 +64,8 @@ bool App::home_column_move(int code) {
     }
     const auto width = [&](int r) { return int(rows[size_t(r)].size()); };
     if (code == 8 || code == 9) row = std::clamp(row + (code == 8 ? -1 : 1), 0, 3);
-    else if (code == 0 || code == 1) column = std::clamp(std::min(column, width(row) - 1) + (code == 0 ? -1 : 1), 0,
-                                                         std::max(0, width(row) - 1));
+    else if (code == 0 || code == 1)
+        column = std::clamp(std::min(column, width(row) - 1) + (code == 0 ? -1 : 1), 0, std::max(0, width(row) - 1));
     else return false;
     if (width(row) > 1) home_column_memory = column;
     select_navigation(size_t(rows[size_t(row)][size_t(std::clamp(column, 0, width(row) - 1))]), false);
@@ -118,9 +118,8 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
             category_icon(r, tile.index, bx + (narrow ? 14 : low ? 22 : 16), by + (b.h - icon) / 2 + sink, icon);
             const std::string title = locale.text(category_title(tile.index));
             const bool note_row = !low;
-            raw_label(r, title, bx + text_x,
-                      centred_label_y(title, size, by + b.h / 2 + sink - (note_row ? 9 : 0)), size, "ink",
-                      b.w - text_x - 12);
+            raw_label(r, title, bx + text_x, centred_label_y(title, size, by + b.h / 2 + sink - (note_row ? 9 : 0)),
+                      size, "ink", b.w - text_x - 12);
             std::string note;
             if (tile.index >= 1 && tile.index <= 3) {
                 const auto& g = summary.groups[tile.index - 1];

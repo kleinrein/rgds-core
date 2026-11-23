@@ -69,6 +69,37 @@ class ResumeNoteTests(unittest.TestCase):
             self.assertIsNone(keep_last_frame(data, data, rom, time.time() + 60))
             self.assertFalse((data / 'library' / game_key(rom) / 'last-frame.bmp').exists())
 
+    def test_engine_frame_wins_and_ds_checkpoint_stands_in(self):
+        import os
+        from emulators import keep_last_frame
+        from library import game_key
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp)
+            rom = data / 'game.nds'
+            rom.write_bytes(b'x')
+            folder = data / 'library' / game_key(rom)
+            folder.mkdir(parents=True)
+            (data / 'session').mkdir()
+            (data / 'session/menu-background.bmp').write_bytes(b'BMmenu')
+            since = time.time() - 60
+            # RG DS Play wrote its own as it quit: kept, the menu's capture not copied over it.
+            (folder / 'last-frame.bmp').write_bytes(b'BMengine')
+            self.assertEqual(keep_last_frame(data, data, rom, since, 'rgds-play').read_bytes(), b'BMengine')
+            # No engine frame and no capture: the 128x96 top screen inside a DSCore checkpoint.
+            (folder / 'last-frame.bmp').unlink()
+            (data / 'session/menu-background.bmp').unlink()
+            head = bytearray(64 + 128 * 96 * 2)
+            head[:4], head[8:12] = b'DSST', b'HEAD'
+            head[56:60], head[60:64] = (128).to_bytes(4, 'little'), (96).to_bytes(4, 'little')
+            head[64:66] = b'\xff\xff'
+            (folder / 'auto-rgds-experimental.dss').write_bytes(bytes(head))
+            kept = keep_last_frame(data, data, rom, since, 'rgds-experimental')
+            self.assertEqual(kept.read_bytes()[:2], b'BM')
+            # An old checkpoint is an earlier session's.
+            kept.unlink()
+            os.utime(folder / 'auto-rgds-experimental.dss', (since - 600, since - 600))
+            self.assertIsNone(keep_last_frame(data, data, rom, since, 'rgds-experimental'))
+
 
 if __name__ == '__main__':
     unittest.main()

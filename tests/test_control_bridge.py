@@ -28,7 +28,7 @@ class ControlBridgeTests(unittest.TestCase):
                 text=True
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            for core in ('drastic', 'dsperate', 'nnddss'):
+            for core in ('dsperate', 'rgds-play'):
                 with self.subTest(core=core):
                     result = subprocess.run(
                         [str(binary), str(root), core],
@@ -80,8 +80,8 @@ int main(int argc,char** argv){
  physical.fill(0);profile("preset=left-handed\n");physical[3]=1;
  assert(SDL_JoystickGetHat(nullptr,0)==SDL_HAT_UP);
  assert(SDL_GameControllerGetButton(nullptr,SDL_CONTROLLER_BUTTON_DPAD_UP)==1);
- button(3);assert(SDL_PollEvent(&event)==1);if(core=="drastic")assert(event.jbutton.button==20);else assert(event.type==SDL_JOYHATMOTION && event.jhat.value==SDL_HAT_UP);
- if(core!="drastic"){button(0);assert(SDL_PollEvent(&event)==1 && event.jhat.value==(SDL_HAT_UP|SDL_HAT_RIGHT));button(0,false);assert(SDL_PollEvent(&event)==1 && event.jhat.value==SDL_HAT_UP);}
+ button(3);assert(SDL_PollEvent(&event)==1);assert(event.type==SDL_JOYHATMOTION && event.jhat.value==SDL_HAT_UP);
+ button(0);assert(SDL_PollEvent(&event)==1 && event.jhat.value==(SDL_HAT_UP|SDL_HAT_RIGHT));button(0,false);assert(SDL_PollEvent(&event)==1 && event.jhat.value==SDL_HAT_UP);
  physical.fill(0);profile("preset=custom\nbind_a=l3\nbind_b=r3\n");physical[9]=physical[12]=1;
  assert(SDL_JoystickGetButton(nullptr,0)==1 && SDL_JoystickGetButton(nullptr,1)==1);
  assert(SDL_JoystickGetButton(nullptr,9)==0 && SDL_JoystickGetButton(nullptr,12)==0);

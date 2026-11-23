@@ -882,9 +882,12 @@ class GameMenu:
             if self.core not in ('rgds-experimental', 'rgds-play'):
                 self.publish('error', 'Rewind is available when a game runs with DSCore or RG DS Play.')
                 return
-            if not (action == 'rewind-open' or (
-                len(pieces) == 2 and pieces[0] in ('rewind-show', 'rewind-play', 'rewind-back') and pieces[1].isdigit()
-            )):
+            if not (
+                action == 'rewind-open' or (
+                    len(pieces) == 2 and pieces[0] in ('rewind-show', 'rewind-play', 'rewind-back')
+                    and pieces[1].isdigit()
+                )
+            ):
                 self.publish('error', 'Invalid rewind request.')
                 return
         if action.startswith('shader:'):
@@ -920,10 +923,8 @@ class GameMenu:
             "busy", "Saving before switching games…" if self.switch_target else
             'Changing 3D threading…' if action.startswith('threaded:') else 'Applying graphics…' if action.startswith(
                 ('graphics:', 'play-graphics:', 'play-color:', 'filter2d:', 'adaptive:')
-            ) else 'Applying shader…' if action.startswith('shader:') else '' if action.startswith(
-                'rewind-'
-            ) else 'Applying cheat…' if action.
-            startswith('cheat:') else
+            ) else 'Applying shader…' if action.startswith('shader:') else '' if action.
+            startswith('rewind-') else 'Applying cheat…' if action.startswith('cheat:') else
             ("Saving checkpoint before restarting…" if self.restart else "Saving before returning home…"
              ) if action == "save-quit" else 'Changing speed…' if action ==
             'fast-forward' else "Saving before returning home…" if action ==
@@ -1074,7 +1075,10 @@ class GameMenu:
             elif action in ("ds:blow", "ds:lid") or action.startswith("slot-") or action in (
                 "save", "load", "quit", "quit-discard", "fast-forward"
             ) or action.startswith(
-                ('shader:', 'graphics:', 'play-graphics:', 'play-color:', 'play-scale:', 'filter2d:', 'cheat:', 'rewind-')
+                (
+                    'shader:', 'graphics:', 'play-graphics:', 'play-color:', 'play-scale:', 'filter2d:', 'cheat:',
+                    'rewind-'
+                )
             ) or action in ('fps:0', 'fps:1', 'threaded:0', 'threaded:1', 'adaptive:0', 'adaptive:1'):
                 self.send(action)
             elif action == "force-quit":

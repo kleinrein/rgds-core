@@ -43,7 +43,12 @@ def pixels(scan):
                     if x % step == 0:
                         if alpha:
                             value = (scan[at] << 8) | scan[at + 1]
-                            row += bytes(((value >> 11) * 255 // 31, ((value >> 5) & 63) * 255 // 63, (value & 31) * 255 // 31, alpha * 255 // 4))
+                            row += bytes(
+                                (
+                                    (value >> 11) * 255 // 31, ((value >> 5) & 63) * 255 // 63,
+                                    (value & 31) * 255 // 31, alpha * 255 // 4
+                                )
+                            )
                         else:
                             row += b"\0\0\0\0"
                     if alpha: at += 2

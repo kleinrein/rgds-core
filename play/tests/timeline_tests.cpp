@@ -199,21 +199,35 @@ void test_screen() {
     s.pad(0);
     CHECK(s.chosen() == 4 && s.branch_index() == 0 && s.line().back() == 10 && s.line().size() == 10);
     CHECK(s.label(10, words) == "+0:04"); // 10 at frame 600
-    // A drag to the right goes back in time; letting go plays from there.
+    // A drag to the right goes back in time; letting go only looks (A or Play from here plays).
     s.set_time(2000, false);
     const int x = 320;
-    s.touch({Touch::Down, x, RewindScreen::flow_y});
-    s.touch({Touch::Move, x + int(RewindScreen::drag_per_moment) * 2, RewindScreen::flow_y});
+    s.touch({Touch::Down, x, RewindScreen::row_y});
+    s.touch({Touch::Move, x + int(RewindScreen::drag_per_moment) * 2, RewindScreen::row_y});
     CHECK(s.chosen() == 2);
-    s.touch({Touch::Up, x + int(RewindScreen::drag_per_moment) * 2, RewindScreen::flow_y});
+    s.touch({Touch::Up, x + int(RewindScreen::drag_per_moment) * 2, RewindScreen::row_y});
     uint32_t target = 0;
-    CHECK(s.take(target) == RewindScreen::Result::Jump && target == 2);
-    CHECK(s.take(target) == RewindScreen::Result::None);
+    CHECK(s.chosen() == 2 && s.take(target) == RewindScreen::Result::None);
+    // A flick goes further than the finger did, without the springs too, and lands at once; still only a look.
+    s.pad(Right);
+    s.pad(0);
+    s.pad(Right);
+    s.pad(0);
+    CHECK(s.chosen() == 4);
+    for (int i = 0; i <= 5; ++i) {
+        s.set_time(2100 + uint64_t(i) * 10, false);
+        s.touch({i ? Touch::Move : Touch::Down, x + i * 30, RewindScreen::row_y});
+    }
+    s.touch({Touch::Up, x + 150, RewindScreen::row_y});
+    CHECK(s.selected() == 0 && s.settled() && s.take(target) == RewindScreen::Result::None); // the oldest
+    s.pad(Right);
+    s.pad(0);
+    CHECK(s.chosen() == 2);
     // A tap on a picture only looks at it; Back to now is a tap on its button.
     s.set_time(3000, false);
     const int right_one = int(s.centre_x(2));
-    s.touch({Touch::Down, right_one, RewindScreen::flow_y});
-    s.touch({Touch::Up, right_one, RewindScreen::flow_y});
+    s.touch({Touch::Down, right_one, RewindScreen::row_y});
+    s.touch({Touch::Up, right_one, RewindScreen::row_y});
     CHECK(s.chosen() == 3 && s.take(target) == RewindScreen::Result::None);
     s.pad(Right);
     s.pad(0);
@@ -227,18 +241,22 @@ void test_screen() {
     s.touch({Touch::Down, chip.x + 10, chip.y + 10});
     s.touch({Touch::Up, chip.x + 10, chip.y + 10});
     CHECK(s.branch_index() == 1 && s.line().back() == now);
-    // A tap on the scrubber's track looks (the strip goes there); only a drag along it, let go, plays.
+    // The header's back arrow and the footer's Back both go back to now.
     uint32_t ignored = 0;
     s.take(ignored);
-    const Box track = RewindScreen::box(RewindScreen::Part::Scrubber);
-    s.touch({Touch::Down, track.x + 30, track.y + 20});
-    s.touch({Touch::Up, track.x + 30, track.y + 20});
-    CHECK(s.chosen() == s.line().front() && s.take(ignored) == RewindScreen::Result::None && s.settled());
-    s.touch({Touch::Down, track.x + 30, track.y + 20});
-    s.touch({Touch::Move, track.x + track.w - 30, track.y + 20});
-    CHECK(!s.settled()); // a finger on it: nothing to load yet
-    s.touch({Touch::Up, track.x + track.w - 30, track.y + 20});
-    CHECK(s.take(target) == RewindScreen::Result::Jump && target == s.line().back());
+    s.touch({Touch::Down, 40, 40});
+    s.touch({Touch::Up, 40, 40});
+    CHECK(s.take(ignored) == RewindScreen::Result::Back);
+    const Box footer_back = RewindScreen::box(RewindScreen::Part::Back);
+    s.touch({Touch::Down, footer_back.x + 20, footer_back.y + 20});
+    s.touch({Touch::Move, footer_back.x + 400, footer_back.y + 20}); // slid off: cancelled
+    s.touch({Touch::Up, footer_back.x + 400, footer_back.y + 20});
+    CHECK(s.take(ignored) == RewindScreen::Result::None);
+    // A finger on the row: nothing settled to show until it lets go.
+    s.touch({Touch::Down, 320, RewindScreen::row_y});
+    CHECK(!s.settled());
+    s.touch({Touch::Up, 320, RewindScreen::row_y});
+    CHECK(s.settled() && s.take(ignored) == RewindScreen::Result::None);
     // With the springs on, A during a glide plays where the strip is heading, not what passes the middle.
     s.set_time(5000, true);
     s.pad(0);
@@ -247,7 +265,7 @@ void test_screen() {
     CHECK(s.moving() && !s.settled());
     s.pad(A);
     s.pad(0);
-    CHECK(s.take(target) == RewindScreen::Result::Jump && target == s.line()[s.line().size() - 1 - std::min<size_t>(10, s.line().size() - 1)]);
+    CHECK(s.take(target) == RewindScreen::Result::Jump && target == s.line().front()); // ten back, stopped at the oldest
     for (uint64_t ms = 5016; ms < 6500; ms += 16) s.set_time(ms, true);
     CHECK(s.settled());
     s.set_time(7000, false);

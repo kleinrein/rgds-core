@@ -305,8 +305,7 @@ void Session::show_moment(uint32_t id) {
     // One silent frame, so the top screen shows the moment: no achievements, no frame count, no sound.
     core_->run_frame(0);
     int16_t discard[2048 * 2];
-    while (core_->audio(discard, 2048) == 2048) {
-    }
+    while (core_->audio(discard, 2048) == 2048) {}
 }
 
 void Session::close_rewind(uint32_t id) {
@@ -361,15 +360,15 @@ bool Session::menu_rewind_show(uint32_t id, Picture& shown) {
     menu_previewed_ = id != menu_now_;
     core_->run_frame(0);
     int16_t discard[2048 * 2];
-    while (core_->audio(discard, 2048) == 2048) {
-    }
+    while (core_->audio(discard, 2048) == 2048) {}
     const Picture p = core_->picture();
     if (!p.px || p.w <= 0 || p.h <= 0) {
         shown = {};
         return true; // loaded; nothing to read back (a GPU game): the menu keeps the small picture
     }
     menu_shown_.resize(size_t(p.w) * p.h);
-    for (int y = 0; y < p.h; ++y) std::copy(p.px + size_t(y) * p.stride, p.px + size_t(y) * p.stride + p.w, &menu_shown_[size_t(y) * p.w]);
+    for (int y = 0; y < p.h; ++y)
+        std::copy(p.px + size_t(y) * p.stride, p.px + size_t(y) * p.stride + p.w, &menu_shown_[size_t(y) * p.w]);
     shown = {menu_shown_.data(), p.w, p.h, p.w};
     return true;
 }
@@ -393,7 +392,8 @@ void Session::menu_rewind_restore() {
     if (!menu_previewed_ || !menu_now_) return;
     menu_previewed_ = false;
     std::string error;
-    if (!timeline_.jump(*core_, menu_now_, error)) std::fprintf(stderr, "play: rewind: back to now: %s\n", error.c_str());
+    if (!timeline_.jump(*core_, menu_now_, error))
+        std::fprintf(stderr, "play: rewind: back to now: %s\n", error.c_str());
     else std::fprintf(stderr, "play: rewind: back to now (a look was still in effect)\n");
 }
 

@@ -160,7 +160,9 @@ class PackagingRecordTests(unittest.TestCase):
                 hashlib.sha256(release.read(launcher)).hexdigest()
             )
             # DSCore is the only DS engine: no retired engine is packaged
-            self.assertFalse([n for n in release.namelist() if '/emulators/dsperate/' in n or '/emulators/melonds/' in n])
+            self.assertFalse(
+                [n for n in release.namelist() if '/emulators/dsperate/' in n or '/emulators/melonds/' in n]
+            )
 
 
 if __name__ == "__main__": unittest.main()

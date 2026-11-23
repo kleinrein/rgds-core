@@ -31,17 +31,9 @@ jobs:
       - name: Python syntax
         run: git ls-files -z '*.py' | xargs -0 python -m py_compile
       - name: Python tests
-        env:
-          PYTHONPATH: tests:runtime
-        run: |
-          # Need build/host/rgds-launcher or the fetched engines
-          needs_build='bluetooth_ui|game_info_ui|gap_closure_ui|ota_ui|release_polish_ui|shader_pixels|shader_preview_validation'
-          # Over a minute: assembles the whole compat layer
-          slow='portmaster'
-          # Already failing when CI was added (core_refinement on develop only); take a module out once it is fixed
-          known_red='companion_lint|core_refinement|game_switcher|shader_preview'
-          modules=$(ls tests | grep -E '^test_.*\.py$' | grep -vE "^test_($needs_build|$slow|$known_red)\.py$" | sed 's/\.py$//')
-          python -m unittest $modules
+        # In parallel, one process per test class; leaves out the needs-build, slow and known-red modules listed
+        # in tools/test.py (take a module out of known_red there once it is fixed)
+        run: python tools/test.py --ci
       - name: Flasher vet
         working-directory: flasher
         run: go vet ./...

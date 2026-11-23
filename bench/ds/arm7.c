@@ -16,7 +16,7 @@ typedef unsigned char u8;
 #define SAMPLES 0x02300000 /* the ARM9 fills this: a PCM16 tone per channel (arm9 main.c) */
 
 static void sound_on(void) {
-    POWCNT2 = 3; /* sound + wifi clock */
+    POWCNT2 = 3;            /* sound + wifi clock */
     SOUNDCNT = 0x8000 | 30; /* quiet: the mixer still runs for every channel */
     for (int n = 0; n < 16; ++n) {
         CH_TMR(n) = (u16)(0x10000 - 0x200 + n * 8);

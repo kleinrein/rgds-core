@@ -21,22 +21,23 @@ static double now_ms(void) {
 }
 static unsigned long long rs = 88172645463325252ull;
 static unsigned rnd(void) {
-    rs ^= rs << 13; rs ^= rs >> 7; rs ^= rs << 17;
-    return (unsigned) (rs >> 16);
+    rs ^= rs << 13;
+    rs ^= rs >> 7;
+    rs ^= rs << 17;
+    return (unsigned)(rs >> 16);
 }
 static float frnd(void) { return (rnd() & 0xffff) / 65535.0f; }
 static int pick(int n) { return rnd() % n; }
 
-static const char* vsrc =
-    "#version 330 core\n"
-    "layout(location=0) in vec2 a;\n"
-    "out vec4 color; out vec2 texcoord0; out vec2 texcoord1; out vec2 texcoord2;\n"
-    "out float texcoordw; out vec3 normal; out vec3 tangent; out vec3 view;\n"
-    "void main(){ vec2 u=a*0.5+0.5; gl_Position=vec4(a,a.x*0.6-0.1,1);\n"
-    "color=vec4(u,1-u.x,0.3+0.7*u.y); texcoord0=u*1.7-0.3; texcoord1=u.yx*1.3;\n"
-    "texcoord2=u*0.8+0.1; texcoordw=0.5+u.x;\n"
-    "normal=normalize(vec3(a*0.6,1)); tangent=normalize(vec3(1,a.y*0.4,-a.x*0.3));\n"
-    "view=vec3(-a*0.8,1.5);}\n";
+static const char* vsrc = "#version 330 core\n"
+                          "layout(location=0) in vec2 a;\n"
+                          "out vec4 color; out vec2 texcoord0; out vec2 texcoord1; out vec2 texcoord2;\n"
+                          "out float texcoordw; out vec3 normal; out vec3 tangent; out vec3 view;\n"
+                          "void main(){ vec2 u=a*0.5+0.5; gl_Position=vec4(a,a.x*0.6-0.1,1);\n"
+                          "color=vec4(u,1-u.x,0.3+0.7*u.y); texcoord0=u*1.7-0.3; texcoord1=u.yx*1.3;\n"
+                          "texcoord2=u*0.8+0.1; texcoordw=0.5+u.x;\n"
+                          "normal=normalize(vec3(a*0.6,1)); tangent=normalize(vec3(1,a.y*0.4,-a.x*0.3));\n"
+                          "view=vec3(-a*0.8,1.5);}\n";
 
 static GLuint compile(GLenum type, const char* src, int* ok) {
     GLuint sh = glCreateShader(type);
@@ -163,7 +164,7 @@ static void randcfg(FragConfig* c) {
 }
 
 static void randuni(FragUniforms* u) {
-    float* f = (float*) u;
+    float* f = (float*)u;
     for (size_t i = 0; i < sizeof *u / 4; i++) f[i] = frnd();
     for (int i = 0; i < 8; i++) {
         for (int k = 0; k < 3; k++) {
@@ -202,12 +203,12 @@ int main(int argc, char** argv) {
     EGLConfig cfg;
     EGLint n;
     eglChooseConfig(d, ca, &cfg, 1, &n);
-    EGLint xa[] = {EGL_CONTEXT_MAJOR_VERSION, 3, EGL_CONTEXT_MINOR_VERSION, 3,
-                   EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
-                   EGL_NONE};
+    EGLint xa[] = {
+        EGL_CONTEXT_MAJOR_VERSION,           3,       EGL_CONTEXT_MINOR_VERSION, 3, EGL_CONTEXT_OPENGL_PROFILE_MASK,
+        EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT, EGL_NONE};
     EGLContext ctx = eglCreateContext(d, n ? cfg : NULL, EGL_NO_CONTEXT, xa);
     if (!eglMakeCurrent(d, EGL_NO_SURFACE, EGL_NO_SURFACE, ctx)) return puts("no ctx"), 1;
-    gladLoadGLLoader((GLADloadproc) eglGetProcAddress);
+    gladLoadGLLoader((GLADloadproc)eglGetProcAddress);
     printf("%s | %s\n", glGetString(GL_RENDERER), glGetString(GL_VERSION));
 
     GLuint fbt, fb;
@@ -329,9 +330,8 @@ int main(int argc, char** argv) {
             if (bad <= 8) {
                 printf("MISMATCH #%d: %d px differ, max %d; lights %d disable %d fog %d "
                        "alphatest %d/%d tex %x t0type %d lenv %d\n",
-                       t, diffpx, maxd, c.numlights, c.lightDisable, c.tev_buffer.fogmode,
-                       c.alphatest, c.alphafunc, c.texconfig.w, c.tex0type,
-                       c.lconfig0.lightenv);
+                       t, diffpx, maxd, c.numlights, c.lightDisable, c.tev_buffer.fogmode, c.alphatest, c.alphafunc,
+                       c.texconfig.w, c.tex0type, c.lconfig0.lightenv);
                 char name[64];
                 snprintf(name, sizeof name, "/tmp/mismatch-%d.frag", t);
                 FILE* f = fopen(name, "w");
@@ -349,8 +349,8 @@ int main(int argc, char** argv) {
     printf("configs %d, skipped (exact shader did not compile) %d, mismatches %d, "
            "worst differing pixels %d of %d\n",
            count, skipped, bad, worstn, W * H);
-    printf("exact link %.0f ms each; draw+read exact %.2f ms, uber %.2f ms\n",
-           exact_ms / count, draw_ms[0] / count, draw_ms[1] / count);
+    printf("exact link %.0f ms each; draw+read exact %.2f ms, uber %.2f ms\n", exact_ms / count, draw_ms[0] / count,
+           draw_ms[1] / count);
     if (cost) printf("one 400x240 layer: exact %.2f ms, uber %.2f ms\n", cost_ms[0] / count, cost_ms[1] / count);
     return bad != 0;
 }

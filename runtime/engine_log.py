@@ -100,6 +100,10 @@ class EngineLog:
             self.path.parent.mkdir(parents=True, exist_ok=True)
             pending.write_text(header + "\n" + tail)
             pending.replace(self.path)
+            # A crash keeps its own copy, which the next launch does not write over (a signal is a negative code).
+            if returncode not in (None, 0):
+                crash = self.path.with_name(self.core + "-crash.log")
+                crash.write_text(header + "\n" + tail)
         except OSError as failure:
             # Preserve the bounded crash tail even if a card remounts read-only
             # mid-game. This recovery file never becomes a save destination.

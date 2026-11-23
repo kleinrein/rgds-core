@@ -7,9 +7,10 @@
 
 namespace music_layout {
 // The lists: five rows between the header's rule and the bar along the bottom.
-constexpr int rows_top = 92, row_height = 56, stride = 62, rows_height = 310, rail_x = 596;
-constexpr int bar_y = 418, bar_height = 54; // the mini player
-constexpr int tabs = 5;                     // as wide as their longest word needs: App::music_tab_width
+constexpr int row_height = 56, stride = 62, rail_x = 596;
+inline int rows_top = 92, rows_height = 310; // lower under Media's second pill row: App::music_sync_layout
+constexpr int bar_y = 418, bar_height = 54;  // the mini player
+constexpr int tabs = 5;                      // as wide as their longest word needs: App::music_tab_width
 constexpr std::array<const char*, tabs> tab_names = {"Songs", "Albums", "Artists", "Folders", "Lists"};
 // Now playing.
 constexpr SDL_Rect art{32, 96, 200, 200};
@@ -36,6 +37,13 @@ int App::music_tab_width() {
 }
 
 bool App::music_available() const { return preferences.music_player && !o.game_menu && !probe; }
+
+// Under Media's section pills the Music tabs are a second row of pills, and the list starts below them.
+void App::music_sync_layout() {
+    const bool pills = media_sections() && mu.view == MusicUi::View::Browse && mu.section == 0 && mu.levels.size() <= 1;
+    music_layout::rows_top = pills ? media_layout::music_rule_y + 8 : 92;
+    music_layout::rows_height = 402 - music_layout::rows_top;
+}
 
 // The Music player switch moved (Settings > Sound, a profile's page, another profile now playing).
 void App::music_switched() {
@@ -314,7 +322,10 @@ void App::music_set_tab(int tab) {
     // Tabs sit side by side: the next one slides in from the right, the one before from the left.
     const int step = (tab - mu.tab + music_layout::tabs) % music_layout::tabs;
     if (step) view_route = step <= music_layout::tabs / 2 ? ViewTravel::Right : ViewTravel::Left;
+    if (step && media_sections()) view_route = ViewTravel::Fade; // under Media's pill rows: in place, as a section
     mu.tab = tab;
+    mu.tab_pill.target = tab;
+    if (!preferences.animations) mu.tab_pill.snap(tab);
     mu.levels.clear();
     mu.motion.stop();
     music_level();
@@ -342,11 +353,19 @@ void App::music_show(MusicUi::View view) {
 
 // The list the lower screen shows now: the library page, or the queue.
 int App::music_rows() {
+    if (media_shelf_open()) return int(media_shelf().items.size());
     return mu.view == MusicUi::View::Queue ? int(music.queue.size()) : int(music_level().rows.size());
 }
-int& App::music_focus() { return mu.view == MusicUi::View::Queue ? mu.queue_focus : music_level().focus; }
-int& App::music_scroll() { return mu.view == MusicUi::View::Queue ? mu.queue_scroll : music_level().scroll; }
+int& App::music_focus() {
+    if (media_shelf_open()) return media_shelf().focus;
+    return mu.view == MusicUi::View::Queue ? mu.queue_focus : music_level().focus;
+}
+int& App::music_scroll() {
+    if (media_shelf_open()) return media_shelf().scroll;
+    return mu.view == MusicUi::View::Queue ? mu.queue_scroll : music_level().scroll;
+}
 int App::music_max_scroll() {
+    if (media_shelf_open()) return media_max_scroll();
     return std::max(0, music_rows() * music_layout::stride - (music_layout::stride - music_layout::row_height) -
                            music_layout::rows_height);
 }
@@ -368,6 +387,7 @@ void App::music_move_focus(int delta) {
 }
 
 void App::music_activate(int index) {
+    if (media_shelf_open()) return media_activate(index);
     const Uint32 now = s.GetTicks();
     if (mu.view == MusicUi::View::Queue) {
         if (index < 0 || index >= int(music.queue.size())) return;
@@ -435,6 +455,7 @@ void App::music_activate(int index) {
 
 // X or a long press on a row: what else can be done with it.
 void App::music_row_options(int index) {
+    if (media_shelf_open()) return media_options(index);
     const Uint32 now = s.GetTicks();
     if (mu.view == MusicUi::View::Queue) {
         if (index < 0 || index >= int(music.queue.size())) return;
@@ -500,6 +521,7 @@ bool App::music_back() {
         emit_sound(MenuCue::Back);
         return true;
     }
+    if (media_shelf_open()) return media_back();
     if (mu.levels.size() > 1) {
         mu.levels.pop_back();
         mu.motion.stop();
@@ -512,23 +534,40 @@ bool App::music_back() {
 }
 
 void App::open_music() {
-    if (music_open || launching || probe || !music_available()) return;
+    if (music_open || launching || probe || !(music_available() || media_sections())) return;
     cancel_navigation();
-    music_setup();
+    // Media opens on the section it was left on.
+    media_load_section();
+    media_fit_section();
     const Uint32 now = s.GetTicks();
-    music.poll(now);
-    // Opening the player is when new music is looked for: an engine already running reads the folder again (only
-    // new and changed files are opened), a new one does so as it starts.
-    if (music.alive) music.send("rescan", now);
-    else music.start(now);
+    if (music_available()) {
+        music_setup();
+        music.poll(now);
+        // Opening the player is when new music is looked for: an engine already running reads the folder again
+        // (only new and changed files are opened), a new one does so as it starts.
+        if (music.alive) music.send("rescan", now);
+        else music.start(now);
+    }
     music_open = true;
-    // Straight to what is playing, when something is.
-    mu.view = music.loaded() ? MusicUi::View::Player : MusicUi::View::Browse;
+    // Straight to what is playing, when something is (and Music is where Media was left).
+    mu.view = music_available() && mu.section == 0 && music.loaded() ? MusicUi::View::Player : MusicUi::View::Browse;
+    if (media_sections()) {
+        // New films and books are looked for each time, as music is.
+        media_start_index(true);
+        mu.index_seen = mu.places_seen = -2;
+        mu.hero_key.clear();
+        mu.hero_prev.clear();
+        media_poll(now, true);
+        if (mu.section != 0) {
+            media_build(mu.section == 2);
+            media_place_focus(true);
+        }
+    }
     mu.focus_visible = false;
     mu.touch = MusicUi::Touch::None;
     mu.motion.stop();
     mu.seeking = false;
-    music_level();
+    if (music_available()) music_level();
     emit_sound(MenuCue::Open);
     mu.bottom_changed = dirty = true;
 }
@@ -539,7 +578,8 @@ void App::close_music() {
     mu.touch = MusicUi::Touch::None;
     mu.motion.stop();
     pointer_down = false;
-    music.save_settings();
+    if (music_ready) music.save_settings();
+    if (media_sections()) media_save_section();
     emit_sound(MenuCue::Back);
     dirty = true;
 }
@@ -593,35 +633,47 @@ std::string App::music_home_note() {
 
 // Every turn of the main loop. True while the player's screens are moving.
 bool App::music_tick(Uint32 now) {
-    if (!music_available()) {
+    const bool sounds = music_available();
+    if (!sounds && !media_sections()) {
         if (music_open) close_music();
         return false;
     }
-    music_setup();
+    if (!sounds && music_open && mu.section == 0) {
+        // The music player was switched off under an open Media level: its shelves stay.
+        media_fit_section();
+        mu.view = MusicUi::View::Browse;
+        if (mu.section != 0) {
+            media_build(mu.section == 2);
+            media_place_focus(true);
+        }
+    }
+    if (sounds) music_setup();
     // An engine may be playing from before the launcher restarted: look once a second even when the player is shut.
-    if (!music_open && !music.alive && now - mu.polled_at < 1000) return false;
-    mu.polled_at = now;
-    if (music.poll(now)) {
-        mu.bottom_changed = true;
-        if (music_open || home_menu) dirty = true;
-    }
-    const int level = hardware.volume ? hardware.volume_percent : 100;
-    if (music.alive && (level != mu.volume_sent || !mu.was_alive)) {
-        music.send("volume " + std::to_string(level), now);
-        mu.volume_sent = level;
-    }
-    mu.was_alive = music.alive;
-    // The menu's own music and cues stand down while a song plays, and come back after.
-    if (music.playing() != mu.was_playing) {
-        mu.was_playing = music.playing();
-        configure_sounds();
-    }
-    if (music.alive && music.now.error_serial != mu.error_seen) {
-        mu.error_seen = music.now.error_serial;
-        if (music_open && music.now.error[0]) music_toast(music.now.error);
+    if (sounds && (music_open || music.alive || now - mu.polled_at >= 1000)) {
+        mu.polled_at = now;
+        if (music.poll(now)) {
+            mu.bottom_changed = true;
+            if (music_open || home_menu) dirty = true;
+        }
+        const int level = hardware.volume ? hardware.volume_percent : 100;
+        if (music.alive && (level != mu.volume_sent || !mu.was_alive)) {
+            music.send("volume " + std::to_string(level), now);
+            mu.volume_sent = level;
+        }
+        mu.was_alive = music.alive;
+        // The menu's own music and cues stand down while a song plays, and come back after.
+        if (music.playing() != mu.was_playing) {
+            mu.was_playing = music.playing();
+            configure_sounds();
+        }
+        if (music.alive && music.now.error_serial != mu.error_seen) {
+            mu.error_seen = music.now.error_serial;
+            if (music_open && music.now.error[0]) music_toast(music.now.error);
+        }
     }
     if (!music_open) return false;
-    bool moving = false;
+    music_sync_layout();
+    bool moving = media_sections() && media_tick(now);
     if (mu.motion.active()) {
         if (mu.view == MusicUi::View::Browse || mu.view == MusicUi::View::Queue) {
             const int row = music_scroll() / music_layout::stride;
@@ -817,11 +869,15 @@ void App::music_shoulders(SDL_Renderer* r, int y) {
 }
 
 void App::music_top(SDL_Renderer* r, int y) {
+    if (media_shelf_open()) return media_top(r, y);
     rect(r, 0, y, 640, 480, "background");
     pattern(r, y + 48, 432);
     status_bar(r, y);
     music_shoulders(r, y);
     const MusicLibrary& library = music.library;
+    // Under Media, Music's pages look like Videos and Books: the focused row large over a blur of its cover.
+    if (!music.loaded() && media_sections() && mu.view == MusicUi::View::Browse && !music_level().rows.empty())
+        return music_hero(r, y);
     if (!music.loaded()) {
         // Nothing playing yet: what there is to play, or how to get music onto the card.
         round_rect(r, 22, y + 82, 596, 320, card_radius + 2, "line");
@@ -1055,8 +1111,12 @@ void App::music_browse(SDL_Renderer* r, int y) {
     const int tab_width = music_tab_width(), tabs_left = 616 - tabs * tab_width;
     // Wide tabs leave no room for the page's name; the open tab says where this is.
     const bool named = !root || 88 + label_width("Music", 28) + 12 <= tabs_left;
-    music_header(r, y, !named ? "" : root ? "Music" : level.title, root, root ? tabs_left - 96 : 520);
-    if (root) {
+    const bool pills = root && media_sections(); // Media: the section pills, and the tabs as a row of pills
+    if (pills) {
+        media_header(r, y, media_layout::music_rule_y);
+        media_tab_pills(r, y);
+    } else music_header(r, y, !named ? "" : root ? "Music" : level.title, root, root ? tabs_left - 96 : 520);
+    if (root && !pills) {
         const int pressed = pointer_down && mu.touch == MusicUi::Touch::Button && mu.touch_button == 1 &&
                                     contact_y < 78 && contact_x >= tabs_left
                                 ? (contact_x - tabs_left) / tab_width
@@ -1287,13 +1347,17 @@ void App::music_equaliser(SDL_Renderer* r, int y) {
 }
 
 void App::music_bottom(SDL_Renderer* r, int y) {
+    music_sync_layout();
     rect(r, 0, y, 640, 480, "background");
     pattern(r, y, 480, true);
     switch (mu.view) {
     case MusicUi::View::Player: music_player(r, y); break;
     case MusicUi::View::Queue: music_queue(r, y); break;
     case MusicUi::View::Equaliser: music_equaliser(r, y); break;
-    default: music_browse(r, y); break;
+    default:
+        if (media_shelf_open()) media_bottom(r, y);
+        else music_browse(r, y);
+        break;
     }
     if (!mu.toast.empty()) {
         const int width = std::min(560, label_width(mu.toast, 16, false) + 36), left = 320 - width / 2;
@@ -1355,6 +1419,13 @@ void App::music_action(int code) {
     last_activity = now;
     mu.bottom_changed = dirty = true;
     using View = MusicUi::View;
+    music_sync_layout();
+    if (media_action(code)) return; // the Videos and Books pages
+    // L2 and R2 step Media's sections from the library's first page; in the player they shuffle and repeat.
+    if ((code == 15 || code == 16) && media_sections() && mu.view == View::Browse && mu.levels.size() <= 1) {
+        media_step_section(code == 15 ? -1 : 1);
+        return;
+    }
     // Everywhere: Start plays and pauses, L2 shuffles, R2 repeats, the Anbernic button leaves.
     if (code == 4) {
         if (music.loaded()) music.send("toggle", now);
@@ -1432,12 +1503,13 @@ int App::music_button_at(int x, int y) {
     using namespace music_layout;
     using View = MusicUi::View;
     if (x < 84 && y < 78) return 0; // Back, in every header
+    if (const int pill = media_header_button(x, y); pill >= 0) return pill;
     const auto round_hit = [&](int cx, int cy, int size) {
         return std::abs(x - cx) <= std::max(24, size / 2 + 4) && std::abs(y - cy) <= std::max(24, size / 2 + 4);
     };
     if (mu.view == View::Browse || mu.view == View::Queue) {
-        if (mu.view == View::Browse && mu.levels.size() == 1 && y < 78 && x >= 616 - tabs * music_tab_width() &&
-            x < 616)
+        if (mu.view == View::Browse && !media_sections() && mu.levels.size() == 1 && y < 78 &&
+            x >= 616 - tabs * music_tab_width() && x < 616)
             return 1;
         if (!music.loaded()) return y >= 424 && x < 200 ? 0 : -1;
         if (y >= bar_y - 4)
@@ -1469,6 +1541,18 @@ void App::music_button(int button) {
     switch (button) {
     case 0: action(3); break;
     case 1: music_set_tab((contact_x - (616 - music_layout::tabs * music_tab_width())) / music_tab_width()); break;
+    case 60:
+    case 61:
+    case 62: {
+        const auto list = media_section_list();
+        if (button - 60 < int(list.size())) media_set_section(list[size_t(button - 60)]);
+        break;
+    }
+    case 70:
+    case 71:
+    case 72:
+    case 73:
+    case 74: music_set_tab(button - 70); break;
     case 10:
         music_show(View::Player);
         emit_sound(MenuCue::Open);
@@ -1512,10 +1596,20 @@ void App::music_press(int x, int y) {
     mu.swiped = mu.held = false;
     mu.touch = Touch::None;
     mu.touch_row = mu.touch_button = -1;
+    music_sync_layout();
     const int button = music_button_at(x, y);
     if (button >= 0) {
         mu.touch = Touch::Button;
         mu.touch_button = button;
+        return;
+    }
+    if (media_shelf_open()) {
+        // A poster: a tap opens it, a drag scrolls the shelf with the same flick as the lists.
+        if (y < media_layout::grid_top || y >= media_layout::grid_bottom) return;
+        mu.touch = Touch::List;
+        mu.touch_row = media_hit(x, y);
+        mu.scroll_at_press = music_scroll();
+        mu.motion.begin(now, music_scroll());
         return;
     }
     if (mu.view == View::Browse || mu.view == View::Queue) {

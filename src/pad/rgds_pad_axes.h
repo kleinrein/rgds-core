@@ -37,72 +37,60 @@ static const int rgds_pad_state_invert[4] = {1, 1, 1, 0};
 static const int rgds_pad_stick_states[2][2] = {{1, 3}, {2, 0}};
 
 struct rgds_pad_axis {
-	int code;   /* the ABS_* code reported */
-	int invert; /* report the value negated */
-	int cal;    /* raw * scale at the rest position */
-	int value;  /* the last value worked out, before inversion */
+    int code;   /* the ABS_* code reported */
+    int invert; /* report the value negated */
+    int cal;    /* raw * scale at the rest position */
+    int value;  /* the last value worked out, before inversion */
 };
 
 /* The kernel's int_sqrt: the floor of the square root. */
-static inline long rgds_pad_isqrt(long x)
-{
-	long r = 0, bit = 1L << 30;
-	if (x <= 0)
-		return 0;
-	while (bit > x)
-		bit >>= 2;
-	while (bit) {
-		if (x >= r + bit) {
-			x -= r + bit;
-			r = (r >> 1) + bit;
-		} else {
-			r >>= 1;
-		}
-		bit >>= 2;
-	}
-	return r;
+static inline long rgds_pad_isqrt(long x) {
+    long r = 0, bit = 1L << 30;
+    if (x <= 0) return 0;
+    while (bit > x) bit >>= 2;
+    while (bit) {
+        if (x >= r + bit) {
+            x -= r + bit;
+            r = (r >> 1) + bit;
+        } else {
+            r >>= 1;
+        }
+        bit >>= 2;
+    }
+    return r;
 }
 
-static inline int rgds_pad_tune(int value)
-{
-	/* ADC_DATA_TUNING(x, p) = (x * p) / 100, the same percentage both ways on the RG DS */
-	if (value != 0)
-		value = (value * RGDS_PAD_TUNING) / 100;
-	if (value > RGDS_PAD_MAX)
-		value = RGDS_PAD_MAX;
-	if (value < -RGDS_PAD_MAX)
-		value = -RGDS_PAD_MAX;
-	return value;
+static inline int rgds_pad_tune(int value) {
+    /* ADC_DATA_TUNING(x, p) = (x * p) / 100, the same percentage both ways on the RG DS */
+    if (value != 0) value = (value * RGDS_PAD_TUNING) / 100;
+    if (value > RGDS_PAD_MAX) value = RGDS_PAD_MAX;
+    if (value < -RGDS_PAD_MAX) value = -RGDS_PAD_MAX;
+    return value;
 }
 
 /* One stick: two raw readings in, both axes' values worked out (x->value, y->value). Returns 0 when either reading
  * is 0, which the driver takes as a failed read and skips (the values then stay as they were). */
-static inline int rgds_pad_stick(struct rgds_pad_axis *x, int raw_x, struct rgds_pad_axis *y, int raw_y)
-{
-	int vx, vy, mag, max = RGDS_PAD_MAX, dz = RGDS_PAD_DEADZONE;
-	if (raw_x == 0 || raw_y == 0)
-		return 0;
-	vx = raw_x * RGDS_PAD_SCALE - x->cal;
-	vy = raw_y * RGDS_PAD_SCALE - y->cal;
-	mag = (int)rgds_pad_isqrt((long)vx * vx + (long)vy * vy);
-	if (dz) {
-		if (mag <= dz) {
-			vx = 0;
-			vy = 0;
-		} else {
-			/* the driver's order of operations, which keeps the products inside an int */
-			vx = (((max * vx) / mag) * (mag - dz)) / (max - dz);
-			vy = (((max * vy) / mag) * (mag - dz)) / (max - dz);
-		}
-	}
-	x->value = rgds_pad_tune(vx);
-	y->value = rgds_pad_tune(vy);
-	return 1;
+static inline int rgds_pad_stick(struct rgds_pad_axis* x, int raw_x, struct rgds_pad_axis* y, int raw_y) {
+    int vx, vy, mag, max = RGDS_PAD_MAX, dz = RGDS_PAD_DEADZONE;
+    if (raw_x == 0 || raw_y == 0) return 0;
+    vx = raw_x * RGDS_PAD_SCALE - x->cal;
+    vy = raw_y * RGDS_PAD_SCALE - y->cal;
+    mag = (int)rgds_pad_isqrt((long)vx * vx + (long)vy * vy);
+    if (dz) {
+        if (mag <= dz) {
+            vx = 0;
+            vy = 0;
+        } else {
+            /* the driver's order of operations, which keeps the products inside an int */
+            vx = (((max * vx) / mag) * (mag - dz)) / (max - dz);
+            vy = (((max * vy) / mag) * (mag - dz)) / (max - dz);
+        }
+    }
+    x->value = rgds_pad_tune(vx);
+    y->value = rgds_pad_tune(vy);
+    return 1;
 }
 
-static inline int rgds_pad_report(const struct rgds_pad_axis *a)
-{
-	return a->invert ? -a->value : a->value;
-}
+static inline int rgds_pad_report(const struct rgds_pad_axis* a) { return a->invert ? -a->value : a->value; }
 
 #endif

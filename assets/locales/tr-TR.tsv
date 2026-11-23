@@ -137,8 +137,8 @@ Button layout	Düğme düzeni
 Button {0}	Düğme {0}
 Buttons and the game menu shortcut	Düğmeler ve oyun menüsü kısayolu
 Cancel	İptal
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Güncellemeyi iptal et
+Cancel the update? Anything already downloaded is removed.	Güncelleme iptal edilsin mi? İndirilenler silinir.
 Carousel	Atlıkarınca
 Carried	Üzerinde
 Cartridges	Kartuşlar
@@ -1467,16 +1467,16 @@ Vectorscope	Vektörskop
 Radial spectrum	Dairesel spektrum
 Waterfall	Şelale
 Tunnel	Tünel
-Prism	Prism
+Prism	Prizma
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
+Matrix rain	Matrix yağmuru
+Kaleidoscope	Kaleydoskop
+Fireworks	Havai fişek
+Lava lamp	Lav lambası
+Aurora	Kutup ışıkları
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Dalgacıklar
 Rotozoom	Rotozoom
 ScreenScraper account	ScreenScraper hesabı
 Not signed in	Giriş yapılmadı
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Ekran görüntüsü kaydediliyor…
 Screenshot saved to the Album.	Ekran görüntüsü Albüm'e kaydedildi.
 Still saving the last screenshot.	Son ekran görüntüsü hâlâ kaydediliyor.
 No picture to save. Resume the game and press Menu + R.	Kaydedilecek resim yok. Oyuna devam edip Menü + R'ye basın.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Cihaz her açıldığında profil seçiciyi göster.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	Son oyuncunun PIN'i var, bu yüzden açılışta yine sorulur. O ekranda B profili değiştirir.
+Switch profile	Profil değiştir
 Photo mode	Fotoğraf modu
 Leave photo mode?	Fotoğraf modundan çıkılsın mı?
 Keep editing	Düzenlemeye devam et
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Doğum günün kutlu olsun, {0}!
 Last played {0}	Son oynanma: {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Renkler ve menü müziği saati izler: daha sıcak akşamlar, daha sessiz geceler
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Orijinalinde olduğu gibi DS oyunlarına bildirilir. O gün cihaz kendi tarzında merhaba der.
+Looking for videos and books…	Videolar ve kitaplar aranıyor…
+Play from the start	Baştan oynat
+Start from the beginning	Baştan başla
+Mark as finished	Bitti olarak işaretle
+Mark as not finished	Bitmedi olarak işaretle
+{0} artist	{0} sanatçı
+{0} artists	{0} sanatçı
+{0} item	{0} öge
+{0} items	{0} öge
+Add network place	Ağ konumu ekle
+Added.	Eklendi.
+Cancel paste	Yapıştırmayı iptal et
+Card	Kart
+Choose a share	Paylaşım seç
+Clear marks	İşaretleri kaldır
+Copied.	Kopyalandı.
+Copy	Kopyala
+Delete for good	Kalıcı olarak sil
+Delete these for good?	Bunlar kalıcı olarak silinsin mi?
+Delete this for good?	Bu kalıcı olarak silinsin mi?
+Empty the trash for good?	Çöp kutusu kalıcı olarak boşaltılsın mı?
+Empty trash	Çöp kutusunu boşalt
+Extract here	Buraya çıkar
+Folder	Klasör
+Getting it…	Alınıyor…
+Getting them…	Hepsi alınıyor…
+Go ahead	Devam et
+Inbox	Gelen kutusu
+Keep it anyway	Yine de tut
+Marked	İşaretli
+Move	Taşı
+Move here	Buraya taşı
+Move these to the trash?	Bunlar çöp kutusuna taşınsın mı?
+Move this to the trash?	Bu çöp kutusuna taşınsın mı?
+Moved to the trash.	Çöp kutusuna taşındı.
+Moved.	Taşındı.
+Network	Ağ
+New folder	Yeni klasör
+No servers found	Sunucu bulunamadı
+Open the folder to copy to, then press Y.	Hedef klasörü açıp Y'ye basın.
+Open the folder to move to, then press Y.	Hedef klasörü açıp Y'ye basın.
+Paste here	Buraya yapıştır
+Put this key on the server	Bu anahtarı sunucuya ekleyin
+Remove	Kaldır
+Remove it	Kaldır
+Remove this place	Bu konumu kaldır
+Remove this place?	Bu konum kaldırılsın mı?
+Removed.	Kaldırıldı.
+Rename	Yeniden adlandır
+Servers on this network	Bu ağdaki sunucular
+Sign in with	Şununla giriş yap
+That did not work.	Bu işe yaramadı.
+That server shares no folders.	Bu sunucu klasör paylaşmıyor.
+The trash is empty.	Çöp kutusu boş.
+This handheld's key	Bu cihazın anahtarı
+Trash	Çöp kutusu
+Type an address	Adres yaz
+Wait a moment, then try again.	Biraz bekleyip yeniden deneyin.
+{0} marked	{0} işaretli
+{0} more	{0} tane daha
+Getting {0}	{0} alınıyor
+Waiting to retry {0}	Yeniden deneme bekleniyor: {0}
+until restart	yeniden başlatılana kadar
+Future	Gelecek
+Lap	Tur
+Earlier	Daha önce
+Where you are	Bulunduğun yer
+Rewind	Geri sar
+Mark	İşaretle
+Draw	Çiz
+Stamp	Damga
+Lift pen	Kalemi kaldır
+Pen down	Kalemi indir
+Screen	Ekran
+Check panel order and controller input	Ekran sırasını ve kumanda girişini kontrol edin
+Upper screen	Üst
+Lower screen	Alt
+Kind	Tür
+Size	Boyut
+Modified	Değiştirilme
+Where	Konum
+Archive	Arşiv
+Text	Metin
+Save data	Kayıt verisi
+File	Dosya
+{0} file	{0} dosyası
+{0} free	{0} boş
+Sort by	Sıralama ölçütü
+Could not open it	Açılamadı
+This folder is empty	Bu klasör boş
+The trash is empty	Çöp kutusu boş
+No network places yet	Henüz ağ konumu yok

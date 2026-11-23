@@ -154,3 +154,37 @@ None yet. The handheld was not on the network on 2026-11-21.
 - 63 strings in all 23 locale files.
 - Not done: FFmpeg 8 with V4L2 request in the image, dma-buf zero copy, pinch zoom, network sources, shares for
   Videos and Books in file sharing, anything on the handheld.
+
+## 10. One app in the launcher, 2026-11-22 (Mac only, not on the handheld)
+
+Owner: the Media app and the Music app looked like two different programs, Music left for another one, nothing
+was remembered; keep the Media app's pills and blur, but make it one fast app. So the shelves moved into the
+launcher, next to the music player, and rgds-media now only plays a film or shows a book.
+
+- `src/launcher/media_shelf.hpp`: the music player's level gains section pills along the top of the lower screen,
+  **Music · Videos · Books** (a lit glass pill slides between them). Music's own tabs become a second, smaller pill
+  row. L2/R2 step the sections from a first page. On Videos and Books, L/R step them as well (those shelves have no
+  tabs). A tap on a pill does the same. The section is kept in the profile's `media/launcher.ini` and Media opens
+  on it next time. Sections travel sideways with the launcher's own view transitions; folders go forward and Back.
+- Videos and Books are the Media app's grid (3 films or 4 books across, length chip, progress bar, folder chips,
+  gliding focus corners, flick and rubber band). The upper screen is the picked item large over a blur of its own
+  picture, cross-fading as the focus moves. Music's first page shows the focused row the same way, blurring its
+  44 px cover. X: Play / Play from the start / Mark as finished. Start resumes the newest one in progress.
+- `rgds-media --index` (`make_index` in `play/src/media/library.cpp`) writes `STATE/index.tsv` with every shelf at
+  once. Then, in the background (nice 10), it makes each poster (the `.px` cache as before, plus `.bmp` and a
+  24-px `.blur.bmp` for the launcher's picture loader) and rewrites the index every 350 ms. Items in progress get
+  their posters first. The launcher starts it each time Media opens and re-reads index.tsv and places.tsv whenever
+  they change.
+- A or a tap on a film or book: `launch_media()` with `--open FILE`, through the usual display handoff. Back in
+  rgds-media leaves it, and the launcher comes back on the same shelf and item with the new place shown.
+  The Home tile opens the level directly (`open_music`) and no longer starts rgds-media. Its Music tab, exit
+  code 42, is unused by the launcher.
+- Tests: tests/test_media_ui.py (tile and remembered section, folder in and out, four sideways transitions).
+- Not measured on the handheld: grid frame time with many posters, indexer CPU while browsing, and the open
+  time of a film. That still goes through runtime/media.py (Python start-up) before rgds-media. Exec'ing
+  rgds-media straight from the launcher is the next speed step if it feels slow.
+
+Motion (2026-11-23): the house motion, nothing of its own. The lit pill glides 160 ms ease-out like a segmented
+control; a section or a Music tab crossfades the page in place under the pills (no sideways slide); the focus
+corners sit on the focused tile as every grid's focus does (only the scroll glides); the hero crossfades in 140 ms
+with no lift, and not at all while a section change's own crossfade runs.

@@ -1,0 +1,24 @@
+#!/bin/sh
+# Compressed swap in RAM, as insurance against running out of memory: a big library, a 3DS or PSP game and the menu
+# together are the likely way to get there, and with no swap the kernel's OOM killer picks a process (often the
+# launcher) instead. vm.swappiness stays 0 (sysctl.d/rgds.conf), so anonymous memory is only moved here once the page
+# cache is nearly gone: a game's working set is not touched in normal play. lz4 for speed, vm.page-cluster 0 since
+# a RAM device gains nothing from read-ahead. Run by rcS in the background; rgds/zram-off on the data partition skips
+# it (for a comparison run). The size can be overridden with RGDS_ZRAM_SIZE (a disksize value such as 512M).
+SIZE=${RGDS_ZRAM_SIZE:-512M}
+DEV=/sys/block/zram0
+[ -f /data/rgds/zram-off ] && exit 0
+grep -q '^/dev/zram0 ' /proc/swaps 2>/dev/null && exit 0
+[ -d $DEV ] || modprobe zram num_devices=1 2>/dev/null || { echo "zram: no zram module" >&2; exit 0; }
+i=0
+while [ ! -b /dev/zram0 ] && [ $i -lt 40 ]; do sleep 0.025; i=$((i + 1)); done
+[ -b /dev/zram0 ] || { echo "zram: /dev/zram0 did not appear" >&2; exit 0; }
+echo lz4 > $DEV/comp_algorithm 2>/dev/null
+echo "$SIZE" > $DEV/disksize 2>/dev/null || { echo "zram: could not size /dev/zram0 to $SIZE" >&2; exit 0; }
+mkswap /dev/zram0 > /dev/null 2>&1 && swapon -p 100 /dev/zram0 2>/dev/null || {
+    echo "zram: swapon failed" >&2
+    exit 0
+}
+algo=$(sed -n 's/.*\[\(.*\)\].*/\1/p' $DEV/comp_algorithm 2>/dev/null)
+echo "zram: $SIZE swap on /dev/zram0 (${algo:-unknown})" >&2
+exit 0

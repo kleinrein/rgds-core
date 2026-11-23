@@ -30,12 +30,16 @@ def flashpoint_install(root):
         " launchCommand TEXT)"
     )
     rows = [
-        (GAME_ID, "Rocket: The Game?", "Studio A", "Portal B", "Flash", 0, "Single Player", "2007-05-01",
-         "Fly the rocket.\nAvoid rocks.", "Action; Arcade; Space", "", "arcade", "", ""),
+        (
+            GAME_ID, "Rocket: The Game?", "Studio A", "Portal B", "Flash", 0, "Single Player", "2007-05-01",
+            "Fly the rocket.\nAvoid rocks.", "Action; Arcade; Space", "", "arcade", "", ""
+        ),
         ("x-extreme", "Grim Game", "", "", "Flash", 1, "Single Player", "", "", "", "", "arcade", "", ""),
         ("x-unity", "Unity Game", "", "", "Unity", 0, "", "", "", "", "", "arcade", "", "http://u.com/a.html"),
-        (LEGACY_ID, "Old One", "Dev", "", "Flash", 0, "Multiplayer", "2004", "", "Puzzle", "", "arcade", "",
-         "http://old.example.com/games/old.swf"),
+        (
+            LEGACY_ID, "Old One", "Dev", "", "Flash", 0, "Multiplayer", "2004", "", "Puzzle", "", "arcade", "",
+            "http://old.example.com/games/old.swf"
+        ),
     ]
     db.executemany("INSERT INTO game VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
     db.execute(

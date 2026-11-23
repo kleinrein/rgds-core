@@ -137,8 +137,8 @@ Button layout	Tata letak tombol
 Button {0}	Tombol {0}
 Buttons and the game menu shortcut	Tombol dan pintasan menu game
 Cancel	Batal
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Batalkan pembaruan
+Cancel the update? Anything already downloaded is removed.	Batalkan pembaruan? Yang sudah diunduh akan dihapus.
 Carousel	Karosel
 Carried	Dibawa
 Cartridges	Kartrid
@@ -268,7 +268,7 @@ Day or night	Siang atau malam
 Day streak	Hari beruntun
 Daylight saving	Waktu musim panas
 Days	Hari
-Default	Default
+Default	Bawaan
 Default shader	Filter default
 DEFAULT THEME - CHECK LOG	TEMA DEFAULT - PERIKSA LOG
 Delete	Hapus
@@ -517,7 +517,7 @@ Keep playing	Terus bermain
 Keep this game in Favourites	Simpan game ini di Favorit
 Kernel	Kernel
 Key {0}	Tombol {0}
-Keyboard	Keyboard
+Keyboard	Papan ketik
 Keys	Kunci
 Kinstone fusions	Fusi Kinstone
 Lamppost	Tiang lampu
@@ -1467,16 +1467,16 @@ Vectorscope	Vektorskop
 Radial spectrum	Spektrum melingkar
 Waterfall	Air terjun
 Tunnel	Terowongan
-Prism	Prism
+Prism	Prisma
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
+Matrix rain	Hujan Matrix
+Kaleidoscope	Kaleidoskop
+Fireworks	Kembang api
+Lava lamp	Lampu lava
 Aurora	Aurora
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Riak
 Rotozoom	Rotozoom
 ScreenScraper account	Akun ScreenScraper
 Not signed in	Belum masuk
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Menyimpan tangkapan layar…
 Screenshot saved to the Album.	Tangkapan layar disimpan ke Album.
 Still saving the last screenshot.	Masih menyimpan tangkapan layar terakhir.
 No picture to save. Resume the game and press Menu + R.	Tidak ada gambar untuk disimpan. Lanjutkan game lalu tekan Menu + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Tampilkan pemilih profil setiap kali perangkat dinyalakan.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	Pemain terakhir memakai PIN, jadi saat menyala tetap diminta. B di layar itu mengganti profil.
+Switch profile	Ganti profil
 Photo mode	Mode foto
 Leave photo mode?	Keluar dari mode foto?
 Keep editing	Lanjut mengedit
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Selamat ulang tahun, {0}!
 Last played {0}	Terakhir dimainkan {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Warna dan musik menu mengikuti jam: sore lebih hangat, malam lebih tenang
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Game DS mengetahuinya, seperti aslinya. Pada harinya, konsol menyapa dengan caranya sendiri.
+Looking for videos and books…	Mencari video dan buku…
+Play from the start	Putar dari awal
+Start from the beginning	Mulai dari awal
+Mark as finished	Tandai selesai
+Mark as not finished	Tandai belum selesai
+{0} artist	{0} artis
+{0} artists	{0} artis
+{0} item	{0} item
+{0} items	{0} item
+Add network place	Tambah lokasi jaringan
+Added.	Ditambahkan.
+Cancel paste	Batal tempel
+Card	Kartu
+Choose a share	Pilih folder bersama
+Clear marks	Hapus tanda
+Copied.	Disalin.
+Copy	Salin
+Delete for good	Hapus permanen
+Delete these for good?	Hapus semua ini secara permanen?
+Delete this for good?	Hapus ini secara permanen?
+Empty the trash for good?	Kosongkan sampah secara permanen?
+Empty trash	Kosongkan sampah
+Extract here	Ekstrak di sini
+Folder	Folder
+Getting it…	Mengambil…
+Getting them…	Mengambil semuanya…
+Go ahead	Lanjutkan
+Inbox	Kotak masuk
+Keep it anyway	Tetap simpan
+Marked	Ditandai
+Move	Pindahkan
+Move here	Pindahkan ke sini
+Move these to the trash?	Pindahkan semua ini ke sampah?
+Move this to the trash?	Pindahkan ini ke sampah?
+Moved to the trash.	Dipindahkan ke sampah.
+Moved.	Dipindahkan.
+Network	Jaringan
+New folder	Folder baru
+No servers found	Server tidak ditemukan
+Open the folder to copy to, then press Y.	Buka folder tujuan, lalu tekan Y.
+Open the folder to move to, then press Y.	Buka folder tujuan, lalu tekan Y.
+Paste here	Tempel di sini
+Put this key on the server	Pasang kunci ini di server
+Remove	Hapus
+Remove it	Hapus
+Remove this place	Hapus lokasi ini
+Remove this place?	Hapus lokasi ini?
+Removed.	Dihapus.
+Rename	Ganti nama
+Servers on this network	Server di jaringan ini
+Sign in with	Masuk dengan
+That did not work.	Itu tidak berhasil.
+That server shares no folders.	Server itu tidak membagikan folder.
+The trash is empty.	Sampah kosong.
+This handheld's key	Kunci perangkat ini
+Trash	Sampah
+Type an address	Ketik alamat
+Wait a moment, then try again.	Tunggu sebentar, lalu coba lagi.
+{0} marked	{0} ditandai
+{0} more	{0} lagi
+Getting {0}	Mengambil {0}
+Waiting to retry {0}	Menunggu untuk mencoba lagi {0}
+until restart	sampai mulai ulang
+Future	Masa depan
+Lap	Putaran
+Earlier	Sebelumnya
+Where you are	Posisi sekarang
+Rewind	Putar balik
+Mark	Tandai
+Draw	Gambar
+Stamp	Stempel
+Lift pen	Angkat pena
+Pen down	Turunkan pena
+Screen	Layar
+Check panel order and controller input	Periksa urutan layar dan input kontroler
+Upper screen	Atas
+Lower screen	Bawah
+Kind	Jenis
+Size	Ukuran
+Modified	Diubah
+Where	Lokasi
+Archive	Arsip
+Text	Teks
+Save data	Data simpanan
+File	File
+{0} file	File {0}
+{0} free	{0} kosong
+Sort by	Urutkan menurut
+Could not open it	Tidak dapat membukanya
+This folder is empty	Folder ini kosong
+The trash is empty	Tempat sampah kosong
+No network places yet	Belum ada lokasi jaringan

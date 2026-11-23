@@ -27,7 +27,7 @@ class MainlineBridgeTests(unittest.TestCase):
                 text=True
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            for core in ('drastic', 'dsperate', 'nnddss'):
+            for core in ('dsperate', 'rgds-play'):
                 with self.subTest(core=core):
                     result = subprocess.run(
                         [str(root / 'test'), str(root), core],
@@ -69,7 +69,7 @@ class MainlineBridgeTests(unittest.TestCase):
                 text=True
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            for core in ('drastic', 'rgds-experimental'):
+            for core in ('dsperate', 'rgds-play'):
                 for platform in ('independent', 'stock'):
                     with self.subTest(core=core, platform=platform):
                         environment = dict(os.environ, RGDS_MENU_EXTERNAL='0', RGDS_SESSION_PLATFORM=platform)
@@ -118,7 +118,7 @@ int main(int argc,char** argv){
  physical.fill(0);physical[13]=physical[16]=1;
  assert(SDL_JoystickGetHat(pad,0)==(SDL_HAT_UP|SDL_HAT_RIGHT));
  SDL_Event e{};button(13);assert(SDL_PollEvent(&e)==1);
- assert(core=="drastic"?e.type==SDL_JOYBUTTONDOWN && e.jbutton.button==20:e.type==SDL_JOYHATMOTION && e.jhat.value==SDL_HAT_UP);
+ assert(e.type==SDL_JOYHATMOTION && e.jhat.value==SDL_HAT_UP);
  button(13,false);assert(SDL_PollEvent(&e)==1);
  physical.fill(0);physical[10]=1;fs::remove(control+".menu");button(10); // F opens the menu
  while(SDL_PollEvent(&e))assert(e.type==SDL_JOYBUTTONUP || (e.type==SDL_JOYHATMOTION && e.jhat.value==0));
@@ -162,10 +162,9 @@ int main(int argc,char** argv){
  physical.fill(0);physical[8]=1;assert(SDL_JoystickGetButton(pad,6)==1); // physical Select
  physical.fill(0);physical[12]=physical[15]=1;
  assert(SDL_JoystickGetHat(pad,0)==(SDL_HAT_UP|SDL_HAT_RIGHT));
- if(core=="drastic")assert(SDL_JoystickGetButton(pad,20)==1 && SDL_JoystickGetButton(pad,23)==1);
- button(12);assert(SDL_PollEvent(&e)==1);assert(core=="drastic"?e.type==SDL_JOYBUTTONDOWN && e.jbutton.button==20:e.type==SDL_JOYHATMOTION && e.jhat.value==SDL_HAT_UP);
- button(15);assert(SDL_PollEvent(&e)==1);assert(core=="drastic"?e.jbutton.button==23:e.jhat.value==(SDL_HAT_UP|SDL_HAT_RIGHT));
- button(12,false);assert(SDL_PollEvent(&e)==1);assert(core=="drastic"?e.type==SDL_JOYBUTTONUP && e.jbutton.button==20:e.jhat.value==SDL_HAT_RIGHT);
+ button(12);assert(SDL_PollEvent(&e)==1);assert(e.type==SDL_JOYHATMOTION && e.jhat.value==SDL_HAT_UP);
+ button(15);assert(SDL_PollEvent(&e)==1);assert(e.jhat.value==(SDL_HAT_UP|SDL_HAT_RIGHT));
+ button(12,false);assert(SDL_PollEvent(&e)==1);assert(e.jhat.value==SDL_HAT_RIGHT);
  physical.fill(0);physical[16]=1;fs::remove(control+".menu");button(16);
  while(SDL_PollEvent(&e))assert(e.type==SDL_JOYBUTTONUP || (e.type==SDL_JOYHATMOTION && e.jhat.value==0));
  assert(fs::exists(control+".menu"));

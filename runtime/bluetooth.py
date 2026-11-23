@@ -37,17 +37,20 @@ def codecs():
     """The codec each connected headset plays with, by address: bluealsactl info's "Selected codec" line."""
     ctl = shutil.which('bluealsactl') or shutil.which('bluealsa-cli')
     if not ctl: return {}
+
     def run(*args):
         try:
             return subprocess.run([ctl, *args], capture_output=True, text=True, timeout=5).stdout
         except (OSError, subprocess.TimeoutExpired):
             return ''
+
     out = {}
     for line in run('list-pcms').splitlines():
         found = SINK.match(line.strip())
         if not found: continue
         selected = re.search(r'^Selected codec:\s*([^\s:]+)', run('info', found.group(1)), re.M)
-        if selected: out[found.group(2).replace('_', ':').upper()] = CODEC_NAMES.get(selected.group(1), selected.group(1))
+        if selected:
+            out[found.group(2).replace('_', ':').upper()] = CODEC_NAMES.get(selected.group(1), selected.group(1))
     return out
 
 

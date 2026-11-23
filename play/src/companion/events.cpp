@@ -126,7 +126,8 @@ public:
                 }
             }
 
-        std::stable_sort(now.begin(), now.end(), [](const Player& a, const Player& b) { return a.points() > b.points(); });
+        std::stable_sort(now.begin(), now.end(),
+                         [](const Player& a, const Player& b) { return a.points() > b.points(); });
         if (!(now == players_now_) || event != event_now_) ++drawn_;
         players_now_ = std::move(now);
         event_now_ = event;
@@ -134,7 +135,8 @@ public:
         for (size_t i = 0; i < names_.size(); ++i) {
             const uint32_t at = best_ + uint32_t(i) * best_step_;
             Won r{read(live, at, best_name_), plain_number(read(live, at, best_score_))};
-            if (i >= records_seen_.size() || records_seen_[i].name != r.name || records_seen_[i].score != r.score) ++drawn_;
+            if (i >= records_seen_.size() || records_seen_[i].name != r.name || records_seen_[i].score != r.score)
+                ++drawn_;
             records_now_.push_back(r);
         }
         records_seen_ = records_now_;
@@ -239,8 +241,8 @@ public:
                 disc(out, mx, cy, 6, metal[m]);
                 mx -= 12;
             }
-            font.draw(out, b.x + 10, font.centred(kit::small, cy), font.fit(p.name, kit::small, mx - b.x - 12), kit::small,
-                      look.ink);
+            font.draw(out, b.x + 10, font.centred(kit::small, cy), font.fit(p.name, kit::small, mx - b.x - 12),
+                      kit::small, look.ink);
         }
     }
 

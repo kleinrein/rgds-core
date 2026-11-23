@@ -548,7 +548,7 @@ pass keep/keep/keep, so Panfrost also preloads and stores all attachments of eve
 list runner 8 %, bounding-box tests 3 %, texture hashing 2 %. Four vertex formats with morphing fail the vertex
 decoder JIT and decode in C++ every frame (`Vertex decoder JIT failed` in the log), a small cost.
 
-**The kernel pays on every submit.** `linux-rocknix.config` carries `CONFIG_DEBUG_SPINLOCK`,
+**The kernel pays on every submit.** The kernel config (`linux-rocknix.config` then, `linux-rgds_defconfig` now) carries `CONFIG_DEBUG_SPINLOCK`,
 `CONFIG_INIT_ON_ALLOC_DEFAULT_ON`, `CONFIG_INIT_ON_FREE_DEFAULT_ON` and `CONFIG_SCHEDSTATS`, hardening and debug
 defaults that zero every allocation twice and check every spinlock; 85 µs for a job submit is slow. A trial costs
 no build: `init_on_alloc=0 init_on_free=0` on the `APPEND` line of `extlinux.conf.in`; the spinlock checks need a
@@ -597,7 +597,9 @@ heap alloc:off, heap free:off`, then four 90 s races at Performance clocks again
 | Normal | 4130 / 4092 / 4084 | 3240 | 7.2 ms a frame |
 | Zeroing off | 4138 / 4103 / 4120 | 3280 | 6.9 ms a frame |
 
-That is 0.4 % more frames, about the spread between runs, and not worth the hardening, so the boot line went back. Kernel
+That is 0.4 % more frames, about the spread between runs, and not worth the hardening, so the boot line went back. (On 23 November a DS
+trial measured −2.7 % emulation work in Mario Kart DS, and the owner turned the zeroing off in the kernel config: see
+docs/OWN_BSP_PLAN.md, Phase D.) Kernel
 time is measured over all CPUs from `/proc/stat` and leaves out the first normal race. Each side had one slow race with a
 window near 48 ms a frame, and both sides having it rules out the options; see the next section for what it was.
 

@@ -48,8 +48,9 @@ format:
 	$(PYTHON) tools/format.py
 format-check:
 	$(PYTHON) tools/format.py --check
+# Parallel, one process per test class (tools/test.py); TEST_ARGS="-j 4 music" narrows it.
 test: build-host
-	$(PYTHON) -m unittest discover -s tests -v
+	$(PYTHON) tools/test.py $(TEST_ARGS)
 	build/host/rgds-launcher --self-test
 	SDL_VIDEODRIVER=dummy build/host/rgds-launcher --preview --frames 2 --screenshot build/preview.bmp --theme themes/default/light.ini
 ssh:

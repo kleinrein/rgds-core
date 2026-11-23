@@ -9,7 +9,7 @@
 
 ![Home screen, the Nintendo 64 shelf and a kart game's pause board, captured on an RG DS](docs/images/screens.png)
 
-> **Early release.** RG DS OS 0.9.0 is the latest public image. The standard RG DS is tested; the RG DS Plus runs the same image but is still being checked ([Plus tester guide](docs/RG_DS_PLUS_TEST.md)). Details in [Status](#status).
+> **Early release.** RG DS OS 0.9.1 is the latest public image. The standard RG DS is tested; the RG DS Plus runs the same image but is still being checked ([Plus tester guide](docs/RG_DS_PLUS_TEST.md)). Details in [Status](#status).
 
 ## What you get
 

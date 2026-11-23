@@ -33,7 +33,8 @@ inline bool zx_tzx_needs_128k(const std::vector<uint8_t>& tape) {
     size_t pos = 10;
     auto number = [&](size_t offset, int bytes) -> size_t { // little-endian; a tape cut short reads as none
         size_t value = 0;
-        for (int i = bytes - 1; i >= 0; --i) value = (value << 8) | (pos + offset + i < size ? tape[pos + offset + i] : 0);
+        for (int i = bytes - 1; i >= 0; --i)
+            value = (value << 8) | (pos + offset + i < size ? tape[pos + offset + i] : 0);
         return value;
     };
     while (pos < size) {
@@ -68,8 +69,8 @@ inline bool zx_tzx_needs_128k(const std::vector<uint8_t>& tape) {
         if (id == 0x33) {
             for (size_t i = 0, count = number(0, 1); i < count; ++i) {
                 const size_t type = number(1 + 3 * i, 1), machine = number(2 + 3 * i, 1), value = number(3 + 3 * i, 1);
-                if (type != 0) continue;                            // 0: computers
-                if (machine <= 2 && value == 3) return true;        // 16K, 48K: does not run
+                if (type != 0) continue;                                     // 0: computers
+                if (machine <= 2 && value == 3) return true;                 // 16K, 48K: does not run
                 if (machine >= 3 && machine <= 5 && value == 1) return true; // 128K, +2, +2A/+3: uses its hardware
             }
         }

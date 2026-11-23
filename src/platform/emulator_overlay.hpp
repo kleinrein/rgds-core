@@ -185,7 +185,8 @@ class EmulatorOverlay {
             if (at != std::string::npos) away.replace(at, 3, away_span(asleep - asleep_base));
             if (toasts.size() >= 6) toasts.pop_front();
             // A moment after the wake, so the panels are lit before it starts.
-            toasts.push_back(Toast{3, 0, title, away, hud::word("RGDS_HUD_WELCOME_BACK", "Welcome back"), 4000, now + 700});
+            toasts.push_back(
+                Toast{3, 0, title, away, hud::word("RGDS_HUD_WELCOME_BACK", "Welcome back"), 4000, now + 700});
         }
         asleep_base = asleep;
     }

@@ -2631,19 +2631,19 @@ sdl_ready:
     }
     return true;
   };
-  // Rewind (rewind_ring.h): a moment every DS_REWIND_SECONDS (2) of play, up to DS_REWIND_MB (64) of memory;
+  // Rewind (rewind_ring.h): a moment every DS_REWIND_SECONDS (2) of play, up to DS_REWIND_MB (128) of memory, kept raw;
   // DS_REWIND=0 keeps none. Not during a replay, a recording or a network session. The pictures come from what was
-  // last presented (any tier), the previews from one unscaled frame.
+  // last presented (any tier). Nothing runs while the menu shows them: an extra frame mid-game (an unscaled one,
+  // while held) left the Vulkan renderer waiting on work nobody collected, and the next real frame hung (2026-11-22).
   ds::sdl::RewindRing rewind;
   if (const char* off = std::getenv("DS_REWIND"); !(off && std::strcmp(off, "0") == 0)) {
     const char* seconds = std::getenv("DS_REWIND_SECONDS");
     const char* mb = std::getenv("DS_REWIND_MB");
     rewind.configure(60, seconds ? std::max(0.5, std::atof(seconds)) : 2.0,
-                     size_t(mb ? std::max(8, std::atoi(mb)) : 64) << 20);
+                     size_t(mb ? std::max(8, std::atoi(mb)) : 128) << 20);
   }
   u32 rewind_now = 0;
-  bool rewind_previewed = false;
-  std::vector<u32> rewind_shown;
+  bool rewind_previewed = false; // never set now (no look loads anything); kept for the guard below
   const auto rewind_allowed = [&] { return rewind.enabled() && !save_readonly && !log.writing() && !net_live; };
   const ds::sdl::RewindRing::Save rewind_save = [&](std::vector<u8>& out) {
     ds::state::Writer w;
@@ -2700,34 +2700,8 @@ sdl_ready:
     m.px = info.thumb;
     return true;
   };
-  rgds::rewind_show_handler = [&](unsigned id, int& screens, int& w, int& h, const uint32_t*& px) {
-    if (!rewind_now) return false;
-    std::string err;
-    if (!rewind.jump(id, rewind_load, err)) {
-      std::fprintf(stderr, "rewind: cannot show %u: %s\n", id, err.c_str());
-      return false;
-    }
-    rewind_previewed = id != rewind_now;
-    // One silent frame, unscaled, so the native screens hold this moment's picture.
-    ds::sdl::Display::Target none[2] = {};
-    set_scale_targets(none, false);
-    nds.run_frame();
-    fb_current = true;
-    rewind_shown.resize(size_t(2) * ds::SCREEN_W * ds::SCREEN_H);
-    for (int s = 0; s < 2; ++s) {
-      const u32* fb = nds.gpu.framebuffer(s);
-      u32* out = rewind_shown.data() + size_t(s) * ds::SCREEN_W * ds::SCREEN_H;
-      for (size_t i = 0; i < size_t(ds::SCREEN_W) * ds::SCREEN_H; ++i) {
-        const u32 c = fb[i]; // ARGB8888 to bytes R, G, B, X
-        out[i] = 0xFF000000u | (c & 0xFFu) << 16 | (c & 0xFF00u) | ((c >> 16) & 0xFFu);
-      }
-    }
-    screens = 2;
-    w = int(ds::SCREEN_W);
-    h = int(ds::SCREEN_H);
-    px = rewind_shown.data();
-    return true;
-  };
+  // A look is the moment's own picture (rgds_rewind_moment), drawn by the menu: nothing to load or run here.
+  rgds::rewind_show_handler = nullptr;
   rgds::rewind_jump_handler = [&](unsigned id, bool play) {
     if (!rewind_now) return false;
     if (play) {

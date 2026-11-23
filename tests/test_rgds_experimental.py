@@ -148,10 +148,11 @@ class ExperimentalLaunchTests(Fixture):
         rom = self.prepare()
         config = self.data / 'emulators' / ENGINE / 'config.ini'
         ini = self.data / 'library' / game_key(rom) / 'ds-input.ini'
-        for fields, mode, dns in ((dict(online='1'), 'internet', 'wiimmfi'), (dict(online='2'), 'internet', 'wiilink'),
-                                  (dict(online='1', wireless='1'), 'internet', 'wiimmfi'),
-                                  (dict(online='0', wireless='2'), 'host', 'wiimmfi'), (dict(online='7'), 'off',
-                                                                                         'wiimmfi')):
+        for fields, mode, dns in (
+            (dict(online='1'), 'internet', 'wiimmfi'), (dict(online='2'), 'internet', 'wiilink'),
+            (dict(online='1', wireless='1'), 'internet',
+             'wiimmfi'), (dict(online='0', wireless='2'), 'host', 'wiimmfi'), (dict(online='7'), 'off', 'wiimmfi')
+        ):
             write_fields(ini, fields)
             emulators.launch_plan(ENGINE, self.app, self.data, rom)
             self.assertIn('mode = ' + mode, config.read_text(), fields)

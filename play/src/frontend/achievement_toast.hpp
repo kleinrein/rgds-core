@@ -45,9 +45,8 @@ public:
             badge_px_.clear();
             drawn_ = false;
         }
-        const Uint32 stay = current_.kind == AchievementNotice::Unlocked || current_.kind == AchievementNotice::Mastered
-                                ? 5000
-                                : 3500;
+        const Uint32 stay =
+            current_.kind == AchievementNotice::Unlocked || current_.kind == AchievementNotice::Mastered ? 5000 : 3500;
         const Uint32 slide = look.animations ? 260 : 0;
         const Uint32 age = now - started_;
         if (age >= stay + slide) {
@@ -103,7 +102,8 @@ private:
                    by + (64 - badge_h_ * scale) / 2, scale);
         } else {
             c.rounded_rect(bx, by, 64, 64, 12, look.slot);
-            icon(c, look, Icon::Trophy, bx + 32, by + 32, 36, current_.kind == AchievementNotice::Problem ? look.muted : look.accent);
+            icon(c, look, Icon::Trophy, bx + 32, by + 32, 36,
+                 current_.kind == AchievementNotice::Problem ? look.muted : look.accent);
         }
         const int tx = bx + 64 + 16, right = box.w - 18;
         std::string heading;
@@ -125,14 +125,16 @@ private:
         }
         font.draw(c, tx, font.centred(kit::small, 25), font.fit(heading, kit::small, heading_right - tx), kit::small,
                   look.accent);
-        const std::string title = current_.kind == AchievementNotice::Problem || current_.kind == AchievementNotice::NoSet
-                                      ? look.tr(current_.detail)
-                                      : current_.title;
+        const std::string title =
+            current_.kind == AchievementNotice::Problem || current_.kind == AchievementNotice::NoSet
+                ? look.tr(current_.detail)
+                : current_.title;
         font.draw(c, tx, font.centred(kit::body, 52), font.fit(title, kit::body, right - tx), kit::body, look.ink);
         std::string detail;
         if (current_.kind == AchievementNotice::Unlocked) detail = current_.detail;
         else if (current_.kind == AchievementNotice::Mastered) detail = look.tr(current_.detail);
-        else if (current_.kind == AchievementNotice::GameReady) detail = current_.detail + "  " + look.tr("achievements");
+        else if (current_.kind == AchievementNotice::GameReady)
+            detail = current_.detail + "  " + look.tr("achievements");
         else if (current_.kind == AchievementNotice::NoSet) detail = current_.title;
         if (!detail.empty())
             font.draw(c, tx, font.centred(kit::small, 78), font.fit(detail, kit::small, right - tx), kit::small,

@@ -21,10 +21,10 @@ namespace play {
 class Timeline final : public MomentTree {
 public:
     struct Options {
-        size_t budget = size_t(48) << 20;    // deflated states and thumbnails kept
-        double seconds = 1.0;                // between moments, for a state up to `step_bytes`
+        size_t budget = size_t(48) << 20;      // deflated states and thumbnails kept
+        double seconds = 1.0;                  // between moments, for a state up to `step_bytes`
         size_t step_bytes = size_t(512) << 10; // each more of these in a state adds `seconds` to the step
-        size_t max_state = size_t(24) << 20; // a bigger state gets no rewind
+        size_t max_state = size_t(24) << 20;   // a bigger state gets no rewind
         int thumb_w = 208, thumb_h = 156; // the Rewind screen's middle picture, so it is sharp; counted in the budget
     };
 

@@ -183,8 +183,7 @@ def _package():
         {
             k: v
             for k, v in payloads["components"].items() if k not in ("dsperate", "nnddss")
-        },
-        **{"rgds-play": "RG DS Play (GBA, GB, GBC) with pinned libmgba and corresponding source"}
+        }, **{"rgds-play": "RG DS Play (GBA, GB, GBC) with pinned libmgba and corresponding source"}
     )
     packaged_payloads["components"]["rgds-experimental"
                                     ] = "Experimental DSperate fork with isolated saves and corresponding source"
@@ -259,9 +258,8 @@ def _package():
                 info = zipfile.ZipInfo(str(source.relative_to(scratch / "card")), (2026, 10, 5, 0, 0, 0))
                 info.compress_type = zipfile.ZIP_DEFLATED
                 executable = source.suffix == ".sh" or source.name in (
-                    "rgds-launcher", "rgds-experimental", "rgds-experimental-vulkan",
-                    "rgds-play", "smbd", "smbpasswd", "smbclient", "samba-dcerpcd", "rpcd_classic", "rpcd_winreg",
-                    "rpcd_lsad"
+                    "rgds-launcher", "rgds-experimental", "rgds-experimental-vulkan", "rgds-play", "smbd", "smbpasswd",
+                    "smbclient", "samba-dcerpcd", "rpcd_classic", "rpcd_winreg", "rpcd_lsad"
                 )
                 info.external_attr = (0o100755 if executable else 0o100644) << 16
                 output.writestr(info, source.read_bytes())
@@ -271,9 +269,7 @@ def _package():
     pointer.write_text(archive.name + "\n")
     pointer.replace(dist / "latest.txt")
     print(str(archive))
-    print(
-        "Package: source-built RGDS, DSCore and RG DS Play."
-    )
+    print("Package: source-built RGDS, DSCore and RG DS Play.")
     return archive
 
 

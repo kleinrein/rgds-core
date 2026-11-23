@@ -144,8 +144,7 @@ void App::save_state() {
         if (settings.page == Page::Controls)
             file << "controls " << controls_per_game << ' ' << int(controls_return) << '\n';
         if (home_menu && !o.game_menu)
-            file << "home "
-                 << (home_selected == last_played_tile ? 6 : home_selected == 6 ? 7 : home_selected) << '\n';
+            file << "home " << (home_selected == last_played_tile ? 6 : home_selected == 6 ? 7 : home_selected) << '\n';
         file.close();
         if (!file) throw std::runtime_error("Cannot save launcher state");
         fs::rename(pending, o.state);

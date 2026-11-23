@@ -137,8 +137,8 @@ Button layout	Painikeasettelu
 Button {0}	Painike {0}
 Buttons and the game menu shortcut	Painikkeet ja pelivalikon pikavalinta
 Cancel	Peruuta
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Peruuta päivitys
+Cancel the update? Anything already downloaded is removed.	Peruutetaanko päivitys? Jo ladattu poistetaan.
 Carousel	Karuselli
 Carried	Mukana
 Cartridges	Pelikasetit
@@ -1467,16 +1467,16 @@ Vectorscope	Vektoriskooppi
 Radial spectrum	Pyöreä spektri
 Waterfall	Vesiputous
 Tunnel	Tunneli
-Prism	Prism
+Prism	Prisma
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
+Matrix rain	Matrix-sade
+Kaleidoscope	Kaleidoskooppi
+Fireworks	Ilotulitus
+Lava lamp	Laavalamppu
+Aurora	Revontulet
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Väreet
 Rotozoom	Rotozoom
 ScreenScraper account	ScreenScraper-tili
 Not signed in	Ei kirjautunut
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Tallennetaan kuvakaappausta…
 Screenshot saved to the Album.	Kuvakaappaus tallennettu albumiin.
 Still saving the last screenshot.	Edellistä kuvakaappausta tallennetaan yhä.
 No picture to save. Resume the game and press Menu + R.	Ei tallennettavaa kuvaa. Jatka peliä ja paina Valikko + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Näytä profiilin valinta aina, kun laite käynnistyy.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	Viimeisellä pelaajalla on PIN, joten käynnistys kysyy sitä silti. B vaihtaa siinä näkymässä profiilia.
+Switch profile	Vaihda profiilia
 Photo mode	Kuvatila
 Leave photo mode?	Poistutaanko kuvatilasta?
 Keep editing	Jatka muokkausta
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Hyvää syntymäpäivää, {0}!
 Last played {0}	Viimeksi pelattu {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Värit ja valikkomusiikki seuraavat kelloa: lämpimämmät illat, hiljaisemmat yöt
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	DS-pelit saavat sen tietää, kuten alkuperäisessä. Sinä päivänä laite tervehtii omalla tavallaan.
+Looking for videos and books…	Etsitään videoita ja kirjoja…
+Play from the start	Toista alusta
+Start from the beginning	Aloita alusta
+Mark as finished	Merkitse valmiiksi
+Mark as not finished	Merkitse keskeneräiseksi
+{0} artist	{0} esittäjä
+{0} artists	{0} esittäjää
+{0} item	{0} kohde
+{0} items	{0} kohdetta
+Add network place	Lisää verkkosijainti
+Added.	Lisätty.
+Cancel paste	Peruuta liittäminen
+Card	Kortti
+Choose a share	Valitse jako
+Clear marks	Poista merkinnät
+Copied.	Kopioitu.
+Copy	Kopioi
+Delete for good	Poista pysyvästi
+Delete these for good?	Poistetaanko nämä pysyvästi?
+Delete this for good?	Poistetaanko tämä pysyvästi?
+Empty the trash for good?	Tyhjennetäänkö roskakori pysyvästi?
+Empty trash	Tyhjennä roskakori
+Extract here	Pura tähän
+Folder	Kansio
+Getting it…	Haetaan…
+Getting them…	Haetaan niitä…
+Go ahead	Jatka
+Inbox	Saapuneet
+Keep it anyway	Säilytä silti
+Marked	Merkitty
+Move	Siirrä
+Move here	Siirrä tähän
+Move these to the trash?	Siirretäänkö nämä roskakoriin?
+Move this to the trash?	Siirretäänkö tämä roskakoriin?
+Moved to the trash.	Siirretty roskakoriin.
+Moved.	Siirretty.
+Network	Verkko
+New folder	Uusi kansio
+No servers found	Palvelimia ei löytynyt
+Open the folder to copy to, then press Y.	Avaa kohdekansio ja paina Y.
+Open the folder to move to, then press Y.	Avaa kohdekansio ja paina Y.
+Paste here	Liitä tähän
+Put this key on the server	Lisää tämä avain palvelimelle
+Remove	Poista
+Remove it	Poista se
+Remove this place	Poista tämä sijainti
+Remove this place?	Poistetaanko tämä sijainti?
+Removed.	Poistettu.
+Rename	Nimeä uudelleen
+Servers on this network	Tämän verkon palvelimet
+Sign in with	Kirjaudu käyttäen
+That did not work.	Se ei onnistunut.
+That server shares no folders.	Palvelin ei jaa kansioita.
+The trash is empty.	Roskakori on tyhjä.
+This handheld's key	Tämän laitteen avain
+Trash	Roskakori
+Type an address	Kirjoita osoite
+Wait a moment, then try again.	Odota hetki ja yritä uudelleen.
+{0} marked	{0} merkitty
+{0} more	{0} lisää
+Getting {0}	Haetaan {0}
+Waiting to retry {0}	Odotetaan uutta yritystä: {0}
+until restart	uudelleenkäynnistykseen asti
+Future	Tulevaisuus
+Lap	Kierros
+Earlier	Aiemmin
+Where you are	Missä olet
+Rewind	Kelaa taaksepäin
+Mark	Merkitse
+Draw	Piirrä
+Stamp	Leimaa
+Lift pen	Nosta kynä
+Pen down	Laske kynä
+Screen	Näyttö
+Check panel order and controller input	Tarkista näyttöjen järjestys ja ohjaimen syöte
+Upper screen	Ylä
+Lower screen	Ala
+Kind	Tyyppi
+Size	Koko
+Modified	Muokattu
+Where	Sijainti
+Archive	Arkisto
+Text	Teksti
+Save data	Tallennustiedot
+File	Tiedosto
+{0} file	{0}-tiedosto
+{0} free	{0} vapaana
+Sort by	Järjestä
+Could not open it	Sitä ei voitu avata
+This folder is empty	Tämä kansio on tyhjä
+The trash is empty	Roskakori on tyhjä
+No network places yet	Ei vielä verkkosijainteja

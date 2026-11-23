@@ -62,7 +62,6 @@ bool initialized = false, autosave = true, saving = false, quitting = false, fai
 bool atomic_state_replace = false, play_state_replace = false;
 unsigned long long opened = 0, save_at = 0, pulse_at = 0, candidate_at = 0, quit_at = 0;
 int pulse = 0;
-SDL_JoystickID joystick = 0;
 std::map<std::string, Stamp> before;
 std::string candidate;
 Stamp candidate_stamp{};
@@ -176,7 +175,7 @@ struct NativeInputGuard {
     explicit NativeInputGuard(bool& field) : value(field), before(field) { value = true; }
     ~NativeInputGuard() { value = before; }
 };
-bool fast_forward = false, pulse_consumed = false;
+bool fast_forward = false;
 unsigned long long ds_lid_reopen = 0, ds_mic_release = 0;
 std::string speed_token;
 unsigned long long load_at = 0;
@@ -436,16 +435,10 @@ extern "C" SDL_bool SDL_IsGameController(int index) {
     }
     return next ? next(index) : SDL_FALSE;
 }
-// Keep the stock DraStic touch adapter, otherwise use the native SDL input API.
+// Input reads go to the selected SDL library under the shared menu, otherwise to the next SDL.
 // Menu/volume clients are owned by RGDS and never enter another UI controller.
 void* input_symbol(const char* name) {
     if (shared_menu) {
-        static void* touch = []() {
-            auto path = std::getenv("RGDS_TOUCH_LIBRARY");
-            return path ? dlopen(path, RTLD_NOW | RTLD_LOCAL) : nullptr;
-        }();
-        if (touch)
-            if (auto symbol = dlsym(touch, name)) return symbol;
         static void* vendor = []() {
             auto path = std::getenv("RGDS_SDL_LIBRARY");
             return path ? dlopen(path, RTLD_NOW | RTLD_LOCAL) : nullptr;
@@ -636,13 +629,6 @@ int controller_source(int button) {
         if (controller_button(source) == button) return source;
     return button == SDL_CONTROLLER_BUTTON_GUIDE ? rgds::control_menu : -1;
 }
-int logical_joystick(int button) {
-    if (core == "drastic" && button >= 20 && button <= 23) return button - 12;
-    return rgds::joystick_source(button);
-}
-int destination_joystick(int logical) {
-    return logical >= 8 && logical <= 11 && core == "drastic" ? logical + 12 : rgds::physical_button(logical);
-}
 // RGDS_LATENCY_TRACE=FILE (os/device-bench/game_latency.py): for each button press, CLOCK_MONOTONIC microseconds
 // when the engine first read it down and of the next two presents (the frame being shown and the one that read it).
 struct LatencyTrace {
@@ -798,7 +784,7 @@ bool remap_event(SDL_Event& event) {
             held[source] = joystick_button ? event.jbutton.state != 0 : event.cbutton.state != 0;
         int logical = control_mapping.logical_for(source);
         if (logical < 0) return source < 0 || source >= 12;
-        int target = joystick_button ? destination_joystick(logical) : controller_button(logical);
+        int target = joystick_button ? rgds::physical_button(logical) : controller_button(logical);
         if (target < 0) {
             if (joystick_button && logical >= 8 && logical <= 11) {
                 Uint8 hat = 0;
@@ -833,17 +819,17 @@ bool remap_event(SDL_Event& event) {
             int bit = rgds::hat_bit(source);
             bool down = (event.jhat.value & bit) != 0;
             if (logical >= 8 && logical <= 11) native_hat_route = true;
-            if (!(logical >= 8 && logical <= 11 && core != "drastic") && logical >= 0 && bool(old & bit) != down) {
+            if (!(logical >= 8 && logical <= 11) && logical >= 0 && bool(old & bit) != down) {
                 SDL_Event emitted{};
                 emitted.type = down ? SDL_JOYBUTTONDOWN : SDL_JOYBUTTONUP;
                 emitted.jbutton.which = event.jhat.which;
-                emitted.jbutton.button = Uint8(destination_joystick(logical));
+                emitted.jbutton.button = Uint8(rgds::physical_button(logical));
                 emitted.jbutton.state = down ? SDL_PRESSED : SDL_RELEASED;
                 events.push_back(emitted);
             }
         }
         event.jhat.value = mapped;
-        return core != "drastic" && (native_hat_route || mapped != 0);
+        return native_hat_route || mapped != 0;
     }
     return true;
 }
@@ -968,32 +954,20 @@ void answer(const char* state) {
 }
 void inject(int action) {
     pulse = action;
-    pulse_consumed = false;
     pulse_at = now();
     release_at = pulse_at + 160;
-    if (core == "drastic") {
-        for (bool down : {true, false}) {
-            SDL_Event e{};
-            e.type = down ? SDL_JOYBUTTONDOWN : SDL_JOYBUTTONUP;
-            e.jbutton.which = joystick;
-            e.jbutton.button = action == 1 ? 16 : action == 2 ? 17 : action == 4 ? 19 : 18;
-            e.jbutton.state = down ? SDL_PRESSED : SDL_RELEASED;
-            (action == 4 ? events : down ? events : releases).push_back(e);
-        }
-    } else {
-        SDL_Keycode key = action == 1 ? SDLK_F5 : action == 4 ? SDLK_TAB : SDLK_F7;
-        for (bool down : {true, false}) {
-            SDL_Event e{};
-            e.type = down ? SDL_KEYDOWN : SDL_KEYUP;
-            e.key.keysym.sym = key;
-            e.key.keysym.scancode = action == 1 ? SDL_SCANCODE_F5 : action == 4 ? SDL_SCANCODE_TAB : SDL_SCANCODE_F7;
-            e.key.state = down ? SDL_PRESSED : SDL_RELEASED;
-            (action == 4 ? events : down ? events : releases).push_back(e);
-        }
+    SDL_Keycode key = action == 1 ? SDLK_F5 : action == 4 ? SDLK_TAB : SDLK_F7;
+    for (bool down : {true, false}) {
+        SDL_Event e{};
+        e.type = down ? SDL_KEYDOWN : SDL_KEYUP;
+        e.key.keysym.sym = key;
+        e.key.keysym.scancode = action == 1 ? SDL_SCANCODE_F5 : action == 4 ? SDL_SCANCODE_TAB : SDL_SCANCODE_F7;
+        e.key.state = down ? SDL_PRESSED : SDL_RELEASED;
+        (action == 4 ? events : down ? events : releases).push_back(e);
     }
 }
 bool set_fast_forward(bool enabled) {
-    if (core != "dsperate" && core != "drastic" && core != "melonds" && core != "rgds-play") return false;
+    if (core != "dsperate" && core != "rgds-play") return false;
     if (enabled != fast_forward) {
         inject(4);
         fast_forward = enabled;
@@ -1010,7 +984,6 @@ bool set_fast_forward(bool enabled) {
     return true;
 }
 void quit_events(bool checkpoint_saved = false) {
-    if (core == "drastic") inject(3);
     SDL_Event e{};
     e.type = SDL_QUIT;
     events.push_back(e);
@@ -1069,11 +1042,6 @@ void start_load() {
         answer("load-failed");
         return;
     }
-    if (core == "melonds") {
-        auto load = reinterpret_cast<int (*)()>(dlsym(RTLD_DEFAULT, "rgds_load_checkpoint"));
-        answer(load && load() ? "loaded" : "load-failed");
-        return;
-    }
     loading = true;
     load_at = now();
     inject(2);
@@ -1083,10 +1051,6 @@ unsigned long long elapsed(unsigned long long time, unsigned long long since) {
     return time >= since ? time - since : 0;
 }
 bool ds_control(bool blow) {
-    if (core == "melonds") {
-        auto apply = reinterpret_cast<int (*)(int)>(dlsym(RTLD_DEFAULT, "rgds_ds_control"));
-        return apply && apply(blow ? 0 : 1);
-    }
     if (core != "dsperate") return false;
     auto key = blow ? SDLK_m : SDLK_l;
     auto scan = blow ? SDL_SCANCODE_M : SDL_SCANCODE_L;
@@ -1309,11 +1273,8 @@ void tick(bool graphics_safe = false) {
                     overlay_renderer.fps(frame_stats.enabled ? 0 : -1);
                     answer(frame_stats.enabled ? "fps-on" : "fps-off");
                 } else if (command == "threaded:0" || command == "threaded:1") {
-                    auto apply = core == "melonds"
-                                     ? reinterpret_cast<int (*)(int)>(dlsym(RTLD_DEFAULT, "rgds_set_threaded_3d"))
-                                     : nullptr;
-                    bool enabled = command == "threaded:1";
-                    answer(apply && apply(enabled) ? (enabled ? "threaded-on" : "threaded-off") : "threaded-failed");
+                    // No engine left has live 3D threading (it was melonDS only).
+                    answer("threaded-failed");
                 } else if (command.rfind("graphics:", 0) == 0) {
                     int scale = 0, smooth = 0, skip = 0;
                     char extra = 0;
@@ -1614,9 +1575,8 @@ void measure_present(void* source) {
         frame_stats.pause();
         game_rate.reset();
     }
-    static auto native_frames = (core == "melonds" || core == "dsperate")
-                                    ? reinterpret_cast<uint32_t (*)()>(dlsym(RTLD_DEFAULT, "rgds_emulated_frames"))
-                                    : nullptr;
+    static auto native_frames =
+        core == "dsperate" ? reinterpret_cast<uint32_t (*)()>(dlsym(RTLD_DEFAULT, "rgds_emulated_frames")) : nullptr;
     const bool game_counter = native_frames != nullptr;
     if (game_counter && game_rate.sample(us, native_frames(), blocked)) overlay_renderer.fps(game_rate.fps, true);
     if (frame_stats.present(us, blocked)) {
@@ -1852,16 +1812,6 @@ extern "C" int SDL_RenderCopy(SDL_Renderer* renderer, SDL_Texture* texture, cons
     using Fn = CopyTexture;
     static auto copy = rgds::overlay_sdl<Fn>("SDL_RenderCopy");
     if (shared_menu) {
-        if (core == "drastic" && !env("RGDS_TOUCH_LIBRARY").empty()) {
-            // The vendor adapter records the lower-screen destination during
-            // RenderCopy. Bypassing it leaves its touch rectangle null, and its
-            // PollEvent dereferences that pointer on the first finger event.
-            // Preserve that draw/state update, then apply the selected filter.
-            static auto adapter = reinterpret_cast<Fn>(input_symbol("SDL_RenderCopy"));
-            const int result = adapter ? adapter(renderer, texture, source, target) : -1;
-            if (result == 0) sdl_shader(renderer, texture, source, target);
-            return result;
-        }
         if (sdl_shader(renderer, texture, source, target)) return 0;
         return copy ? copy(renderer, texture, source, target) : -1;
     }
@@ -1914,7 +1864,7 @@ void route_ds_touch(const std::vector<rgds::TouchPoint>& points, bool blocked) {
 }
 void poll_ds_touch() {
     // RG DS Play takes the lower panel's touches for its second screen (dock, boards).
-    if (core != "dsperate" && core != "melonds" && core != "rgds-play") return;
+    if (core != "dsperate" && core != "rgds-play") return;
     if (!ds_touch_started) {
         ds_touch_started = true;
         auto path = std::getenv("RGDS_TOUCH_DEV");
@@ -1925,7 +1875,7 @@ void poll_ds_touch() {
 }
 namespace {
 void release_touch_after_resume() {
-    if (core != "dsperate" && core != "melonds" && core != "rgds-play") return;
+    if (core != "dsperate" && core != "rgds-play") return;
     route_ds_touch({}, true);
     ds_touch.discard_until_release();
     ds_touch_suppressed = false;
@@ -1973,16 +1923,15 @@ extern "C" int SDL_PollEvent(SDL_Event* event) {
         latency_trace.event(*event);
         return 1;
     }
-    if (result && event && event->type == SDL_JOYBUTTONDOWN) joystick = event->jbutton.which;
-    if (result && event && autosave &&
-        (event->type == SDL_QUIT ||
-         (core == "drastic" && event->type == SDL_JOYBUTTONDOWN && event->jbutton.button == 18)) &&
-        !quit_at) {
+    if (result && event && autosave && event->type == SDL_QUIT && !quit_at) {
         request_quit();
         return 0;
     }
-    if (result && event) remember_control_event(*event);
-    latency_trace.event(*event);
+    if (result && event) {
+        remember_control_event(*event);
+        // SDL_PollEvent(NULL) only asks whether anything waits, and with no result `event` holds nothing new.
+        latency_trace.event(*event);
+    }
     return result;
 }
 extern "C" Uint8 SDL_JoystickGetButton(SDL_Joystick* stick, int button) {
@@ -1992,7 +1941,7 @@ extern "C" Uint8 SDL_JoystickGetButton(SDL_Joystick* stick, int button) {
     if (reading_native_buttons) return next ? next(stick, button) : 0;
     tick();
     if (shared_menu && button == 8) return 0;
-    int logical = logical_joystick(button);
+    int logical = rgds::joystick_source(button);
     auto value = input_blocked() ? 0
                  : shared_menu && logical >= 0 && logical < 12
                      ? Uint8(joystick_source_down(stick, control_mapping.source_for(logical)))
@@ -2003,19 +1952,6 @@ extern "C" Uint8 SDL_JoystickGetButton(SDL_Joystick* stick, int button) {
         value = next && raw >= 0 ? next(stick, raw) : 0;
     }
     if (shared_menu && logical >= 12 && control_mapping.used(logical)) value = 0;
-    if (core == "drastic") {
-        if (button == 18 && value && !quit_at) {
-            request_quit();
-            return 0;
-        }
-        if (!pulse_consumed && now() - pulse_at < 160 &&
-            ((button == 16 && pulse == 1) || (button == 17 && pulse == 2) || (button == 18 && pulse == 3) ||
-             (button == 19 && pulse == 4))) {
-            pulse_consumed = true;
-            return 1;
-        }
-        if (button == 18 && (saving || failed)) return 0;
-    }
     return value;
 }
 extern "C" Uint8 SDL_GameControllerGetButton(SDL_GameController* pad, SDL_GameControllerButton button) {
@@ -2214,13 +2150,6 @@ extern "C" ssize_t read(int descriptor, void* buffer, size_t size) {
     return result;
 }
 #endif
-extern "C" int SDL_JoystickNumButtons(SDL_Joystick* stick) {
-    using Fn = int (*)(SDL_Joystick*);
-    static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "SDL_JoystickNumButtons"));
-    initialize();
-    int value = next ? next(stick) : 0;
-    return core == "drastic" && value < 24 ? 24 : value;
-}
 extern "C" int kill(pid_t pid, int signal) {
     using Fn = int (*)(pid_t, int);
     static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "kill"));

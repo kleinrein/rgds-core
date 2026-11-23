@@ -46,7 +46,8 @@ enum class SettingsIcon {
     Palette,
     Chat,
     Vibrate,
-    Music
+    Music,
+    Folder
 };
 
 inline SettingsIcon settings_icon_for(const std::string& title) {
@@ -438,6 +439,10 @@ inline void draw_settings_icon(Sdl& s, SDL_Renderer* renderer, SettingsIcon icon
         }
         break;
     // A handheld between two zig-zag shake lines.
+    case SettingsIcon::Folder:
+        path({{3, 6}, {3, 4}, {9, 4}, {11, 6}, {21, 6}, {21, 20}, {3, 20}, {3, 6}});
+        line(3, 9, 21, 9);
+        break;
     case SettingsIcon::Music:
         line(9, 5, 9, 17);
         line(19, 3, 19, 15);

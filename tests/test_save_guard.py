@@ -163,12 +163,16 @@ class SaveGuardTests(unittest.TestCase):
 class SourceRuleTests(unittest.TestCase):
     def test_launch_copies_saves_before_the_engine_starts(self):
         source = (ROOT / 'runtime/emulators.py').read_text()
-        self.assertLess(source.index('protect(player, core, rom, original_rom, build=app.name)'), source.index('subprocess.Popen'))
+        self.assertLess(
+            source.index('protect(player, core, rom, original_rom, build=app.name)'), source.index('subprocess.Popen')
+        )
 
     def test_dscore_writes_the_save_before_the_state(self):
         # the launcher skips a resume point older than the .sav
         source = (ROOT / 'dscore/src/frontend/sdl/main.cpp').read_text()
-        for name in ('auto_state_path(nds, session.states_dir)', 'state_path(nds, session.states_dir, state_slot), display'):
+        for name in (
+            'auto_state_path(nds, session.states_dir)', 'state_path(nds, session.states_dir, state_slot), display'
+        ):
             write = source.index('save_state_file(nds, ' + name)
             self.assertIn('flush_save()', source[write - 200:write])
             self.assertNotIn('flush_save()', source[write:write + 90])

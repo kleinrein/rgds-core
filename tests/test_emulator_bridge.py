@@ -33,7 +33,6 @@ int filter_calls=0,last_filter=-1;
 int fake_filter(int mode){++filter_calls;last_filter=mode;return mode!=2;}
 int adaptive_calls=0,last_adaptive=-1;
 int fake_adaptive(int on){++adaptive_calls;last_adaptive=on;return 1;}
-int fake_load(){return 1;}
 int play_views=0,last_fit=-1,last_second=-1;std::string last_frame;
 int play_colours=0,last_palette=-1,last_correction=-1;
 int fake_play_color(int palette,int correction){++play_colours;last_palette=palette;last_correction=correction;return palette>=0 && palette<8 && correction>=0 && correction<3;}
@@ -65,7 +64,6 @@ extern "C" void* dlsym(void*,const char* name){
  if(!std::strcmp(name,"rgds_set_filter2d"))return reinterpret_cast<void*>(&fake_filter);
  if(!std::strcmp(name,"rgds_set_adaptive"))return reinterpret_cast<void*>(&fake_adaptive);
  if(!std::strcmp(name,"rgds_set_threaded_3d"))return reinterpret_cast<void*>(&fake_threading);
- if(!std::strcmp(name,"rgds_load_checkpoint"))return reinterpret_cast<void*>(&fake_load);
  if(!std::strcmp(name,"rgds_play_set_graphics"))return reinterpret_cast<void*>(&fake_play_graphics);
  if(!std::strcmp(name,"rgds_play_set_color"))return reinterpret_cast<void*>(&fake_play_color);
  if(!std::strcmp(name,"rgds_cheat_count"))return reinterpret_cast<void*>(&fake_cheat_count);
@@ -274,8 +272,7 @@ int main(int argc,char** argv){
    return 0;
  }
  if(argc==4)assert(!atomic_state_replace);
- if(core=="drastic"){setenv("RGDS_TOUCH_LIBRARY","fixture",1);assert(SDL_RenderCopy(nullptr,nullptr,nullptr,nullptr)==0);assert(adapter_draws==1);}
- if(core=="dsperate" || core=="melonds"){
+ if(core=="dsperate"){
    route_ds_touch({{0,320,240},{1,639,479}},false);
    assert(events.size()==2 && events.front().type==SDL_FINGERDOWN);
    assert(events.front().tfinger.windowID==0 && events.front().tfinger.x==.5f && events.front().tfinger.y==.5f);
@@ -294,17 +291,12 @@ int main(int argc,char** argv){
  assert(SDL_JoystickGetButton(nullptr,8)==0);
  command("save-1","save");test_time=30;test_clock_step=1;tick();test_clock_step=0;assert(state().find("state=saving")!=std::string::npos);assert(saving && !failed);
  SDL_Event event{};assert(SDL_PollEvent(&event)==1);
- assert(event.type==(core=="drastic"?SDL_JOYBUTTONDOWN:SDL_KEYDOWN));
- if(core=="drastic"){
-   assert(event.jbutton.button==16);
-   assert(SDL_JoystickGetButton(nullptr,16)==1);
-   assert(SDL_JoystickGetButton(nullptr,16)==0); // A held save must not start a write every frame.
- }else assert(event.key.keysym.sym==SDLK_F5);
+ assert(event.type==SDL_KEYDOWN && event.key.keysym.sym==SDLK_F5);
  test_time=80;assert(SDL_PollEvent(&event)==0); // Release must not drain in the press frame.
- if(core!="drastic"){int count=0;auto keys=SDL_GetKeyboardState(&count);assert(keys[SDL_SCANCODE_F5]==1);}
+ {int count=0;auto keys=SDL_GetKeyboardState(&count);assert(keys[SDL_SCANCODE_F5]==1);}
  std::ofstream(root/"states/unrelated.dss")<<"unrelated state";
  test_time=200;tick();assert(SDL_PollEvent(&event)==1);
- assert(event.type==(core=="drastic"?SDL_JOYBUTTONUP:SDL_KEYUP));
+ assert(event.type==SDL_KEYUP);
  test_time=900;tick();assert(state().find("state=saving")!=std::string::npos);
  std::ofstream(root/"states/slot.dss")<<"complete checkpoint";
  test_time=1000;tick();test_time=1700;tick();assert(state().find("state=saved")!=std::string::npos);
@@ -313,18 +305,16 @@ int main(int argc,char** argv){
   auto time=test_time;command("skip-1","save");test_time=time+200;tick();std::ofstream(skip)<<"\n";test_time=time+300;tick();
   assert(state().find("state=save-failed")!=std::string::npos);assert(!fs::exists(skip));
   std::ifstream kept(root/"auto.dss");assert(std::string(std::istreambuf_iterator<char>(kept),{})=="complete checkpoint");}
- command("load-1","load");test_time=1800;test_clock_step=1;tick();test_clock_step=0;assert(state().find(core=="melonds"?"state=loaded":"state=load-requested")!=std::string::npos);assert(loading==(core!="melonds"));
- test_time=2500;tick();assert(state().find(core=="melonds"?"state=loaded":"state=load-dispatched")!=std::string::npos);
+ command("load-1","load");test_time=1800;test_clock_step=1;tick();test_clock_step=0;assert(state().find("state=load-requested")!=std::string::npos);assert(loading);
+ test_time=2500;tick();assert(state().find("state=load-dispatched")!=std::string::npos);
  auto queued=events.size(),deferred=releases.size();
  command("speed-1","fast-forward");test_time=2530;tick();
  assert(state().find("state=fast-forward-on")!=std::string::npos);assert(fast_forward);
  assert(events.size()==queued+2 && releases.size()==deferred);
- if(core=="drastic"){assert(events[queued].jbutton.button==19 && events[queued].type==SDL_JOYBUTTONDOWN);assert(events.back().type==SDL_JOYBUTTONUP);}
- else{assert(events[queued].key.keysym.sym==SDLK_TAB && events[queued].type==SDL_KEYDOWN);assert(events.back().type==SDL_KEYUP);}
+ assert(events[queued].key.keysym.sym==SDLK_TAB && events[queued].type==SDL_KEYDOWN);assert(events.back().type==SDL_KEYUP);
  command("speed-2","fast-forward");test_time=2560;tick();
  assert(state().find("state=fast-forward-off")!=std::string::npos);
  assert(!fast_forward);
- if(core=="drastic")assert(SDL_JoystickGetButton(nullptr,9)==1); // Preserve physical buttons; never synthesize a speed flag.
  command("quit-1","quit");test_time=2600;tick();assert(state().find("state=saving")!=std::string::npos);
  test_time=10000;tick();assert(state().find("state=save-timeout")!=std::string::npos);assert(!quitting);
  autosave=false; // Shader/restart saves are mandatory even when home autosaves are disabled.
@@ -365,9 +355,9 @@ int main(int argc,char** argv){
  rgds::bridge_metrics()={};for(int i=0;i<100;i++)SDL_GetKeyboardState(&key_count);assert(rgds::bridge_metrics().file_reads==0 && rgds::bridge_metrics().keyboard_copies==0);
  for(int value=0;value<2;value++){
    command(value?"thread-on":"thread-off",value?"threaded:1":"threaded:0");test_time+=30;tick();
-   assert(state().find(core=="melonds"?(value?"state=threaded-on":"state=threaded-off"):"state=threaded-failed")!=std::string::npos);
+   assert(state().find("state=threaded-failed")!=std::string::npos); // no engine has live 3D threading
  }
- assert(thread_switches==(core=="melonds"?2:0));
+ assert(thread_switches==0);
  // Physical-button speed requests use a separate channel and never replace
  // the current checkpoint/menu command. Hold release works while blocked.
  saving=loading=false;events.clear();releases.clear();fast_forward=false;
@@ -397,7 +387,7 @@ int main(int argc,char** argv){
         cls.temp.cleanup()
 
     def test_verified_atomic_writer_skips_delay_without_accepting_old_or_partial_states(self):
-        for core in ("dsperate", "drastic", "melonds"):
+        for core in ("dsperate",):
             with self.subTest(core=core), tempfile.TemporaryDirectory() as folder:
                 result = subprocess.run(
                     [str(self.binary), folder, core, "atomic"], capture_output=True, text=True, timeout=5
@@ -419,7 +409,7 @@ int main(int argc,char** argv){
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_each_engine_has_the_same_bounded_checkpoint_and_menu_protocol(self):
-        for core in ("drastic", "dsperate", "melonds", "rgds-play"):
+        for core in ("dsperate", "rgds-play"):
             with self.subTest(core=core), tempfile.TemporaryDirectory() as folder:
                 result = subprocess.run([str(self.binary), folder, core], capture_output=True, text=True, timeout=5)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

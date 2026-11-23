@@ -7,6 +7,59 @@
 #include "launcher/music_viz.hpp"
 
 namespace rgds {
+// Videos and Books, the Media level's other two sections (media_shelf.hpp): one film, book or folder as
+// rgds-media --index lists it.
+struct MediaEntry {
+    enum class Kind { Video, Book, Folder };
+    Kind kind = Kind::Video;
+    bool books = false; // on the Books shelf
+    std::string parent, path, name, key, picture, blur, ext;
+    double length = 0; // seconds, or pages
+    int children = 0, shade = 150;
+    uint64_t size = 0;
+};
+
+// Where a film or book was left (rgds-media's places.tsv).
+struct MediaPlace {
+    double position = 0, length = 0;
+    int64_t when = 0;
+    double fraction() const { return length > 0 ? std::clamp(position / length, 0.0, 1.0) : 0; }
+    bool started() const { return position > .5; }
+    bool finished() const { return length > 0 && position >= length * .97; }
+};
+
+// A value that follows its target like a soft spring: the pills and the focus corners.
+// The lit pill gliding to a new choice: 160 ms ease-out, as a segmented control's (segment_position in main.cpp).
+struct MediaGlide {
+    double value = 0, target = 0, from = 0, aimed = 0, elapsed = 0;
+    void snap(double v) { value = target = from = aimed = v, elapsed = 160; }
+    bool step(double dt_ms);
+};
+
+struct MediaGrid {
+    int cols, tile_w, tile_h, pic_w, pic_h, gap;
+    int x0() const { return (640 - (cols * tile_w + (cols - 1) * gap)) / 2; }
+};
+
+// One shelf's page: the folders opened, what is on it, the focus and its corners.
+struct MediaShelf {
+    std::vector<std::string> path;
+    std::vector<int> items; // into MusicUi::entries
+    int focus = 0, scroll = 0;
+    bool placed = false;
+};
+
+namespace media_layout {
+// The lower screen's header: Back, then the section pills; Music's tabs as a second, smaller row.
+constexpr int pills_y = 14, pills_h = 44, pills_left = 96, pills_right = 616, pills_gap = 6;
+constexpr int tabs_y = 66, tabs_h = 34, tabs_left = 24, tabs_right = 616;
+constexpr int rule_y = 70, music_rule_y = 108; // the header's rule: shelves, and Music with its tabs
+constexpr int grid_top = 78, grid_bottom = 412;
+// Films: three across, 16:9; books: four across, as tall as a paperback.
+constexpr MediaGrid video_grid{3, 186, 150, 186, 105, 13}, book_grid{4, 134, 222, 134, 186, 14};
+constexpr std::array<const char*, 3> section_names = {"Music", "Videos", "Books"};
+} // namespace media_layout
+
 struct MusicRow {
     enum class Kind { Track, Album, Artist, Folder, List, Shuffle };
     Kind kind = Kind::Track;
@@ -75,5 +128,17 @@ struct MusicUi {
     bool lid_dark = false;
     uint32_t lid_quiet_at = 0;
     uint32_t polled_at = 0;
+
+    // Media (media_shelf.hpp): 0 Music, 1 Videos, 2 Books, and what the two shelves show.
+    int section = 0;
+    MediaGlide section_pill, tab_pill; // the lit pill of each row, sliding
+    std::array<MediaShelf, 2> shelves;
+    std::vector<MediaEntry> entries;
+    std::map<std::string, MediaPlace> places;
+    int64_t index_seen = -2, places_seen = -2;
+    uint32_t index_checked = 0, media_ticked = 0, hero_at = 0;
+    std::string hero_key, hero_prev; // the item the upper screen shows, and the one fading out
+    std::string music_hero_key;      // Music's first page: the row its upper screen shows
+    uint32_t music_hero_at = 0;
 };
 } // namespace rgds

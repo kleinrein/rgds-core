@@ -436,8 +436,8 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
                 std::istringstream words(value);
                 std::string x, y, step;
                 words >> x >> y >> step >> h.places;
-                ok = parse_address(x, h.places_x) && parse_address(y, h.places_y) && parse_address(step, h.places_step) &&
-                     h.places > 0 && h.places <= 64;
+                ok = parse_address(x, h.places_x) && parse_address(y, h.places_y) &&
+                     parse_address(step, h.places_step) && h.places > 0 && h.places <= 64;
                 if (!ok) why = "expected extend_places = X Y STEP COUNT";
             } else if (key == "extend_tiles") {
                 // the first tile of each place's sprite, in the places' order
@@ -469,14 +469,13 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
             if (key == "top" || key == "bottom") {
                 auto w = words(value);
                 const bool top = key == "top";
-                ok = (w.size() == 4 || w.size() == 6) &&
-                     parse_rect(w[0] + " " + w[1] + " " + w[2] + " " + w[3], top ? out.screens.top : out.screens.bottom);
+                ok = (w.size() == 4 || w.size() == 6) && parse_rect(w[0] + " " + w[1] + " " + w[2] + " " + w[3],
+                                                                    top ? out.screens.top : out.screens.bottom);
                 if (ok && w.size() == 6)
                     ok = parse_int(w[4], top ? out.screens.top_from : out.screens.bottom_from) &&
                          parse_int(w[5], top ? out.screens.top_to : out.screens.bottom_to);
                 if (!ok) why = "expected " + key + " = x y w h [from to]";
-            }
-            else if (key == "same") ok = parse_buttons(value, out.screens.same);
+            } else if (key == "same") ok = parse_buttons(value, out.screens.same);
             else if (key == "pad") {
                 ok = value == "plain" || value == "machine";
                 out.screens.plain_pad = value == "plain";
@@ -488,16 +487,14 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
             else if (key == "match") {
                 auto w = words(value);
                 ok = w.size() == 2 && parse_int(w[0], out.screens.match_w) && parse_int(w[1], out.screens.match_h);
-            }
-            else if (key == "touch") {
+            } else if (key == "touch") {
                 auto w = words(value);
                 ScreensSpec::Zone zone;
                 ok = w.size() == 5 && parse_rect(w[0] + " " + w[1] + " " + w[2] + " " + w[3], zone.box) &&
                      parse_buttons(w[4], zone.buttons);
                 if (ok) out.screens.touch.push_back(zone);
                 else why = "expected touch = x y w h BUTTONS";
-            }
-            else return fail("unknown key '" + key + "' in [screens]");
+            } else return fail("unknown key '" + key + "' in [screens]");
         } else if (section == "party") {
             auto& p = out.party;
             if (key == "format") {

@@ -1,7 +1,19 @@
 #pragma once
 #include "hw.h"
 enum {
-    SC_PACE, SC_ARM9, SC_JIT, SC_ARM7, SC_STORM, SC_GEOMETRY, SC_FILL, SC_CHURN, SC_SPIKE, SC_DUAL, SC_FEEDBACK, SC_GAUNTLET, SC_SHOWCASE,
+    SC_PACE,
+    SC_ARM9,
+    SC_JIT,
+    SC_ARM7,
+    SC_STORM,
+    SC_GEOMETRY,
+    SC_FILL,
+    SC_CHURN,
+    SC_SPIKE,
+    SC_DUAL,
+    SC_FEEDBACK,
+    SC_GAUNTLET,
+    SC_SHOWCASE,
     SCENE_COUNT
 };
 typedef struct {

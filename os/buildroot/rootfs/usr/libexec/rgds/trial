@@ -17,6 +17,9 @@ rw() { mount -o remount,rw $BOOT; }
 ro() { sync; mount -o remount,ro $BOOT; }
 field() { sed -n "s/.*\"$1\": *\"\([^\"]*\)\".*/\1/p" "$RECORD" 2>/dev/null; }
 counter() { printf '\275\001\000%b' "$1" > $COUNTER; }  # $1: '\000' idle, '\001' armed (count 0)
+# The boot partition is vfat: a rename whose new file is still in the cache can land as an empty extlinux.conf after a
+# power cut, and then neither slot boots. The new file goes to the card first, the rename after it.
+swap() { sync; mv "$1" $BOOT/extlinux/extlinux.conf; sync; }
 result() {  # STATE BUILD PREVIOUS REASON
     mkdir -p "${RESULT%/*}"
     printf '{"build": "%s", "previous": "%s", "reason": "%s", "state": "%s"}\n' "$2" "$3" "$4" "$1" > $RESULT.new
@@ -27,12 +30,14 @@ case "$1" in
 arm)
     [ $# -eq 5 ] || { echo "usage: trial arm SLOT PREVIOUS BUILD VERSION" >&2; exit 2; }
     rw
-    { grep -v -E '^(DEFAULT|FALLBACK) ' $BOOT/extlinux/extlinux.conf; } > $BOOT/extlinux/extlinux.conf.new
-    { printf 'DEFAULT %s\nFALLBACK %s\n' "$2" "$3"; cat $BOOT/extlinux/extlinux.conf.new; } > $BOOT/extlinux/extlinux.conf.arm
-    mv $BOOT/extlinux/extlinux.conf.arm $BOOT/extlinux/extlinux.conf
-    rm -f $BOOT/extlinux/extlinux.conf.new
+    # Record and counter on the card before DEFAULT moves: cut in between, the old slot still boots and `trial boot`
+    # reports the trial as rolled back; the other way round a new slot that panics would have no counter to fall back.
     printf '{"slot": "%s", "previous": "%s", "build": "%s", "version": "%s"}\n' "$2" "$3" "$4" "$5" > $RECORD
     counter '\001'
+    { grep -v -E '^(DEFAULT|FALLBACK) ' $BOOT/extlinux/extlinux.conf; } > $BOOT/extlinux/extlinux.conf.new
+    { printf 'DEFAULT %s\nFALLBACK %s\n' "$2" "$3"; cat $BOOT/extlinux/extlinux.conf.new; } > $BOOT/extlinux/extlinux.conf.arm
+    swap $BOOT/extlinux/extlinux.conf.arm
+    rm -f $BOOT/extlinux/extlinux.conf.new
     ro
     ;;
 boot)
@@ -46,7 +51,7 @@ boot)
         rw
         { grep -v -E '^(DEFAULT|FALLBACK) ' $BOOT/extlinux/extlinux.conf; } > $BOOT/extlinux/extlinux.conf.new
         { printf 'DEFAULT %s\n' "$SLOT"; cat $BOOT/extlinux/extlinux.conf.new; } > $BOOT/extlinux/extlinux.conf.back
-        mv $BOOT/extlinux/extlinux.conf.back $BOOT/extlinux/extlinux.conf
+        swap $BOOT/extlinux/extlinux.conf.back
         rm -f $BOOT/extlinux/extlinux.conf.new
         result rolled-back "$(field build)" "$(field previous)" "slot $(field slot) did not boot"
         rm -f $RECORD
@@ -72,11 +77,13 @@ commit)
         : > $VERIFIED
     fi
     rw
-    { grep -v -E '^FALLBACK ' $BOOT/extlinux/extlinux.conf; } > $BOOT/extlinux/extlinux.conf.new
-    mv $BOOT/extlinux/extlinux.conf.new $BOOT/extlinux/extlinux.conf
     result installed "$(field build)" "$(field previous)" ""
     rm -f $RECORD
     counter '\000'
+    # Counter idle first: a FALLBACK line left behind by a cut is never taken, an armed counter without one would be.
+    sync
+    { grep -v -E '^FALLBACK ' $BOOT/extlinux/extlinux.conf; } > $BOOT/extlinux/extlinux.conf.new
+    swap $BOOT/extlinux/extlinux.conf.new
     ro
     echo "trial: slot $SLOT committed" >&2
     ;;

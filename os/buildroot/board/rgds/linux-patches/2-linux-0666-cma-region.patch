@@ -1,3 +1,10 @@
+RG DS OS: a 64 MiB default CMA region (BananaLinux/ROCKNIX's patch made it 256 MiB)
+
+RG DS OS has no vendor display stack: the direct present's scanout buffers are a few MiB of CMA, and the GPU
+(panfrost) allocates from system memory. 64 MiB instead of 256 saves about 60 ms of boot (the larger region's setup
+took 88 ms) and leaves 192 MiB to the games. Was two patches until 2026-11-23 (this one at 256 MiB, then
+dts-patches/0005 cutting it to 64).
+
 diff --git a/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi b/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi
 index fd2214b6fad4..6863f5af526d 100644
 --- a/arch/arm64/boot/dts/rockchip/rk356x-base.dtsi
@@ -9,7 +16,7 @@ index fd2214b6fad4..6863f5af526d 100644
 +        linux,cma {
 +			compatible = "shared-dma-pool";
 +			reusable;
-+			size = <0x0 0x10000000>;
++			size = <0x0 0x4000000>;
 +			alignment = <0x0 0x400000>;
 +			linux,cma-default;
 +		};

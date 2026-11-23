@@ -25,8 +25,13 @@ def in_linux(command, cwd):
     if platform.system() == 'Linux' and platform.machine() == 'aarch64':
         return subprocess.run(['sh', '-c', shell], capture_output=True, text=True, errors='replace')
     environment = dict(os.environ, LIMA_HOME=str(LIMA / 'state'))
-    return subprocess.run([LIMA / 'lima/bin/limactl', 'shell', 'rgds-image', '--', 'sh', '-c', shell],
-                          capture_output=True, text=True, errors='replace', env=environment)
+    return subprocess.run(
+        [LIMA / 'lima/bin/limactl', 'shell', 'rgds-image', '--', 'sh', '-c', shell],
+        capture_output=True,
+        text=True,
+        errors='replace',
+        env=environment
+    )
 
 
 def play(engine, work, *arguments):
@@ -80,7 +85,9 @@ def main():
     for fixture, reason in failed:
         print(f'{fixture}: {reason}', file=sys.stderr)
     if failed:
-        raise SystemExit('This build would lose DS resume points. Fix the state format; see docs/DEVELOPMENT.md "Saves".')
+        raise SystemExit(
+            'This build would lose DS resume points. Fix the state format; see docs/DEVELOPMENT.md "Saves".'
+        )
     print(f'DS resume points load: {fixtures + bool(args.add)} of them.')
 
 

@@ -35,13 +35,16 @@ class Cover(unittest.TestCase):
 
     def test_closed_scan_first(self):
         with tempfile.TemporaryDirectory() as folder:
-            path = self.mgw(folder, ("im_background_open.rle", scan(8, 4, 0x07E0)), ("im_background_closed.rle", scan(8, 4, 0xF800)))
+            path = self.mgw(
+                folder, ("im_background_open.rle", scan(8, 4, 0x07E0)),
+                ("im_background_closed.rle", scan(8, 4, 0xF800))
+            )
             found = gw_art.members(path)
             self.assertEqual(len(found), 2)
             width, height, rows = gw_art.pixels(found["im_background_closed.rle"])
             self.assertEqual((width, height), (8, 4))
             self.assertEqual(rows[0][:4], bytes((255, 0, 0, 255)))
-            self.assertEqual(rows[0][-4:], bytes(4)) # the transparent run
+            self.assertEqual(rows[0][-4:], bytes(4))  # the transparent run
             self.assertTrue(gw_art.cover(path).startswith(b"\x89PNG"))
 
     def test_large_scan_is_sampled(self):

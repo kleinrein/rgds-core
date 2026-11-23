@@ -24,7 +24,8 @@ def native():
     run('clang', '-std=c11', '-O1', '-Wall', SRC / 'score_test.c', '-o', OUT / 'score_test')
     run(OUT / 'score_test')
     run('clang', '-std=c11', '-O1', '-Wall', SRC / 'golden_gen.c', SRC / 'kernels.c', '-o', OUT / 'golden_gen')
-    (OUT / 'golden.h').write_text(subprocess.run([OUT / 'golden_gen'], check=True, capture_output=True, text=True).stdout)
+    (OUT /
+     'golden.h').write_text(subprocess.run([OUT / 'golden_gen'], check=True, capture_output=True, text=True).stdout)
 
 
 def cross(flags, source, target, *extra):
@@ -59,16 +60,21 @@ def build():
     OUT.mkdir(parents=True, exist_ok=True)
     native()
     # -O2 with armv5te, as commercial DS code is built: LDRD, CLZ, the DSP multiplies, Thumb interworking.
-    arm9 = ['-target', 'arm-none-eabi', '-mcpu=arm946e-s', '-mfloat-abi=soft', '-O2', '-std=gnu11', '-ffreestanding', '-Wall',
-            '-Wextra', '-Wno-unused-parameter', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-fno-exceptions']
+    arm9 = [
+        '-target', 'arm-none-eabi', '-mcpu=arm946e-s', '-mfloat-abi=soft', '-O2', '-std=gnu11', '-ffreestanding',
+        '-Wall', '-Wextra', '-Wno-unused-parameter', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables',
+        '-fno-exceptions'
+    ]
     run(LLVM / 'clang', '-target', 'arm-none-eabi', '-mcpu=arm946e-s', '-c', SRC / 'start9.s', '-o', OUT / 'start9.o')
     cross(arm9 + ['-marm'], SRC / 'main.c', 'main.o')
     cross(arm9 + ['-marm'], SRC / 'scenes.c', 'scenes.o')
     cross(arm9 + ['-marm'], SRC / 'kernels.c', 'kernels_arm.o')
     cross(arm9 + ['-mthumb'], SRC / 'kernels.c', 'kernels_thumb.o', '-DKERNEL_NAME=kernel_thumb')
     code9 = link(script(ARM9_AT), ['start9.o', 'main.o', 'scenes.o', 'kernels_arm.o', 'kernels_thumb.o'], 'arm9')
-    arm7 = ['-target', 'arm-none-eabi', '-mcpu=arm7tdmi', '-mfloat-abi=soft', '-marm', '-O2', '-std=gnu11', '-ffreestanding',
-            '-Wall', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-fno-exceptions']
+    arm7 = [
+        '-target', 'arm-none-eabi', '-mcpu=arm7tdmi', '-mfloat-abi=soft', '-marm', '-O2', '-std=gnu11',
+        '-ffreestanding', '-Wall', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '-fno-exceptions'
+    ]
     run(LLVM / 'clang', '-target', 'arm-none-eabi', '-mcpu=arm7tdmi', '-c', SRC / 'start7.s', '-o', OUT / 'start7.o')
     cross(arm7, SRC / 'arm7.c', 'arm7.o')
     code7 = link(script(ARM7_AT), ['start7.o', 'arm7.o'], 'arm7')

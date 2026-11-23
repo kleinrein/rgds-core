@@ -32,6 +32,8 @@ enum class MusicGlyph {
     Bluetooth,
     Headphones,
     Expand,
+    Film,
+    Book,
     Count
 };
 
@@ -182,6 +184,11 @@ inline float music_glyph_distance(MusicGlyph glyph, float x, float y) {
         d = std::min(d, box(p, {4.6f, 16.4f}, {2.2f, 3.8f}, 1.5f));
         return std::min(d, box(p, {19.4f, 16.4f}, {2.2f, 3.8f}, 1.5f));
     }
+    case MusicGlyph::Film: // a screen with a play mark in it
+        return std::min(std::fabs(box(p, {12, 12.5f}, {9.4f, 7}, 2.4f)) - 1,
+                        triangle(p, {9.8f, 9.2f}, {9.8f, 15.8f}, {15.6f, 12.5f}));
+    case MusicGlyph::Book: // open, two pages either side of the spine
+        return std::min(box(p, {6.9f, 12}, {4.7f, 7.4f}, 1.3f), box(p, {17.1f, 12}, {4.7f, 7.4f}, 1.3f));
     case MusicGlyph::Expand: {
         float d = 1e9f;
         for (int corner = 0; corner < 4; corner++) {

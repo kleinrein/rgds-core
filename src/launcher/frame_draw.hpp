@@ -329,7 +329,8 @@ void App::draw(bool screenshot) {
             // The lower panel is presented every frame even when the music player's page is still: on the handheld a
             // panel presented only now and then showed an old frame when a view transition (B back to Home) started
             // presenting it at full rate again (2026-11-12).
-            if (i == 0 && !screenshot && !shutter_active() && settings.page != Page::Photo && settings.page != Page::Rewind) {
+            if (i == 0 && !screenshot && !shutter_active() && settings.page != Page::Photo &&
+                settings.page != Page::Rewind) {
                 const auto signature = top_signature(s.GetTicks());
                 if (!signature.empty() && signature == top_seen) {
                     top_skips++;

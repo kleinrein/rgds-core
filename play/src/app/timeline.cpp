@@ -8,7 +8,9 @@
 namespace play {
 
 // Started here, not in the member list: every member it reads is set by now.
-Timeline::Timeline() { worker_ = std::thread([this] { work(); }); }
+Timeline::Timeline() {
+    worker_ = std::thread([this] { work(); });
+}
 
 Timeline::~Timeline() {
     {
@@ -70,7 +72,8 @@ Thumb Timeline::make_thumb(const Picture& p, int max_w, int max_h) {
     t.px.resize(size_t(t.w) * t.h);
     // Each thumb pixel averages the 2x2 nearest source pixels around its centre: soft enough not to shimmer.
     for (int y = 0; y < t.h; ++y) {
-        const int sy0 = std::min(p.h - 1, int((y + 0.25) * p.h / t.h)), sy1 = std::min(p.h - 1, int((y + 0.75) * p.h / t.h));
+        const int sy0 = std::min(p.h - 1, int((y + 0.25) * p.h / t.h)),
+                  sy1 = std::min(p.h - 1, int((y + 0.75) * p.h / t.h));
         for (int x = 0; x < t.w; ++x) {
             const int sx0 = std::min(p.w - 1, int((x + 0.25) * p.w / t.w)),
                       sx1 = std::min(p.w - 1, int((x + 0.75) * p.w / t.w));

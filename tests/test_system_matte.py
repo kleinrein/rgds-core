@@ -10,6 +10,7 @@ import unittest
 try:
     import numpy as np
     from PIL import Image
+    import scipy.ndimage  # noqa: F401  tools/system_matte.py needs it at import
 except ImportError:  # the matte's tools live in .cache/venv, not in the test environment
     np = None
     Image = None
@@ -43,7 +44,7 @@ def picture(size=256, studio=200, body=(90, 110, 170), hole=None, hole_alpha=0):
     return Image.fromarray(pixels, 'RGB'), alpha
 
 
-@unittest.skipUnless(np is not None and Image is not None, 'numpy and Pillow required')
+@unittest.skipUnless(np is not None and Image is not None, 'numpy, Pillow and SciPy required')
 class SystemMatteTest(unittest.TestCase):
     def setUp(self):
         self.matte = matte_module()

@@ -41,7 +41,7 @@ public:
         std::vector<Game> recent_games;
         Activity activity;
         std::vector<std::pair<std::string, uint64_t>> systems; // time by system id, most first
-        JournalT<Game> journal;                                // sittings, unlocks and pictures by day (play_journal.hpp)
+        JournalT<Game> journal; // sittings, unlocks and pictures by day (play_journal.hpp)
     };
     // Days since 1970-01-01 of a moment's local date.
     static long local_day(std::time_t moment) {
@@ -139,9 +139,11 @@ public:
                                 const fs::path png = line.substr(0, tab);
                                 const long long at = journal::shot_time(png.filename().string());
                                 if (!at || png.extension() != ".png") continue;
-                                auto& shots = album[line.substr(tab + 1, end == std::string::npos ? end : end - tab - 1)];
+                                auto& shots =
+                                    album[line.substr(tab + 1, end == std::string::npos ? end : end - tab - 1)];
                                 if (shots.size() < 2000)
-                                    shots.push_back({at, (png.parent_path() / (png.stem().string() + ".thumb.bmp")).string()});
+                                    shots.push_back(
+                                        {at, (png.parent_path() / (png.stem().string() + ".thumb.bmp")).string()});
                             }
                         }
                         std::ifstream history(folder / "sessions.tsv");

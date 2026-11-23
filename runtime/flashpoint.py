@@ -275,8 +275,14 @@ def main(argv=None):
         if args.command == "scan":
             print("flashpoint: %d games imported" % scan(args.flash))
         else:
-            imported, skipped = import_flashpoint(args.flashpoint, args.dest, copy=not args.move,
-                                                  extreme=args.extreme, search=args.search, limit=args.limit)
+            imported, skipped = import_flashpoint(
+                args.flashpoint,
+                args.dest,
+                copy=not args.move,
+                extreme=args.extreme,
+                search=args.search,
+                limit=args.limit
+            )
             print("flashpoint: %d games imported, %d skipped" % (imported, skipped))
     except (OSError, sqlite3.Error) as error:
         print("flashpoint: %s" % error, file=sys.stderr)

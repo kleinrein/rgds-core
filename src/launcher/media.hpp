@@ -413,10 +413,9 @@ public:
                 return false;
             };
             if (!attach(finished) && attach(queue) && urgent) {
-                auto at = std::find_if(queue.begin(), queue.end(),
-                                       [&](const Job& job) {
-                                           return job.icon == icon && job.thumb == thumb && job.path == path;
-                                       });
+                auto at = std::find_if(queue.begin(), queue.end(), [&](const Job& job) {
+                    return job.icon == icon && job.thumb == thumb && job.path == path;
+                });
                 std::rotate(queue.begin(), at, at + 1);
             }
             return;

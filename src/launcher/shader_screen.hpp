@@ -35,12 +35,12 @@ std::string App::picker_game_system() {
 
 void App::close_shader_picker() {
     settings.page = shader_return;
-    settings.focus = shader_return == Page::QuickMenu      ? 3
+    settings.focus = shader_return == Page::QuickMenu        ? 3
                      : shader_return == Page::SystemDefaults ? 4
-                     : shader_return == Page::Graphics     ? 4
-                     : shader_return == Page::PlayGraphics ? 3
-                     : shader_per_game                     ? 1
-                                                           : 5;
+                     : shader_return == Page::Graphics       ? 4
+                     : shader_return == Page::PlayGraphics   ? 3
+                     : shader_per_game                       ? 1
+                                                             : 5;
     dirty = true;
 }
 
@@ -245,8 +245,7 @@ void App::render_shader_carousel(SDL_Renderer* r, int y) {
                                  ? int(std::max(0.0, 1.0 - (s.GetTicks() - selected_at) / 190.0) * 4)
                                  : 0,
                       row = y + 144 - lift;
-            const int value = shader_choices[size_t(index)],
-                      shown = value < 0 ? default_shader(shader_system) : value;
+            const int value = shader_choices[size_t(index)], shown = value < 0 ? default_shader(shader_system) : value;
             if (selected) start_frame(r, x, row, tile, value == current ? "IN USE" : "APPLY", 30);
             round_rect(r, x, row + 4, tile, tile, 5, "line");
             round_rect(r, x, row, tile, tile, 5, "line");

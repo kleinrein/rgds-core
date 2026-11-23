@@ -15,7 +15,7 @@ namespace play {
 
 inline bool system_has_stick(const std::string& system) {
     return system == "n64" || system == "psp" || system == "dc" || system == "scummvm" || system == "atari5200" ||
-           system == "amiga" || // the Amiga's right stick: its mouse
+           system == "amiga" ||                  // the Amiga's right stick: its mouse
            system == "dos" || system == "flash"; // Flash: the stick moves the pointer
 }
 

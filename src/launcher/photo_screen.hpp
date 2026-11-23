@@ -699,7 +699,7 @@ void App::photo_top(SDL_Renderer* r, int y) {
         const bool on = page == photo_page;
         const int cy = y + 8 + page * 232 + 116;
         if (on) fill_round(r, 498, cy - 5, 10, 10, 5, theme.at("accent"));
-        label(r, page ? "Lower" : "Upper", 516, cy - 11, 18, on ? "ink" : "muted", 116);
+        label(r, page ? "Lower screen" : "Upper screen", 516, cy - 11, 18, on ? "ink" : "muted", 116);
     }
     // The keys for the parts the footer below has no room to explain.
     auto hints = photo_hints(false);
@@ -745,7 +745,7 @@ void App::photo_bottom(SDL_Renderer* r, int y) {
         }
         if (photo_pages > 1) {
             // Which screen this is, in the desk's corner.
-            const std::string name = photo_page ? "Lower" : "Upper";
+            const std::string name = photo_page ? "Lower screen" : "Upper screen";
             const int w = label_width(name, 14) + 20;
             fill_round(r, desk.x + 8, desk.y + 8, w, 24, 12, Color{20, 20, 24});
             label(r, name, desk.x + 18, desk.y + 11, 14, "on_accent", w - 16);
@@ -876,7 +876,7 @@ void App::photo_bottom(SDL_Renderer* r, int y) {
         raised_pill(r, photo_switch_x + 3 + int(std::lround(at * (half - 3))), fy + 11, half - 3, 34, 17,
                     theme.at("accent"), 0, false);
         for (int page = 0; page < 2; page++) {
-            const std::string name = page ? "Lower" : "Upper";
+            const std::string name = page ? "Lower screen" : "Upper screen";
             const int w = std::min(half - 12, label_width(name, 16));
             label(r, name, photo_switch_x + page * half + (half - w) / 2, centred_label_y(locale.text(name), 16, fy + 28),
                   16, std::abs(at - page) < .5 ? "on_accent" : "ink", half - 12);

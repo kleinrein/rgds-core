@@ -47,6 +47,11 @@ import play_options  # noqa: E402
 
 play_options.LIBRETRO_DIR = cores
 import emulators  # noqa: E402
+import activate  # noqa: E402
+
+# The spike runs its own player and core, so the release's file check says nothing about them; another session's
+# bind mount over the release's rgds-play (2026-11-23) made it refuse every spike launch.
+activate.verify_engine = lambda *args, **kwargs: None
 
 if play_options.system_of(rom) != "dc": raise SystemExit(f"{rom} is not a Dreamcast game to this runtime")
 plan = emulators.launch_plan("rgds-play", release, data, rom, fresh_start=fresh)

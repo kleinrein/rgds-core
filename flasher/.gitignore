@@ -1,0 +1,3 @@
+# `go build` in this folder writes the binary here; releases come from build.sh into dist/
+/flasher
+/flasher.exe

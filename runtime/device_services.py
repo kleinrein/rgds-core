@@ -702,7 +702,10 @@ class Services:
     def bundle_report(self, folder, device):
         """One file to send: the logs a crash leaves, without addresses or network names, the last five kept."""
         logs, engines = self.data.parent / "logs", self.data / "logs"
-        sources = [logs / name for name in ("dmesg.txt", "hardware.txt", "boot.txt")]
+        sources = [
+            logs / name for name in
+            ("dmesg.txt", "hardware.txt", "boot.txt", "messages.txt", "messages.prev.txt", "dmesg.prev.txt")
+        ]
         sources += sorted(logs.glob("launcher.log*")) + sorted(engines.glob("*.log*"))
         sources += sorted(path for path in (logs / "pstore").glob("*/*"))
         contents = {device.name: device.read_bytes()}

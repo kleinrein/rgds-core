@@ -137,8 +137,8 @@ Button layout	按键布局
 Button {0}	按键 {0}
 Buttons and the game menu shortcut	按键与游戏菜单快捷键
 Cancel	取消
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	取消更新
+Cancel the update? Anything already downloaded is removed.	要取消更新吗？已下载的内容将被删除。
 Carousel	轮播
 Carried	携带
 Cartridges	卡带
@@ -146,7 +146,7 @@ Change group	切换分组
 Changes immediately. Map a button in Controls for quick access.	立即切换。在“按键设置”中指定按键可快速使用。
 Changing 3D threading…	正在更改 3D 线程…
 Changing speed…	正在更改速度…
-Chaos Emeralds	混沌翡翠
+Chaos Emeralds	混乱宝石
 Chat is unavailable: you can still draw	无法聊天：仍然可以画画
 Chat Room	聊天室
 Chat Room {0}	聊天室 {0}
@@ -1467,17 +1467,17 @@ Vectorscope	矢量示波器
 Radial spectrum	环形频谱
 Waterfall	瀑布
 Tunnel	隧道
-Prism	Prism
-Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
-Copper bars	Copper bars
-Synthwave	Synthwave
-Ripples	Ripples
-Rotozoom	Rotozoom
+Prism	棱镜
+Lissajous	李萨如
+Matrix rain	矩阵雨
+Kaleidoscope	万花筒
+Fireworks	烟花
+Lava lamp	熔岩灯
+Aurora	极光
+Copper bars	铜条
+Synthwave	合成波
+Ripples	波纹
+Rotozoom	旋转缩放
 ScreenScraper account	ScreenScraper 账户
 Not signed in	未登录
 Change account	更换账户
@@ -1679,18 +1679,18 @@ In a game press Menu + R, or choose Screenshot in the Game menu. Menu + R works 
 This picture is the game's cover now.	这张图片现在是游戏封面。
 The cover could not be changed.	无法更改封面。
 The screenshot could not be saved.	无法保存截图。
-Delete this screenshot?	删除这张截图？
+Delete this screenshot?	要删除这张截图吗？
 Use as the game's cover	设为游戏封面
 Save the game behind this menu to the Album	将此菜单后面的游戏画面保存到相册
 Saving the screenshot…	正在保存截图…
 Screenshot saved to the Album.	截图已保存到相册。
 Still saving the last screenshot.	上一张截图仍在保存。
 No picture to save. Resume the game and press Menu + R.	没有可保存的画面。请回到游戏后按 Menu + R。
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	每次开机时显示档案选择界面。
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	上一位玩家设有 PIN，因此开机时仍会询问。在该界面按 B 可切换档案。
+Switch profile	切换档案
 Photo mode	照片模式
-Leave photo mode?	退出照片模式？
+Leave photo mode?	要退出照片模式吗？
 Keep editing	继续编辑
 Leave without saving	不保存并退出
 Saved to the Album.	已保存到相册。
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	{0}，生日快乐！
 Last played {0}	上次游玩：{0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	颜色和菜单音乐随时间变化：傍晚更温暖，夜晚更安静
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	和原版一样，DS 游戏会知道这一天。到了那天，掌机会用自己的方式向你问好。
+Looking for videos and books…	正在查找视频和图书…
+Play from the start	从头播放
+Start from the beginning	从头开始
+Mark as finished	标记为已完成
+Mark as not finished	标记为未完成
+{0} artist	{0} 位艺人
+{0} artists	{0} 位艺人
+{0} item	{0} 项
+{0} items	{0} 项
+Add network place	添加网络位置
+Added.	已添加。
+Cancel paste	取消粘贴
+Card	存储卡
+Choose a share	选择共享
+Clear marks	清除标记
+Copied.	已复制。
+Copy	复制
+Delete for good	永久删除
+Delete these for good?	要永久删除这些项目吗？
+Delete this for good?	要永久删除此项目吗？
+Empty the trash for good?	要永久清空回收站吗？
+Empty trash	清空回收站
+Extract here	解压到此处
+Folder	文件夹
+Getting it…	正在获取…
+Getting them…	正在获取文件…
+Go ahead	继续
+Inbox	收件箱
+Keep it anyway	仍然保留
+Marked	已标记
+Move	移动
+Move here	移动到此处
+Move these to the trash?	要将这些项目移到回收站吗？
+Move this to the trash?	要将此项目移到回收站吗？
+Moved to the trash.	已移到回收站。
+Moved.	已移动。
+Network	网络
+New folder	新建文件夹
+No servers found	未找到服务器
+Open the folder to copy to, then press Y.	打开目标文件夹，然后按 Y。
+Open the folder to move to, then press Y.	打开目标文件夹，然后按 Y。
+Paste here	粘贴到此处
+Put this key on the server	将此密钥添加到服务器
+Remove	移除
+Remove it	移除
+Remove this place	移除此位置
+Remove this place?	要移除此位置吗？
+Removed.	已移除。
+Rename	重命名
+Servers on this network	此网络中的服务器
+Sign in with	登录方式
+That did not work.	操作未成功。
+That server shares no folders.	该服务器没有共享文件夹。
+The trash is empty.	回收站是空的。
+This handheld's key	本机密钥
+Trash	回收站
+Type an address	输入地址
+Wait a moment, then try again.	请稍候再试。
+{0} marked	已标记 {0} 项
+{0} more	还有 {0} 个
+Getting {0}	正在获取 {0}
+Waiting to retry {0}	等待重试：{0}
+until restart	直到重启
+Future	未来
+Lap	圈
+Earlier	更早
+Where you are	当前位置
+Rewind	倒带
+Mark	标记
+Draw	绘制
+Stamp	印章
+Lift pen	抬笔
+Pen down	落笔
+Screen	屏幕
+Check panel order and controller input	请检查屏幕顺序和控制器输入
+Upper screen	上屏
+Lower screen	下屏
+Kind	类型
+Size	大小
+Modified	修改日期
+Where	位置
+Archive	压缩包
+Text	文本
+Save data	存档数据
+File	文件
+{0} file	{0} 文件
+{0} free	可用 {0}
+Sort by	排序方式
+Could not open it	无法打开
+This folder is empty	此文件夹为空
+The trash is empty	回收站为空
+No network places yet	还没有网络位置

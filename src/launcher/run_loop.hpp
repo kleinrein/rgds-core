@@ -119,6 +119,7 @@ int App::run() {
         std::stable_sort(inputs.begin(), inputs.end(), [](const Input& a, const Input& b) { return a.time < b.time; });
     }
     while (!quit && !stopping) {
+        if (frame_log.file) frame_log.loop_top = FrameLog::clock();
         update_health();
         if (o.game_menu && !o.preview && !sleep_audio_parked && fs::exists(o.data / "session/game-menu.audio-sleep")) {
             sounds.close();
@@ -196,11 +197,13 @@ int App::run() {
         }
         if (o.port_menu) port_poll(now);
         else port_files_poll(now);
-        for (auto point : touchscreen.poll(now - began))
+        for (auto point : touchscreen.poll(now - began)) {
+            frame_log.touches++;
             if (!(o.port_menu && port_idle)) raw_touch(point, now);
             else if (port_info_shown()) port_touch(point, now);
+        }
         for (auto point : top_touch.poll())
-            if (session_initialized && !(o.port_menu && port_idle)) zoom_top_touch(point.kind, point.x, point.y, now);
+            if (++frame_log.top_touches && session_initialized && !(o.port_menu && port_idle)) zoom_top_touch(point.kind, point.x, point.y, now);
         if (o.port_menu && port_idle) port_info_tick(now);
         if (!session_initialized) {
             if (o.seconds && now - began >= Uint32(o.seconds) * 1000) break;
@@ -366,9 +369,13 @@ int App::run() {
         }
         if (banner_shown() && banner_frame(now) != drawn_banner_frame) dirty = true;
         bool list_animated = browser_list.update(now);
-        if (zoom_update(now)) dirty = true;
+        // A wall gliding or settling is an animation: the loop keeps drawing instead of sleeping until the next
+        // input, which held a flick to a few frames a second on the handheld.
+        const bool zoom_moving = zoom_update(now);
+        if (zoom_moving) dirty = true;
         const bool shader_moving = settings.page == Page::ShaderPicker && shader_carousel.update(now);
         bool animated =
+            zoom_moving ||
             (preferences.animations && (carousel.update(now) || shader_moving || list_animated ||
                                         now - selected_at < 190 || (!view_active && now - page_at < 150))) ||
             (settings.page == Page::ShaderPicker && shader_thumbs_pending);
@@ -406,6 +413,11 @@ int App::run() {
             ui_trace.mark(UiTrace::Assets, rendered_frames, uint32_t(settings.page));
             if (!rendered_frames) launch_profile.mark("assets-start");
             const double prepare_at = FrameLog::clock();
+            if (frame_log.file) {
+                frame_log.add(FrameLog::Work, prepare_at - frame_log.loop_top);
+                frame_log.add(FrameLog::Wait, frame_log.waited);
+                frame_log.waited = 0;
+            }
             prepare_render_assets();
             if (!rendered_frames) launch_profile.mark("assets-ready");
             if (frame_log.file) frame_log.add(FrameLog::Prepare, FrameLog::clock() - prepare_at);
@@ -413,16 +425,23 @@ int App::run() {
             frames++;
             if (frame_log.file) {
                 const double at = FrameLog::clock();
-                if (frame_log.last) frame_log.add(FrameLog::Interval, at - frame_log.last);
+                if (frame_log.last) {
+                    const double gap = at - frame_log.last;
+                    frame_log.add(FrameLog::Interval, gap);
+                    frame_log.gaps[gap <= 18 ? 0 : gap <= 34 ? 1 : gap <= 50 ? 2 : gap <= 100 ? 3 : 4]++;
+                }
                 frame_log.last = at;
                 frame_log.frames++;
                 if (!frame_log.began) frame_log.began = at;
                 if (at - frame_log.began >= 1000) {
-                    static const char* names[] = {"interval", "prepare", "top", "top_present", "bottom",
-                                                  "bottom_present"};
+                    static const char* names[] = {"interval", "prepare",        "top",  "top_present",
+                                                  "bottom",   "bottom_present", "work", "wait"};
                     std::fprintf(frame_log.file, "t=%u frames=%d top_frames=%d page=%d zoom=%.2f tiles_built=%d",
                                  s.GetTicks(), frame_log.frames, frame_log.top_frames, int(settings.page), zoom.level,
                                  zoom_sprite_builds);
+                    std::fprintf(frame_log.file, " touches=%d/%d gaps=%d,%d,%d,%d,%d", frame_log.touches,
+                                 frame_log.top_touches, frame_log.gaps[0], frame_log.gaps[1], frame_log.gaps[2],
+                                 frame_log.gaps[3], frame_log.gaps[4]);
                     zoom_sprite_builds = 0;
                     for (int i = 0; i < FrameLog::Count; i++) {
                         const int n = i == FrameLog::TopDraw || i == FrameLog::TopPresent ? frame_log.top_frames
@@ -481,10 +500,12 @@ int App::run() {
         if (options_hold() && !hold_felt) wait_ms = std::min(wait_ms, std::max(1, int(600 - (now - pointer_at))));
         if (glitter) wait_ms = std::min(wait_ms, 33);
         if (banner_shown() && preferences.animations) wait_ms = std::min(wait_ms, int(banner_wait(now)));
+        const double wait_from = frame_log.file ? FrameLog::clock() : 0;
         if (wait_event(&e, wait_ms)) {
             event(e);
             while (s.PollEvent(&e)) event(e);
         }
+        if (frame_log.file) frame_log.waited += FrameLog::clock() - wait_from;
     }
     flush_brightness();
     flush_volume();
@@ -603,7 +624,10 @@ int App::run() {
                << ",\"status\":" << std::quoted(status) << ",\"pin_digits\":" << pin_digits.size()
                << ",\"pin_purpose\":" << int(pin_purpose) << ",\"settings_unlocked\":" << settings_unlocked
                << ",\"chat_open\":" << chat_open << ",\"music_open\":" << music_open
-               << ",\"music_view\":" << int(mu.view) << ",\"music_tab\":" << mu.tab << ',';
+               << ",\"music_view\":" << int(mu.view) << ",\"music_tab\":" << mu.tab
+               << ",\"media_section\":" << mu.section << ",\"media_entries\":" << mu.entries.size()
+               << ",\"media_shelf_items\":" << (mu.section ? media_shelf().items.size() : size_t(0))
+               << ",\"media_folder_depth\":" << (mu.section ? media_shelf().path.size() : size_t(0)) << ',';
         report << "\"page\":" << int(settings.page) << ",\"boot_pending\":" << (settings.page == Page::BootWarning)
                << ",\"library_scan_started\":" << library_scan_started << ",\"library_ready\":" << library_ready
                << ",\"frames\":" << rendered_frames << ",\"metadata_reads\":" << library_cache.counters.file_reads

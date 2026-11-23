@@ -15,7 +15,16 @@ import array, fcntl, json, os, select, struct, sys, time
 EV_SYN, EV_KEY, EV_ABS, EV_FF = 0, 1, 3, 0x15
 FF_RUMBLE = 0x50
 EVENT = struct.Struct('llHHi')
-ABS_NAMES = {0: 'ABS_X', 1: 'ABS_Y', 2: 'ABS_Z', 3: 'ABS_RX', 4: 'ABS_RY', 5: 'ABS_RZ', 16: 'ABS_HAT0X', 17: 'ABS_HAT0Y'}
+ABS_NAMES = {
+    0: 'ABS_X',
+    1: 'ABS_Y',
+    2: 'ABS_Z',
+    3: 'ABS_RX',
+    4: 'ABS_RY',
+    5: 'ABS_RZ',
+    16: 'ABS_HAT0X',
+    17: 'ABS_HAT0Y'
+}
 
 
 def ioc(direction, kind, number, size):
@@ -83,8 +92,18 @@ def main():
             os.close(fd)
             continue
         fcntl.ioctl(fd, ioc(1, 'E', 0x90, 4), 1)  # EVIOCGRAB
-        dev = dict(path=path, name=name, id=eviocgid(fd), keys=bits(fd, EV_KEY, 96), ff=bits(fd, EV_FF, 16),
-                   axes={}, presses={}, abs={}, abs_events=0, syn=0)
+        dev = dict(
+            path=path,
+            name=name,
+            id=eviocgid(fd),
+            keys=bits(fd, EV_KEY, 96),
+            ff=bits(fd, EV_FF, 16),
+            axes={},
+            presses={},
+            abs={},
+            abs_events=0,
+            syn=0
+        )
         for code in bits(fd, EV_ABS, 8):
             dev['axes'][code] = absinfo(fd, code)
         devices.append((fd, dev))
@@ -141,12 +160,16 @@ def main():
         print(f"   keys {dev['keys']}  ff {dev['ff']}")
         for code, info in sorted(dev['axes'].items()):
             seen = dev['abs'].get(code)
-            print(f"   {ABS_NAMES.get(code, code):9} range {info['min']}..{info['max']} fuzz {info['fuzz']} "
-                  f"flat {info['flat']} | rest {info['value']}"
-                  + (f" seen {seen['low']}..{seen['high']}" if seen else ' not moved'))
+            print(
+                f"   {ABS_NAMES.get(code, code):9} range {info['min']}..{info['max']} fuzz {info['fuzz']} "
+                f"flat {info['flat']} | rest {info['value']}" +
+                (f" seen {seen['low']}..{seen['high']}" if seen else ' not moved')
+            )
         print(f"   presses {dict(sorted(dev['presses'].items()))}")
-        print(f"   {dev['syn'] / took:.0f} reports/s, {dev['abs_events']} axis events in {took:.0f} s"
-              + (f", rumble effect {dev['rumble_effect']}" if 'rumble_effect' in dev else ''))
+        print(
+            f"   {dev['syn'] / took:.0f} reports/s, {dev['abs_events']} axis events in {took:.0f} s" +
+            (f", rumble effect {dev['rumble_effect']}" if 'rumble_effect' in dev else '')
+        )
         report.append(dev)
     if out:
         with open(out, 'w') as stream:

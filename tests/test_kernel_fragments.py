@@ -30,12 +30,13 @@ def kernel_config(wanted):
 
 
 class KernelFragmentsTest(unittest.TestCase):
-    def output(self, tmp, fragments_line=None, kernel=None):
+    def output(self, tmp, fragments_line=None, kernel=None, base_line=None):
         out = Path(tmp)
         line = fragments_line or next(
             l for l in DEFCONFIG.splitlines() if l.startswith('BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES=')
         )
-        (out / '.config').write_text(line + '\n')
+        base = next(l for l in DEFCONFIG.splitlines() if l.startswith('BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE='))
+        (out / '.config').write_text(line + '\n' + (base_line or base) + '\n')
         if kernel is not None:
             (out / 'build/linux-custom').mkdir(parents=True)
             (out / 'build/linux-custom/.config').write_text(kernel)
@@ -76,6 +77,18 @@ class KernelFragmentsTest(unittest.TestCase):
             with self.assertRaises(SystemExit) as raised:
                 own_os_build.kernel_config_drift(self.output(tmp, fragments_line=stale))
         self.assertIn('--reconfigure', str(raised.exception))
+
+    def test_the_defconfig_builds_on_our_own_kernel_config(self):
+        base = own_os_build.kernel_base_config(DEFCONFIG)
+        self.assertEqual(base.name, 'linux-rgds_defconfig')
+        self.assertTrue(base.is_file(), base)
+
+    def test_a_kept_output_config_on_the_old_base_stops_the_build(self):
+        stale = 'BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_RGDS_PATH)/board/rgds/linux-rocknix.config"'
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(SystemExit) as raised:
+                own_os_build.kernel_config_drift(self.output(tmp, base_line=stale))
+        self.assertIn('another kernel config', str(raised.exception))
 
 
 if __name__ == '__main__':

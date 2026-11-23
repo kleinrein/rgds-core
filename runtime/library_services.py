@@ -24,8 +24,12 @@ def run(service, payload):
         return
     if action == 'profile-remove':
         path = remove_profile(service.data, payload.get('id', ''), bool(payload.get('backup')))[0]
-        if path: service.publish(state='ready', message='Profile removed. A backup is in userdata/exports.', export=str(path))
-        else: service.publish(state='ready', message='Profile removed.')
+        if path:
+            service.publish(
+                state='ready', message='Profile removed. A backup is in userdata/exports.', export=str(path)
+            )
+        else:
+            service.publish(state='ready', message='Profile removed.')
         return
     if action == 'profile-erase':
         erase_removed(service.data)

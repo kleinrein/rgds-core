@@ -47,7 +47,9 @@ class IntegrationTests(unittest.TestCase):
         plan = self.plan()
         self.assertEqual(plan["env"]["LD_PRELOAD"], str(self.hooks / "librgdsbridge.so"))
         self.assertEqual(plan["env"]["RGDS_SHARED_MENU"], "1")
-        self.assertEqual(plan["env"]["RGDS_STATE_SLOT"], str(self.data / "emulators/rgds-experimental/states/RGDS.0.dss"))
+        self.assertEqual(
+            plan["env"]["RGDS_STATE_SLOT"], str(self.data / "emulators/rgds-experimental/states/RGDS.0.dss")
+        )
 
     def test_launch_cleans_stale_environment(self):
         plan = self.plan(LD_PRELOAD="stale.so", LD_LIBRARY_PATH="/old/lib", PATH="/old/bin")

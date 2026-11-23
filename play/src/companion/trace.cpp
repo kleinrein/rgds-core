@@ -73,7 +73,7 @@ struct Point {
 struct Road {
     std::unordered_set<uint32_t> cells;
     int lo_x = INT_MAX, hi_x = INT_MIN, lo_y = INT_MAX, hi_y = INT_MIN;
-    int strokes = 0; // stretches painted since the course was started here (a loaded one counts as many)
+    int strokes = 0;     // stretches painted since the course was started here (a loaded one counts as many)
     long path_count = 0; // the path's points the road was painted from (0: painted by driving)
     bool has_start = false;
     int start_x = 0, start_y = 0, start_dx = 0, start_dy = 0, start_w = 0; // the start line: where, which way, how wide
@@ -153,7 +153,8 @@ Face shrunk(const Face& big, int w, int h) {
                     const uint32_t c = big.px[size_t(v) * big.w + u];
                     if (c >> 24) r += c & 0xFF, g += (c >> 8) & 0xFF, b += (c >> 16) & 0xFF, ++solid;
                 }
-            if (solid * 2 >= all && solid) small.px[size_t(y) * w + x] = 0xFF000000u | (r / solid) | ((g / solid) << 8) | ((b / solid) << 16);
+            if (solid * 2 >= all && solid)
+                small.px[size_t(y) * w + x] = 0xFF000000u | (r / solid) | ((g / solid) << 8) | ((b / solid) << 16);
         }
     return small;
 }
@@ -209,8 +210,8 @@ public:
                 }
             } else if (key == "racer_x" || key == "racer_y" || key == "racer_rank" || key == "racer_lap" ||
                        key == "racer_kind") {
-                uint32_t& at = key == "racer_x"    ? racer_x_
-                               : key == "racer_y"  ? racer_y_
+                uint32_t& at = key == "racer_x"      ? racer_x_
+                               : key == "racer_y"    ? racer_y_
                                : key == "racer_rank" ? racer_rank_
                                : key == "racer_lap"  ? racer_lap_
                                                      : racer_kind_;
@@ -291,12 +292,13 @@ public:
         if ((x >> 2) != (px_ >> 2) || (y >> 2) != (py_ >> 2) || course != course_now_) ++moves_;
         if (course != course_now_) heading_x_ = heading_y_ = 0, hx_ = x, hy_ = y;
         // Which way the machine points: where it is going, over the last stretch.
-        if (std::abs(x - hx_) + std::abs(y - hy_) > 40) heading_x_ = int(x - hx_), heading_y_ = int(y - hy_), hx_ = x, hy_ = y;
+        if (std::abs(x - hx_) + std::abs(y - hy_) > 40)
+            heading_x_ = int(x - hx_), heading_y_ = int(y - hy_), hx_ = x, hy_ = y;
         course_now_ = course;
         px_ = x, py_ = y;
         sampled_ = true;
-        const bool tracing = (when_.empty() || when_.match(live)) && std::abs(x) < 0x40000 && std::abs(y) < 0x40000 &&
-                             !road.path_count;
+        const bool tracing =
+            (when_.empty() || when_.match(live)) && std::abs(x) < 0x40000 && std::abs(y) < 0x40000 && !road.path_count;
         if (!tracing) {
             pen_down_ = false;
         } else if (!pen_down_) {
@@ -324,7 +326,8 @@ public:
         const bool drawn = found != courses_.end() && found->second.cells.size() > 1;
         // Everything but the player is the same until the road grows: kept, and copied.
         const uint64_t want = (uint64_t(layer_serial_) << 32) ^ (uint64_t(course_now_ & 0xFFFF) << 16) ^
-                              (uint64_t(out.w()) << 8) ^ uint64_t(out.h()) ^ colour_key(look) ^ (drawn ? 1ull << 63 : 0);
+                              (uint64_t(out.w()) << 8) ^ uint64_t(out.h()) ^ colour_key(look) ^
+                              (drawn ? 1ull << 63 : 0);
         if (want != layer_key_ || layer_.w() != out.w() || layer_.h() != out.h()) {
             layer_.resize(out.w(), out.h());
             paint_layer(layer_, look, font, drawn ? &found->second : nullptr);
@@ -338,7 +341,8 @@ public:
         std::vector<const Racer*> order;
         for (size_t i = 0; i < racers_.size(); ++i)
             if (racers_[i].there) order.push_back(&racers_[i]);
-        std::stable_sort(order.begin(), order.end(), [](const Racer* a, const Racer* b) { return a->place > b->place; });
+        std::stable_sort(order.begin(), order.end(),
+                         [](const Racer* a, const Racer* b) { return a->place > b->place; });
         for (const Racer* racer : order) {
             if (racer == &racers_[0]) continue;
             const Face* face = face_of(*racer, true);
@@ -435,7 +439,9 @@ public:
                 // Squares of this size: as they are; of another (a profile's width changed): their middles repainted.
                 for (const Point& p : points) {
                     if (size == cell_) road.add(p.x, p.y);
-                    else road.add(floor_div(p.x * long(size) + size / 2, cell_), floor_div(p.y * long(size) + size / 2, cell_));
+                    else
+                        road.add(floor_div(p.x * long(size) + size / 2, cell_),
+                                 floor_div(p.y * long(size) + size / 2, cell_));
                 }
             } else {
                 // Points a few lengths apart, one lap after another: painted as strokes where they follow on.
@@ -470,7 +476,8 @@ private:
             const uint32_t fx = peek_address(live, at + racer_x_, 4), fy = peek_address(live, at + racer_y_, 4);
             float x, y;
             std::memcpy(&x, &fx, 4), std::memcpy(&y, &fy, 4);
-            if (!std::isfinite(x) || !std::isfinite(y) || std::abs(x) > 0x40000 || std::abs(y) > 0x40000) r.there = false;
+            if (!std::isfinite(x) || !std::isfinite(y) || std::abs(x) > 0x40000 || std::abs(y) > 0x40000)
+                r.there = false;
             r.x = x, r.y = y;
             r.place = std::clamp(int(int16_t(peek_address(live, at + racer_rank_, 2))) + 1, 1, racer_count_);
             r.lap = std::clamp(int(int16_t(peek_address(live, at + racer_lap_, 2))) + 1, 1, laps_ ? laps_ : 99);
@@ -514,7 +521,8 @@ private:
     static int column_x(const Canvas& out) { return out.w() - kit::gap - column_w; }
 
     // The player's lap, then everyone by place, clear of the dock's corner.
-    void draw_standings(Canvas& out, const Look& look, const Font& font, const std::vector<const Racer*>& worst_first) const {
+    void draw_standings(Canvas& out, const Look& look, const Font& font,
+                        const std::vector<const Racer*>& worst_first) const {
         const int x = column_x(out);
         int y = kit::gap;
         if (racers_[0].there) {
@@ -572,8 +580,10 @@ private:
                 if (width > width_ * 8) width = 0; // an edge that isn't one
             }
             // A step much longer than its neighbours is a jump in the path (a shortcut's other end): not painted.
-            if (std::abs(x - px) + std::abs(y - py) < 512) stroke(fresh, px, py, x, y, std::max<double>(width, cell_ * 2));
-            if (i == 0) fresh.has_start = true, fresh.start_x = int(x), fresh.start_y = int(y), fresh.start_w = int(width);
+            if (std::abs(x - px) + std::abs(y - py) < 512)
+                stroke(fresh, px, py, x, y, std::max<double>(width, cell_ * 2));
+            if (i == 0)
+                fresh.has_start = true, fresh.start_x = int(x), fresh.start_y = int(y), fresh.start_w = int(width);
             if (i == 1) fresh.start_dx = int(x - fresh.start_x), fresh.start_dy = int(y - fresh.start_y);
             px = x, py = y;
         }
@@ -593,7 +603,8 @@ private:
         const int steps = std::max(1, int(length / std::max(1, cell_)));
         bool grew = false;
         for (int i = 0; i <= steps; ++i) {
-            const double fx = (x0 + (x1 - x0) * double(i) / steps) / cell_, fy = (y0 + (y1 - y0) * double(i) / steps) / cell_;
+            const double fx = (x0 + (x1 - x0) * double(i) / steps) / cell_,
+                         fy = (y0 + (y1 - y0) * double(i) / steps) / cell_;
             const int cx = int(std::floor(fx)), cy = int(std::floor(fy));
             for (int dy = -reach; dy <= reach; ++dy)
                 for (int dx = -reach; dx <= reach; ++dx) {
@@ -626,7 +637,8 @@ private:
         // The course fitted to the room under the chips, its shape kept.
         wx0_ = double(road->lo_x) * cell_, wy0_ = double(road->lo_y) * cell_;
         const double ww = double(road->hi_x - road->lo_x + 1) * cell_, wh = double(road->hi_y - road->lo_y + 1) * cell_;
-        const int top = kit::margin * 2 + 28, room_w = (standings(road) ? column_x(out) : out.w()) - 2 * kit::margin - 24,
+        const int top = kit::margin * 2 + 28,
+                  room_w = (standings(road) ? column_x(out) : out.w()) - 2 * kit::margin - 24,
                   room_h = out.h() - top - kit::margin - 24;
         s_ = std::min(room_w / ww, room_h / wh);
         ox_ = kit::margin + 12 + (room_w - ww * s_) / 2;
@@ -636,7 +648,8 @@ private:
         const int grow = std::clamp(int(std::ceil((min_px - width_ * s_) / 2 / cell_px)), 0, 12);
         // The squares, softened: a tent blur two squares wide each way, read
         // back between squares, so the road's edge is where it is half painted.
-        const int pad = 3 + grow, gw = road->hi_x - road->lo_x + 1 + 2 * pad, gh = road->hi_y - road->lo_y + 1 + 2 * pad;
+        const int pad = 3 + grow, gw = road->hi_x - road->lo_x + 1 + 2 * pad,
+                  gh = road->hi_y - road->lo_y + 1 + 2 * pad;
         std::vector<float> field(size_t(gw) * gh, 0.f), tmp(field.size(), 0.f);
         for (uint32_t c : road->cells) {
             const int cx = Road::unpack_x(c) - road->lo_x + pad, cy = Road::unpack_y(c) - road->lo_y + pad;
@@ -666,7 +679,8 @@ private:
             const int i = int(u), j = int(v);
             const double fu = u - i, fv = v - j;
             const float* row = &field[size_t(j) * gw];
-            const double a = row[i] + (row[i + 1] - row[i]) * fu, b = row[gw + i] + (row[gw + i + 1] - row[gw + i]) * fu;
+            const double a = row[i] + (row[i + 1] - row[i]) * fu,
+                         b = row[gw + i] + (row[gw + i + 1] - row[gw + i]) * fu;
             return a + (b - a) * fv;
         };
         auto smooth = [](double lo, double hi, double v) {
@@ -675,8 +689,10 @@ private:
         };
         // Wide enough on screen that the edge reads as a kerb.
         const double feather = std::clamp(0.6 / cell_px, 0.04, 0.12); // never down to empty ground: no grey box
-        const int x0 = std::max(0, int(ox_ - pad * cell_ * s_)), x1 = std::min(out.w(), int(ox_ + (ww + pad * cell_) * s_) + 1);
-        const int y0 = std::max(0, int(oy_ - pad * cell_ * s_)), y1 = std::min(out.h(), int(oy_ + (wh + pad * cell_) * s_) + 4);
+        const int x0 = std::max(0, int(ox_ - pad * cell_ * s_)),
+                  x1 = std::min(out.w(), int(ox_ + (ww + pad * cell_) * s_) + 1);
+        const int y0 = std::max(0, int(oy_ - pad * cell_ * s_)),
+                  y1 = std::min(out.h(), int(oy_ + (wh + pad * cell_) * s_) + 4);
         // A soft shadow a few pixels under the road, as the launcher lifts its cards.
         const Rgb shade = look.shadow();
         const double drop = 3 / cell_px;

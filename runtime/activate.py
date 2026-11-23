@@ -227,10 +227,9 @@ def verify_engine(app, core):
         # but are not loaded by an emulator. Full installation verification
         # covers them; do not rehash a large source archive on every game launch.
         if name in (
-            "emulators/dsperate/source.tar.gz", "emulators/rgds-experimental/source.tar.gz",
-            "emulators/rgds-experimental/vulkan-source.tar.gz", "emulators/rgds-experimental/panvk-source.tar.gz",
-            "emulators/melonds/source.tar.gz", "emulators/rgds-play/source.tar.gz"
-        ) or name.startswith("emulators/dsperate/rgds-build/"):
+            "emulators/rgds-experimental/source.tar.gz", "emulators/rgds-experimental/vulkan-source.tar.gz",
+            "emulators/rgds-experimental/panvk-source.tar.gz", "emulators/rgds-play/source.tar.gz"
+        ):
             return False
         return name.startswith("runtime/") or name == "emulators/hooks/librgdsbridge.so" or name.startswith(
             "emulators/" + core + "/"

@@ -182,7 +182,7 @@ int main(int argc, char** argv) {
     std::vector<std::string> videos, books;
     int shelf = 0;
     uint32_t quit_after = 0;
-    bool music_tab = false;
+    bool music_tab = false, index_only = false;
     for (int i = 1; i < argc; ++i) {
         std::string a = argv[i];
         auto next = [&]() -> std::string { return i + 1 < argc ? argv[++i] : ""; };
@@ -198,6 +198,7 @@ int main(int argc, char** argv) {
         else if (a == "--shelf") shelf = next() == "books" ? 1 : 0;
         else if (a == "--shots") shots = next();
         else if (a == "--music-tab") music_tab = true;
+        else if (a == "--index") index_only = true;
         else if (a == "--script") script_file = next();
         else if (a == "--quit-after") quit_after = uint32_t(std::atoi(next().c_str()));
         else if (a == "--help" || a == "-h") {
@@ -212,6 +213,8 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "usage: rgds-media --videos DIR --books DIR --state DIR\n");
         return 2;
     }
+    // The launcher's Media level: the shelves and their posters, no window (library.cpp).
+    if (index_only) return make_index(videos, books, state_dir);
     std::signal(SIGTERM, request_stop);
     std::signal(SIGINT, request_stop);
     std::signal(SIGHUP, request_stop);

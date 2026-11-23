@@ -137,8 +137,8 @@ Button layout	Mappa pulsanti
 Button {0}	Pulsante {0}
 Buttons and the game menu shortcut	Pulsanti e scorciatoia del menu di gioco
 Cancel	Annulla
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Annulla aggiornamento
+Cancel the update? Anything already downloaded is removed.	Annullare l'aggiornamento? Quanto già scaricato verrà rimosso.
 Carousel	Carosello
 Carried	Con te
 Cartridges	Cartucce
@@ -1467,16 +1467,16 @@ Vectorscope	Vettorscopio
 Radial spectrum	Spettro circolare
 Waterfall	Cascata
 Tunnel	Tunnel
-Prism	Prism
+Prism	Prisma
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
+Matrix rain	Pioggia Matrix
+Kaleidoscope	Caleidoscopio
+Fireworks	Fuochi d'artificio
+Lava lamp	Lampada lava
 Aurora	Aurora
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Increspature
 Rotozoom	Rotozoom
 ScreenScraper account	Account ScreenScraper
 Not signed in	Accesso non effettuato
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Salvataggio della schermata…
 Screenshot saved to the Album.	Schermata salvata nell'album.
 Still saving the last screenshot.	Sto ancora salvando l'ultima schermata.
 No picture to save. Resume the game and press Menu + R.	Nessuna immagine da salvare. Riprendi il gioco e premi Menu + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Mostra la scelta del profilo a ogni avvio della console.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	L'ultimo giocatore ha un PIN, quindi all'avvio viene comunque chiesto. B in quella schermata cambia profilo.
+Switch profile	Cambia profilo
 Photo mode	Modalità foto
 Leave photo mode?	Uscire dalla modalità foto?
 Keep editing	Continua a modificare
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Buon compleanno, {0}!
 Last played {0}	Ultima partita: {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Colori e musica del menu seguono l'orologio: sere più calde, notti più quiete
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	I giochi DS lo conoscono, come sull'originale. Quel giorno la console ti saluta a modo suo.
+Looking for videos and books…	Ricerca di video e libri…
+Play from the start	Riproduci dall'inizio
+Start from the beginning	Ricomincia dall'inizio
+Mark as finished	Segna come finito
+Mark as not finished	Segna come non finito
+{0} artist	{0} artista
+{0} artists	{0} artisti
+{0} item	{0} elemento
+{0} items	{0} elementi
+Add network place	Aggiungi percorso di rete
+Added.	Aggiunto.
+Cancel paste	Annulla incolla
+Card	Scheda
+Choose a share	Scegli una condivisione
+Clear marks	Togli i segni
+Copied.	Copiato.
+Copy	Copia
+Delete for good	Elimina definitivamente
+Delete these for good?	Eliminare definitivamente questi elementi?
+Delete this for good?	Eliminare definitivamente questo elemento?
+Empty the trash for good?	Svuotare definitivamente il cestino?
+Empty trash	Svuota cestino
+Extract here	Estrai qui
+Folder	Cartella
+Getting it…	Download in corso…
+Getting them…	Download dei file…
+Go ahead	Procedi
+Inbox	In arrivo
+Keep it anyway	Mantieni comunque
+Marked	Segnato
+Move	Sposta
+Move here	Sposta qui
+Move these to the trash?	Spostare questi elementi nel cestino?
+Move this to the trash?	Spostare questo elemento nel cestino?
+Moved to the trash.	Spostato nel cestino.
+Moved.	Spostato.
+Network	Rete
+New folder	Nuova cartella
+No servers found	Nessun server trovato
+Open the folder to copy to, then press Y.	Apri la cartella di destinazione, poi premi Y.
+Open the folder to move to, then press Y.	Apri la cartella di destinazione, poi premi Y.
+Paste here	Incolla qui
+Put this key on the server	Metti questa chiave sul server
+Remove	Rimuovi
+Remove it	Rimuovilo
+Remove this place	Rimuovi questo percorso
+Remove this place?	Rimuovere questo percorso?
+Removed.	Rimosso.
+Rename	Rinomina
+Servers on this network	Server in questa rete
+Sign in with	Accedi con
+That did not work.	Non ha funzionato.
+That server shares no folders.	Quel server non condivide cartelle.
+The trash is empty.	Il cestino è vuoto.
+This handheld's key	Chiave di questa console
+Trash	Cestino
+Type an address	Digita un indirizzo
+Wait a moment, then try again.	Attendi un momento, poi riprova.
+{0} marked	{0} segnati
+{0} more	altri {0}
+Getting {0}	Download di {0}
+Waiting to retry {0}	In attesa di riprovare {0}
+until restart	fino al riavvio
+Future	Futuro
+Lap	Giro
+Earlier	Prima
+Where you are	Dove sei
+Rewind	Riavvolgi
+Mark	Segna
+Draw	Disegna
+Stamp	Timbro
+Lift pen	Solleva penna
+Pen down	Abbassa penna
+Screen	Schermo
+Check panel order and controller input	Controlla l'ordine degli schermi e i comandi
+Upper screen	Superiore
+Lower screen	Inferiore
+Kind	Tipo
+Size	Dimensione
+Modified	Modificato
+Where	Posizione
+Archive	Archivio
+Text	Testo
+Save data	Dati salvati
+File	File
+{0} file	File {0}
+{0} free	{0} liberi
+Sort by	Ordina per
+Could not open it	Impossibile aprirlo
+This folder is empty	Questa cartella è vuota
+The trash is empty	Il cestino è vuoto
+No network places yet	Nessun percorso di rete

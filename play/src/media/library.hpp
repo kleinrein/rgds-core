@@ -84,6 +84,9 @@ public:
     std::vector<std::pair<std::string, Poster>> take();
     // A poster already on the card, read at once (null when there is none).
     bool cached(const Item& item, Poster& out) const;
+    // Without the thread (rgds-media --index): the folder posters are kept in, and one made (or read) now.
+    void set_folder(const std::string& dir) { dir_ = dir; }
+    bool make(const Item& item, Poster& out);
 
 private:
     void run();
@@ -96,5 +99,13 @@ private:
     std::map<std::string, bool> asked_;
     std::vector<std::pair<std::string, Poster>> done_;
 };
+
+// Where an item's poster is kept: <key>-<size^time>.px, the launcher's BMPs beside it (.bmp, .blur.bmp).
+std::string poster_path(const std::string& dir, const Item& item);
+
+// rgds-media --index: every shelf listed into STATE/index.tsv at once, then a poster (and its blur) made for
+// each, the index rewritten as they come. What the launcher's Media level shows (src/launcher/media_shelf.hpp).
+int make_index(const std::vector<std::string>& videos, const std::vector<std::string>& books,
+               const std::string& state_dir);
 
 } // namespace media

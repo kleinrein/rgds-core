@@ -232,8 +232,17 @@ def native(args):
         # (copy2 keeps the device build's dates): start RG DS Core's copy afresh every time.
         # The music engine is a local package too (os/buildroot/package/rgds-music, from src/music).
         # So is the pad daemon (os/buildroot/package/rgds-pad, from src/pad), and RG DS Media (rgds-media, play/src).
-        run('make', '-C', out, 'rgds-core-dirclean', 'rgds-music-dirclean', 'rgds-media-dirclean', 'rgds-pad-dirclean',
-            'libretro-ruffle-dirclean', env=env)
+        run(
+            'make',
+            '-C',
+            out,
+            'rgds-core-dirclean',
+            'rgds-music-dirclean',
+            'rgds-media-dirclean',
+            'rgds-pad-dirclean',
+            'libretro-ruffle-dirclean',
+            env=env
+        )
         if kernel_config_drift(out):
             # a changed kernel fragment (board/rgds/linux-*.fragment): Buildroot only merges them when the kernel
             # is configured, so an existing kernel build would keep the old settings without this
@@ -284,17 +293,29 @@ def kernel_fragments(text):
     ]
 
 
+def kernel_base_config(text):
+    """The kernel configuration rgds_os_defconfig (or an output .config) builds on, as a path in this checkout."""
+    found = re.search(r'^BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="([^"]*)"', text, re.M)
+    return Path(found.group(1).replace('$(BR2_EXTERNAL_RGDS_PATH)', str(ROOT / 'os/buildroot'))) if found else None
+
+
 def kernel_config_drift(out, kernel_config=None):
     """Fragment settings the kernel's .config does not carry (empty when it matches, or before the first build).
 
-    Buildroot keeps output/.config until --reconfigure (a fragment newly listed in the defconfig is ignored, so
-    that stops the build), and merges the fragments into the kernel's .config only when the kernel is configured
-    (native() then runs linux-reconfigure). A setting Kconfig itself overrides shows up here after the build too.
+    Buildroot keeps output/.config until --reconfigure (a fragment newly listed in the defconfig, or another base
+    config, is ignored, so that stops the build), and merges the fragments into the kernel's .config only when the
+    kernel is configured (native() then runs linux-reconfigure). A setting Kconfig itself overrides shows up here
+    after the build too.
     """
     defconfig = (ROOT / 'os/buildroot/configs/rgds_os_defconfig').read_text()
-    if kernel_fragments(defconfig) != kernel_fragments((out / '.config').read_text()):
+    kept = (out / '.config').read_text()
+    if kernel_fragments(defconfig) != kernel_fragments(kept):
         raise SystemExit(
             'output/rgds-os/.config names other kernel fragments than the defconfig: run with --reconfigure.'
+        )
+    if kernel_base_config(defconfig) != kernel_base_config(kept):
+        raise SystemExit(
+            'output/rgds-os/.config names another kernel config than the defconfig: run with --reconfigure.'
         )
     kernel_config = kernel_config or out / 'build/linux-custom/.config'
     if not kernel_config.is_file():

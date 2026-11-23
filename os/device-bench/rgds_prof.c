@@ -30,7 +30,7 @@ struct sample {
     uint64_t pc, lr;
 };
 
-static struct sample *samples;
+static struct sample* samples;
 static atomic_uint used;
 static char out[512];
 static atomic_int written;
@@ -50,7 +50,7 @@ int ioctl(int fd, unsigned long request, ...) {
     if (!real) real = (int (*)(int, unsigned long, ...))dlsym(RTLD_NEXT, "ioctl");
     va_list args;
     va_start(args, request);
-    void *arg = va_arg(args, void *);
+    void* arg = va_arg(args, void*);
     va_end(args);
     if (!samples) return real(fd, request, arg);
     struct timespec a, b;
@@ -63,14 +63,15 @@ int ioctl(int fd, unsigned long request, ...) {
         if (atomic_load(&ioctls[slot].request) == request ||
             atomic_compare_exchange_strong(&ioctls[slot].request, &expected, request)) {
             atomic_fetch_add(&ioctls[slot].calls, 1);
-            atomic_fetch_add(&ioctls[slot].ns, (unsigned long)((b.tv_sec - a.tv_sec) * 1000000000L + b.tv_nsec - a.tv_nsec));
+            atomic_fetch_add(&ioctls[slot].ns,
+                             (unsigned long)((b.tv_sec - a.tv_sec) * 1000000000L + b.tv_nsec - a.tv_nsec));
             break;
         }
     }
     return result;
 }
 
-static void on_prof(int sig, siginfo_t *info, void *context) {
+static void on_prof(int sig, siginfo_t* info, void* context) {
     (void)sig;
     (void)info;
     struct timespec now;
@@ -79,14 +80,14 @@ static void on_prof(int sig, siginfo_t *info, void *context) {
     if (seconds < start_after) return;
     unsigned at = atomic_fetch_add_explicit(&used, 1, memory_order_relaxed);
     if (at >= MAX_SAMPLES) return;
-    const ucontext_t *uc = context;
+    const ucontext_t* uc = context;
     samples[at].tid = (uint32_t)syscall(SYS_gettid);
     samples[at].ms = (uint32_t)(seconds * 1000);
     samples[at].pc = uc->uc_mcontext.pc;
     samples[at].lr = uc->uc_mcontext.regs[30];
 }
 
-static void copy_file(const char *from, const char *to) {
+static void copy_file(const char* from, const char* to) {
     FILE *in = fopen(from, "r"), *o = fopen(to, "w");
     char buffer[4096];
     size_t n;
@@ -103,13 +104,13 @@ static void dump(void) {
     snprintf(path, sizeof path, "%s.maps", out);
     copy_file("/proc/self/maps", path);
     snprintf(path, sizeof path, "%s.threads", out);
-    FILE *f = fopen(path, "w");
-    DIR *tasks = opendir("/proc/self/task");
-    for (struct dirent *e; f && tasks && (e = readdir(tasks));) {
+    FILE* f = fopen(path, "w");
+    DIR* tasks = opendir("/proc/self/task");
+    for (struct dirent* e; f && tasks && (e = readdir(tasks));) {
         if (e->d_name[0] == '.') continue;
         char comm_path[300], comm[64] = "";
         snprintf(comm_path, sizeof comm_path, "/proc/self/task/%s/comm", e->d_name);
-        FILE *c = fopen(comm_path, "r");
+        FILE* c = fopen(comm_path, "r");
         if (c) {
             if (fgets(comm, sizeof comm, c)) comm[strcspn(comm, "\n")] = 0;
             fclose(c);
@@ -142,16 +143,16 @@ static void on_usr2(int sig) {
 }
 
 __attribute__((constructor)) static void start(void) {
-    const char *target = getenv("RGDS_PROF");
+    const char* target = getenv("RGDS_PROF");
     if (!target || !*target) return;
     snprintf(out, sizeof out, "%s", target);
     unsetenv("LD_PRELOAD"); // not into the children (the runtime's helpers)
     samples = calloc(MAX_SAMPLES, sizeof *samples);
     if (!samples) return;
-    const char *after = getenv("RGDS_PROF_START");
+    const char* after = getenv("RGDS_PROF_START");
     start_after = after ? atof(after) : 0;
     clock_gettime(CLOCK_MONOTONIC, &began);
-    const char *hz_env = getenv("RGDS_PROF_HZ");
+    const char* hz_env = getenv("RGDS_PROF_HZ");
     int hz = hz_env ? atoi(hz_env) : 1000;
     if (hz < 1) hz = 1000;
     struct sigaction prof = {0};

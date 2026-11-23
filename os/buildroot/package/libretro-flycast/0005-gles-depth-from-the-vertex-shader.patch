@@ -1,0 +1,82 @@
+From: RG DS <rgds@localhost>
+Subject: [PATCH] gles: depth from the vertex shader, not gl_FragDepth
+
+Every GLES 3 pixel shader wrote a log2 depth per pixel (gl_FragDepth). On the
+RG DS's Mali-G52 (Panfrost) that turns off the early depth test and hidden
+pixel removal for every draw, so all overdraw is shaded and textured. The
+vertex shader now writes the Dreamcast's 1/w (vtx_uv.z, linear in screen
+space since w is 1) scaled by the frame's depth_scale (2 / fZ_max, -1, the
+GLES 2 path's), and the pixel shaders no longer touch depth. Same ordering;
+linear rather than log2 precision in a 24-bit depth buffer. Crazy Taxi's
+drive: 57 -> 58.8 game frames a second, 54 -> 58 shown (2026-11-23), no
+depth faults in captures. Dreamcast only (Naomi 2's own vertex shader is
+untouched); RGDS_FLYCAST_VTXDEPTH=0 gives the old path back.
+
+--- a/core/rend/gles/gles.h	2026-11-23 11:39:06.379631777 +0100
++++ b/core/rend/gles/gles.h	2026-11-23 11:39:06.381636382 +0100
+@@ -573,11 +573,17 @@
+ extern const char *VertexCompatShader;
+ extern const char *PixelCompatShader;
+ 
++// RG DS: depth from the vertex shader (the Dreamcast's 1/w, linear on screen, scaled by depth_scale) instead of a
++// log2 depth written per pixel. gl_FragDepth turns off the Mali GPU's early depth test and hidden-pixel removal for
++// every draw, so all overdraw is shaded. On for the Dreamcast (not Naomi 2); RGDS_FLYCAST_VTXDEPTH=0 turns it off.
++bool rgds_vertex_depth();
++
+ class OpenGlSource : public ShaderSource
+ {
+ public:
+ 	OpenGlSource() : ShaderSource(gl.glsl_version_header) {
+ 		addConstant("TARGET_GL", gl.gl_version);
++		addConstant("RGDS_VTXDEPTH", rgds_vertex_depth() ? 1 : 0);
+ 		addSource(ShaderCompatSource);
+ 	}
+ };
+--- a/core/rend/gles/gles.cpp	2026-11-23 11:39:06.380634079 +0100
++++ b/core/rend/gles/gles.cpp	2026-11-23 11:39:06.381636382 +0100
+@@ -119,7 +119,11 @@
+ 	#if DIV_POS_Z != 1
+ 		vtx_uv.xy *= vpos.z;
+ 		vpos.w = 1.0;
++		#if RGDS_VTXDEPTH == 1
++		vpos.z = clamp(depth_scale.x * vtx_uv.z + depth_scale.y, -1.0, 1.0);
++		#else
+ 		vpos.z = 0.0;
++		#endif
+ 	#endif
+ #endif
+ 	gl_Position = vpos;
+@@ -356,7 +360,9 @@
+ #else
+ 	highp float w = 100000.0 * vtx_uv.z;
+ #endif
++#if RGDS_VTXDEPTH != 1
+ 	gl_FragDepth = log2(1.0 + max(w, -0.999999)) / 34.0;
++#endif
+ 
+ #if DITHERING == 1
+ 	mediump float ditherTable[16] = float[](
+@@ -388,8 +394,10 @@
+ #else
+ 	highp float w = 100000.0 * vtx_uv.z;
+ #endif
++#if RGDS_VTXDEPTH != 1
+ 	gl_FragDepth = log2(1.0 + max(w, -0.999999)) / 34.0;
+ #endif
++#endif
+ 	gl_FragColor=vec4(0.0, 0.0, 0.0, sp_ShaderColor);
+ }
+ )";
+@@ -397,6 +405,12 @@
+ void os_VideoRoutingTermGL();
+ 
+ GLCache glcache;
++
++bool rgds_vertex_depth()
++{
++	static const bool on = [] { const char *e = getenv("RGDS_FLYCAST_VTXDEPTH"); return !(e && *e == '0'); }();
++	return on && !settings.platform.isNaomi2();
++}
+ gl_ctx gl;
+ 
+ GLuint fogTextureId;

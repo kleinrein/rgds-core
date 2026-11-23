@@ -137,8 +137,8 @@ Button layout	Bố cục nút
 Button {0}	Nút {0}
 Buttons and the game menu shortcut	Các nút và phím tắt menu trò chơi
 Cancel	Hủy
-Cancel update	Cancel update
-Cancel the update? Anything already downloaded is removed.	Cancel the update? Anything already downloaded is removed.
+Cancel update	Hủy cập nhật
+Cancel the update? Anything already downloaded is removed.	Hủy cập nhật? Phần đã tải về sẽ bị xóa.
 Carousel	Băng chuyền
 Carried	Đang mang
 Cartridges	Băng trò chơi
@@ -1467,16 +1467,16 @@ Vectorscope	Vectorscope
 Radial spectrum	Phổ hình tròn
 Waterfall	Thác nước
 Tunnel	Đường hầm
-Prism	Prism
+Prism	Lăng kính
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
+Matrix rain	Mưa Matrix
+Kaleidoscope	Kính vạn hoa
+Fireworks	Pháo hoa
+Lava lamp	Đèn dung nham
+Aurora	Cực quang
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Gợn sóng
 Rotozoom	Rotozoom
 ScreenScraper account	Tài khoản ScreenScraper
 Not signed in	Chưa đăng nhập
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Đang lưu ảnh chụp màn hình…
 Screenshot saved to the Album.	Đã lưu ảnh chụp màn hình vào Album.
 Still saving the last screenshot.	Vẫn đang lưu ảnh chụp màn hình trước.
 No picture to save. Resume the game and press Menu + R.	Không có ảnh để lưu. Tiếp tục trò chơi rồi nhấn Menu + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Hiện bảng chọn hồ sơ mỗi lần máy khởi động.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	Người chơi gần nhất có mã PIN nên khi khởi động vẫn hỏi. Nhấn B ở màn hình đó để đổi hồ sơ.
+Switch profile	Đổi hồ sơ
 Photo mode	Chế độ ảnh
 Leave photo mode?	Rời chế độ ảnh?
 Keep editing	Tiếp tục chỉnh
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Chúc mừng sinh nhật, {0}!
 Last played {0}	Chơi lần cuối {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Màu sắc và nhạc menu theo đồng hồ: buổi tối ấm hơn, ban đêm yên hơn
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	Trò chơi DS được biết ngày này, như máy gốc. Vào ngày đó, máy chào bạn theo cách riêng.
+Looking for videos and books…	Đang tìm video và sách…
+Play from the start	Phát từ đầu
+Start from the beginning	Bắt đầu từ đầu
+Mark as finished	Đánh dấu đã xong
+Mark as not finished	Đánh dấu chưa xong
+{0} artist	{0} nghệ sĩ
+{0} artists	{0} nghệ sĩ
+{0} item	{0} mục
+{0} items	{0} mục
+Add network place	Thêm vị trí mạng
+Added.	Đã thêm.
+Cancel paste	Hủy dán
+Card	Thẻ nhớ
+Choose a share	Chọn thư mục chia sẻ
+Clear marks	Bỏ đánh dấu
+Copied.	Đã sao chép.
+Copy	Sao chép
+Delete for good	Xóa vĩnh viễn
+Delete these for good?	Xóa vĩnh viễn các mục này?
+Delete this for good?	Xóa vĩnh viễn mục này?
+Empty the trash for good?	Dọn sạch thùng rác vĩnh viễn?
+Empty trash	Dọn thùng rác
+Extract here	Giải nén tại đây
+Folder	Thư mục
+Getting it…	Đang tải…
+Getting them…	Đang tải các tệp…
+Go ahead	Tiếp tục
+Inbox	Hộp đến
+Keep it anyway	Vẫn giữ lại
+Marked	Đã đánh dấu
+Move	Di chuyển
+Move here	Di chuyển đến đây
+Move these to the trash?	Chuyển các mục này vào thùng rác?
+Move this to the trash?	Chuyển mục này vào thùng rác?
+Moved to the trash.	Đã chuyển vào thùng rác.
+Moved.	Đã di chuyển.
+Network	Mạng
+New folder	Thư mục mới
+No servers found	Không tìm thấy máy chủ
+Open the folder to copy to, then press Y.	Mở thư mục đích rồi nhấn Y.
+Open the folder to move to, then press Y.	Mở thư mục đích rồi nhấn Y.
+Paste here	Dán vào đây
+Put this key on the server	Thêm khóa này vào máy chủ
+Remove	Gỡ
+Remove it	Gỡ bỏ
+Remove this place	Gỡ vị trí này
+Remove this place?	Gỡ vị trí này?
+Removed.	Đã gỡ.
+Rename	Đổi tên
+Servers on this network	Máy chủ trong mạng này
+Sign in with	Đăng nhập bằng
+That did not work.	Không thành công.
+That server shares no folders.	Máy chủ đó không chia sẻ thư mục nào.
+The trash is empty.	Thùng rác trống.
+This handheld's key	Khóa của máy này
+Trash	Thùng rác
+Type an address	Nhập địa chỉ
+Wait a moment, then try again.	Đợi một lát rồi thử lại.
+{0} marked	Đã đánh dấu {0}
+{0} more	thêm {0}
+Getting {0}	Đang tải {0}
+Waiting to retry {0}	Đang chờ thử lại {0}
+until restart	đến khi khởi động lại
+Future	Tương lai
+Lap	Vòng
+Earlier	Trước đó
+Where you are	Vị trí hiện tại
+Rewind	Tua lại
+Mark	Đánh dấu
+Draw	Vẽ
+Stamp	Đóng dấu
+Lift pen	Nhấc bút
+Pen down	Hạ bút
+Screen	Màn hình
+Check panel order and controller input	Kiểm tra thứ tự màn hình và tín hiệu tay cầm
+Upper screen	Trên
+Lower screen	Dưới
+Kind	Loại
+Size	Kích thước
+Modified	Đã sửa
+Where	Vị trí
+Archive	Tệp nén
+Text	Văn bản
+Save data	Dữ liệu lưu
+File	Tệp
+{0} file	Tệp {0}
+{0} free	Còn trống {0}
+Sort by	Sắp xếp theo
+Could not open it	Không mở được
+This folder is empty	Thư mục này trống
+The trash is empty	Thùng rác trống
+No network places yet	Chưa có vị trí mạng nào

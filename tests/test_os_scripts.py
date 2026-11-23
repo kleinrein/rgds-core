@@ -114,8 +114,10 @@ class PowerSleepTest(unittest.TestCase):
         # N s, "open N" by the lid opening, "charger N" by the charger with the lid still shut, "fail" aborts the
         # suspend; a line may also set the battery ("rtc 3" = the alarm, then 3 %)
         self.interrupts = d / 'interrupts'
-        self.interrupts.write_text(' 35:          0          0          0          0  rk817  0 Edge      rk805_pwrkey_fall\n'
-                                   ' 40:          0          0          0          0  rk817  5 Edge      RTC alarm\n')
+        self.interrupts.write_text(
+            ' 35:          0          0          0          0  rk817  0 Edge      rk805_pwrkey_fall\n'
+            ' 40:          0          0          0          0  rk817  5 Edge      RTC alarm\n'
+        )
         tool(
             d / 'bin', 'suspend', f"""line=$(head -n 1 {self.wakes}); sed -i.bak 1d {self.wakes}
 now=$(cat {d}/rtc/since_epoch)
@@ -327,8 +329,10 @@ class AudioRouteTest(unittest.TestCase):
     """usr/libexec/rgds/audio: one shared stream on the RG DS's single card; on the RG DS Plus the speakers' card or
     the codec's, by the jack."""
     RG_DS = ' 0 [rk817ext       ]: simple-card - rk817_ext\n                      rk817_ext\n'
-    PLUS = (' 0 [rk817hp        ]: simple-card - rk817_hp\n                      rk817_hp\n'
-            ' 1 [aw88166        ]: audio-graph-card2 - aw88166\n                      aw88166\n')
+    PLUS = (
+        ' 0 [rk817hp        ]: simple-card - rk817_hp\n                      rk817_hp\n'
+        ' 1 [aw88166        ]: audio-graph-card2 - aw88166\n                      aw88166\n'
+    )
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

@@ -424,7 +424,7 @@ framebuffer, about 1 s, until the scene replaces it.
 The panels' driver 700 ms (two panels in sequence), the I2C buses with the PMIC's regulators 137 ms, CMA setup
 88 ms (a 256 MiB region from BananaLinux's patch; a few MiB are used), deferred probes 84 ms, the jitter-entropy
 RNG's self-test 69 ms, clock debugfs 37 ms, the charger 25 ms; everything else is under 25 ms each. Cut here: the
-jitter-entropy RNG and debugfs out of the config, CMA down to 64 MiB (`dts-patches/0005`).
+jitter-entropy RNG and debugfs out of the config, CMA down to 64 MiB (`dts-patches/0005`, since 2026-11-23 folded into `linux-patches/2-linux-0666-cma-region.patch`).
 
 Tried and measured, no gain: UHS for the card in U-Boot and a card-first `bootflow scan` (its prompt-to-bootm time
 stayed 1.53 s; the next step there needs the UART, nothing in the bootstage table names what it waits for), the

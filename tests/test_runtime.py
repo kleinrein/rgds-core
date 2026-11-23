@@ -203,7 +203,9 @@ class EmulatorTests(Fixture):
     def test_launch_never_inherits_a_previous_core_hook(self):
         self.binary("rgds-experimental")
         with patch.dict(os.environ, {"LD_PRELOAD": "/old/libhook.so"}):
-            plan = emulators.launch_plan("rgds-experimental", self.app, self.data, self.root / "game.nds", prepare=False)
+            plan = emulators.launch_plan(
+                "rgds-experimental", self.app, self.data, self.root / "game.nds", prepare=False
+            )
         self.assertNotIn("LD_PRELOAD", plan["env"])
 
     def test_archive_extracts_one_game_and_preserves_its_filename(self):

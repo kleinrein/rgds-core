@@ -232,7 +232,8 @@ int main(int argc, char** argv) {
             const auto keys = targets;
             // A Spectrum's shifts (left and second from the right on the last row), a C64's page key.
             const bool zx = std::string(system) == "zx";
-            for (size_t i : zx ? std::vector<size_t>{keys.size() - 2, keys.size() - 10} : std::vector<size_t>{keys.size() - 1}) {
+            for (size_t i :
+                 zx ? std::vector<size_t>{keys.size() - 2, keys.size() - 10} : std::vector<size_t>{keys.size() - 1}) {
                 const Box& b = keys[i];
                 keyboard->touch({Touch::Down, b.x + b.w / 2, b.y + b.h / 2});
                 keyboard->touch({Touch::Up, b.x + b.w / 2, b.y + b.h / 2});

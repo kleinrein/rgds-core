@@ -128,6 +128,12 @@ Separately, `round_rect`, `alpha_round`, `shoulder_fill`, `triangle` and the bac
 `SDL_RenderFillRects` as one list (same rectangles in the same order, so byte-identical pixels; the in-game menu's
 software canvases hook `RenderFillRects` too, `platform/canvas_fill.hpp`). Counted on the Mac preview with an SDL
 shim: a scrolling wall went from about 4500 to 400 draws a frame (both panels), the plain library from 2500 to 800.
+The choppiness the owner still felt after that was not drawing at all: a gliding wall set `dirty` but was not counted
+as `animated` in `run_loop.hpp`, so after each frame the loop slept its idle wait (up to 250 ms). Any new motion
+must feed `animated` or `feedback_active`. `RGDS_FRAME_LOG=FILE` writes one line a second of where frame time goes
+(draw, present, loop work, wait, frame-gap histogram, touch points, tiles built) for measuring on the handheld.
+On the wall, B goes back as anywhere (the level is kept: `ui.ini` `library_zoom=N`, restored at start), a quiet grid
+button at the end of the title row steps through the levels, and the edge gestures pass through.
 
 ### The 2026-11-06 consistency pass
 
@@ -378,7 +384,13 @@ drive real SDL input with temporary data; they do not launch handheld emulators.
 A launcher crash leaves a record in `userdata/logs/crashes.log`: signal or exception, frames, memory map, screen and
 game count (`src/platform/crash_record.hpp`). `rgds/logs/launcher.log` ends in the exit status, with `dmesg` after a
 failure, and the last five runs are kept. A kernel panic restarts after 5 s and rcS moves its record from RAM to
-`rgds/logs/pstore/`. A hard freeze or a power-off records nothing.
+`rgds/logs/pstore/`. On RG DS OS the system log and `dmesg` reach the card every minute while something is being logged,
+and at shutdown (`rgds/logs/messages.txt`, `dmesg.txt`; the previous boot's as `*.prev.txt`, `usr/libexec/rgds/logs`),
+so a hard freeze loses at most its last minute. A power-off records nothing.
+
+Running out of memory is covered by 512 MiB of lz4 zram swap (`usr/libexec/rgds/zram`, off with `rgds/zram-off`). With
+`vm.swappiness = 0` it is only used once the page cache is nearly gone. `grep zram /run/rgds/messages` shows it came
+up, and a non-zero `Used` in `/proc/swaps` after a crash means memory was tight.
 
 Settings > Maintenance > Save device report bundles all of this into `userdata/support/report-*.tar.gz`, with network
 names and addresses removed, for a tester to send. ROM file names stay in it. To read a record:

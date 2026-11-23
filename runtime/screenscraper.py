@@ -141,14 +141,19 @@ def text_of(value):
 def information(jeu, order):
     """({info.ini fields}, {LANGUAGE: synopsis}) from one jeuInfos game."""
     genres = []
-    for genre in sorted([g for g in jeu.get("genres") or [] if isinstance(g, dict)], key=lambda g: str(g.get("principale", "0")) != "1"):
+    for genre in sorted(
+        [g for g in jeu.get("genres") or [] if isinstance(g, dict)], key=lambda g: str(g.get("principale", "0")) != "1"
+    ):
         names = [n for n in genre.get("noms") or [] if isinstance(n, dict)]
         english = next((n.get("text") for n in names if n.get("langue") == "en"), "")
         if english and english not in genres: genres.append(english)
     date = pick(jeu.get("dates"), order)
     year, month, day = (re.findall(r"\d+", date) + ["", "", ""])[:3]
     rating = ""
-    ratings = {str(c.get("type", "")).upper(): str(c.get("text", "")).strip() for c in jeu.get("classifications") or [] if isinstance(c, dict)}
+    ratings = {
+        str(c.get("type", "")).upper(): str(c.get("text", "")).strip()
+        for c in jeu.get("classifications") or [] if isinstance(c, dict)
+    }
     for board in BOARDS:
         if minimum_age(board + " " + ratings.get(board, "")) is not None:
             rating = board + " " + ratings[board]

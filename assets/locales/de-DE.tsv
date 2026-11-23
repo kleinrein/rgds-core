@@ -160,10 +160,10 @@ Checking PortMaster	PortMaster wird geprüft
 Checking the new version…	Neue Version wird geprüft…
 Checkpoint loaded	Spielstand geladen
 Checkpoint loaded (preview)	Spielstand geladen (Vorschau)
-Checkpoint loaded.	Spielstand geladen
+Checkpoint loaded.	Spielstand geladen.
 Checkpoint saved	Spielstand gespeichert
 Checkpoint saved (preview)	Spielstand gespeichert (Vorschau)
-Checkpoint saved.	Spielstand gespeichert
+Checkpoint saved.	Spielstand gespeichert.
 Choose a chat room to join	Wähle einen Chatraum zum Beitreten
 Choose a network from the list	Wähle ein Netzwerk aus der Liste
 Choose an option	Option auswählen
@@ -977,7 +977,7 @@ Stop fetching before editing the match.	Download vor Änderung der Zuordnung sto
 Stop scraping	Abruf stoppen
 Stop scraping before changing source	Vor Quellenwechsel Abruf stoppen
 Stopping after this request	Stopp nach dieser Anfrage
-Stopping after this request.	Stopp nach dieser Anfrage
+Stopping after this request.	Stopp nach dieser Anfrage.
 Storage read-only - use internal RGDS	Speicher schreibgeschützt – internes RGDS verwenden
 Su	So
 Subtle	Dezent
@@ -1467,16 +1467,16 @@ Vectorscope	Vektorskop
 Radial spectrum	Rundes Spektrum
 Waterfall	Wasserfall
 Tunnel	Tunnel
-Prism	Prism
+Prism	Prisma
 Lissajous	Lissajous
-Matrix rain	Matrix rain
-Kaleidoscope	Kaleidoscope
-Fireworks	Fireworks
-Lava lamp	Lava lamp
-Aurora	Aurora
+Matrix rain	Matrix-Regen
+Kaleidoscope	Kaleidoskop
+Fireworks	Feuerwerk
+Lava lamp	Lavalampe
+Aurora	Polarlicht
 Copper bars	Copper bars
 Synthwave	Synthwave
-Ripples	Ripples
+Ripples	Wellen
 Rotozoom	Rotozoom
 ScreenScraper account	ScreenScraper-Konto
 Not signed in	Nicht angemeldet
@@ -1686,9 +1686,9 @@ Saving the screenshot…	Screenshot wird gespeichert…
 Screenshot saved to the Album.	Screenshot im Album gespeichert.
 Still saving the last screenshot.	Der letzte Screenshot wird noch gespeichert.
 No picture to save. Resume the game and press Menu + R.	Kein Bild zum Speichern. Setze das Spiel fort und drücke Menü + R.
-Show the profile picker every time the handheld starts.	Show the profile picker every time the handheld starts.
-The last player has a PIN, so startup still asks for it. B on that screen switches profile.	The last player has a PIN, so startup still asks for it. B on that screen switches profile.
-Switch profile	Switch profile
+Show the profile picker every time the handheld starts.	Bei jedem Start der Konsole die Profilauswahl zeigen.
+The last player has a PIN, so startup still asks for it. B on that screen switches profile.	Der letzte Spieler hat eine PIN, daher fragt der Start trotzdem danach. B wechselt dort das Profil.
+Switch profile	Profil wechseln
 Photo mode	Fotomodus
 Leave photo mode?	Fotomodus verlassen?
 Keep editing	Weiter bearbeiten
@@ -1925,3 +1925,95 @@ Happy birthday, {0}!	Alles Gute zum Geburtstag, {0}!
 Last played {0}	Zuletzt gespielt {0}
 Colours and menu music follow the clock: warmer evenings, quieter nights	Farben und Menümusik folgen der Uhr: wärmere Abende, ruhigere Nächte
 DS games are told it, as on the original. On the day, the handheld says hello in its own way.	DS-Spiele erfahren ihn, wie beim Original. An dem Tag grüßt dich der Handheld auf seine Art.
+Looking for videos and books…	Suche nach Videos und Büchern…
+Play from the start	Von vorne abspielen
+Start from the beginning	Von vorne beginnen
+Mark as finished	Als beendet markieren
+Mark as not finished	Als nicht beendet markieren
+{0} artist	{0} Künstler
+{0} artists	{0} Künstler
+{0} item	{0} Eintrag
+{0} items	{0} Einträge
+Add network place	Netzwerkort hinzufügen
+Added.	Hinzugefügt.
+Cancel paste	Einfügen abbrechen
+Card	Karte
+Choose a share	Freigabe wählen
+Clear marks	Markierungen aufheben
+Copied.	Kopiert.
+Copy	Kopieren
+Delete for good	Endgültig löschen
+Delete these for good?	Diese endgültig löschen?
+Delete this for good?	Endgültig löschen?
+Empty the trash for good?	Papierkorb endgültig leeren?
+Empty trash	Papierkorb leeren
+Extract here	Hier entpacken
+Folder	Ordner
+Getting it…	Wird geholt…
+Getting them…	Werden geholt…
+Go ahead	Fortfahren
+Inbox	Eingang
+Keep it anyway	Trotzdem behalten
+Marked	Markiert
+Move	Verschieben
+Move here	Hierher verschieben
+Move these to the trash?	In den Papierkorb verschieben?
+Move this to the trash?	In den Papierkorb verschieben?
+Moved to the trash.	In den Papierkorb verschoben.
+Moved.	Verschoben.
+Network	Netzwerk
+New folder	Neuer Ordner
+No servers found	Keine Server gefunden
+Open the folder to copy to, then press Y.	Zielordner öffnen, dann Y drücken.
+Open the folder to move to, then press Y.	Zielordner öffnen, dann Y drücken.
+Paste here	Hier einfügen
+Put this key on the server	Diesen Schlüssel auf dem Server hinterlegen
+Remove	Entfernen
+Remove it	Entfernen
+Remove this place	Diesen Ort entfernen
+Remove this place?	Diesen Ort entfernen?
+Removed.	Entfernt.
+Rename	Umbenennen
+Servers on this network	Server in diesem Netzwerk
+Sign in with	Anmelden mit
+That did not work.	Das hat nicht geklappt.
+That server shares no folders.	Dieser Server gibt keine Ordner frei.
+The trash is empty.	Der Papierkorb ist leer.
+This handheld's key	Schlüssel dieser Konsole
+Trash	Papierkorb
+Type an address	Adresse eingeben
+Wait a moment, then try again.	Kurz warten, dann erneut versuchen.
+{0} marked	{0} markiert
+{0} more	{0} weitere
+Getting {0}	Lade {0}
+Waiting to retry {0}	Warte auf erneuten Versuch: {0}
+until restart	bis zum Neustart
+Future	Zukunft
+Lap	Runde
+Earlier	Früher
+Where you are	Wo du bist
+Rewind	Zurückspulen
+Mark	Markieren
+Draw	Zeichnen
+Stamp	Stempeln
+Lift pen	Stift anheben
+Pen down	Stift aufsetzen
+Screen	Bildschirm
+Check panel order and controller input	Bildschirmreihenfolge und Controller-Eingabe prüfen
+Upper screen	Oben
+Lower screen	Unten
+Kind	Art
+Size	Größe
+Modified	Geändert
+Where	Ort
+Archive	Archiv
+Text	Text
+Save data	Speicherdaten
+File	Datei
+{0} file	{0}-Datei
+{0} free	{0} frei
+Sort by	Sortieren nach
+Could not open it	Konnte nicht geöffnet werden
+This folder is empty	Dieser Ordner ist leer
+The trash is empty	Der Papierkorb ist leer
+No network places yet	Noch keine Netzwerkorte

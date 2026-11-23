@@ -544,28 +544,32 @@ public:
                           {"ppsspp_frameskip", "1"},
                           {"ppsspp_auto_frameskip", "enabled"}};
         // The Dreamcast at its own 640 x 480 (the RG DS panel's size, so a dot is a pixel; the Plus scales it), the
-        // SH4 on its own thread beside the drawing, a frame left undrawn only when the SH4 falls behind. Per-triangle
-        // sorting: per-pixel needs more than the Mali-G52's GLES 3.1. No anisotropic filtering (nothing to gain on PSP
+        // SH4 on its own thread beside the drawing, a frame left undrawn only when the SH4 falls behind. Per-strip
+        // sorting of the translucent polygons: per-pixel needs more than the Mali-G52's GLES 3.1, and per-triangle
+        // draws twice as many (~750 a frame in Crazy Taxi's drive, each a fixed cost on Panfrost): per-strip took that
+        // drive from ~52 to ~57 game frames a second (2026-11-23). No anisotropic filtering (nothing to gain on PSP
         // either) and no full framebuffer emulation (slower, and N64's framebuffer copies crashed Panfrost). The
         // triggers are the handheld's buttons. The VMU's screen goes to the second screen, not over the game; one VMU
-        // per game, so a game's saves stay its own.
+        // per game, so a game's saves stay its own. Flycast's libretro options are named "reicast_..." (its
+        // CORE_OPTION_NAME, kept for old configs): with "flycast_..." keys none of these reached the core before
+        // 2026-11-23, and it ran on its own defaults (no frameskip, analogue triggers, shared VMUs).
         if (system == "dc")
-            variables_ = {{"flycast_internal_resolution", "640x480"},
-                          {"flycast_threaded_rendering", "enabled"},
-                          {"flycast_auto_skip_frame", "some"},
-                          {"flycast_alpha_sorting", "per-triangle (normal)"},
-                          {"flycast_anisotropic_filtering", "off"},
-                          {"flycast_emulate_framebuffer", "disabled"},
-                          {"flycast_texupscale", "1"},
-                          {"flycast_gdrom_fast_loading", "enabled"},
-                          {"flycast_digital_triggers", "enabled"},
-                          {"flycast_per_content_vmus", "VMU A1"},
-                          {"flycast_vmu1_screen_display", "disabled"},
-                          {"flycast_vmu2_screen_display", "disabled"},
-                          {"flycast_vmu3_screen_display", "disabled"},
-                          {"flycast_vmu4_screen_display", "disabled"},
-                          {"flycast_show_vmu_screen_settings", "disabled"},
-                          {"flycast_lightgun1_crosshair", "disabled"}};
+            variables_ = {{"reicast_internal_resolution", "640x480"},
+                          {"reicast_threaded_rendering", "enabled"},
+                          {"reicast_auto_skip_frame", "some"},
+                          {"reicast_alpha_sorting", "per-strip (fast, least accurate)"},
+                          {"reicast_anisotropic_filtering", "off"},
+                          {"reicast_emulate_framebuffer", "disabled"},
+                          {"reicast_texupscale", "1"},
+                          {"reicast_gdrom_fast_loading", "enabled"},
+                          {"reicast_digital_triggers", "enabled"},
+                          {"reicast_per_content_vmus", "VMU A1"},
+                          {"reicast_vmu1_screen_display", "disabled"},
+                          {"reicast_vmu2_screen_display", "disabled"},
+                          {"reicast_vmu3_screen_display", "disabled"},
+                          {"reicast_vmu4_screen_display", "disabled"},
+                          {"reicast_show_vmu_screen_settings", "disabled"},
+                          {"reicast_lightgun1_crosshair", "disabled"}};
         // RGDS_PLAY_CORE_OPTIONS="key=value;key=value": options over the player's own, for trying a core's settings.
         if (const char* extra = std::getenv("RGDS_PLAY_CORE_OPTIONS")) {
             std::string list = extra;

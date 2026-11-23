@@ -74,10 +74,13 @@ std::string App::category_title(size_t index) {
 
 void App::category_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
     static const std::array<SettingsIcon, home_count> symbols = {
-        SettingsIcon::Sliders, SettingsIcon::Cartridge, SettingsIcon::Heart, SettingsIcon::Clock,
+        SettingsIcon::Sliders, SettingsIcon::Cartridge, SettingsIcon::Heart,  SettingsIcon::Clock,
         SettingsIcon::Chat,    SettingsIcon::Music,     SettingsIcon::Volume, SettingsIcon::Play};
     if (toy_at(index)) return voice_face(r, 0, x + size / 2, y + size / 2, size * 6 / 5, 0);
-    ui_icon(r, media_at(index) ? SettingsIcon::Play : music_at(index) ? SettingsIcon::Music : symbols.at(index),
+    ui_icon(r,
+            media_at(index)   ? SettingsIcon::Play
+            : music_at(index) ? SettingsIcon::Music
+                              : symbols.at(index),
             x + size / 2, y + size / 2, size, "accent");
 }
 

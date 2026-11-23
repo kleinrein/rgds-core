@@ -10,7 +10,7 @@ We do not run Banana's binaries. `os/buildroot` builds everything itself, from u
 | Part | Source today | Whose it really is |
 | --- | --- | --- |
 | Kernel | gregkh `v7.2.7` tarball | upstream stable |
-| Kernel config | `board/rgds/linux-rocknix.config` (7771 lines) + our 46-line fragment | **ROCKNIX's generic handheld config** |
+| Kernel config | `board/rgds/linux-rgds_defconfig` (775 settings, a `savedefconfig`) + our two fragments | **ours** since 2026-11-23 (was ROCKNIX's 7771-line handheld config) |
 | Device trees | `board/rgds/dts/*.dts` (1341 / 1392 lines) + our 9 dts-patches | **Banana's**, ROCKNIX drivers (`rocknix,generic-dsi`, single-ADC joypad) |
 | Out-of-tree drivers | `board/rgds/kernel/` (panel-generic-dsi, rocknix-singleadc-joypad, rk3568 pm_config) | **ROCKNIX's**, with our early-power changes in the panel |
 | Kernel patches | `board/rgds/linux-patches/` (21) | mostly ROCKNIX/Banana, 2 ours (`7-rgds-*`) |
@@ -163,7 +163,8 @@ Nothing faster exists for this RAM without overclocking past what Rockchip's and
   - the AW87391 driver we carry and its "AMP" control names, and the amp regulator's names;
   - deep sleep (`rockchip-suspend`, the PMIC sleep pin, `vdd_logic` off, LEDs keep their state);
   - the lid pin pulled up, the USB 1.1 host off, ramoops.
-- `dts-patches` 0001–0004 are folded in and gone. 0005 (CMA, SoC file) and 0006–0009 (Plus) stay.
+- `dts-patches` 0001–0004 are folded in and gone, 0006–0009 (Plus) stay. 0005 (CMA 64 MiB) was folded into
+  `linux-patches/2-linux-0666-cma-region.patch` on 2026-11-23.
   `external.mk` copies `dts/*.dtsi` too.
 - **Proof:** `tools/dtb_compare.py` reads two `.dtb` files and resolves every phandle by the target's `#…-cells`, so
   only real differences show (`tests/test_dtb_compare.py`). Replaying `external.mk`'s refresh step (copy, patches
@@ -191,18 +192,21 @@ disturbs the phase lock. Watch for the blank-on-touch seen with Armbian, with th
 **RG DS Plus:** mainline has no Plus tree. Once steps 2–3 hold on the RG DS, the Plus can become the RG DS
 `.dtsi` plus Plus differences the same way.
 
-#### Step 2 in progress, 2026-11-20: mainline input + our pad combiner (built, NOT on hardware)
+#### Step 2 done, 2026-11-20 (axis fix 2026-11-22): mainline input + our pad combiner
 
 - The owner chose our own combiner. `src/pad/rgds-pad.c` (+ `rgds_pad_axes.h`) merges `gpio-keys-control`,
   `adc-joystick` and `pwm-vibrator` into one uinput pad with ROCKNIX's identity: `retrogame_joypad`,
   0x19/0x484B/0x1101/0x0100, phys `rocknix-singleadc-joypad/input0`, the same 17 buttons, ±1800 sticks with fuzz and
   flat 32, and rumble passed through with the motor's own FF bits.
-  - It opens the sources through private nodes in `/run/rgds/pad`, grabs them and unlinks their `/dev/input`
+  - It opens the sources through private nodes in `/dev/rgds-pad`, grabs them and unlinks their `/dev/input`
     nodes, then restores them on a clean stop.
   - It exits 3 when a kernel joypad exists (the Plus) or the sources are missing.
   - It runs on CPUs 0–2 at SCHED_FIFO 10.
 - The stick math is ROCKNIX's to the unit (`tests/test_rgds_pad.py`, against a Python port of the driver):
-  - channel 0 → RX, 1 → RY (inverted), 2 → Y (inverted), 3 → X (inverted);
+  - mux state 0 → X (inverted), 1 → RY (inverted), 2 → Y (inverted), 3 → RX; sticks pair states {1, 3} (right)
+    and {2, 0} (left). ROCKNIX's driver drives the select lines the other way round from mainline's `gpio-mux`: its
+    channel c sets (sel_a, sel_b) = (1,1), (1,0), (0,1), (0,0), i.e. mux state 3, 1, 2, 0. The test derives the
+    table from the driver's `joypad_amux_select` switch again;
   - rest position at first open, ×2 scale, radial deadzone 64, 250 % gain, clamp.
 - Tree: the joypad section is replaced by:
   - F = BTN_MODE (mainline: KEY_HOME), Home = KEY_HOME;
@@ -234,6 +238,14 @@ disturbs the phase lock. Watch for the blank-on-touch seen with Armbian, with th
   committed. It carries the trimmed kernel #17, the step 2 tree, rgds-pad, the U-Boot I/O-domain fix (already on
   the card), Flycast with patches 0002–0004 (dircleaned), the 3DS engine f1ac7770, and every session's work in the
   tree at that time.
+- **Bug, found by the owner 2026-11-22: the left stick didn't steer in DS games.** The first table took ROCKNIX's
+  channel numbers as mainline's mux states, which swaps states 0 and 3: the left stick's X came out as RX (the DS
+  pen) and the right stick's X as X. The menu hid it, since either stick moves the selection there, and the
+  hardware test above only checked that each axis moved. The table and the stick pairs were fixed and
+  `test_mux_states_map_to_the_axes_rocknix_reported` was added. Image `0.9.1-0de9d393e37c-os2a88cb59`
+  (rgds-pad md5 `b293ef99`) went on slot a. Slot b got the same pad in another session's `os2f9cf014`
+  (2026-11-23). The owner confirmed both sticks are fine on 2026-11-23. A hardware check of a new input table must
+  hold each direction and see which single axis moves (`pad_log.py`), not just the range.
 
 ### Phase D: Our kernel config and patches (2–3 days)
 - `make savedefconfig` from a config built up from `rockchip` essentials + what `lsmod`/`/sys` show the board uses;
@@ -329,7 +341,141 @@ and SD bus mode are the next boot lever (Phase E).
    network, sleep/lid, charge, a PortMaster port), then the bootstage marks.
 2. Why U-Boot reads the card at only ~9 MB/s (Linux gets UHS SDR104 on the same card). At 25 MB/s, 10 MB is
    0.4 s, not 1.1 s. Also try zstd instead of LZ4: smaller file, slower unpacking; on a slow read it may win.
-3. Then `savedefconfig` the result into our own `linux-rgds_defconfig` and retire `linux-rocknix.config`.
+3. ~~Then `savedefconfig` the result into our own `linux-rgds_defconfig` and retire `linux-rocknix.config`.~~ Done
+   2026-11-23, see below.
+
+#### Our own config, 2026-11-23 (build-side, no behaviour change)
+
+- `board/rgds/linux-rgds_defconfig` is `make savedefconfig` of the kernel built for 0.9.1 (ROCKNIX's
+  `linux-rocknix.config` + `linux-rgds.fragment` + `linux-board.fragment`): 775 settings instead of 7771 lines.
+  `linux-rocknix.config` is gone; `rgds_os_defconfig` builds on the new file and still lists both fragments, which
+  stay the place to change a setting (one line and a reason each).
+- Proof, in a RAM copy of the patched kernel tree in the VM with Buildroot's cross compiler: `olddefconfig` of the
+  defconfig, and Buildroot's merge (`merge_config.sh -m` with both fragments, then `olddefconfig`), each give back
+  the built `.config` byte for byte, apart from `CONFIG_OPENSSL_SUPPORTS_ML_DSA`, a probe of the build host's
+  OpenSSL (Buildroot builds with its own).
+- `own_os_build.py`'s drift check now also stops a build whose kept `output/.config` names another base config
+  (`--reconfigure` needed once, as with the fragments); `tests/test_kernel_fragments.py` covers it.
+- **Still in it from ROCKNIX, the owner's call** (docs/PERFORMANCE.md measured an 85 µs Panfrost job submit):
+  `DEBUG_SPINLOCK`, `INIT_ON_ALLOC_DEFAULT_ON` + `INIT_ON_FREE_DEFAULT_ON` (every page zeroed on allocation and on
+  free), `SCHEDSTATS`, `DEBUG_DEVRES`, `REGULATOR_DEBUG`, `PROFILING`. The init_on pair can be tried without a build
+  (`init_on_alloc=0 init_on_free=0` on the command line); the rest need a kernel build.
+
+#### ROCKNIX's debug defaults on trial, 2026-11-23 (owner's yes)
+
+Test kernel #18: the built kernel's exact config minus `DEBUG_SPINLOCK`, `SCHEDSTATS`, `INIT_ON_ALLOC_DEFAULT_ON`,
+`INIT_ON_FREE_DEFAULT_ON`, `DEBUG_DEVRES` and `REGULATOR_DEBUG` (`SCHED_INFO` falls with `SCHEDSTATS`). It was built
+in the VM's RAM copy of the patched tree and packed with slot b's exact `os2f9cf014` system: only the kernel and
+`/lib/modules` were swapped (same 117 modules, Buildroot's depmod). It went on slot a with a scratch copy of
+`own_os_push.py`. Then `init_on_alloc=1 init_on_free=1` on slot a's boot line put the zeroing back alone. Afterwards
+the handheld went back to slot b, with the boot file restored and the trial committed.
+
+Measures: `os/device-bench/kbench.c` (median of 5 rounds, pinned to CPU 3, CPU at 1992 MHz under the performance
+governor), and three Mario Kart DS attract replays (`mkds-attract.dsin`, 3600 frames, on `/data/rgds/perf-userdata`,
+`DS_FRAME_STATS=1`, session held).
+
+| | Today's kernel #17 | #18, no debug, no zeroing | #18 with zeroing back |
+| --- | --- | --- | --- |
+| syscall (ns) | 182 | 181 | 182 |
+| first touch + free of a page (µs) | 4.65–4.68 | 4.02–4.06 | 4.78–4.84 |
+| pipe round trip, CPU 3 ↔ 2 (µs) | 19.9–20.0 | 18.6–18.7 | 18.5–18.7 |
+| futex wake (ns) | 347 | 344 | 347 |
+| mmap + munmap 64 KiB (µs) | 8.5–8.6 | 8.2 | 8.6 |
+| MKDS emulation work, mean (ms) | 10.13 / 10.15 / 10.16 | 9.89 / 9.87 / 9.86 | 10.16 / 10.16 (a third run, 120 s after boot, was hit by boot-time work) |
+| MKDS frame time, mean (ms) | 9.52 / 9.52 / 9.55 | 9.27 / 9.27 / 9.26 | 9.53 / 9.54 |
+| MKDS work frames over budget (of 3600) | 32 / 29 / 31 | 27 / 30 / 27 | 33 / 30 |
+
+What it says:
+- **The page zeroing is the whole game-side gain: −2.7 % emulation work in Mario Kart DS**, with run-to-run spread
+  ~0.3 %. That is more than the PSP trial on 5 November showed (+0.4 % frames, docs/PERFORMANCE.md). The cost is
+  hardening: freed and newly allocated pages are no longer wiped, so a kernel memory-disclosure bug could leak old
+  data. Owner's call.
+- **The four debug options cost no measurable game time**, only kernel paths: −6.5 % on a cross-CPU wakeup (spinlock
+  checks and scheduler statistics). They give nothing in safety on a shipped handheld. Turning them off is a
+  fragment change (`linux-board.fragment`) and a normal image build.
+- No problems on #18: the boot was clean, the trial committed, and both panels, sound, battery, charger, Wi-Fi modules
+  and the pad all came up. Not tried on #18: sleep, Bluetooth, PortMaster.
+- **Owner's decision, 2026-11-23: both off.** All six lines are in `linux-board.fragment`. Merged over
+  `linux-rgds_defconfig`, they give exactly the tested #18 config. The next image build reconfigures the kernel
+  (own_os_build's drift check runs `linux-reconfigure`) and rebuilds it. Check sleep, Bluetooth and a PortMaster
+  port on that image.
+
+#### Lever 2 on trial: `nohz_full=3 rcu_nocbs=3`, 2026-11-23 (owner's yes)
+
+Kernel #17 (today's, `NO_HZ_FULL` and `RCU_NOCB_CPU` compiled in since the trim) on slot b, with only the boot
+line changed. `dmesg`: "Full dynticks CPUs: 3", "Offload RCU callbacks from CPUs: 3". Each run started after the
+boot's background work was over (uptime ≥ 200 s). rcS already sends every IRQ to CPU 0 and the session keeps
+itself on CPUs 0–2, so CPU 3 has only the emulation thread.
+
+| | Normal boot line | `nohz_full=3 rcu_nocbs=3` |
+| --- | --- | --- |
+| MKDS emulation work, mean (ms) | 10.13 / 10.15 / 10.16 | 9.91 / 9.84 / 9.88 (−2.7 %) |
+| MKDS work frames over budget (of 3600) | 32 / 29 / 31 | 24 / 23 / 27 (about −20 %) |
+| MKDS work p99 (ms) | 16.63 / 16.48 / 16.63 | 16.40 / 16.03 / 16.32 |
+| CPU 3 timer interrupts | 250/s (HZ) | ~12/s during the replays |
+| Crazy Taxi drive, game fps (whole drive / 65–135 s; one drive each) | 55.96 / 58.04 | 55.84 / 57.79 |
+| kbench on CPU 3: syscall / pipe / fault | 182 ns / 20.0 µs / 4.7 µs | 522 ns / 27.1 µs / 5.1 µs |
+
+- **DS gains** about as much as the page zeroing did, and on top of it the frames over budget drop by about a
+  fifth: the emulation thread no longer takes a tick every 4 ms.
+- **Dreamcast is unchanged** (one drive each, differences within a drive's own spread).
+- **The price is paid by every kernel entry on CPU 3:** context tracking makes a syscall ~340 ns dearer. A CPU 3
+  thread making 10,000 syscalls a second would lose ~0.3 % of the core. DS and Flycast's SH4 thread don't; 3DS
+  and PSP have not been measured.
+- The boot line went back to normal afterwards. Shipping it means adding the two words to `extlinux.conf.in`'s
+  `APPEND`; the OTA rewrites `extlinux.conf`, so updated handhelds get it too.
+
+**3DS and PSP, checked before shipping (the owner asked), 2026-11-23.** The same boot lines, each run ≥ 200 s after
+boot, with the 3DS session's `race-run.sh` (Mario Kart 7, 150 s, its userdata copy) and the PSP session's `run2.sh`
+(OutRun Cross route, 90 s, Performance clocks, `RGDS_PLAY_CPU=3` as a real launch), driven by
+`/data/rgds/kbench/nz.sh` and `psp2.sh`:
+
+| | Normal | `nohz_full=3 rcu_nocbs=3` |
+| --- | --- | --- |
+| 3DS MK7, ms per frame (60.00 fps, 0 over 16.7 ms in all) | 11.63 / 11.24 | 11.42 / 11.22 |
+| PSP OutRun, frame ms mean per race | 30.19 / 32.90 / 28.33 / 29.20 (mean 30.15) | 32.97 / 34.14 / 29.13 / 34.65 (mean 32.72) |
+| PSP 300-frame windows reached in 90 s | 8 / 8 / 9 / 9 | 7 / 7 / 9 / 7 |
+
+- **3DS: no difference.**
+- **PSP: about 8 % slower with nohz_full**, and every nohz race was slower than the normal race in the same
+  position. PPSSPP's main loop on CPU 3 drives GL, so it enters the kernel all the time (ioctls), and on a
+  `nohz_full` CPU each entry pays the context-tracking cost (syscall 182 → 522 ns).
+- **So not shipped globally.** It would only pay if CPU 3 held nothing but syscall-light emulation threads (DS,
+  Dreamcast's SH4, 3DS) and PSP's GL-driving main loop moved to another CPU. That needs its own PSP measurement,
+  since that loop is the PSP's limit (docs/PERFORMANCE.md).
+- **Owner's decision, 2026-11-23: leave it off.** The kernel keeps `NO_HZ_FULL` compiled in (inert without the
+  boot words), so a later trial still needs no build.
+
+#### The kernel patches, 2026-11-23
+
+All 21 still apply to 7.2.7, and each one does something this hardware needs. They keep their names: the numeric
+prefixes set the order Buildroot applies them in, and the names are what the docs and the history refer to.
+
+| Patch | Why | Needed by |
+| --- | --- | --- |
+| `1-mainline-0003` pwm_set_period | helper for the ROCKNIX joypad's rumble | Plus only |
+| `1-mainline-0004` adc-keys 316 → joypad | routes the Plus's F key (adc-keys, BTN_MODE) into the ROCKNIX joypad | Plus only |
+| `6-rk3326-003` input-polldev | the polling layer the ROCKNIX joypad driver is written against | Plus only |
+| `2-linux-0002` rk817 names | `battery` / charger names the runtime reads | both |
+| `2-linux-0008` SD resume retry | the card comes back after a deep sleep that power-cycled it | both |
+| `2-linux-0021` dma-names | `dma-names` for UART1, the Bluetooth UART, so its DMA channels can be found | both |
+| `2-linux-0026` AW87391 | the RG DS's speaker amplifier driver (not in mainline) | RG DS |
+| `2-linux-0027` AW88166 firmware | the Plus's amplifier loads its firmware without stalling boot | Plus |
+| `2-linux-0028` fan53555 STI8070A | the Plus's `vdd_cpu` chip reports a die ID the Silergy path rejects (cpufreq would defer forever) | Plus |
+| `2-linux-0666` CMA 64 MiB | default CMA region; **folded with `dts-patches/0005` on 2026-11-23** | both |
+| `2-linux-1001` rk356x idle states | CPU idle states (power) | both |
+| `2-linux-1011` Goodix | skip the config-from-disk wait (~60 s) | both |
+| `3-default-9901` sync suspend | suspend/resume in order (sleep reliability) | both |
+| `5-mainline-rockchip-001…008` | RK817 charger and fuel-gauge fixes (state of charge across boots and sleep) | both |
+| `7-rgds-0001` DSI async probe | ours: boot time | both |
+| `7-rgds-0002` VOP2 ports in step | ours: both panels start on the same frame | both |
+
+The three Plus-only input patches, `kernel/rocknix-singleadc-joypad.c` and `rocknix-joypad.h` go once the Plus moves to
+mainline input + `rgds-pad` (step 2 for the Plus, which needs a Plus at hand to test).
+
+The CMA fold: the region was 256 MiB in `0666` and cut to 64 MiB by `dts-patches/0005` after it; now `0666` says 64
+MiB itself and `0005` is gone. The new `0666` reverses cleanly on the built kernel tree (the same file, so the same
+DTB).
 
 ### Phase E: Our U-Boot board (2 days)
 
@@ -348,7 +494,9 @@ with ours, three things matter:
    - So every boot spends about 3 s with those pins (by the trees, the Wi-Fi SDIO side) mismatched. Rockchip's
      hardware guide says the domain setting must match its supply. Banana's U-Boot has done the same since
      day one; no harm is known, but it should not stay.
-2. **The SD card's power switch has the opposite polarity.**
+2. **The SD card's power switch has the opposite polarity.** (Wrong, 2026-11-23: a `regulator-fixed` takes its
+   polarity from `enable-active-high`, not from the GPIO flag, in Linux and U-Boot alike, so both trees drive the
+   pin the same way. The slow read had another cause; see "The card clock" below.)
    - The pin is the same, GPIO0_A5: active-low on Quartz64, active-high on the RG DS.
    - RG DS marks it always-on; Quartz64 doesn't.
    - A UHS start-up power-cycles the card, so this fits UHS never engaging (the 2026-10-27 UHS try changed
@@ -418,6 +566,49 @@ Mac-side `dd` command ready before the first write. Needs the owner's OK.
 - `configs/anbernic-rg-ds-rk3568_defconfig` + a board DT (U-Boot's `dts/upstream` already syncs mainline's) so the
   Quartz64 defconfig and patch `001-fix-defconfig` go away; keep bootcount, altbootcmd, SARADC board ID.
 - Measure kernel-jump time with bootstage.
+
+#### The card clock and the unpack, 2026-11-23 (owner's yes; on the card)
+
+Measured with U-Boot's bootstage marks (`/proc/device-tree/bootstage`, `/data/rgds/kbench/stages.sh` on the
+handheld), three boots per build, kernel #17 on slot b:
+
+| U-Boot | Kernel read (`main_loop` → `bootm_start`) | LZ4 unpack (→ `start_kernel`) | Kernel starts |
+| --- | --- | --- | --- |
+| 0.9.x (I/O-domain fix, `a645…`) | 1.193 s | 0.444 s | 2.584 s |
+| without `sd-uhs-sdr104` in U-Boot's tree | 1.193 s | 0.444 s | 2.584 s |
+| + `uboot-patches/006` (card clock) | 0.682 s | 0.558 s | 2.189 s |
+| + `uboot-patches/007` (LZ4 at -O2, aligned) | **0.682 s** | **0.409 s** | **2.039 s (−0.55 s)** |
+
+How it was found:
+- Removing SDR104 changed nothing. U-Boot's Rockchip dw_mmc never calls `mmc_of_parse`, so `sd-uhs-*` in the tree
+  is never read. That trial U-Boot is not kept.
+- A diagnostic U-Boot whose `preboot` did a raw `mmc read` of 10 MiB added 0.872 s to the boot: **12.0 MB/s, the
+  limit of a 25 MHz bus**, so the filesystem was not the problem (it adds ~0.32 s over the raw read).
+- A second diagnostic passed registers to Linux on the boot line (`setexpr.l` → `rgds.mmc=`): CRU CLKSEL_CON30 =
+  `0x5420` (the card clock's source at 50 MHz), the dw_mmc's CLKDIV 0 (bypass), CTYPE 4-bit, UHS_REG 0. U-Boot had
+  picked high speed. But the controller's CLKGEN halves its input before CLKDIV, which is why Linux's dw_mmc-rockchip
+  asks for twice the clock (`RK3288_CLKGEN_DIV`). U-Boot asks for the card clock itself, so the card ran at 25 MHz.
+  **`006`** asks the CRU for twice the clock, falling back to the old request where the CRU has no such rate (the
+  400 kHz identification clock). It speeds up the SPL's read of U-Boot too.
+- With `006` the unpack got 0.11 s slower although its code did not change: `ulz4fn` moved from `0x857050` to
+  `0x857074`. U-Boot builds `lib/` with `-Os`, under which GCC ignores alignment flags. That is also what the
+  2026-11-20 readback build's +0.16 s most likely was. **`007`** builds `lz4_wrapper.o` with `-O2` and 64-byte
+  function / 32-byte loop alignment: 0.409 s, now independent of the code before it.
+
+Where it stands:
+- The tested U-Boot (`886304c3…`) is on the card. Buildroot's U-Boot was rebuilt from the repo (`uboot-dirclean
+  uboot`): `ulz4fn` at the same `0x857000`, differing from the tested image by 101 bytes, all build-date strings.
+  New cards (`rgds-os.img`) get it from the next full image build. OTA updates never write U-Boot.
+- Backups on the handheld: `/data/rgds/logs/u-boot-before-nosdr104-1795444243.bin` (= `a645…`, the 0.9.x U-Boot,
+  also on the Mac as `build/os/uboot-trial-20261120/u-boot-iodomains-noreadback.bin`). Restoring from the Mac with
+  the card in a reader: `dd` it to the card at 32 KiB (`seek=64` in 512-byte blocks).
+- **Not tried on a Plus.** It has the same SoC and controller, so it should get the same gain; check it with the
+  Plus's I/O-domain branch.
+- Next in this step: U-Boot's CPU runs 816 MHz on the SYR827's power-on 850 mV (the kernel's log shows `vdd_cpu ...
+  at 850 mV` when it first registers it; U-Boot has no FAN53555 driver enabled). Mainline's table puts 408–1104 MHz
+  at 900 mV, so a faster unpack needs U-Boot to set the regulator to 900 mV first (`DM_REGULATOR_FAN53555` and an
+  RG DS node). Worth at most ~0.1 s of the 0.41 s unpack. The read is now ~15 MB/s against the 50 MHz bus's 25:
+  the next suspects are U-Boot's FAT reads and the bounce buffer.
 
 ### Phase F: Upstream and tidy (ongoing)
 - Send DT fixes and small driver patches upstream (kernel, U-Boot). Every one that lands is one less to carry.

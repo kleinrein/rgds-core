@@ -28,7 +28,6 @@ BT_AUDIO = Path("/usr/libexec/rgds/bt-audio")
 # RG DS OS: "<card> rk817|aw88166", the card that plays now (/usr/libexec/rgds/audio); absent: the RK817 as card 0
 AUDIO_MIXER = Path("/run/rgds/audio-mixer")
 
-
 CAPTURE_CONF = Path("/run/rgds/audio-capture.conf")
 # RK817 "Mic Capture Gain": -18 dB + 3 dB per step, so 4 is -6 dB. The DS amplifier a game picks multiplies this again,
 # and Electroplankton's x160 clips at an eighth of full scale: at +6 dB speech peaked four times over that, harsh and thin.
@@ -50,12 +49,14 @@ def microphone_levels(conf=CAPTURE_CONF, run=subprocess.run):
         return
     for control, value in (("Master Capture Volume", "255,255"), ("Mic Capture Gain", f"{MIC_GAIN},{MIC_GAIN}")):
         try:
-            run(["amixer", "-q", "-c", card, "cset", f"name={control}", value],
+            run(
+                ["amixer", "-q", "-c", card, "cset", f"name={control}", value],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 env=clean_environment(),
                 timeout=2,
-                check=False)
+                check=False
+            )
         except (OSError, subprocess.SubprocessError) as error:
             print(f"Microphone levels: {error}", file=sys.stderr, flush=True)
 
@@ -98,13 +99,17 @@ class Mixer:
         try:
             pin = "off"
             if level > 0:
-                jack = subprocess.run(["amixer", "-c", str(card), "cget", "iface=CARD,name=Headphones Jack"],
-                                      stdout=subprocess.PIPE,
-                                      **amixer).stdout
+                jack = subprocess.run(
+                    ["amixer", "-c", str(card), "cget", "iface=CARD,name=Headphones Jack"],
+                    stdout=subprocess.PIPE,
+                    **amixer
+                ).stdout
                 pin = "off" if "values=on" in (jack or "") else "on"
-            subprocess.run(["amixer", "-q", "-c", str(card), "sset", "Internal Speakers", pin],
-                           stdout=subprocess.DEVNULL,
-                           **amixer)
+            subprocess.run(
+                ["amixer", "-q", "-c", str(card), "sset", "Internal Speakers", pin],
+                stdout=subprocess.DEVNULL,
+                **amixer
+            )
             self.speakers_on = state
         except (OSError, subprocess.SubprocessError) as error:
             print(f"Speakers: {error}", file=sys.stderr, flush=True)
@@ -142,7 +147,8 @@ class Mixer:
         if not self.control or card != self.card:
             self.query()
         subprocess.run(
-            ["amixer", "-q", "-c", str(card), "sset", self.control, "playback", f"{dac_percent(level)}%"],
+            ["amixer", "-q", "-c",
+             str(card), "sset", self.control, "playback", f"{dac_percent(level)}%"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             env=clean_environment(),
@@ -170,12 +176,14 @@ class Amplifier:
         return 0 if value >= 1023 else max(1, min(100, round(100 - value * 3 / 16)))
 
     def get(self, control):
-        result = self.run(["amixer", "-c", str(self.card), "sget", control],
-                          text=True,
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.DEVNULL,
-                          env=clean_environment(),
-                          timeout=2)
+        result = self.run(
+            ["amixer", "-c", str(self.card), "sget", control],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            env=clean_environment(),
+            timeout=2
+        )
         match = re.search(r"Playback (\d+) \[", result.stdout or "")
         return int(match[1]) if result.returncode == 0 and match else None
 
@@ -190,13 +198,15 @@ class Amplifier:
 
     def set(self, level):
         for control in self.controls():
-            self.run(["amixer", "-q", "-c", str(self.card), "sset", control,
-                      str(self.raw(level))],
-                     stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL,
-                     env=clean_environment(),
-                     check=True,
-                     timeout=2)
+            self.run(
+                ["amixer", "-q", "-c", str(self.card), "sset", control,
+                 str(self.raw(level))],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                env=clean_environment(),
+                check=True,
+                timeout=2
+            )
 
 
 def headset_volume(level):

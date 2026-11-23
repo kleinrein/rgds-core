@@ -1,0 +1,54 @@
+#!/bin/sh
+# The system log and the kernel log, kept on the card so a crash or hang that is not a kernel panic (those go to
+# pstore, rcS) still leaves its last messages behind. syslogd writes to RAM (/run/rgds/messages, rotated once to
+# messages.0 at 256 KiB), so before this only the copies at 20 s and 2 min after boot reached the card.
+#   logs boot   the previous boot's files become *.prev.txt (run by rcS before anything writes the new ones)
+#   logs save   one copy now: rgds/logs/messages.txt and dmesg.txt (run by rcK at shutdown)
+#   logs watch  a copy every minute, only when something was logged (run by rcS in the background)
+# Each copy is written beside the file and renamed over it, so a power cut leaves the old copy or the new one, not
+# half of one. A hang loses at most the last minute. The device report (runtime/device_services.py) collects them.
+LOGS=${RGDS_LOGS:-/data/rgds/logs}
+RUN=${RGDS_RUN:-/run/rgds}
+EVERY=${RGDS_LOGS_EVERY:-60}
+
+state() { printf '%s %s %s' "$(wc -c 2>/dev/null < $RUN/messages.0)" "$(wc -c 2>/dev/null < $RUN/messages)" \
+    "$(dmesg 2>/dev/null | tail -n 1)"; }
+
+save() {
+    mountpoint -q /data 2>/dev/null || [ -n "$RGDS_LOGS" ] || return 0
+    mkdir -p "$LOGS" || return 0
+    # messages.0 is missing until syslogd first rotates: cat still copies messages, so its status is not checked
+    cat $RUN/messages.0 $RUN/messages > "$LOGS/messages.txt.new" 2>/dev/null
+    [ -s "$LOGS/messages.txt.new" ] && mv -f "$LOGS/messages.txt.new" "$LOGS/messages.txt"
+    dmesg > "$LOGS/dmesg.txt.new" 2>/dev/null && [ -s "$LOGS/dmesg.txt.new" ] &&
+        mv -f "$LOGS/dmesg.txt.new" "$LOGS/dmesg.txt"
+    rm -f "$LOGS/messages.txt.new" "$LOGS/dmesg.txt.new"
+}
+
+case "$1" in
+boot)
+    for f in messages dmesg; do
+        [ -f "$LOGS/$f.txt" ] && mv -f "$LOGS/$f.txt" "$LOGS/$f.prev.txt"
+        rm -f "$LOGS/$f.txt.new"
+    done
+    ;;
+save)
+    save
+    sync
+    ;;
+watch)
+    last=
+    while :; do
+        sleep "$EVERY"
+        now=$(state)
+        [ "$now" = "$last" ] && continue
+        save
+        last=$now
+    done
+    ;;
+*)
+    echo "usage: $0 boot|save|watch" >&2
+    exit 2
+    ;;
+esac
+exit 0

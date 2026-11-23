@@ -7,10 +7,10 @@
 
 // bindings in descriptor set 0, shared by every pipeline (one layout for all)
 enum {
-    VKB_VERTUNI = 0,  // VertUniforms (hw vertex shaders), dynamic offset
-    VKB_FRAGCFG = 1,  // FragConfig (uber shader), dynamic offset
-    VKB_FRAGUNI = 2,  // FragUniforms, dynamic offset
-    VKB_FREECAM = 3,  // FreecamUniforms
+    VKB_VERTUNI = 0, // VertUniforms (hw vertex shaders), dynamic offset
+    VKB_FRAGCFG = 1, // FragConfig (uber shader), dynamic offset
+    VKB_FRAGUNI = 2, // FragUniforms, dynamic offset
+    VKB_FREECAM = 3, // FreecamUniforms
     VKB_TEX0 = 4,
     VKB_TEX0SHADOW = 5,
     VKB_TEX1 = 6,

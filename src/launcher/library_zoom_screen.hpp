@@ -396,7 +396,8 @@ SDL_Texture* App::zoom_sprite(SDL_Renderer* r, size_t index, int size, bool cove
     if (size < 8 || size > 256) return nullptr;
     const Game& game = model.games[index];
     const bool loved = size >= 60 && game_loved(index);
-    const Color line = theme.at("line"), panel = theme.at("panel"), slot = theme.at("slot"), accent = theme.at("accent");
+    const Color line = theme.at("line"), panel = theme.at("panel"), slot = theme.at("slot"),
+                accent = theme.at("accent");
     std::string key = std::to_string(reinterpret_cast<uintptr_t>(r));
     key += '|';
     key += std::to_string(index);
@@ -428,8 +429,7 @@ SDL_Texture* App::zoom_sprite(SDL_Renderer* r, size_t index, int size, bool cove
         const char* quality = s.GetHint("SDL_RENDER_SCALE_QUALITY");
         const std::string before = quality ? quality : "";
         s.SetHint("SDL_RENDER_SCALE_QUALITY", "1");
-        sprite.texture =
-            s.CreateTexture(r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, size + 4, size + 6);
+        sprite.texture = s.CreateTexture(r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, size + 4, size + 6);
         s.SetHint("SDL_RENDER_SCALE_QUALITY", before.empty() ? "0" : before.c_str());
         if (!sprite.texture) {
             s.ClearError();
@@ -580,8 +580,8 @@ bool App::zoom_render(SDL_Renderer* r, int y, bool prepass) {
         if (box.w < 4 || box.x > 640 || box.x + box.w < 0 || box.y > y + 480 || box.y + box.h < y + ZoomWall::top - 8)
             continue;
         const int rest = e < .5 ? lo : hi;
-        placed.push_back({index, box, cover, tile_level, rest, (rest == lo ? a : b).w,
-                          rest == 0 ? covers_at_rest : rest == 1});
+        placed.push_back(
+            {index, box, cover, tile_level, rest, (rest == lo ? a : b).w, rest == 0 ? covers_at_rest : rest == 1});
     }
     // New tile textures are drawn in a pass of their own before the panel's frame begins (frame_draw.hpp). On the
     // handheld's tiled GPU every switch of render target in the middle of a frame stores the half-drawn panel and
@@ -605,8 +605,8 @@ bool App::zoom_render(SDL_Renderer* r, int y, bool prepass) {
         const int margin = int(std::lround(2 * k));
         SDL_Rect destination{tile.box.x - margin, tile.box.y - margin, int(std::lround((tile.rest_size + 4) * k)),
                              int(std::lround((tile.rest_size + 6) * k))};
-        if (tile.box.w == tile.rest_size) destination = {tile.box.x - 2, tile.box.y - 2, tile.rest_size + 4,
-                                                         tile.rest_size + 6};
+        if (tile.box.w == tile.rest_size)
+            destination = {tile.box.x - 2, tile.box.y - 2, tile.rest_size + 4, tile.rest_size + 6};
         s.RenderCopy(r, tile.sprite, nullptr, &destination);
     }
     // At the dense wall, the first game of each letter carries the letter.

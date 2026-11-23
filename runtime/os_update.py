@@ -371,8 +371,14 @@ class OsUpdater(Updater):
                     )
                     conf = self.boot / 'extlinux/extlinux.conf'
                     new = replace_label(conf.read_text(), other, template)
-                    conf.with_name('extlinux.conf.new').write_text(new)
+                    # On the card before the rename: on vfat a cut after an unsynced rename can leave extlinux.conf
+                    # empty, and neither slot boots.
+                    with conf.with_name('extlinux.conf.new').open('w', encoding='utf-8') as out:
+                        out.write(new)
+                        out.flush()
+                        os.fsync(out.fileno())
                     os.replace(conf.with_name('extlinux.conf.new'), conf)
+                    subprocess.run(['sync'], check=False)
                 finally:
                     self.remount('ro')
                 self.publish('staging', 'Preparing update…', progress=100)
