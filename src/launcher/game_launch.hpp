@@ -158,7 +158,7 @@ void App::finish_launch(bool reopen) {
              : launch_result == 78 ? "The memory card is read-only"
              : launch_result       ? "LAUNCH ERROR " + std::to_string(launch_result) + " - SEE LOG"
              : launch_preview      ? "PREVIEW: " + std::string(core_names[launching_core]) + " SELECTED"
-                                   : "BACK HOME";
+                                   : "READY"; // a normal return home is not news: no toast
     if (launch_result && !launch_cancelled) emit_sound(MenuCue::Error);
     else if (reopen) emit_sound(MenuCue::Back);
     if (media_launch) {

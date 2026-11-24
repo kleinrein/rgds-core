@@ -22,7 +22,7 @@ ESRB_NAMES = {'n64': 'Nintendo - Nintendo 64 (BigEndian)'}
 USERDATA = '/data/rgds/userdata'
 ROMS = '/data/roms'
 FOLDERS = {'genesis': 'md'}
-DS_SUFFIXES = ('.nds', '.dsi')  # runtime's SYSTEMS lists every other system
+DS_SUFFIXES = ('.nds', '.dsi', '.srl', '.cia')  # runtime's SYSTEMS lists every other system
 
 
 class Row:

@@ -64,11 +64,13 @@ enum class Page {
     ProfileGameRules, // one game: who sees it
     PinPad,           // entering or choosing a PIN
     Achievements,     // Settings > Library > RetroAchievements: the switch and the account (runtime/achievements.py)
-    Album,            // Settings > Library > Album: screenshots by game and date (album_screen.hpp, screenshots.py)
+    Album,            // Home > Album: screenshots by game and date (album_screen.hpp, screenshots.py)
     Photo,            // Album > Photo mode: lenses, stamps, pen, frames and a date stamp (photo_screen.hpp)
-    Files,            // Settings > Library > Files: the card's folders (files_screen.hpp, runtime/files.py)
+    Files,            // Settings > Files: the card's folders (files_screen.hpp, runtime/files.py)
     Rewind,           // Game menu > Rewind: the game's moments, Cover Flow style (rewind_menu.hpp)
     Journal,          // Playtime > A: every sitting by day, unlocks and pictures beside it (journal_screen.hpp)
+    KidHome,          // a Little kid profile's whole launcher: its games as big pictures (kid_home_screen.hpp)
+    KidMenu,          // a Little kid's game menu: Play and Home, nothing else (kid_home_screen.hpp)
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,
@@ -615,9 +617,9 @@ inline std::string game_sleep_name(int index) {
 inline constexpr std::array<int, 9> power_rows = {0, 3, 2, 1, 7, 8, 4, 6, 5};
 // The root list's order. Section ids stay stable (saved state and tests use
 // them). Since the 2026-11-11 regroup (docs/SETTINGS_PLAN.md): Profiles; Look & sound (Theme, Display, Sound); Games
-// (Library, Controls); Device (Connectivity, Power, System, Updates); then Power off on its own. Statistics (7) is
-// Home's Playtime and no longer listed here.
-inline constexpr std::array<int, 11> section_order = {11, 0, 10, 3, 2, 6, 4, 1, 5, 9, 8};
+// (Library, Controls); Device (Connectivity, Power, System, Files, Updates); then Power off on its own. Statistics (7)
+// is Home's Playtime and no longer listed here. Files (12) came up from Settings > Library's last row on 2026-11-24.
+inline constexpr std::array<int, 12> section_order = {11, 0, 10, 3, 2, 6, 4, 1, 5, 12, 9, 8};
 // Theme and Display share the appearance code: the row ids are the original combined list's.
 inline int appearance_row_id(Page page, int index) {
     // Theme is how the menus look and move; Display is the panel and touch (docs/SETTINGS_PLAN.md).
@@ -685,9 +687,18 @@ struct Settings {
         } else if (page == Page::Display) {
             page = Page::DisplayOptions;
             focus = 0;
-        } else if (page == Page::Achievements || page == Page::Album || page == Page::Files) {
-            // Files is Library's last row, Album the one above it, RetroAchievements above that
-            focus = library_rows - (page == Page::Files ? 1 : page == Page::Album ? 2 : 3);
+        } else if (page == Page::Album) {
+            // A Home app since 2026-11-24 (no longer a Library row): Back is Home.
+            page = Page::Library;
+            focus = 0;
+        } else if (page == Page::Files) {
+            // A row of the Settings root since 2026-11-24 (no longer a Library row).
+            page = Page::Settings;
+            section = 12;
+            focus = 0;
+        } else if (page == Page::Achievements) {
+            // RetroAchievements is Library's last row
+            focus = library_rows - 1;
             page = Page::LibraryOptions;
         } else {
             page = page == Page::Settings || page == Page::GameOptions || page == Page::Homebrew ? Page::Library

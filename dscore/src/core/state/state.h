@@ -93,6 +93,9 @@ public:
     chunk_end_ = p_ + n;
     return true;
   }
+  // Whether the next chunk is `tag`, for one that may be absent: unlike
+  // begin(), a different chunk there is not a failure.
+  bool peek(const char tag[4]) const { return ok_ && end_ - p_ >= 8 && std::memcmp(p_, tag, 4) == 0; }
   void end() {
     if (ok_) p_ = chunk_end_;
   }
@@ -100,7 +103,12 @@ public:
   size_t remaining() const { return ok_ ? static_cast<size_t>(chunk_end_ - p_) : 0; }
 
   template <class T> void put(T& v) {
-    if constexpr (std::is_arithmetic_v<T> || std::is_enum_v<T>) {
+    if constexpr (std::is_same_v<T, bool>) {
+      u8 b = 0;
+      if (more()) blob(&b, 1);
+      v = b != 0;
+    } // a file's byte is not a bool until it is 0 or 1
+    else if constexpr (std::is_arithmetic_v<T> || std::is_enum_v<T>) {
       if (more()) blob(&v, sizeof v);
     } else if constexpr (std::is_array_v<T>) put_n(v, std::extent_v<T>);
     else if constexpr (is_std_array<T>::value) put_n(v.data(), v.size());
@@ -109,7 +117,9 @@ public:
   // Like put() per element, but bulk-copies whole elements at once (avoids
   // GCC reasoning a per-element loop past the array's end).
   template <class E> void put_n(E* e, size_t n) {
-    if constexpr (std::is_arithmetic_v<E> || std::is_enum_v<E>) {
+    if constexpr (std::is_same_v<E, bool>) {
+      for (size_t i = 0; i < n; ++i) put(e[i]);
+    } else if constexpr (std::is_arithmetic_v<E> || std::is_enum_v<E>) {
       if (!ok_) return;
       const size_t whole = static_cast<size_t>(chunk_end_ - p_) / sizeof(E);
       const size_t k = whole < n ? whole : n;
@@ -129,7 +139,7 @@ public:
       std::memset(p, 0, n);
       return;
     }
-    std::memcpy(p, p_, n);
+    if (n) std::memcpy(p, p_, n); // an empty vector's data() is null
     p_ += n;
   }
   template <class T> void vec(std::vector<T>& v) {

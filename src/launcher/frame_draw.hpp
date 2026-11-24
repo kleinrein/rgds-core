@@ -267,6 +267,7 @@ void App::animated_top(SDL_Renderer* renderer, int y) {
 }
 
 void App::draw(bool screenshot) {
+    rewind_tidy();
     if (picker_was_open && !picker_open) {
         picker_closed_at = s.GetTicks();
         // Measured only while the Storage sheet is up.
@@ -306,6 +307,7 @@ void App::draw(bool screenshot) {
         animated_top(surfaces[0].renderer, 0);
         animated_bottom(surfaces[0].renderer, 480);
         touch_feedback(surfaces[0].renderer, 480);
+        draw_toasts(surfaces[0].renderer, 480);
         loading_overlay(surfaces[0].renderer, 0, false);
         loading_overlay(surfaces[0].renderer, 480, true);
         shutdown_overlay(surfaces[0].renderer, 0, true);
@@ -348,6 +350,7 @@ void App::draw(bool screenshot) {
             else {
                 animated_bottom(renderer, 0);
                 touch_feedback(renderer, 0);
+                draw_toasts(renderer, 0);
             }
             loading_overlay(renderer, 0, i == 1);
             shutdown_overlay(renderer, 0, i == 0);

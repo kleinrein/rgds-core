@@ -105,7 +105,7 @@ def game_entry(path, system):
     if system == "dos" and path.suffix.lower() == ".zip": return path.name, path.stat().st_size, ""  # a zipped folder
     if path.suffix.lower() == ".zip":
         from play_options import SYSTEMS as SUFFIXES
-        suffixes = {s for values in SUFFIXES.values() for s in values} | {".nds", ".dsi"}
+        suffixes = {s for values in SUFFIXES.values() for s in values} | {".nds", ".dsi", ".srl", ".cia"}
         with zipfile.ZipFile(path) as archive:
             entries = [i for i in archive.infolist() if Path(i.filename).suffix.lower() in suffixes]
         if len(entries) != 1: raise NotFound("ZIP must contain one game.")
@@ -260,6 +260,9 @@ class ScreenScraperClient:
         )
 
     def artwork(self, rom, name_override=""):
+        # Whether ScreenScraper itself answered "no such game": a cover the public catalogs then lack is only
+        # remembered as unmatched (scraper.scrape) when both sources really said no.
+        self.unsure = bool(self.stopped)
         if not self.stopped:
             try:
                 jeu = self.game(rom, name_override)
@@ -276,6 +279,7 @@ class ScreenScraperClient:
             except ScraperError as error:
                 # Busy or closed for this game: the public catalogs answer it. Several in a row mean the service is
                 # down, and the rest of the run does not wait for it.
+                self.unsure = True
                 self.failures += 1
                 if self.failures >= FAILURE_LIMIT and not self.stopped: self.stopped = str(error)
         return self.public.artwork(rom, name_override)
@@ -286,9 +290,17 @@ class ScreenScraperInfo(GameInfo):
     def __init__(self, screenscraper, kinds):
         super().__init__(screenscraper.public, kinds)
         self.ss = screenscraper
+        self.pending_gametdb = None
 
     def prepare(self, roms, data_item, force=False):
-        pass  # no GameTDB download: ScreenScraper has the DS and 3DS details too
+        # GameTDB answers the DS and 3DS games ScreenScraper does not know (or cannot answer today). Read only
+        # when one of them first needs it: most runs never open the database.
+        self.pending_gametdb = (roms, data_item, force)
+
+    def gametdb(self):
+        if self.pending_gametdb is None: return
+        pending, self.pending_gametdb = self.pending_gametdb, None
+        super().prepare(*pending)
 
     def supports(self, system):
         return system in SYSTEMS or super().supports(system)
@@ -298,16 +310,28 @@ class ScreenScraperInfo(GameInfo):
         return super().process(rom, item, force)
 
     def jeu(self, rom, item):
-        if self.ss.stopped: raise NotFound(self.ss.stopped)
+        # Stopped (quota, closed account) is not "ScreenScraper has nothing": an error, so the game is asked again
+        # on the next run instead of being saved as missing.
+        if self.ss.stopped: raise ScraperError(self.ss.stopped)
         from library import read_fields
         return self.ss.game(rom, read_fields(item / "artwork.ini").get("match_title", ""))
+
+    @staticmethod
+    def fallback(error, ask):
+        """The public sources' answer; when ScreenScraper only failed, their "not found" stays a retryable error."""
+        try:
+            return ask()
+        except NotFound:
+            if isinstance(error, NotFound): raise
+            raise error from None
 
     def information(self, rom, system, code):
         try:
             jeu = self.jeu(rom, self.item)
-        except (NotFound, ScraperError):
-            if system in ("nds", "3ds") or not super().supports(system): raise
-            return super().information(rom, system, code)
+        except (NotFound, ScraperError) as error:
+            if system in ("nds", "3ds"): self.gametdb()
+            elif not super().supports(system): raise
+            return self.fallback(error, lambda: super(ScreenScraperInfo, self).information(rom, system, code))
         fields, synopses = information(jeu, jeu["_order"])
         if not any(fields.values()) and not synopses: raise NotFound("ScreenScraper has no details for this game.")
         return fields, synopses, "ScreenScraper"
@@ -315,12 +339,16 @@ class ScreenScraperInfo(GameInfo):
     def picture(self, item, kind, rom, system, name, code):
         try:
             raw = self.ss.media(self.jeu(rom, item), PICTURE_MEDIA[kind][0])
-        except NotFound:
+        except NotFound as error:
             if not super().supports(system): raise
-            return super().picture(item, kind, rom, system, name, code)
-        except ScraperError:
+            return self.fallback(
+                error, lambda: super(ScreenScraperInfo, self).picture(item, kind, rom, system, name, code)
+            )
+        except ScraperError as error:
             if not self.ss.stopped or not super().supports(system): raise
-            return super().picture(item, kind, rom, system, name, code)
+            return self.fallback(
+                error, lambda: super(ScreenScraperInfo, self).picture(item, kind, rom, system, name, code)
+            )
         image_to_bmp(raw, item / PICTURE_MEDIA[kind][1])
 
 

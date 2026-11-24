@@ -25,6 +25,8 @@ struct Profile {
     fs::path root;
     int picture = 0, colour = -1;
     bool restricted = false;
+    // A Little kid profile (restricted too): no menus at all, one big-picture wall of its games (kid_home_screen.hpp).
+    bool simple = false;
     bool all_games = false; // Games opens every game in one list, not the Systems step (its ui.ini)
     std::string language;   // its menus' language (its ui.ini); empty until read
     bool music = false;     // its Music player switch (its ui.ini); on a Kid profile only the owner changes it
@@ -190,6 +192,7 @@ public:
             profile.name = values["name"].empty() ? id : values["name"];
             profile.picture = std::atoi(values["picture"].c_str());
             profile.restricted = values["restricted"] == "1";
+            profile.simple = profile.restricted && values["simple"] == "1";
             if (!values["age"].empty()) profile.age = std::atoi(values["age"].c_str());
             profile.unrated_hidden = values["unrated"] == "hide";
             profile.allow_ports = values["ports"] == "1";
@@ -259,7 +262,7 @@ public:
 
     // A new profile: its own empty saves, the owner's look to start from, its own name for DS games and PictoChat.
     // The index comes last, so a power cut leaves either nothing new or a whole profile.
-    std::string add(const std::string& wanted, bool restricted, int picture) {
+    std::string add(const std::string& wanted, bool restricted, int picture, bool simple = false) {
         const auto name = profile_clean_name(wanted);
         if (name.empty() || !can_add()) return {};
         const auto id = next_id();
@@ -277,7 +280,10 @@ public:
                                                      {"name", name},
                                                      {"picture", std::to_string(picture)},
                                                      {"restricted", restricted ? "1" : "0"},
-                                                     {"age", restricted ? "7" : "-1"},
+                                                     {"simple", restricted && simple ? "1" : "0"},
+                                                     {"age", simple       ? "3"
+                                                             : restricted ? "7"
+                                                                          : "-1"},
                                                      {"unrated", restricted ? "hide" : "show"}};
         const auto ds_name = profile_ds_name(name);
         if (!profile_write_fields(root / "profile.ini", values) ||
@@ -321,6 +327,7 @@ public:
             values["name"] = profile_clean_name(changed.name);
             values["picture"] = std::to_string(changed.picture);
             values["restricted"] = changed.restricted ? "1" : "0";
+            values["simple"] = changed.restricted && changed.simple ? "1" : "0";
             values["age"] = std::to_string(changed.age);
             values["unrated"] = changed.unrated_hidden ? "hide" : "show";
             values["ports"] = changed.allow_ports ? "1" : "0";

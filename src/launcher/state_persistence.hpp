@@ -11,11 +11,15 @@ void App::restore_state() {
         std::istringstream row(navigation_line);
         std::string marker;
         int category = 1;
-        if (row >> marker >> category && marker == "home" && category >= 0 && category < int(home_count)) {
+        if (row >> marker >> category && marker == "home" && category >= 0 && category <= 12) {
             saved_home = true;
             home_menu = true;
-            // The file keeps the numbers from before the Sound toy: 6 is the last played game, 7 the toy.
-            home_selected = category == 6 ? last_played_tile : category == 7 ? 6 : size_t(category);
+            // The file keeps the numbers from before the Sound toy: 6 is the last played game, 7 the toy. Tiles 6 and
+            // up since Album and Files (2026-11-24) are written as 10 and up.
+            home_selected = category == 6    ? last_played_tile
+                            : category == 7  ? toy_tile()
+                            : category >= 10 ? size_t(category - 4)
+                                             : size_t(category);
         }
     }
     std::ifstream file(o.state);
@@ -74,7 +78,7 @@ void App::restore_state() {
          page == int(Page::DisplayOptions) || page == int(Page::Bluetooth) || page == int(Page::Homebrew) ||
          page == int(Page::Achievements)) &&
         page != int(Page::Keyboard) && page != int(Page::QuickMenu) && page != int(Page::LeaveGame) &&
-        page != int(Page::Confirm) && section >= 0 && section <= 11 && focus >= 0 &&
+        page != int(Page::Confirm) && section >= 0 && section <= 12 && focus >= 0 &&
         focus <= (page == int(Page::Motion)           ? 3
                   : page == int(Page::Timezone)       ? int(timezones.size()) - 1
                   : page == int(Page::Maintenance)    ? 7
@@ -144,7 +148,12 @@ void App::save_state() {
         if (settings.page == Page::Controls)
             file << "controls " << controls_per_game << ' ' << int(controls_return) << '\n';
         if (home_menu && !o.game_menu)
-            file << "home " << (home_selected == last_played_tile ? 6 : home_selected == 6 ? 7 : home_selected) << '\n';
+            file << "home "
+                 << (home_selected == last_played_tile ? 6
+                     : toy_at(home_selected)           ? 7
+                     : home_selected >= 6              ? home_selected + 4
+                                                       : home_selected)
+                 << '\n';
         file.close();
         if (!file) throw std::runtime_error("Cannot save launcher state");
         fs::rename(pending, o.state);

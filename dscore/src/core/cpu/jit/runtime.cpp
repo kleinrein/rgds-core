@@ -188,6 +188,7 @@ void kill_block(JitCpu& jc, Block* b) {
   const u32 idx = (b->key >> 1) & (LUT_SIZE - 1);
   if (static_cast<u32>(jc.lut[idx]) == b->key) jc.lut[idx] = LUT_EMPTY_KEY;
   jc.blocks.erase(b->key);
+  if (u32& n = jc.region_live[key_pc(b->key) >> 24]) --n;
   g_rt.stats.blocks_invalidated++;
 }
 
@@ -214,6 +215,7 @@ void reset_arena() {
     jc.all_blocks.clear();
     jc.blocks.clear();
     jc.parked.clear();
+    std::memset(jc.region_live, 0, sizeof jc.region_live);
     if (jc.lut)
       for (u32 i = 0; i < LUT_SIZE; ++i) jc.lut[i] = LUT_EMPTY_KEY;
   }
@@ -383,6 +385,7 @@ static void register_block(JitCpu& jc, Block* b) {
     v.add(b, lo, hi);
   }
   jc.blocks[b->key] = b;
+  ++jc.region_live[pc >> 24];
   lut_insert(jc, b);
 }
 
@@ -927,10 +930,30 @@ bool attach(NDS& nds, bool arm9, bool arm7) {
     r.stubs_fast = g_fast_timing;
   }
   if (!r.arena) {
-    void* p = mmap(nullptr, ARENA_BYTES, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    // Hot code spans over a megabyte of the arena, far past the instruction
+    // TLB's reach in 4 KB pages, so block entries stall on iTLB misses: the
+    // arena is 2 MB aligned and asks for transparent huge pages (DS_JIT_HUGE=0: not).
+    static const bool huge = [] {
+      const char* e = std::getenv("DS_JIT_HUGE");
+      return !e || std::atoi(e) != 0;
+    }();
+    constexpr size_t HUGE_ALIGN = size_t{2} << 20;
+    const size_t span = huge ? ARENA_BYTES + HUGE_ALIGN : ARENA_BYTES;
+    void* p = mmap(nullptr, span, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (p == MAP_FAILED) {
       std::fprintf(stderr, "jit: cannot map code arena\n");
       return false;
+    }
+    if (huge) {
+      u8* const raw = static_cast<u8*>(p);
+      u8* const aligned =
+          reinterpret_cast<u8*>((reinterpret_cast<uintptr_t>(raw) + HUGE_ALIGN - 1) & ~(HUGE_ALIGN - 1));
+      if (aligned > raw) munmap(raw, static_cast<size_t>(aligned - raw));
+      if (u8* const end = aligned + ARENA_BYTES; end < raw + span) munmap(end, static_cast<size_t>(raw + span - end));
+      p = aligned;
+#ifdef MADV_HUGEPAGE
+      madvise(p, ARENA_BYTES, MADV_HUGEPAGE);
+#endif
     }
     r.arena = static_cast<u8*>(p);
     r.cap = ARENA_BYTES;
@@ -1008,6 +1031,29 @@ void detach(NDS& nds) {
 
 void flush(CpuContext& cpu) {
   if (cpu.jit) invalidate_cpu(*static_cast<JitCpu*>(cpu.jit));
+}
+
+void remapped(CpuContext& cpu, u32 lo, u32 hi) {
+  if (!cpu.jit) return;
+  JitCpu& jc = *static_cast<JitCpu*>(cpu.jit);
+  u32 any = 0;
+  for (u32 r = lo >> 24; r <= hi >> 24; ++r) any |= jc.region_live[r];
+  if (!any) return;
+  u64 killed = 0;
+  for (Block* b : jc.all_blocks) {
+    if (b->dead) continue;
+    const u32 pc = key_pc(b->key);
+    if (pc > hi || static_cast<u64>(pc) + b->guest_len - 1 < lo) continue;
+    // As register_block took them: the host bytes of the block's first and last guest byte.
+    const bool span = b->span_hi != 0;
+    if (jc.ctx->page_table.read_ptr(span ? b->span_lo : pc) == b->host_lo &&
+        jc.ctx->page_table.read_ptr(span ? b->span_hi : pc + b->guest_len - 1) == b->host_hi)
+      continue;
+    remove_from_page_lists(b);
+    kill_block(jc, b); // parked: it comes back only if the address shows its bytes again
+    ++killed;
+  }
+  if (killed) jc.ctx->hot.alerts |= ALERT_INVALIDATED;
 }
 void flush_all() { reset_arena(); }
 void set_trace(bool on) {

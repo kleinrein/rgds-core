@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -33,7 +34,9 @@ type Ready struct {
 	Name    string `json:"name"`
 	Model   string `json:"model"`
 	Version string `json:"version"`
-	Size    int64  `json:"size"` // unpacked: what gets written
+	Size    int64  `json:"size"`   // unpacked: what the card needs
+	Writes  int64  `json:"writes"` // what the flash writes and reads back (plan.go)
+	Signed  bool   `json:"signed"` // checked against RG DS's signature (sign.go)
 	path    string
 }
 
@@ -53,6 +56,7 @@ type State struct {
 	Image     *Ready   `json:"image"`
 	Disk      *Disk    `json:"disk"`
 	Carried   *Carried `json:"carried,omitempty"`
+	CardCopy  string   `json:"cardCopy,omitempty"` // the whole-card backup this flash made (backup.go)
 	Busy      bool     `json:"busy"`
 	Log       string   `json:"log"`
 }
@@ -69,6 +73,8 @@ type server struct {
 	lastSeen time.Time
 	rateAt   time.Time
 	rateDone int64
+	finish   func(error)     // how the worker's job ends (run)
+	flashed  map[string]bool // images that went onto a card this run: downloaded ones go when the flasher closes
 }
 
 func randomToken() string {
@@ -113,29 +119,67 @@ func serve(local string, withWindow bool) error {
 	})
 	go s.loadRelease()
 	go s.watchLifetime()
-	var browser *window
-	if withWindow {
-		if browser = openWindow(s.base); browser != nil {
-			go func() { // a browser that started but never showed the page (a snap without access to its profile)
-				time.Sleep(15 * time.Second)
-				if !s.everConnected() {
-					logf("no window after 15 s; opening the default browser")
-					openDefault(s.base)
-				}
-			}()
-		}
-	} else {
+	errc := make(chan error, 1)
+	go func() { errc <- http.Serve(ln, mux) }()
+	if !withWindow {
 		fmt.Println(s.base)
+		go s.exitOnQuit(nil)
+		return <-errc
 	}
-	go func() {
-		<-quit
-		s.waitForPages(2 * time.Second)
-		if browser != nil {
-			browser.close()
+	if nativeWindow(s.base, s) { // the Mac's own window; it runs until the program ends
+		return nil
+	}
+	browser := openWindow(s.base)
+	if browser != nil {
+		go func() { // a browser that started but never showed the page (a snap without access to its profile)
+			time.Sleep(15 * time.Second)
+			if !s.everConnected() {
+				logf("no window after 15 s; opening the default browser")
+				openDefault(s.base)
+			}
+		}()
+	}
+	go s.exitOnQuit(browser)
+	return <-errc
+}
+
+// exitOnQuit ends the program on Close or a closed window, the browser window with it.
+func (s *server) exitOnQuit(browser *window) {
+	<-quit
+	s.waitForPages(2 * time.Second)
+	if browser != nil {
+		browser.close()
+	}
+	s.shutdown()
+	os.Exit(0)
+}
+
+// shutdown tidies up as the program ends: a release image that went onto a card this run is removed, so the flasher
+// leaves nothing big behind (the next card downloads it again). Not while a card is being written.
+func (s *server) shutdown() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.st.Busy {
+		return
+	}
+	for path := range s.flashed {
+		if filepath.Dir(path) != cacheDir() {
+			continue // a --image file or a backup: the person's own
 		}
-		os.Exit(0)
-	}()
-	return http.Serve(ln, mux)
+		for _, p := range []string{path, path + ".sha256", path + ".sig"} {
+			os.Remove(p)
+		}
+		logf("removed the downloaded image %s", filepath.Base(path))
+	}
+	s.flashed = nil
+}
+
+// dropPreset removes the setup answers of a flash that is over or never started: they hold the Wi-Fi key.
+func dropPreset(path string) {
+	if path != "" {
+		os.Remove(path)
+		os.Remove(filepath.Join(filepath.Dir(path), "carry-preset.tar.gz"))
+	}
 }
 
 var (
@@ -266,6 +310,11 @@ func (s *server) loadRelease() {
 	} else {
 		rel, err = fetchRelease(context.Background())
 	}
+	if backups := listBackups(); rel != nil {
+		rel.Backups = backups
+	} else if len(backups) > 0 { // offline with nothing saved: a backup can still go back on a card
+		rel, err = &Release{Offline: true, Backups: backups}, nil
+	}
 	s.mu.Lock()
 	s.st.Loading = false
 	if err != nil {
@@ -339,8 +388,10 @@ func (s *server) api(w http.ResponseWriter, r *http.Request, name string) {
 		Model   string `json:"model"`
 		Disk    string `json:"disk"`
 		Confirm string `json:"confirm"`
-		Keep    bool   `json:"keep"`  // bring the old system's saves along (carry.go)
-		Games   bool   `json:"games"` // and copy its games to this computer
+		Keep    bool   `json:"keep"`   // bring the old system's saves along (carry.go)
+		Games   bool   `json:"games"`  // and copy its games to this computer
+		Backup  bool   `json:"backup"` // copy the whole card to this computer first (backup.go)
+		Preset  Preset `json:"preset"` // setup answers for the first start (preset.go)
 		update
 	}
 	if r.Method == "POST" {
@@ -404,11 +455,11 @@ func (s *server) api(w http.ResponseWriter, r *http.Request, name string) {
 		s.mu.Unlock()
 		reply(nil)
 	case name == "flash":
-		reply(s.startFlash(req.Disk, req.Confirm, req.Keep, req.Games))
+		reply(s.startFlash(req.Disk, req.Confirm, req.Keep, req.Games, req.Backup, req.Preset))
 	case name == "backup":
 		s.mu.Lock()
-		folder := ""
-		if s.st.Carried != nil {
+		folder := s.st.CardCopy
+		if s.st.Carried != nil && s.st.Carried.Folder != "" {
 			folder = s.st.Carried.Folder
 		}
 		s.mu.Unlock()
@@ -432,7 +483,7 @@ func (s *server) api(w http.ResponseWriter, r *http.Request, name string) {
 	case name == "again":
 		s.mu.Lock()
 		if !s.st.Busy {
-			s.st.Carried = nil
+			s.st.Carried, s.st.CardCopy = nil, ""
 		}
 		if !s.st.Busy && s.st.Image != nil {
 			s.st.Phase, s.st.Error, s.st.Disk = "ready", "", nil
@@ -460,9 +511,11 @@ func (s *server) prepare(modelName string) error {
 		return errors.New("no release loaded")
 	}
 	var img *Image
-	for i := range s.st.Release.Images {
-		if s.st.Release.Images[i].Model == modelName {
-			img = &s.st.Release.Images[i]
+	for _, list := range [][]Image{s.st.Release.Images, s.st.Release.Backups} {
+		for i := range list {
+			if list[i].Model == modelName {
+				img = &list[i]
+			}
 		}
 	}
 	if img == nil {
@@ -474,10 +527,10 @@ func (s *server) prepare(modelName string) error {
 	version := s.st.Release.Version
 	go func(img Image) {
 		defer keepAwake()()
-		path, err := fetchImage(ctx, img, s.progress)
-		var size int64
+		path, signed, err := fetchImage(ctx, img, s.progress)
+		var plan *Plan
 		if err == nil {
-			size, err = unpackedSize(path)
+			plan, err = planFor(path, s.progress)
 		}
 		if err != nil {
 			s.fail("download", err)
@@ -490,7 +543,14 @@ func (s *server) prepare(modelName string) error {
 				s.st.Release.Images[i] = img
 			}
 		}
-		s.st.Image = &Ready{Name: img.Name, Model: img.Model, Version: version, Size: size, path: path}
+		writes := plan.Written
+		if plan.write == nil {
+			writes = plan.Total
+		}
+		if strings.HasPrefix(img.Model, "backup:") {
+			version = ""
+		}
+		s.st.Image = &Ready{Name: img.Name, Model: img.Model, Version: version, Size: plan.Total, Writes: writes, Signed: signed, path: path}
 		s.st.Phase, s.st.Busy, s.cancel = "ready", false, nil
 		s.mu.Unlock()
 		s.notify()
@@ -499,26 +559,34 @@ func (s *server) prepare(modelName string) error {
 	return nil
 }
 
-func (s *server) startFlash(id, confirm string, keep, games bool) error {
+func (s *server) startFlash(id, confirm string, keep, games, backup bool, preset Preset) error {
 	if id == "" || confirm != id {
 		return errors.New("not confirmed; nothing was written")
+	}
+	presetPath, err := savePreset(preset) // a bad answer stops here, before anything happens to the card
+	if err != nil {
+		return err
 	}
 	s.mu.Lock()
 	if s.st.Busy || s.st.Image == nil {
 		s.mu.Unlock()
 		return errors.New("the image is not ready")
 	}
-	image := s.st.Image.path
+	job := Job{Image: s.st.Image.path, Disk: id, Preset: presetPath}
 	s.st.Busy, s.st.Error, s.st.Phase, s.st.Done, s.st.Total = true, "", "prepare", 0, 0
 	s.mu.Unlock()
 	s.notify()
 	d, err := findDisk(id)
 	if err != nil {
+		dropPreset(presetPath)
 		s.idle()
 		return err
 	}
+	if backup {
+		job.Backup = backupPath(d.Name)
+	}
 	s.mu.Lock()
-	s.st.Disk, s.st.Carried = &d, nil
+	s.st.Disk, s.st.Carried, s.st.CardCopy = &d, nil, job.Backup
 	s.mu.Unlock()
 	if keep && d.Carry != nil {
 		// The old card's saves (and games) to this computer first, while it is still mounted; then the flash
@@ -526,6 +594,7 @@ func (s *server) startFlash(id, confirm string, keep, games bool) error {
 		go func() {
 			folder, bundle, err := keepCarry(d.Carry, games, s.progress)
 			if err != nil {
+				dropPreset(presetPath)
 				s.fail("flash", err)
 				return
 			}
@@ -536,17 +605,19 @@ func (s *server) startFlash(id, confirm string, keep, games bool) error {
 			s.mu.Lock()
 			s.st.Carried = &Carried{Folder: folder, OnCard: true, Games: copied, GamesLeft: d.Carry.Games - copied}
 			s.mu.Unlock()
-			if err := s.run(id, image, bundle); err != nil {
+			job.Carry = bundle
+			if err := s.run(job); err != nil {
+				dropPreset(presetPath)
 				s.fail("flash", err)
 			}
 		}()
 		return nil
 	}
-	declined := ""
 	if d.Carry != nil { // its saves were offered and left unticked: the flash brings none, DS saves included
-		declined = "-"
+		job.Carry = "-"
 	}
-	if err := s.run(id, image, declined); err != nil {
+	if err := s.run(job); err != nil { // the worker never started (Windows' permission prompt said No)
+		dropPreset(presetPath)
 		s.idle()
 		return err
 	}
@@ -554,29 +625,44 @@ func (s *server) startFlash(id, confirm string, keep, games bool) error {
 }
 
 // run writes the card: here when this process may, otherwise in the elevated worker.
-func (s *server) run(id, image, carry string) error {
+func (s *server) run(j Job) error {
 	finish := func(err error) {
+		dropPreset(j.Preset) // only as long as the flash needs it
 		if err != nil {
+			s.mu.Lock()
+			if j.Backup != "" && !isFile(j.Backup) {
+				s.st.CardCopy = ""
+			}
+			s.mu.Unlock()
 			s.fail("flash", err)
 			return
 		}
 		s.mu.Lock()
 		s.st.Phase, s.st.Busy, s.job = "done", false, ""
+		if s.flashed == nil {
+			s.flashed = map[string]bool{}
+		}
+		s.flashed[j.Image] = true
+		if j.Backup != "" && s.st.Release != nil { // the new backup can go back from the first step
+			s.st.Release.Backups = listBackups()
+		}
 		s.mu.Unlock()
 		s.notify()
 	}
-	if inProcess(id) {
-		go func() { finish(flash(image, id, carry, s.progress)) }()
+	if inProcess(j.Disk) {
+		go func() { finish(flash(j, s.progress)) }()
 		return nil
 	}
 	job := randomToken()
 	s.mu.Lock()
-	s.job = job
+	s.job, s.finish = job, finish
 	s.mu.Unlock()
 	// This blocks while Windows shows its admin prompt, so the lock is not held here.
-	args := []string{"--worker", "--report", s.base + "api/worker/" + job, "--disk", id, "--image", image, "--log", logPath()}
-	if carry != "" {
-		args = append(args, "--carry", carry)
+	args := []string{"--worker", "--report", s.base + "api/worker/" + job, "--disk", j.Disk, "--image", j.Image, "--log", logPath()}
+	for flag, value := range map[string]string{"--carry": j.Carry, "--backup": j.Backup, "--preset": j.Preset} {
+		if value != "" {
+			args = append(args, flag, value)
+		}
 	}
 	wait, err := startWorker(args)
 	if err != nil {
@@ -613,13 +699,18 @@ func (s *server) workerUpdate(job string, u update) {
 		return
 	}
 	switch u.Phase {
-	case "error":
-		s.fail("flash", errors.New(u.Error))
-	case "done":
+	case "error", "done":
 		s.mu.Lock()
-		s.st.Phase, s.st.Busy, s.job = "done", false, ""
+		finish := s.finish
+		s.job, s.finish = "", nil
 		s.mu.Unlock()
-		s.notify()
+		var err error
+		if u.Phase == "error" {
+			err = errors.New(u.Error)
+		}
+		if finish != nil {
+			finish(err)
+		}
 	default:
 		s.progress(u.Phase, u.Done, u.Total)
 	}

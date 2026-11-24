@@ -116,7 +116,8 @@ private:
     std::vector<u32> thumb;
     std::vector<u8> state;
   };
-  static size_t size_of(const Stored& s) { return s.state.size() + s.thumb.size() * 4; }
+  // What a moment holds in memory (capacity, not size: the budget is real RAM).
+  static size_t size_of(const Stored& s) { return s.state.capacity() + s.thumb.capacity() * 4; }
 
   static void make_thumb(const u32* const screen[2], const int w[2], const int h[2], std::vector<u32>& out) {
     out.assign(static_cast<size_t>(thumb_w) * thumb_h, 0xFF000000u);
@@ -138,7 +139,11 @@ private:
   u32 take(const Save& save, const u32* const screen[2], const int w[2], const int h[2]) {
     const auto t0 = std::chrono::steady_clock::now();
     auto stored = std::make_unique<Stored>();
-    if (!save(stored->state) || stored->state.empty()) return 0;
+    stored->state.swap(spare_); // the last evicted moment's buffer, written into again
+    if (!save(stored->state) || stored->state.empty()) {
+      spare_.swap(stored->state);
+      return 0;
+    }
     stored->info.id = next_id_++;
     stored->info.parent = head_;
     stored->info.position = position_;
@@ -168,6 +173,7 @@ private:
       for (auto& [id, s] : moments_)
         if (s->info.parent == gone) s->info.parent = parent;
       kept_ -= size_of(*victim->second);
+      if (victim->second->state.capacity() > spare_.capacity()) spare_.swap(victim->second->state);
       moments_.erase(victim);
     }
   }
@@ -177,6 +183,7 @@ private:
   size_t budget_ = 0, kept_ = 0;
   u32 next_id_ = 1, head_ = 0, protected_ = 0;
   std::map<u32, std::unique_ptr<Stored>> moments_;
+  std::vector<u8> spare_; // one evicted state's buffer, kept for the next take (outside the budget: one state)
   u64 taken_ = 0;
   double take_ms_ = 0, take_max_ms_ = 0;
 };

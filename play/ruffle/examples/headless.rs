@@ -10,8 +10,10 @@
 //! (mean and worst); RGDS_FLASH_LOG works as in the player.
 //!
 //! Scripted play, to time a game past its title: HEADLESS_TAPS="FRAME:X,Y;..." touches the picture at X, Y (0-1 of its
-//! width and height) for 4 frames from FRAME; HEADLESS_HOLD="FRAME:ID;..." holds joypad button ID (libretro's, 4 = up)
-//! from FRAME on; HEADLESS_SHOTS="FRAME,..." writes shot-FRAME.ppm (with HEADLESS_SHOT's folder, or the current one).
+//! width and height) for 4 frames from FRAME; HEADLESS_DRAGS="FROM-TO:X,Y>X2,Y2;..." keeps a finger down from frame
+//! FROM until TO, sliding from the first place to the second (a held mouse button); HEADLESS_HOLD="FRAME:ID;..." holds
+//! joypad button ID (libretro's, 4 = up) from FRAME on, "FROM-TO:ID" until TO; HEADLESS_SHOTS="FRAME,..." writes
+//! shot-FRAME.ppm (with HEADLESS_SHOT's folder, or the current one).
 
 use std::ffi::{CString, c_uint, c_void};
 use std::os::raw::c_char;
@@ -23,8 +25,9 @@ use ruffle_libretro::libretro as lr;
 use ruffle_libretro::*;
 
 static FRAME: AtomicUsize = AtomicUsize::new(0);
-static TAPS: std::sync::OnceLock<Vec<(usize, f64, f64)>> = std::sync::OnceLock::new();
-static HOLDS: std::sync::OnceLock<Vec<(usize, u32)>> = std::sync::OnceLock::new();
+/// A finger on the picture: from a frame until another, sliding from one place to a second.
+static TAPS: std::sync::OnceLock<Vec<(usize, usize, (f64, f64), (f64, f64))>> = std::sync::OnceLock::new();
+static HOLDS: std::sync::OnceLock<Vec<(usize, usize, u32)>> = std::sync::OnceLock::new();
 static PICTURES: AtomicUsize = AtomicUsize::new(0);
 static SAVE: std::sync::OnceLock<CString> = std::sync::OnceLock::new();
 static RESET: Mutex<Option<lr::HwContextResetFn>> = Mutex::new(None);
@@ -238,15 +241,19 @@ unsafe extern "C" fn state(_port: c_uint, device: c_uint, _index: c_uint, id: c_
     let frame = FRAME.load(Ordering::Relaxed);
     match device {
         lr::DEVICE_POINTER => {
-            let tap = TAPS.get().and_then(|t| t.iter().find(|(at, _, _)| frame >= *at && frame < at + 4));
-            let Some(&(_, x, y)) = tap else { return if id == lr::POINTER_PRESSED { 0 } else { -0x8000 } };
+            let tap = TAPS.get().and_then(|t| t.iter().find(|(from, to, _, _)| frame >= *from && frame < *to));
+            let Some(&(from, to, a, b)) = tap else { return if id == lr::POINTER_PRESSED { 0 } else { -0x8000 } };
+            let along = (frame - from) as f64 / (to - from).saturating_sub(1).max(1) as f64;
+            let (x, y) = (a.0 + (b.0 - a.0) * along, a.1 + (b.1 - a.1) * along);
             match id {
                 lr::POINTER_X => (x * 65535.0 - 32767.0) as i16,
                 lr::POINTER_Y => (y * 65535.0 - 32767.0) as i16,
                 _ => 1,
             }
         }
-        lr::DEVICE_JOYPAD => HOLDS.get().is_some_and(|h| h.iter().any(|&(at, b)| frame >= at && b == id)) as i16,
+        lr::DEVICE_JOYPAD => {
+            HOLDS.get().is_some_and(|h| h.iter().any(|&(from, to, b)| frame >= from && frame < to && b == id)) as i16
+        }
         _ => 0,
     }
 }
@@ -269,12 +276,30 @@ fn main() {
         eprintln!("usage: headless GAME.swf|GAME.zip [FRAMES] [SAVE_DIR]");
         std::process::exit(2);
     };
-    TAPS.set(script("HEADLESS_TAPS", |f, xy| {
+    let place = |xy: &str| {
         let (x, y) = xy.split_once(',')?;
-        Some((f.parse().ok()?, x.parse().ok()?, y.parse().ok()?))
-    }))
-    .unwrap();
-    HOLDS.set(script("HEADLESS_HOLD", |f, id| Some((f.parse().ok()?, id.parse().ok()?)))).unwrap();
+        Some((x.trim().parse::<f64>().ok()?, y.trim().parse::<f64>().ok()?))
+    };
+    let span = |f: &str| match f.split_once('-') {
+        Some((from, to)) => Some((from.trim().parse::<usize>().ok()?, to.trim().parse::<usize>().ok()?)),
+        None => Some((f.parse::<usize>().ok()?, usize::MAX)),
+    };
+    let mut touches = script("HEADLESS_TAPS", |f, xy| {
+        let (at, xy) = (f.parse::<usize>().ok()?, place(xy)?);
+        Some((at, at + 4, xy, xy))
+    });
+    touches.extend(script("HEADLESS_DRAGS", |f, path| {
+        let (from, to) = span(f)?;
+        let (a, b) = path.split_once('>').unwrap_or((path, path));
+        Some((from, to, place(a)?, place(b)?))
+    }));
+    TAPS.set(touches).unwrap();
+    HOLDS
+        .set(script("HEADLESS_HOLD", |f, id| {
+            let (from, to) = span(f)?;
+            Some((from, to, id.parse().ok()?))
+        }))
+        .unwrap();
     let shots: Vec<usize> = std::env::var("HEADLESS_SHOTS")
         .unwrap_or_default()
         .split(',')

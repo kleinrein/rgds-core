@@ -3,6 +3,7 @@
 //
 // Thumb-state executor (Thumb v2 on the ARM9: BLX, BKPT). Each handler
 // charges its cycles where melonDS does.
+#include "core/cpu/block_xfer.h"
 #include "core/cpu/interp/interp_internal.h"
 
 namespace ds::interp {
@@ -352,7 +353,7 @@ void exec_thumb(CpuContext& cpu, u16 instr) {
       bool first = true;
       for (u32 i = 0; i < 8; ++i)
         if (list & (1u << i)) {
-          mem_write32(cpu, addr, (i == rb && !first) ? wb : R(cpu, i), !first);
+          mem_write32(cpu, addr, (i == rb && cpu::stm_stores_new_base(is_arm9(cpu), first)) ? wb : R(cpu, i), !first);
           addr += 4;
           first = false;
         }

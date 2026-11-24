@@ -4,7 +4,8 @@
     python3 tools/own_os_build.py                      # the image, .cache/own-os/build/
     python3 tools/own_os_release.py --version 0.8.0 [--notes notes.txt] [--channel stable] [--upload]
 
-writes dist/release-os/<version>/: the card image for new installs (RG-DS-OS-<version>.img.gz and its .sha256),
+writes dist/release-os/<version>/: the card image for new installs (RG-DS-OS-<version>.img.gz, its .sha256, and its
+.sig, a note naming the image, its size and sha256, signed with the release key: RG DS Flasher checks it, flasher/sign.go),
 RG-DS-OS-Plus-<version>.img.gz (the card fixed to the RG DS Plus, should its detection pick wrong),
 the update RG-DS-OS-<build>.zip (rootfs.squashfs, Image.lz4, the device trees, extlinux.conf and manifest.json under
 <build>/), <channel>-os.json, the feed signed with the key tools/release.py init made,
@@ -16,6 +17,7 @@ with it, it runs that command: the release is created as a draft, and nothing is
 GitHub.
 """
 import argparse
+import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -100,6 +102,31 @@ def sources(build, version, out):
     return archive
 
 
+def unpacked_size(image):
+    """The raw image's size, by unpacking it (gzip's own size field wraps at 4 GiB)."""
+    size = 0
+    with gzip.open(image, 'rb') as f:
+        for block in iter(lambda: f.read(1 << 22), b''):
+            size += len(block)
+    return size
+
+
+def sign_card_image(image, version, digest, key, key_id):
+    """<image>.sig: what RG DS Flasher checks before it writes a card (flasher/sign.go, cardNote)."""
+    note = dict(
+        schema=1,
+        kind='rgds-card-image',
+        name=image.name,
+        version=version,
+        size=image.stat().st_size,
+        unpacked=unpacked_size(image),
+        sha256=digest
+    )
+    sig = image.with_name(image.name + '.sig')
+    sign(note, key, key_id, sig)
+    return sig
+
+
 def flasher(out):
     """The card flasher players use instead of Etcher; it always fetches the latest release, so any build works."""
     subprocess.run([str(FLASHER / 'build.sh'), '--test'], check=True)
@@ -164,7 +191,8 @@ def main():
         shutil.copyfile(BUILD / source, image)
         digest = hashlib.sha256(image.read_bytes()).hexdigest()
         image.with_name(image.name + '.sha256').write_text(f'{digest}  {image.name}\n')
-        images += [image, image.with_name(image.name + '.sha256')]
+        sig = sign_card_image(image, args.version, digest, key, key_id)
+        images += [image, image.with_name(image.name + '.sha256'), sig]
     image = images[0]
     tag = 'v' + args.version
     now = int(time.time())

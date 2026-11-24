@@ -314,6 +314,7 @@ void App::poll_service(Uint32 now) {
         device_status["message"] = "This request did not finish. Please try again.";
         dirty = true;
     }
+    worker_finished_toast(now);
     if (worker <= 0 && worker_ok && (worker_action == "device.poweroff" || worker_action == "device.reboot") &&
         device_status["state"] == "ready") {
         system_exit_ack = !o.preview;

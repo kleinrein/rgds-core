@@ -6,12 +6,14 @@
 // Guest r0-r3/sp are pinned in r4-r8; others go through an LRU RegCache (host
 // r0-r3/r12), written back before anything can observe memory. Guest NZCVQ lives
 // in host APSR; conditionals are predicated. Rare ops go to the fallback stub.
+#include "core/cpu/block_xfer.h"
 #include "core/cpu/jit/jit_internal.h"
 #include "core/cpu/jit/a32/convention.h"
 #include "core/cpu/jit/a32/emit.h"
 #include "core/cpu/jit/block_shape.h"
 #include "core/cpu/arm_decode.h"
 #include "core/cpu/cpu_cycles.h"
+#include "core/cpu/timing_mode.h"
 #include "core/nds.h"
 
 #include <algorithm>
@@ -195,8 +197,9 @@ FlagUse arm_flag_use(u32 instr, bool a9) {
   case AOp::Mrs: u.reads = F_ALL; break;
   case AOp::MsrReg:
   case AOp::MsrImm:
-    u.reads = F_ALL;                          // mode-change path syncs CPSR via the interpreter
-    if (instr & (1u << 19)) u.writes = F_ALL; // f field
+    u.reads = F_ALL; // mode-change path syncs CPSR via the interpreter
+    if ((instr & (1u << 19)) && !(instr & (1u << 22)))
+      u.writes = F_ALL; // f field of the CPSR; MSR SPSR must not claim the flags
     break;
   case AOp::B:
   case AOp::Bl:
@@ -209,8 +212,10 @@ FlagUse arm_flag_use(u32 instr, bool a9) {
   case AOp::SmulXY:
   case AOp::SmlawY:
   case AOp::SmulwY:
-  case AOp::LdrStrImm:
   case AOp::LdrStrReg:
+    if (((instr >> 4) & 0xFF) == 0x06) u.reads |= F_C; // an RRX offset shifts the carry in
+    break;
+  case AOp::LdrStrImm:
   case AOp::LdrStrHImm:
   case AOp::LdrStrHReg:
   case AOp::Ldm:
@@ -416,6 +421,7 @@ private:
   u32 pc_ = 0;
   u32 live_ = F_ALL;
   Cond cond_ = AL;        // predication of the current instruction
+  u32 cur_raw_ = 0;       // the guest instruction being translated (fast timing's data cost)
   u32 pending_ = 0;       // static cycles not yet charged
   u32 charged_ahead_ = 0; // charged before a conditional body
   bool ended_ = false;
@@ -550,7 +556,7 @@ private:
     return static_cast<int>(mem::Timing::cost7_offset(code_region7_ == 0x02, cdi, static_cast<u32>(ni), word));
   }
   bool needs_fallback_cost7(u32 raw) const {
-    if (a9_) return false;
+    if (a9_ || g_fast_timing) return false; // fast timing charges a constant, no table slot needed
     if (thumb_) {
       switch (arm::decode_thumb(static_cast<u16>(raw))) {
       case TOp::LdrPcRel: return cost7_slot(true, true) < 0;
@@ -580,6 +586,21 @@ private:
       charged_ahead_ -= k;
     }
     pending_ += c;
+  }
+  // Fast timing: numC + n accesses at the constant data cost.
+  u32 fast_cost(u32 n) const { return numC_internal() + n * fast_data(cpu_, cur_raw_, thumb_); }
+  // Unpredicated, flag-neutral budget charge of a constant.
+  void charge_now(u32 c) {
+    if (!c) return;
+    u32 i;
+    if (encode_imm12(c, i)) {
+      e().dp_imm(SUB, false, R_BUDGET, R_BUDGET, i);
+      return;
+    }
+    const u32 t = cache_.temp();
+    e().mov_imm(t, c);
+    e().sub_reg(R_BUDGET, R_BUDGET, t);
+    cache_.release(t);
   }
   // Predicated on cond_.
   void flush_pending() {
@@ -831,11 +852,14 @@ private:
   // known at translate time (ARM9 pc-relative literal).
   void emit_single(Mem m, u32 a, u32 data, u32 rd, bool cdi, int const_nd = -1) {
     const bool load = is_load(m), word = is_word(m);
-    const bool const_cost = const_nd >= 0;
+    // Fast timing: numC + a constant, charged where the exact model charges
+    // (after the access), one instruction, no table load or combine.
+    const bool ftime = g_fast_timing;
+    const bool const_cost = const_nd >= 0 && !ftime;
     if (const_cost) add_pending(const_charge(static_cast<u32>(const_nd)));
     flush_pending();
-    const int slot7 = const_cost ? -1 : cost7_slot(cdi, word);
-    assert(a9_ || const_cost || slot7 >= 0);
+    const int slot7 = (const_cost || ftime) ? -1 : cost7_slot(cdi, word);
+    assert(a9_ || const_cost || ftime || slot7 >= 0);
     // Fastmem: no walk; a refused access faults into fm_cold_walk.
     const bool fast = fm_fast();
     const u32 f = fast ? 0xFFu : flags_begin();
@@ -911,7 +935,8 @@ private:
       e().strb(data, en, 0);
       break;
     }
-    if (!const_cost) {
+    if (ftime) charge_now(fast_cost(1));
+    else if (!const_cost) {
       const u32 c = cache_.temp();
       if (a9_) {
         emit_data_cost(a, c, en, word, false, !load);
@@ -935,13 +960,18 @@ private:
     cache_.restore(s0);
     cache_.writeback();
     emit_slow_args(a, load ? 0xFF : data);
+    if (load && !a9_) { // the ARM7's BIOS answers a read by where it comes from (Bus::io_read): cold code only
+      e().mov_imm(SCRATCH3, pc_ + (thumb_ ? 4 : 8));
+      e().str(SCRATCH3, R_CTX, off_reg(15));
+    }
     call_stub(load ? rt().slow_load[size_index(m)] : rt().slow_store[size_index(m)]);
     if (load) {
       emit_load_post(m, 0, 1, 2);
       if (const u32 h = pinned_host(rd); h != 0xFF) e().mov(h, 0);
       else e().str(0, R_CTX, off_reg(rd));
     }
-    if (!const_cost) {
+    if (ftime) charge_now(fast_cost(1));
+    else if (!const_cost) {
       if (a9_) {
         emit_data_cost(1, 2, 3, word, false, !load);
         emit_charge(2, 1, 3, SCRATCH4, cdi);
@@ -1017,7 +1047,8 @@ private:
         cache_.unlock(h);
         ++k;
       }
-      if (writeback && !(list & (1u << rn))) { // a loaded rn wins over the writeback
+      if (writeback &&
+          cpu::ldm_writeback_wins(a9_, thumb_, list, rn)) { // on the ARM7 a loaded rn wins over the writeback
         const u32 h = cache_.write(rn, false);
         e().mov(h, wv);
         cache_.unlock(h);
@@ -1031,7 +1062,7 @@ private:
           src = cache_.temp();
           e().mov_imm(src, pc_store_value);
           tmp = true;
-        } else if (i == rn && !first && writeback) src = wv;
+        } else if (i == rn && writeback && cpu::stm_stores_new_base(a9_, first)) src = wv;
         else src = cache_.read(i);
         e().str(src, en, 4 * k);
         if (tmp) cache_.release(src);
@@ -1048,19 +1079,27 @@ private:
     if (t_w != 0xFF) cache_.release(t_w);
     cache_.release(en);
     // cost: N + (n - 1) S
+    const bool ftime = g_fast_timing;
     if (pc_in_list) {
-      // CDI cost depends on the post-jump pc: charged by the stub.
-      const u32 c = cache_.temp(), t = cache_.temp();
-      emit_data_cost(a, c, t, true, false, false);
-      if (n > 1) {
-        const u32 c2 = cache_.temp();
-        emit_data_cost(a, c2, t, true, true, false);
-        e().mov_imm(t, n - 1);
-        e().mla(c, c2, t, c);
-        cache_.release(c2);
+      if (ftime) {
+        // Fast timing: the data cost now, the constant refill in the branch
+        // (charge_CDI_after_jump's fast form charges the data alone).
+        charge_now(n * fast_data(cpu_, cur_raw_, thumb_));
+        emit_branch_indirect(hpc, interwork_pc);
+      } else {
+        // CDI cost depends on the post-jump pc: charged by the stub.
+        const u32 c = cache_.temp(), t = cache_.temp();
+        emit_data_cost(a, c, t, true, false, false);
+        if (n > 1) {
+          const u32 c2 = cache_.temp();
+          emit_data_cost(a, c2, t, true, true, false);
+          e().mov_imm(t, n - 1);
+          e().mla(c, c2, t, c);
+          cache_.release(c2);
+        }
+        cache_.release(t);
+        emit_branch_indirect(hpc, interwork_pc, true, c, a);
       }
-      cache_.release(t);
-      emit_branch_indirect(hpc, interwork_pc, true, c, a);
       cold_begin(fail);
       if (f != 0xFF) e().msr_apsr_nzcvq(f);
       const size_t fb = cold_.size(); // walk failures enter here
@@ -1074,20 +1113,23 @@ private:
       }
       return;
     }
-    const u32 c = cache_.temp(), t = cache_.temp();
-    emit_data_cost(a, c, t, true, false, !load);
-    if (n > 1) {
-      const u32 c2 = cache_.temp();
-      emit_data_cost(a, c2, t, true, true, !load);
-      e().mov_imm(t, n - 1);
-      e().mla(c, c2, t, c);
-      cache_.release(c2);
+    if (ftime) charge_now(fast_cost(n));
+    else {
+      const u32 c = cache_.temp(), t = cache_.temp();
+      emit_data_cost(a, c, t, true, false, !load);
+      if (n > 1) {
+        const u32 c2 = cache_.temp();
+        emit_data_cost(a, c2, t, true, true, !load);
+        e().mov_imm(t, n - 1);
+        e().mla(c, c2, t, c);
+        cache_.release(c2);
+      }
+      const u32 t1 = cache_.temp();
+      emit_charge(c, a, t, t1, load);
+      cache_.release(t1);
+      cache_.release(t);
+      cache_.release(c);
     }
-    const u32 t1 = cache_.temp();
-    emit_charge(c, a, t, t1, load);
-    cache_.release(t1);
-    cache_.release(t);
-    cache_.release(c);
     const size_t join = hot_.size();
     const RegCache::State s1 = cache_.save();
     cold_begin(fail);
@@ -1211,7 +1253,17 @@ private:
   void emit_branch_indirect(u32 htarget, bool interwork, bool cdi = false, u32 hnumd = 0, u32 haddr = 0) {
     assert(cond_ == AL);
     cache_.flush(); // temps keep their values
-    flush_pending();
+    // The charge here, not through flush_pending: the flush above unlocked every slot, so a
+    // charge that is no immediate would take its temp from the slot holding the target.
+    if (pending_) {
+      u32 i;
+      if (encode_imm12(pending_, i)) e().dp_imm(SUB, false, R_BUDGET, R_BUDGET, i);
+      else {
+        e().mov_imm(R_LR, pending_);
+        e().sub_reg(R_BUDGET, R_BUDGET, R_LR);
+      }
+      pending_ = 0;
+    }
     if (cdi) {
       const u32 d[3] = {0, 1, 2}, sr[3] = {htarget, hnumd, haddr};
       emit_permute(d, sr, 3);
@@ -1294,6 +1346,36 @@ void Translator::arm_msr(u32 instr, AOp op) {
     wv = cache_.temp();
     e().mov_imm(wv, rotr(instr & 0xFF, ((instr >> 8) & 0xF) * 2));
   } else wv = cache_.read(instr & 0xF);
+  // MSR SPSR: one word of the context, no flags, no mode or bank change; skipped in USR/SYS, which have none.
+  if (instr & (1u << 22)) {
+    const u32 smask = ((fields & 1) ? 0x000000FFu : 0) | ((fields & 2) ? 0x0000FF00u : 0) |
+                      ((fields & 4) ? 0x00FF0000u : 0) | ((fields & 8) ? 0xFF000000u : 0);
+    add_pending(numC(pc_));
+    flush_pending();
+    if (!smask) return;
+    const u32 t2 = cache_.temp(), t3 = cache_.temp(), f = cache_.temp();
+    e().mrs_apsr(f); // the mode test below uses the host flags, which hold the guest's
+    e().ldr(t2, R_CTX, OFF_CPSR);
+    e().ubfx(t3, t2, 0, 5);
+    e().cmp_imm(t3, 0x10);
+    e().cmp_imm(t3, 0x1F, NE);
+    const size_t skip = e().b_fwd(EQ);
+    if (smask == 0xFFFFFFFFu) e().str(wv, R_CTX, OFF_SPSR);
+    else {
+      e().ldr(t2, R_CTX, OFF_SPSR);
+      e().mov_imm(t3, smask);
+      e().dp_reg(BIC, false, t2, t2, t3);
+      e().and_reg(t3, wv, t3);
+      e().orr_reg(t2, t2, t3);
+      e().str(t2, R_CTX, OFF_SPSR);
+    }
+    e().bind(skip);
+    e().msr_apsr_nzcvq(f);
+    cache_.release(t2);
+    cache_.release(t3);
+    cache_.release(f);
+    return;
+  }
   const u32 mem_mask = ((fields & 1) ? 0xC0u : 0) | ((fields & 2) ? 0xFF00u : 0) | ((fields & 4) ? 0xFF0000u : 0) |
                        ((fields & 8) ? 0x0F000000u : 0);
   const bool tests = (fields & 7) != 0;
@@ -1333,6 +1415,8 @@ void Translator::arm_msr(u32 instr, AOp op) {
     call_stub(rt().poll);
     e().word(make_key(pc_ + 4, thumb_));
   } // I may have changed
+  cache_.release(
+      wv); // the poll uses r0, r1 and r3: a cached source register is not in its slot any more (a pinned one is not a slot)
   cache_.release(t2);
   cache_.release(t3);
   if (f != 0xFF) cache_.release(f);
@@ -1407,7 +1491,7 @@ void Translator::arm_ldm_stm(u32 instr, bool load) {
   }
   e().and_imm(a, a, ~3u);
   u32 t_w = 0xFF;
-  if (w && !(!u && p)) { // db!: writeback = start address, no t_w
+  if (w) { // its own register: `a` is word-aligned below, the writeback is not
     t_w = cache_.temp();
     if (u) e().add_imm(t_w, hb, n * 4, t_w);
     else e().sub_imm(t_w, hb, n * 4, t_w);
@@ -1665,8 +1749,16 @@ void Translator::translate_arm(u32 instr, bool fb) {
   if (op == AOp::Bx || op == AOp::BlxReg) {
     const u32 rm = instr & 0xF;
     auto taken = [&] {
-      const u32 t = reg_read(rm, pc_ + 8);
-      if (op == AOp::BlxReg) e().mov_imm(cache_.write(14, false), pc_ + 4);
+      u32 t = reg_read(rm, pc_ + 8);
+      if (op == AOp::BlxReg) {
+        // blx lr: the target is lr's old value, and lr's slot is about to take the return address.
+        if (rm == 14) {
+          const u32 old = t;
+          t = cache_.temp();
+          e().mov(t, old);
+        }
+        e().mov_imm(cache_.write(14, false), pc_ + 4);
+      }
       emit_branch_indirect(t, true);
     };
     if (cond != 0xE) emit_branch_cond(cond, taken);
@@ -1980,8 +2072,15 @@ void Translator::translate_thumb(u16 instr, bool fb) {
   }
   case TOp::BxBlx: {
     const u32 rs = (instr >> 3) & 0xF;
-    const u32 t = reg_read(rs, pc_ + 4);
-    if (instr & (1 << 7)) e().mov_imm(cache_.write(14, false), (pc_ + 2) | 1);
+    u32 t = reg_read(rs, pc_ + 4);
+    if (instr & (1 << 7)) {
+      if (rs == 14) {
+        const u32 old = t;
+        t = cache_.temp();
+        e().mov(t, old);
+      } // blx lr, as in the ARM form
+      e().mov_imm(cache_.write(14, false), (pc_ + 2) | 1);
+    }
     emit_branch_indirect(t, true);
     return;
   }
@@ -2071,13 +2170,14 @@ bool Translator::run() {
     const bool ends = thumb_ ? shape::thumb_ends_block(static_cast<u16>(raw)) : shape::arm_ends_block(raw, a9_);
     addr += step();
     if (ends) break;
-    if (!cpu_.page_table.read_ptr(addr)) break;
+    if (!cpu_.page_table.read_ptr(addr) && !cpu_.nds->bus.bios7_code(cpu_.which, addr)) break;
   }
 
   // Backward flag liveness.
   u32 live = F_ALL;
   for (size_t i = instrs_.size(); i-- > 0;) {
-    instrs_[i].live_out = live;
+    instrs_[i].live_out =
+        rt().trace ? F_ALL : live; // a traced run prints the CPSR at every instruction: no flag is dead to it
     const bool paired = thumb_ && i > 0 && arm::decode_thumb(static_cast<u16>(instrs_[i - 1].raw)) == TOp::BlPrefix;
     const FlagUse u = instrs_[i].fallback ? FlagUse{F_ALL, 0}
                       : thumb_            ? thumb_flag_use(static_cast<u16>(instrs_[i].raw), a9_, paired)
@@ -2100,6 +2200,7 @@ bool Translator::run() {
     cache_.begin_instr();
     if (rt().trace) emit_call2(reinterpret_cast<const void*>(&jit_h_trace), in.raw, make_key(in.addr, thumb_));
     if (rt().cyclog) emit_call2(reinterpret_cast<const void*>(&jit_h_cyclog), in.raw, make_key(in.addr, thumb_));
+    cur_raw_ = in.raw;
     if (thumb_) translate_thumb(static_cast<u16>(in.raw), in.fallback);
     else translate_arm(in.raw, in.fallback);
     rt().stats.instrs_translated++;

@@ -63,6 +63,7 @@ Antarctica	Antarctica
 Any	Alle
 Applies immediately. Higher clocks use more battery.	Geldt direct. Hogere kloksnelheden verbruiken meer batterij.
 Applies immediately. Your game keeps its progress.	Geldt direct. Je spelvoortgang blijft behouden.
+Applies when the game starts without resuming.	Geldt als de game start zonder te hervatten.
 Apply	Toepassen
 APPLY	TOEPASSEN
 Applying shader…	Shader toepassen…
@@ -447,6 +448,7 @@ Default controls saved.	Algemene besturing opgeslagen.
 Glossy tiles	Glanzende tegels
 Go back	Terug
 Goes into	Komt in
+Going online…	Online gaan…
 Golden leaves	Gouden bladeren
 Green	Groen
 Grey	Grijs
@@ -457,12 +459,26 @@ Left stick down	Linkerstick omlaag
 Left stick left	Linkerstick links
 Left stick right	Linkerstick rechts
 Left stick up	Linkerstick omhoog
+Online play is off.	Online spelen staat uit.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Online spelen staat aan met WiiLink WFC. Verbind via het Nintendo WFC-menu van de game.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Online spelen staat aan met Wiimmfi. Verbind via het Nintendo WFC-menu van de game.
+Online play is on. Local wireless applies when it is off.	Online spelen staat aan. Lokaal draadloos geldt als het uit staat.
 Page	Pagina
+Restart later	Later herstarten
+Restart now, unsaved progress is lost	Nu herstarten, niet-opgeslagen voortgang gaat verloren
+Restarting the game to apply the change…	De game herstart om de wijziging toe te passen…
+Restarting the game to change online play…	De game herstart om online spelen te wijzigen…
+Restarting the game to change the microphone…	De game herstart om de microfoon te wijzigen…
+Restarting the game to turn off local wireless…	De game herstart om lokaal draadloos uit te zetten…
+Restarting the game to turn on local wireless…	De game herstart om lokaal draadloos aan te zetten…
 Right stick down	Rechterstick omlaag
 Right stick left	Rechterstick links
 Right stick right	Rechterstick rechts
 Right stick up	Rechterstick omhoog
 Storyware	Verhalenboek
+The game reads its language when it starts	De game leest zijn taal bij het starten
+The game reads your nickname when it starts	De game leest je naam bij het starten
+Turning online play off…	Online spelen uitzetten…
 h	u
 Haptic strength	Haptische sterkte
 Health	Gezondheid
@@ -2017,3 +2033,14 @@ Could not open it	Kon het niet openen
 This folder is empty	Deze map is leeg
 The trash is empty	De prullenbak is leeg
 No network places yet	Nog geen netwerklocaties
+Files	Bestanden
+Theme, sound and Wi-Fi	Thema, geluid en wifi
+Your screenshots and photos, by game and date	Je screenshots en foto's, per game en datum
+Games, saves and music on the card	Games, opslagen en muziek op de kaart
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare heeft de DS- en DSi-BIOS-bestanden in de BIOS-map nodig
+This .cia is encrypted: copy the decrypted DSiWare file instead	Deze .cia is versleuteld: kopieer in plaats daarvan het ontsleutelde DSiWare-bestand
+This .cia is not a DSiWare file	Deze .cia is geen DSiWare-bestand
+Little kid	Kleuter
+Big pictures, one tap to play. No menus.	Grote plaatjes, één tik om te spelen. Geen menu's.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	Voor de kleinste spelers: alleen hun eigen spellen, als grote plaatjes. Eén tik start, en er zijn geen menu's of instellingen om in te verdwalen.
+No games yet	Nog geen spellen

@@ -5,6 +5,10 @@ dscore/src/core/cart/miniz/**
 dscore/src/net/enet/**
 dscore/src/net/slirp/**
 dscore/src/frontend/sdl/wl/**
+dscore/src/core/dsp/faad2/**
+dscore/src/core/dsp/teakra/**
+dscore/src/core/dsp/DSP_HLE/**
+dscore/src/frontend/stb/**
 # Generated files: format the generator instead, or the next run undoes it.
 dscore/src/core/bios/freebios_data.cpp
 dscore/src/frontend/sdl/loader_icon.h

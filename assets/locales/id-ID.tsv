@@ -63,6 +63,7 @@ Antarctica	Antartika
 Any	Semua
 Applies immediately. Higher clocks use more battery.	Langsung diterapkan. Clock lebih tinggi memakai lebih banyak baterai.
 Applies immediately. Your game keeps its progress.	Langsung diterapkan. Progres game tetap tersimpan.
+Applies when the game starts without resuming.	Berlaku saat game dimulai tanpa melanjutkan.
 Apply	Terapkan
 APPLY	TERAPKAN
 Applying shader…	Menerapkan filter…
@@ -447,6 +448,7 @@ Default controls saved.	Kontrol global disimpan.
 Glossy tiles	Ubin mengilap
 Go back	Kembali
 Goes into	Masuk ke
+Going online…	Menyambung ke online…
 Golden leaves	Daun emas
 Green	Hijau
 Grey	Abu-abu
@@ -457,12 +459,26 @@ Left stick down	Stik kiri bawah
 Left stick left	Stik kiri kiri
 Left stick right	Stik kiri kanan
 Left stick up	Stik kiri atas
+Online play is off.	Main online mati.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Main online aktif dengan WiiLink WFC. Sambungkan dari menu Nintendo WFC di game.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Main online aktif dengan Wiimmfi. Sambungkan dari menu Nintendo WFC di game.
+Online play is on. Local wireless applies when it is off.	Main online aktif. Nirkabel lokal berlaku saat main online mati.
 Page	Halaman
+Restart later	Mulai ulang nanti
+Restart now, unsaved progress is lost	Mulai ulang sekarang, progres yang belum disimpan hilang
+Restarting the game to apply the change…	Memulai ulang game untuk menerapkan perubahan…
+Restarting the game to change online play…	Memulai ulang game untuk mengubah main online…
+Restarting the game to change the microphone…	Memulai ulang game untuk mengubah mikrofon…
+Restarting the game to turn off local wireless…	Memulai ulang game untuk mematikan nirkabel lokal…
+Restarting the game to turn on local wireless…	Memulai ulang game untuk menyalakan nirkabel lokal…
 Right stick down	Stik kanan bawah
 Right stick left	Stik kanan kiri
 Right stick right	Stik kanan kanan
 Right stick up	Stik kanan atas
 Storyware	Buku cerita
+The game reads its language when it starts	Game membaca bahasanya saat dimulai
+The game reads your nickname when it starts	Game membaca nama Anda saat dimulai
+Turning online play off…	Mematikan main online…
 h	j
 Haptic strength	Kekuatan haptik
 Health	Kesehatan
@@ -2017,3 +2033,14 @@ Could not open it	Tidak dapat membukanya
 This folder is empty	Folder ini kosong
 The trash is empty	Tempat sampah kosong
 No network places yet	Belum ada lokasi jaringan
+Files	File
+Theme, sound and Wi-Fi	Tema, suara, dan Wi-Fi
+Your screenshots and photos, by game and date	Tangkapan layar dan fotomu, per game dan tanggal
+Games, saves and music on the card	Game, simpanan, dan musik di kartu
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare memerlukan file BIOS DS dan DSi di folder BIOS
+This .cia is encrypted: copy the decrypted DSiWare file instead	.cia ini terenkripsi: salin file DSiWare yang sudah didekripsi
+This .cia is not a DSiWare file	.cia ini bukan file DSiWare
+Little kid	Anak kecil
+Big pictures, one tap to play. No menus.	Gambar besar, sekali ketuk untuk main. Tanpa menu.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	Untuk pemain terkecil: hanya game mereka, sebagai gambar besar. Sekali ketuk langsung main, tanpa menu atau pengaturan yang membingungkan.
+No games yet	Belum ada game

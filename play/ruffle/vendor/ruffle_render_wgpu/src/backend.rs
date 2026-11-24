@@ -79,6 +79,10 @@ pub struct WgpuRenderBackend<T: RenderTarget> {
     viewport_scale_factor: f64,
     texture_pool: TexturePool,
     offscreen_texture_pool: TexturePool,
+    /// RG DS: pictures drawn with this off-screen pool (submit_frame).
+    offscreen_pool_age: u32,
+    /// RG DS: the quality drawn at whatever the movie asks for (pin_quality).
+    pinned_quality: Option<StageQuality>,
     pub(crate) offscreen_buffer_pool: Arc<BufferPool<wgpu::Buffer, BufferDimensions>>,
     chunk_buffers: ChunkBuffers,
     active_frame: ActiveFrame,
@@ -216,6 +220,12 @@ impl WgpuRenderBackend<crate::target::TextureTarget> {
     }
 }
 
+/// RGDS_FLASH_POOL=frame: a new off-screen texture pool for every picture.
+fn pool_each_frame() -> bool {
+    static EACH: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *EACH.get_or_init(|| std::env::var("RGDS_FLASH_POOL").as_deref() == Ok("frame"))
+}
+
 impl<T: RenderTarget> WgpuRenderBackend<T> {
     pub fn new(descriptors: Arc<Descriptors>, target: T) -> Result<Self, Error> {
         if target.width() > descriptors.limits.max_texture_dimension_2d
@@ -276,6 +286,8 @@ impl<T: RenderTarget> WgpuRenderBackend<T> {
             viewport_scale_factor: 1.0,
             texture_pool: TexturePool::new(),
             offscreen_texture_pool: TexturePool::new(),
+            offscreen_pool_age: 0,
+            pinned_quality: None,
             offscreen_buffer_pool: Arc::new(offscreen_buffer_pool),
             chunk_buffers,
             active_frame,
@@ -380,6 +392,15 @@ impl<T: RenderTarget> WgpuRenderBackend<T> {
         } else {
             false
         }
+    }
+
+    /// RG DS: draw at this quality from now on, whatever the movie sets (its own stays on the stage, for the
+    /// movie to read). The player draws without multisampling on Panfrost and smooths the picture itself; a movie
+    /// with a GRAPHICS: HIGH setting of its own (Swords and Sandals) otherwise turned 4x multisampling back on, and
+    /// its filtered full-screen clip took 74 ms a picture.
+    pub fn pin_quality(&mut self, quality: StageQuality) {
+        self.pinned_quality = Some(quality);
+        ruffle_render::backend::RenderBackend::set_quality(self, quality);
     }
 
     pub fn descriptors(&self) -> &Arc<Descriptors> {
@@ -506,6 +527,12 @@ impl<T: RenderTarget + 'static> RenderBackend for WgpuRenderBackend<T> {
     }
 
     fn set_quality(&mut self, quality: StageQuality) {
+        // RG DS: a quality the embedder pinned stays (pin_quality), and the same quality again changes nothing: a
+        // movie that sets its quality every frame had the surface made anew each time.
+        let quality = self.pinned_quality.unwrap_or(quality);
+        if quality == self.surface.quality() {
+            return;
+        }
         self.surface = Surface::new(
             &self.descriptors,
             quality,
@@ -669,7 +696,16 @@ impl<T: RenderTarget + 'static> RenderBackend for WgpuRenderBackend<T> {
 
         self.active_frame
             .submit_for_target(&self.descriptors, &self.target, frame_output);
-        self.offscreen_texture_pool = TexturePool::new();
+        // RG DS: the off-screen textures (a cached clip's, its filters' passes) are kept for the next picture, as the
+        // frame's own pool is; Ruffle made a new pool here, so a clip redrawn through a filter every picture had its
+        // textures made and freed every picture (Swords and Sandals: a drop shadow over the whole scene). Emptied
+        // every ten seconds of pictures instead, so sizes no longer used do not pile up. RGDS_FLASH_POOL=frame is
+        // Ruffle's way.
+        self.offscreen_pool_age += 1;
+        if self.offscreen_pool_age >= 300 || pool_each_frame() {
+            self.offscreen_pool_age = 0;
+            self.offscreen_texture_pool = TexturePool::new();
+        }
         self.profiler
             .end_frame()
             .expect("Frame should end successfully");

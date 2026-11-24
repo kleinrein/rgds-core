@@ -63,6 +63,7 @@ Antarctica	Antarktis
 Any	Alle
 Applies immediately. Higher clocks use more battery.	Gjelder straks. Høyere hastighet bruker mer batteri.
 Applies immediately. Your game keeps its progress.	Gjelder straks. Spillets fremgang beholdes.
+Applies when the game starts without resuming.	Gjelder når spillet starter uten å fortsette.
 Apply	Bruk
 APPLY	BRUK
 Applying shader…	Bruker skjermfilter …
@@ -447,6 +448,7 @@ Default controls saved.	Standardkontroller lagret.
 Glossy tiles	Blanke fliser
 Go back	Gå tilbake
 Goes into	Havner i
+Going online…	Kobler til nett …
 Golden leaves	Gylne blader
 Green	Grønn
 Grey	Grå
@@ -457,12 +459,26 @@ Left stick down	Venstre spak ned
 Left stick left	Venstre spak venstre
 Left stick right	Venstre spak høyre
 Left stick up	Venstre spak opp
+Online play is off.	Nettspill er av.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Nettspill er på med WiiLink WFC. Koble til fra spillets Nintendo WFC-meny.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Nettspill er på med Wiimmfi. Koble til fra spillets Nintendo WFC-meny.
+Online play is on. Local wireless applies when it is off.	Nettspill er på. Lokal trådløs gjelder når det er av.
 Page	Side
+Restart later	Start på nytt senere
+Restart now, unsaved progress is lost	Start på nytt nå, ulagret framgang går tapt
+Restarting the game to apply the change…	Starter spillet på nytt for å bruke endringen …
+Restarting the game to change online play…	Starter spillet på nytt for å endre nettspill …
+Restarting the game to change the microphone…	Starter spillet på nytt for å endre mikrofonen …
+Restarting the game to turn off local wireless…	Starter spillet på nytt for å slå av lokal trådløs …
+Restarting the game to turn on local wireless…	Starter spillet på nytt for å slå på lokal trådløs …
 Right stick down	Høyre spak ned
 Right stick left	Høyre spak venstre
 Right stick right	Høyre spak høyre
 Right stick up	Høyre spak opp
 Storyware	Historiebok
+The game reads its language when it starts	Spillet leser språket sitt når det starter
+The game reads your nickname when it starts	Spillet leser kallenavnet ditt når det starter
+Turning online play off…	Slår av nettspill …
 h	t
 Haptic strength	Haptisk styrke
 Health	Helse
@@ -2017,3 +2033,14 @@ Could not open it	Kunne ikke åpne den
 This folder is empty	Denne mappen er tom
 The trash is empty	Papirkurven er tom
 No network places yet	Ingen nettverkssteder ennå
+Files	Filer
+Theme, sound and Wi-Fi	Tema, lyd og Wi-Fi
+Your screenshots and photos, by game and date	Skjermbildene og bildene dine etter spill og dato
+Games, saves and music on the card	Spill, lagringer og musikk på kortet
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare trenger BIOS-filene for DS og DSi i BIOS-mappen
+This .cia is encrypted: copy the decrypted DSiWare file instead	Denne .cia-filen er kryptert: kopier den dekrypterte DSiWare-filen i stedet
+This .cia is not a DSiWare file	Denne .cia-filen er ikke en DSiWare-fil
+Little kid	Lite barn
+Big pictures, one tap to play. No menus.	Store bilder, ett trykk for å spille. Ingen menyer.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	For de minste: bare spillene deres, som store bilder. Ett trykk starter, og det er ingen menyer eller innstillinger å gå seg vill i.
+No games yet	Ingen spill ennå

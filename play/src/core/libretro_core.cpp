@@ -355,6 +355,7 @@ public:
         }
         system_ = system;
         system_dir_ = system_dir;
+        fbneo_ = system == "arcade" && std::filesystem::path(library).filename().string().rfind("fbneo", 0) == 0;
         save_dir_ = save_dir;
         if (system == "scummvm") {
             // ScummVM names a save by the kind of game ("monkey.s00", for the demo and the whole game alike, and
@@ -452,10 +453,17 @@ public:
             }
         }
         if (system == "c64") variables_ = {{"vice_autoloadwarp", "enabled"}}; // a disk or tape loads at full speed
-        // Arcade (mame2003-plus, built with only the two-monitor cabinets): straight into the game, no MAME screens
+        // Arcade, FBNeo: every other set. Its vertical games come on their side and are turned here (rotated), so
+        // they stand upright and the tall screen can put them over both panels; 32-bit colour; high scores kept
+        // where the board's own hiscore.dat (in the BIOS folder's fbneo) knows where a game keeps them.
+        if (system == "arcade" && fbneo_)
+            variables_ = {{"fbneo-vertical-mode", "disabled"},
+                          {"fbneo-allow-depth-32", "enabled"},
+                          {"fbneo-hiscores", "enabled"}};
+        // Arcade, mame2003-plus (built with only the two-monitor cabinets): straight into the game, no MAME screens
         // over it. Punch-Out!! draws its two monitors one over the other (256 x 448), a Vs. dual board side by side
         // (512 x 240): play/profiles/arcade puts each on its own panel.
-        if (system == "arcade")
+        else if (system == "arcade")
             variables_ = {
                 {"mame2003-plus_skip_disclaimer", "enabled"},    {"mame2003-plus_skip_warnings", "enabled"},
                 {"mame2003-plus_display_setup", "disabled"},     {"mame2003-plus_input_interface", "retropad"},
@@ -808,6 +816,14 @@ public:
     Picture other_eye() const override {
         if (!stereo()) return {};
         return {frame_.data() + fw_ / 2, fw_ / 2, fh_, fw_};
+    }
+    bool read_back_latest() override {
+        if (!drew_target_ || fw_ <= 0 || fh_ <= 0) return false; // picture() already holds the pixels
+        const unsigned w = unsigned(fw_), h = unsigned(fh_);
+        return on_gpu([&] {
+            read_back(w, h);
+            return true;
+        });
     }
     void set_gl_target(unsigned texture, int w, int h) override {
         target_ = texture;
@@ -1375,7 +1391,7 @@ private:
         max_w_ = static_cast<int>(std::max(av.geometry.max_width, av.geometry.base_width));
         max_h_ = static_cast<int>(std::max(av.geometry.max_height, av.geometry.base_height));
         if (system_ == "cpc") resize(cpc_crop_w, cpc_crop_h * 2); // cpc_present: the screen, its lines twice
-        else resize(static_cast<int>(av.geometry.base_width), static_cast<int>(av.geometry.base_height));
+        else resize_turned(static_cast<int>(av.geometry.base_width), static_cast<int>(av.geometry.base_height));
     }
     void resize(int w, int h) {
         if (w <= 0 || h <= 0) return;
@@ -1581,9 +1597,15 @@ private:
         case RETRO_ENVIRONMENT_SET_MESSAGE: return true;
         case RETRO_ENVIRONMENT_SET_GEOMETRY: {
             const auto* g = static_cast<const retro_game_geometry*>(data);
-            resize(static_cast<int>(g->base_width), static_cast<int>(g->base_height));
+            resize_turned(static_cast<int>(g->base_width), static_cast<int>(g->base_height));
             return true;
         }
+        case RETRO_ENVIRONMENT_SET_ROTATION:
+            // Only FBNeo's is honoured (above: rotated). mame2003-plus asks too, and turns its picture itself when told
+            // no, as it always has been here (its Punch-Out!! profile counts its rows as it draws them).
+            if (system_ != "arcade" || !fbneo_) return false;
+            rotation_ = *static_cast<const unsigned*>(data) & 3;
+            return true;
         case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO:
             apply_av(*static_cast<const retro_system_av_info*>(data));
             return true;
@@ -1646,9 +1668,29 @@ private:
             cpc_present(static_cast<int>(w), static_cast<int>(h));
             return;
         }
+        if (rotation_) return rotated(src, w, h, pitch);
         resize(static_cast<int>(w), static_cast<int>(h));
         for (unsigned y = 0; y < h; ++y) convert_row(src + y * pitch, frame_.data() + static_cast<size_t>(y) * fw_, w);
     }
+    // A frame the core asked to be turned (RETRO_ENVIRONMENT_SET_ROTATION, quarter turns counter-clockwise): FBNeo
+    // draws a vertical arcade game as its board's monitor scans it, on its side, and leaves turning it upright to the
+    // frontend. picture() is the game as it stands, so every view, checkpoint picture and the tall screen see that.
+    void rotated(const uint8_t* src, unsigned w, unsigned h, size_t pitch) {
+        const bool quarter = rotation_ & 1;
+        resize(static_cast<int>(quarter ? h : w), static_cast<int>(quarter ? w : h));
+        row_.resize(w);
+        for (unsigned y = 0; y < h; ++y) {
+            convert_row(src + y * pitch, row_.data(), w);
+            for (unsigned x = 0; x < w; ++x) {
+                // Where (x, y) lands: a quarter turn counter-clockwise puts the top right corner at the top left.
+                const unsigned tx = rotation_ == 1 ? y : rotation_ == 2 ? w - 1 - x : h - 1 - y;
+                const unsigned ty = rotation_ == 1 ? w - 1 - x : rotation_ == 2 ? h - 1 - y : x;
+                frame_[static_cast<size_t>(ty) * fw_ + tx] = row_[x];
+            }
+        }
+    }
+    // The picture's size for a frame of w x h, turned as the core asked.
+    void resize_turned(int w, int h) { rotation_ & 1 ? resize(h, w) : resize(w, h); }
     void convert_row(const uint8_t* row, uint32_t* dst, unsigned w) const {
         if (pixel_format_ == RETRO_PIXEL_FORMAT_XRGB8888) {
             const auto* p = reinterpret_cast<const uint32_t*>(row);
@@ -1794,6 +1836,9 @@ private:
     enum retro_pixel_format pixel_format_ = RETRO_PIXEL_FORMAT_0RGB1555;
     std::vector<uint32_t> frame_;
     int fw_ = 0, fh_ = 0;
+    unsigned rotation_ = 0;     // quarter turns counter-clockwise the core asked for (rotated)
+    bool fbneo_ = false;        // the arcade core is FBNeo (mame2003-plus has the two-monitor cabinets)
+    std::vector<uint32_t> row_; // one converted row of a frame being turned
     // Beetle VB's frame is both eyes side by side (the options above): 768 wide.
     bool stereo() const { return system_ == "vb" && fw_ == 768; }
     double fps_ = 60.0;

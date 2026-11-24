@@ -36,6 +36,7 @@ void Spu::reset() {
   master_ = 0;
   muted_ = true;
   rd_ = wr_ = 0;
+  silence_cycles_ = 0;
   mix_period_ = MIX_PERIOD;
   timer_step_ = TIMER_STEP;
   batch_ = nds_.dsi ? 1 : 16; // DSi: slice-aligned mix events
@@ -197,7 +198,13 @@ void Spu::fifo_fill(Channel& c) {
 
 template <typename T> T Spu::fifo_read(Channel& c) {
   T v;
-  std::memcpy(&v, reinterpret_cast<const u8*>(c.fifo) + c.fifo_rd, sizeof(T));
+  const u8* const bytes = reinterpret_cast<const u8*>(c.fifo);
+  if (c.fifo_rd + sizeof(T) <= sizeof c.fifo) std::memcpy(&v, bytes + c.fifo_rd, sizeof(T));
+  else { // a read across the end wraps (a format changed mid-stream, or a state's position): never past the array
+    u8 b[sizeof(T)];
+    for (size_t i = 0; i < sizeof(T); ++i) b[i] = bytes[(c.fifo_rd + i) & 0x1F];
+    std::memcpy(&v, b, sizeof(T));
+  }
   c.fifo_rd = (c.fifo_rd + sizeof(T)) & 0x1F;
   c.fifo_level -= sizeof(T);
   if (c.fifo_level <= 16) fifo_fill(c);
@@ -292,6 +299,7 @@ void Spu::next_adpcm(Channel& c) {
 s32 Spu::run_channel(Channel& c, u32 n) {
   if (!(c.cnt & 0x80000000u)) return 0;
   const u32 fmt = c.format();
+  if (fmt == 3 && (&c - ch_.data()) < 8) return 0; // no PSG behind channels 0-7: the format is silent there
   const bool psg = fmt == 3 && (&c - ch_.data()) < 14;
   const bool noise = fmt == 3 && !psg;
   if (fmt < 3 && c.loop + c.len < 16) return 0;
@@ -323,7 +331,8 @@ s32 Spu::run_channel(Channel& c, u32 n) {
     }
     if (!(c.cnt & 0x80000000u)) break;
   }
-  return (static_cast<s32>(c.cur) << c.vol_shift) * c.volume;
+  return static_cast<s32>(c.cur) * (1 << c.vol_shift) *
+         c.volume; // (a shift of a negative value, written as the product it is)
 }
 
 // ---- capture ----------------------------------------------------------------
@@ -342,7 +351,13 @@ void Spu::cap_flush(Capture& cp) {
 }
 
 template <typename T> void Spu::cap_write(Capture& cp, T v) {
-  std::memcpy(reinterpret_cast<u8*>(cp.fifo) + cp.fifo_wr, &v, sizeof(T));
+  u8* const bytes = reinterpret_cast<u8*>(cp.fifo);
+  if (cp.fifo_wr + sizeof(T) <= sizeof cp.fifo) std::memcpy(bytes + cp.fifo_wr, &v, sizeof(T));
+  else { // as fifo_read: the capture width changed mid-run
+    u8 b[sizeof(T)];
+    std::memcpy(b, &v, sizeof(T));
+    for (size_t i = 0; i < sizeof(T); ++i) bytes[(cp.fifo_wr + i) & 0xF] = b[i];
+  }
   cp.fifo_wr = (cp.fifo_wr + sizeof(T)) & 0xF;
   cp.fifo_level += sizeof(T);
   if (cp.fifo_level >= 16) cap_flush(cp);
@@ -397,6 +412,14 @@ void Spu::write_sndexcnt(u16 value, u16 mask) {
   }
   catch_up();
   cur = value & 0xE00F; // bits 15, 14 and 0-3 are applied per sample in mix()
+}
+
+void Spu::silence(u64 cycles) {
+  silence_cycles_ += cycles;
+  while (silence_cycles_ >= mix_period_) {
+    push(0, 0);
+    silence_cycles_ -= mix_period_;
+  }
 }
 
 void Spu::push(s16 l, s16 r) {
@@ -470,18 +493,22 @@ void Spu::mix() {
   s16 r = muted_ ? 0 : static_cast<s16>(std::clamp(out_r, -0x8000, 0x7FFF));
   if (nds_.dsi) {
     // Nothing reaches output/mic while SNDEXCNT disables I2S; otherwise each
-    // output sample is a mic sample clock, mixing NITRO with (silent) DSP.
+    // output sample is a mic sample clock, mixing NITRO with the DSP's output.
     const u16 sx = nds_.io.dsi.sndexcnt;
     if (!(sx & 0x8000)) {
       l = r = 0;
     } else {
-      nds_.io.dsi_mic_clock(nds_.io.mic_at(mix_at_));
+      const s16 mic = nds_.io.mic_at(mix_at_);
+      nds_.io.dsi_mic_clock(mic);
+      s16 dsp[2];
+      nds_.io.dsp.sample_clock(dsp, mic);
       if (sx & 0x4000) {
         l = r = 0;
       } else {
+        // SNDEXCNT's ratio: fn eighths NITRO, the rest the DSP.
         const int fn = std::min(sx & 0xF, 8);
-        l = static_cast<s16>((l * fn) >> 3);
-        r = static_cast<s16>((r * fn) >> 3);
+        l = static_cast<s16>(std::clamp((l * fn + dsp[0] * (8 - fn)) >> 3, -0x8000, 0x7FFF));
+        r = static_cast<s16>(std::clamp((r * fn + dsp[1] * (8 - fn)) >> 3, -0x8000, 0x7FFF));
       }
     }
   }
@@ -500,9 +527,30 @@ template <class S> void Spu::sync_state(S& s) {
   s.fields(cnt_, bias_, master_, muted_, mix_at_, batch_);
   s.fields(mix_period_, apply_bias_); // appended: DS states leave the defaults
   s.end();
+  if constexpr (S::reading) {
+    // Positions that index arrays are the file's word: held to their arrays.
+    for (Channel& c : ch_) {
+      c.fifo_wr &= 7;
+      c.fifo_rd &= 0x1F;
+      c.adpcm_idx = std::clamp(c.adpcm_idx, 0, 88);
+      c.adpcm_idx_loop = std::clamp(c.adpcm_idx_loop, 0, 88);
+    }
+    for (Capture& cp : cap_) {
+      cp.fifo_rd &= 3;
+      cp.fifo_wr &= 0xF;
+    }
+    // The mix period divides and steps the clock (zero would never advance it); the batch sets how far one event reaches.
+    if (mix_period_ != MIX_PERIOD && mix_period_ != MIX_PERIOD_47K) {
+      mix_period_ = MIX_PERIOD;
+      s.fail("sound mix period");
+      return;
+    }
+    batch_ = std::clamp<u32>(batch_, 1, 16);
+  }
   if constexpr (S::reading) timer_step_ = mix_period_ / 4;
   if constexpr (S::reading) {
     rd_ = wr_ = 0;
+    silence_cycles_ = 0;
     nds_.sched.rebind(EventId::Spu, ev_mix);
   }
 }

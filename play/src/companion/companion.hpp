@@ -75,8 +75,10 @@ public:
     void touch_top(const Touch& t);
     // A finger is this game's mouse on the top panel too.
     bool top_is_touched() const { return profile_ && profile_->has_screens && profile_->screens.pointer; }
+    // [screens] tall: the game over both panels, one screen twice as tall (a vertical arcade game).
+    bool tall_screen() const { return profile_ && profile_->has_screens && profile_->screens.tall; }
     // A short click in the motor as one of the machine's buttons goes down, 0-1.
-    float machine_click() const { return click_frames_ > 0 ? 0.45f : 0; }
+    float machine_click() const { return click_frames_ > 0 || view_click_ > 0 ? 0.45f : 0; }
     // The info screen: the title card every game has before its own second screen appears, and the corner button.
     void set_info(bool info) { info_ = info; }
     bool info() const { return info_; }
@@ -101,6 +103,12 @@ public:
     // only when the switch is turned to it. While it shows, a HUD split stays in the game picture.
     void set_manual(std::unique_ptr<View> manual) { manual_ = std::move(manual); }
     bool has_manual() const { return manual_ != nullptr; }
+    // A view that reads every finger (the touch pad): the player opens the panel's touch device for it.
+    bool wants_fingers() const {
+        for (const auto& v : views_)
+            if (v->wants_fingers()) return true;
+        return false;
+    }
     bool showing_manual() const;
     // Every finger on the second screen (a pinch on the manual); true when it must be drawn again.
     bool fingers(const std::vector<std::pair<int, int>>& down);
@@ -124,6 +132,7 @@ private:
     uint32_t finger_ = 0; // the buttons a finger holds on the machine
     uint32_t held_ = 0;   // what the machine had last frame
     int click_frames_ = 0;
+    int view_click_ = 0; // frames left of a view's own tick (View::take_click)
     bool strip_mode() const { return profile_ && profile_->has_hud && !profile_->hud.strip.empty(); }
     void update_strip(Core& live);
     void render_with_strip(Canvas& out, const Look& look, const Font& font) const;

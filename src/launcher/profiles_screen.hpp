@@ -213,6 +213,7 @@ void App::commit_profile(int index) {
     systems_menu = false;
     if (!home_menu && library_ready) library_view(preferences.view);
     picker_at_boot = false;
+    if (active_profile().simple) open_kid_home(changed);
     selected_at = s.GetTicks();
     dirty = true;
 }
@@ -273,10 +274,6 @@ void App::profile_picker_bottom(SDL_Renderer* r, int y) {
     std::vector<KeyHint> hints = {{"A", "Play"}};
     if (!picker_at_boot && !profiles.active_unclear()) hints.push_back({"B", "Back"});
     key_hints(r, 320, y + 456, hints, 0);
-    if (!status.empty()) {
-        const int status_width = std::min(600, label_width(status, 16));
-        label(r, status, 320 - status_width / 2, y + 428, 16, "muted", 600);
-    }
 }
 
 void App::profile_card_top(SDL_Renderer* r, int y, const Profile& profile) {
@@ -284,7 +281,10 @@ void App::profile_card_top(SDL_Renderer* r, int y, const Profile& profile) {
     settings_card(r, 24, top, 592, 240);
     draw_profile_tile(r, profile, 48, top + 32, 176);
     raw_label(r, profile.name, 248, top + 34, 36, "ink", 344);
-    std::string kind = locale.text(profile.owner() ? "Owner" : profile.restricted ? "Kid" : "Adult");
+    std::string kind = locale.text(profile.owner()      ? "Owner"
+                                   : profile.simple     ? "Little kid"
+                                   : profile.restricted ? "Kid"
+                                                        : "Adult");
     if (profile.age != no_age_limit) kind += "  ·  " + age_limit_text(profile.age);
     raw_label(r, kind, 248, top + 84, 18, "accent", 344);
     if (!profile.last_game.empty()) {
@@ -341,8 +341,10 @@ void App::profiles_activate(int row) {
         return;
     }
     if (row == profile_row_switch) open_profile_picker(false);
-    else if (row == profile_row_add) open_profile_choose(ProfileChoice::Kind);
-    else if (row == profile_row_ask) {
+    else if (row == profile_row_add) {
+        kind_editing = false;
+        open_profile_choose(ProfileChoice::Kind);
+    } else if (row == profile_row_ask) {
         // Not a page, so the checkpoint cannot see it.
         if (!active_profile().owner() && !settings_unlocked && !owner_pin().empty()) {
             pin_target_page = Page::Profiles;
@@ -402,6 +404,7 @@ void App::profiles_screen(SDL_Renderer* r, int y) {
             raw_label(r, profile.name, text_x, centred_label_y(profile.name, text, middle), text, "ink", 300);
             const std::string tag = locale.text(profile.id == profiles.active() ? "Playing now"
                                                 : profile.owner()               ? "Owner"
+                                                : profile.simple                ? "Little kid"
                                                 : profile.restricted            ? "Kid"
                                                                                 : "Adult");
             const int width = label_width(tag, 16, false);
@@ -496,17 +499,10 @@ void App::profile_edit_activate(int row) {
         emit_sound(MenuCue::Confirm);
     };
     if (row == 0) {
-        // A grown-up's profile keeps what was set; one that becomes a Kid's starts safe.
-        changed.restricted = !changed.restricted;
-        if (changed.restricted) {
-            if (changed.age == no_age_limit) changed.age = 7;
-            changed.unrated_hidden = true;
-        } else {
-            changed.age = no_age_limit;
-            changed.unrated_hidden = false;
-        }
-        save();
-        profile_edit_focus(0);
+        // Adult, Kid or Little kid: the same three cards as a new profile, on the one it is now.
+        kind_editing = true;
+        open_profile_choose(ProfileChoice::Kind);
+        settings.focus = profile->simple ? 2 : profile->restricted ? 1 : 0;
     } else if (row == 1) begin_edit(9);
     else if (row == 2) begin_edit(10);
     else if (row == 3) open_profile_choose(ProfileChoice::Picture);
@@ -631,7 +627,9 @@ void App::profile_edit_row(SDL_Renderer* r, int y, int i) {
     if (!profile || i >= int(rows.size())) return;
     const int row = rows[size_t(i)];
     switch (row) {
-    case 0: list_row(r, y, i, "Who it's for", profile->restricted ? "Kid" : "Adult"); break;
+    case 0:
+        list_row(r, y, i, "Who it's for", profile->simple ? "Little kid" : profile->restricted ? "Kid" : "Adult");
+        break;
     case 1: list_row(r, y, i, "Name", profile->name); break;
     case 2: list_row(r, y, i, "DS name", profile->ds_name); break;
     case 20: {
@@ -674,10 +672,8 @@ void App::profile_edit_top(SDL_Renderer* r, int y) {
     if (!profile) return;
     profile_card_top(r, y, *profile);
     // Said plainly: without the owner's PIN a Kid profile is filtered, not locked.
-    const std::string note = !status.empty() ? status
-                             : profile->restricted && owner_pin().empty()
-                                 ? "Not locked: set a PIN on the owner's profile."
-                                 : "";
+    const std::string note =
+        profile->restricted && owner_pin().empty() ? "Not locked: set a PIN on the owner's profile." : "";
     if (!note.empty()) {
         const int width = std::min(584, label_width(note, 16));
         label(r, note, 320 - width / 2, y + top_card_y + top_card_h - 20, 16, "muted", 584);
@@ -713,7 +709,7 @@ void App::open_profile_choose(ProfileChoice kind) {
 }
 
 int App::profile_choice_count() const {
-    return profile_choice == ProfileChoice::Kind      ? 2
+    return profile_choice == ProfileChoice::Kind      ? 3
            : profile_choice == ProfileChoice::Month   ? 13 // the months, and no birthday
            : profile_choice == ProfileChoice::Day     ? DsBirthday::days_in(birthday_month_choice)
            : profile_choice == ProfileChoice::Picture ? int(profile_picture_count)
@@ -721,7 +717,7 @@ int App::profile_choice_count() const {
 }
 
 SDL_Rect App::profile_choice_box(int index) const {
-    if (profile_choice == ProfileChoice::Kind) return {28 + index * 300, 130, 284, 210};
+    if (profile_choice == ProfileChoice::Kind) return {28 + index * 196, 130, 184, 210};
     if (profile_choice == ProfileChoice::Colour || profile_choice == ProfileChoice::Age ||
         profile_choice == ProfileChoice::Month)
         return colour_tile(index);
@@ -773,8 +769,34 @@ void App::profile_set_ds_name(const Profile& profile, const std::string& name) {
 
 void App::choose_profile_option(int index) {
     emit_sound(MenuCue::Confirm);
+    if (profile_choice == ProfileChoice::Kind && kind_editing) {
+        // A grown-up's profile keeps what was set; one that becomes a Kid's starts safe, a Little kid's safer still.
+        kind_editing = false;
+        if (const auto* profile = edited_profile()) {
+            Profile changed = *profile;
+            const bool was_restricted = changed.restricted;
+            changed.restricted = index >= 1;
+            changed.simple = index == 2;
+            if (changed.restricted && !was_restricted) {
+                changed.age = changed.simple ? 3 : 7;
+                changed.unrated_hidden = true;
+            } else if (changed.simple && changed.age != only_picked_games)
+                changed.age = std::min(changed.age == no_age_limit ? 3 : changed.age, 3);
+            else if (!changed.restricted) {
+                changed.age = no_age_limit;
+                changed.unrated_hidden = false;
+            }
+            if (!profiles.save(changed)) status = "Could not save all settings. Check storage.";
+            if (changed.id == profiles.active()) visibility_changed = true;
+        }
+        settings.page = Page::ProfileEdit;
+        profile_edit_focus(0);
+        dirty = true;
+        return;
+    }
     if (profile_choice == ProfileChoice::Kind) {
-        new_profile_restricted = index == 1;
+        new_profile_restricted = index >= 1;
+        new_profile_simple = index == 2;
         begin_edit(8);
         return;
     }
@@ -834,7 +856,7 @@ void App::choose_profile_option(int index) {
 
 void App::profile_choose_action(int code) {
     int& focus = settings.focus;
-    const int count = profile_choice_count(), wide = profile_choice == ProfileChoice::Kind      ? 2
+    const int count = profile_choice_count(), wide = profile_choice == ProfileChoice::Kind      ? 3
                                                      : profile_choice == ProfileChoice::Picture ? 6
                                                      : profile_choice == ProfileChoice::Day     ? 7
                                                                                                 : 4;
@@ -845,7 +867,11 @@ void App::profile_choose_action(int code) {
         settings.page = Page::ProfileEdit;
         profile_edit_focus(20);
     } else if (code == 3) {
-        if (profile_choice == ProfileChoice::Kind) {
+        if (profile_choice == ProfileChoice::Kind && kind_editing) {
+            kind_editing = false;
+            settings.page = Page::ProfileEdit;
+            profile_edit_focus(0);
+        } else if (profile_choice == ProfileChoice::Kind) {
             settings.page = Page::Profiles;
             settings.focus = 0;
         } else {
@@ -894,11 +920,18 @@ void App::profile_choose_screen(SDL_Renderer* r, int y) {
         }
         if (profile_choice == ProfileChoice::Kind) {
             settings_card(r, box.x, box.y, box.w, box.h);
-            const char* title = i == 0 ? "Adult" : "Kid";
-            const int width = label_width(title, 28);
-            label(r, title, box.x + (box.w - width) / 2, box.y + 28, 28, "accent", box.w - 24);
-            wrapped(r, i == 0 ? "Own saves and look. Settings stay open." : "Own saves, and a library you choose.",
-                    box.x + 20, box.y + 84, 18, box.w - 40, 4);
+            const char* title = i == 0 ? "Adult" : i == 1 ? "Kid" : "Little kid";
+            const int size = label_width(title, 28) > box.w - 24 ? 24 : 28, width = label_width(title, size);
+            label(r, title, box.x + (box.w - width) / 2, box.y + 28, size, "accent", box.w - 24);
+            wrapped(r,
+                    i == 0   ? "Own saves and look. Settings stay open."
+                    : i == 1 ? "Own saves, and a library you choose."
+                             : "Big pictures, one tap to play. No menus.",
+                    box.x + 18, box.y + 84, 18, box.w - 36, 5);
+            if (kind_editing && (i == 2   ? profile && profile->simple
+                                 : i == 1 ? profile && profile->restricted && !profile->simple
+                                          : profile && !profile->restricted))
+                chosen_tick(r, box.x + box.w - 14, box.y + 14);
         } else if (profile_choice == ProfileChoice::Picture) {
             Profile shown;
             if (profile) shown = *profile;
@@ -952,10 +985,16 @@ void App::profile_choose_top(SDL_Renderer* r, int y) {
     if (profile_choice == ProfileChoice::Kind || !profile) {
         const int top = y + top_card_y + (top_card_h - 240) / 2;
         settings_card(r, 24, top, 592, 240);
-        label(r, settings.focus == 1 ? "Kid" : "Adult", 48, top + 30, 28, "accent", 544);
+        label(r,
+              settings.focus == 2   ? "Little kid"
+              : settings.focus == 1 ? "Kid"
+                                    : "Adult",
+              48, top + 30, 28, "accent", 544);
         wrapped(r,
-                settings.focus == 1 ? "A library that fits their age, and no way into the handheld's settings."
-                                    : "A second grown-up or an older child, with everything open.",
+                settings.focus == 2   ? "For the smallest players: just their games, as big pictures. One tap plays, "
+                                        "and there are no menus or settings to get lost in."
+                : settings.focus == 1 ? "A library that fits their age, and no way into the handheld's settings."
+                                      : "A second grown-up or an older child, with everything open.",
                 48, top + 84, 20, 544, 4);
         return;
     }
@@ -1620,6 +1659,18 @@ bool App::page_open_to_kid(Page page) const {
     }
 }
 
+bool App::page_open_to_little_kid(Page page) const {
+    switch (page) {
+    case Page::KidHome:
+    case Page::ProfilePicker:
+    case Page::PinPad:
+    case Page::BootWarning: return true;
+    case Page::Welcome: return welcome_active;
+    case Page::Confirm: return confirmation == "poweroff";
+    default: return false;
+    }
+}
+
 bool App::section_open_to_kid(int section) {
     static constexpr std::array<int, 6> open = {0, 3,  7,
                                                 8, 10, 11}; // Theme, Sound, Statistics, Power off, Display, Profiles
@@ -1651,6 +1702,23 @@ void App::enforce_lock(Uint32 now) {
         // Left on from before: the card should not be open on the network on a child's profile.
         sharing_stopped_at = now;
         start_worker("device.sharing-off");
+    }
+    if (who.simple && o.game_menu && !settings_unlocked && settings.page != Page::KidMenu &&
+        settings.page != Page::LeaveGame) {
+        // In a game a Little kid has two buttons, Play and Home; the whole game menu is behind the owner's PIN.
+        settings.page = Page::KidMenu;
+        settings.focus = 0;
+        last_open_page = Page::KidMenu;
+        dirty = true;
+        return;
+    }
+    if (who.simple && !o.game_menu && !page_open_to_little_kid(settings.page)) {
+        // A Little kid has one screen. Whatever page this was meant to be (a restored state, a game ending, a key),
+        // it is their wall of games; a grown-up leaves through Who's playing? and the owner's PIN.
+        settings_unlocked = false;
+        open_kid_home(false);
+        last_open_page = Page::KidHome;
+        return;
     }
     if (settings.page == Page::Library && !chat_open) settings_unlocked = false;
     const Page page = settings.page;

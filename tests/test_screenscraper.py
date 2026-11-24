@@ -100,6 +100,7 @@ class FakeClient(scraper.Client):
             if params.get("romnom") not in self.games: raise scraper.NotFound("No matching game found.")
             return {"jeu": json.loads(json.dumps(self.games[params["romnom"]]))}
         if endpoint == "mediaJeu.php": return b"PNG " + params["media"].encode()
+        if endpoint == "jeuRecherche.php": return {"jeux": []}
         raise AssertionError(endpoint)
 
 
@@ -219,6 +220,104 @@ class ScreenScraperTests(unittest.TestCase):
         self.assertEqual(len(public.asked), 7)  # every game still got its public cover
         self.assertEqual([c[0] for c in fake.calls].count("jeuInfos.php"), screenscraper.FAILURE_LIMIT)
         self.assertTrue(client.stopped)
+
+    def test_a_stopped_service_leaves_details_and_pictures_to_ask_again(self):
+        # Quota reached mid-run: what ScreenScraper never answered is an error, not "this game has none".
+        import game_info
+        rom = self.rom("Sonic the Hedgehog (Europe).md")
+        client = screenscraper.ScreenScraperClient(FakeClient({rom.name: JEU}), FakePublic())
+        client.stopped = "Your daily ScreenScraper quota has been reached."
+        extras = screenscraper.ScreenScraperInfo(client, ("info", "snap", "title"))
+        item = self.root / "data/library" / library.game_key(rom)
+        item.mkdir(parents=True)
+        with patch.object(game_info.GameInfo, "supports", lambda self, system: False):
+            outcome = extras.process(rom, item)
+            self.assertTrue(all(value.startswith("error") for value in outcome.values()), outcome)
+            status = library.read_fields(item / "info-status.ini")
+            self.assertFalse({"info", "snap", "title"} & set(status), status)
+            self.assertTrue(all(extras.needs(item, kind, False) for kind in ("info", "snap", "title")))
+
+    def ds_rom(self, name, code):
+        folder = self.root / "games/nds"
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / name
+        path.write_bytes(b"\0" * 12 + code.encode() + b"\0" * 500)
+        return path
+
+    def test_a_ds_game_screenscraper_lacks_gets_gametdb_details_read_once(self):
+        import game_info
+        roms = [self.ds_rom("Mario.nds", "ASME"), self.ds_rom("Other.nds", "AXXE")]
+        record = {
+            "titles": {
+                "EN": "Super Mario 64 DS"
+            },
+            "developer": "Nintendo",
+            "publisher": "Nintendo",
+            "genre": "Platform",
+            "release": "2004-11-21",
+            "rating": "",
+            "players": "4",
+            "online": "",
+            "features": "",
+            "languages": "EN",
+            "region": "NTSC-U",
+            "synopses": {}
+        }
+        opened = []
+
+        def prepare(self, roms, data_item, force=False):
+            opened.append(len(roms))
+            self.records = {"ASME": record}
+
+        client = screenscraper.ScreenScraperClient(FakeClient(), FakePublic())
+        extras = screenscraper.ScreenScraperInfo(client, ("info",))
+        with patch.object(game_info.GameInfo, "prepare", prepare):
+            scraper.scrape(self.root / "data", client, roms, extras=extras)
+        self.assertEqual(opened, [2])
+        info = library.read_fields(self.root / "data/library" / library.game_key(roms[0]) / "info.ini")
+        self.assertEqual((info["info_provider"], info["info_title"]), ("GameTDB", "Super Mario 64 DS"))
+        other = library.read_fields(self.root / "data/library" / library.game_key(roms[1]) / "info-status.ini")
+        self.assertEqual(other["info"], "missing")  # neither source has it
+
+    def test_a_cover_no_source_has_is_not_asked_again_for_a_week(self):
+        class Nowhere(FakePublic):
+            def artwork(self, rom, name_override=""):
+                self.asked.append(Path(rom).name)
+                raise scraper.NotFound("No cover in the public catalogs.")
+
+        rom = self.rom("Homebrew.md")
+        fake, public = FakeClient(), Nowhere()
+        client = screenscraper.ScreenScraperClient(fake, public)
+        data = self.root / "data"
+        item = data / "library" / library.game_key(rom)
+        scraper.scrape(data, client, [rom])
+        scraper.scrape(data, client, [rom])
+        self.assertEqual(public.asked, [rom.name])
+        self.assertEqual(len(fake.calls), 1)
+        status = library.read_fields(data / "scraper/status.ini")
+        self.assertEqual((status["missing"], status["state"]), ("1", "done"))
+        self.assertEqual(library.read_fields(item / "artwork-status.ini")["state"], "missing")
+        # A matching title asks again at once, and so does a week later.
+        library.write_fields(item / "artwork.ini", {"match_title": "Homebrew Deluxe"})
+        scraper.scrape(data, client, [rom])
+        self.assertEqual(len(public.asked), 2)
+        later = scraper.time.time() + scraper.UNMATCHED_RETRY + 1
+        with patch.object(scraper.time, "time", return_value=later):
+            scraper.scrape(data, client, [rom])
+        self.assertEqual(len(public.asked), 3)
+
+    def test_an_unmatched_cover_is_asked_again_when_screenscraper_was_only_busy(self):
+        class Nowhere(FakePublic):
+            def artwork(self, rom, name_override=""):
+                self.asked.append(Path(rom).name)
+                raise scraper.NotFound("No cover in the public catalogs.")
+
+        rom = self.rom("Homebrew.md")
+        public = Nowhere()
+        client = screenscraper.ScreenScraperClient(FakeClient(failure=503), public)
+        scraper.scrape(self.root / "data", client, [rom])
+        scraper.scrape(self.root / "data", client, [rom])
+        self.assertEqual(public.asked, [rom.name, rom.name])
 
     def test_a_zipped_dos_game_is_matched_by_its_file_name(self):
         folder = self.games / "DOS"

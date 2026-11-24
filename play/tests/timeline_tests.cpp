@@ -4,6 +4,7 @@
 // With a ROM (tests/test_timeline.py builds the test cartridge), a real session is rewound too, and the Rewind
 // screen is written to SHOT.bmp for a look.
 #include "app/session.hpp"
+#include "app/storage.hpp"
 #include "app/timeline.hpp"
 #include "companion/rewind.hpp"
 #include "ui/screens.hpp"
@@ -160,7 +161,9 @@ void test_big_and_refused_states() {
     Timeline r;
     r.configure(60, {});
     play_frames(r, none, 61);
-    CHECK(!r.available());
+    CHECK(r.available() && r.size() == 0); // one refusal (a tape loading): tried again a quarter step later
+    play_frames(r, none, 15 * 8);
+    CHECK(!r.available()); // eight in a row before the first moment: this game can't be rewound
 }
 
 void test_screen() {
@@ -372,7 +375,16 @@ void test_session(const std::string& rom, const std::string& data, const std::st
     std::vector<uint8_t> after;
     CHECK(session.core().save_state(after) && after == before);
     // B is still held: the game doesn't get it until it is let go.
-    // Then play from an earlier moment: the game is that moment, and the next one branches from it.
+    // Then play from an earlier moment: the game is that moment, and the next one branches from it. The battery save
+    // as it was is kept first (the test cartridge has none of its own: one is put there).
+    const std::string sav = session.save().path;
+    std::vector<uint8_t> card;
+    if (!read_file(sav, card) || card.empty()) {
+        card.assign(64, 0x5A);
+        CHECK(write_file_atomic(sav, card, why));
+    }
+    std::remove((sav + ".before-rewind").c_str());
+    std::remove((sav + ".before-rewind.last").c_str());
     CHECK(session.open_rewind(why));
     session.rewind_input(0, 50, false);
     session.rewind_input(L, 60, false);
@@ -380,6 +392,8 @@ void test_session(const std::string& rom, const std::string& data, const std::st
     const uint32_t from = session.rewind_screen().chosen();
     session.rewind_input(A, 80, false);
     CHECK(!session.rewinding() && session.timeline().head() == from);
+    std::vector<uint8_t> kept;
+    CHECK(read_file(sav + ".before-rewind", kept) && kept == card);
     for (int i = 0; i < 60 * 2; ++i) session.frame(0);
     session.timeline().settle();
     CHECK(session.timeline().children(from).size() >= 2);
@@ -404,10 +418,20 @@ void test_session(const std::string& rom, const std::string& data, const std::st
     CHECK(session.menu_rewind_show(older, shown));
     session.frame(0);
     CHECK(session.timeline().position() == session.timeline().find(menu_now)->position + 1);
-    // Play from here leaves the game at that moment.
+    // Back with no look loads nothing: the game is exactly as it was, and the head stays.
+    session.frame(0);
+    const uint32_t opened = session.menu_rewind_open();
+    std::vector<uint8_t> unchanged, back;
+    CHECK(opened && session.core().save_state(unchanged));
+    CHECK(session.menu_rewind_jump(opened, false) && session.timeline().head() == opened);
+    CHECK(session.core().save_state(back) && back == unchanged);
+    // Play from here leaves the game at that moment. The first kept save stays; the latest goes beside it.
     const uint32_t again = session.menu_rewind_open();
     CHECK(again && session.menu_rewind_show(older, shown) && session.menu_rewind_jump(older, true));
     CHECK(session.timeline().head() == older);
+    std::vector<uint8_t> first, last;
+    CHECK(read_file(sav + ".before-rewind", first) && first == card);
+    CHECK(read_file(sav + ".before-rewind.last", last) && !last.empty());
 }
 
 } // namespace

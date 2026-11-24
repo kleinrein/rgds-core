@@ -220,8 +220,8 @@ other workers. `.7z` with no games folder in its path goes to the inbox (Python 
 
 ## 12. Phase 2 as built (2026-11-22)
 
-- **Where**: Settings > Library > Files, the last row (library row id 15; Album and RetroAchievements moved one up for
-  Back). Deep link `--settings --section files`.
+- **Where**: a row of the Settings root since 2026-11-24 (Device group, section id 12, after System); until then
+  Settings > Library's last row (library row id 15, now unused). Locked on a Kid profile while Settings are. Deep link `--settings --section files`.
 - **Roots** (L/R, shoulder tabs name the neighbours): Games `/data/roms`, Inbox `/data/inbox`, Screenshots (the active
   player's album), Music (first `--music-dir`), Card `/data`, Trash (`<data>/trash`). `RGDS_FILES_ROOTS="Name=path;..."`
   replaces all but Trash (host previews, tests).

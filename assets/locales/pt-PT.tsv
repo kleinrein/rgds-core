@@ -63,6 +63,7 @@ Antarctica	Antártida
 Any	Todos
 Applies immediately. Higher clocks use more battery.	Aplica-se imediatamente. Frequências maiores gastam mais bateria.
 Applies immediately. Your game keeps its progress.	Aplica-se imediatamente. O progresso do jogo é mantido.
+Applies when the game starts without resuming.	Aplica-se quando o jogo arranca sem retomar.
 Apply	Aplicar
 APPLY	APLICAR
 Applying shader…	A aplicar filtro…
@@ -447,6 +448,7 @@ Default controls saved.	Controlos globais guardados.
 Glossy tiles	Azulejos brilhantes
 Go back	Voltar
 Goes into	Vai para
+Going online…	A ligar online…
 Golden leaves	Folhas douradas
 Green	Verde
 Grey	Cinzento
@@ -457,12 +459,26 @@ Left stick down	Manípulo esquerdo baixo
 Left stick left	Manípulo esquerdo esquerda
 Left stick right	Manípulo esquerdo direita
 Left stick up	Manípulo esquerdo cima
+Online play is off.	O jogo online está desligado.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Jogo online ligado com WiiLink WFC. Liga-te no menu Nintendo WFC do jogo.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Jogo online ligado com Wiimmfi. Liga-te no menu Nintendo WFC do jogo.
+Online play is on. Local wireless applies when it is off.	O jogo online está ligado. O sem fios local aplica-se quando estiver desligado.
 Page	Página
+Restart later	Reiniciar mais tarde
+Restart now, unsaved progress is lost	Reiniciar agora, o progresso não guardado perde-se
+Restarting the game to apply the change…	A reiniciar o jogo para aplicar a alteração…
+Restarting the game to change online play…	A reiniciar o jogo para mudar o jogo online…
+Restarting the game to change the microphone…	A reiniciar o jogo para mudar o microfone…
+Restarting the game to turn off local wireless…	A reiniciar o jogo para desligar o sem fios local…
+Restarting the game to turn on local wireless…	A reiniciar o jogo para ligar o sem fios local…
 Right stick down	Manípulo direito baixo
 Right stick left	Manípulo direito esquerda
 Right stick right	Manípulo direito direita
 Right stick up	Manípulo direito cima
 Storyware	Livro de histórias
+The game reads its language when it starts	O jogo lê o idioma ao arrancar
+The game reads your nickname when it starts	O jogo lê o teu nome ao arrancar
+Turning online play off…	A desligar o jogo online…
 h	h
 Haptic strength	Intensidade tátil
 Health	Vida
@@ -2017,3 +2033,14 @@ Could not open it	Não foi possível abrir
 This folder is empty	Esta pasta está vazia
 The trash is empty	O lixo está vazio
 No network places yet	Ainda não há locais de rede
+Files	Ficheiros
+Theme, sound and Wi-Fi	Tema, som e Wi-Fi
+Your screenshots and photos, by game and date	As tuas capturas e fotos, por jogo e data
+Games, saves and music on the card	Jogos, gravações e música do cartão
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	O DSiWare precisa dos ficheiros de BIOS da DS e da DSi na pasta BIOS
+This .cia is encrypted: copy the decrypted DSiWare file instead	Este .cia está encriptado: copie antes o ficheiro DSiWare desencriptado
+This .cia is not a DSiWare file	Este .cia não é um ficheiro DSiWare
+Little kid	Criança pequena
+Big pictures, one tap to play. No menus.	Imagens grandes, um toque para jogar. Sem menus.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	Para os jogadores mais pequenos: só os jogos deles, em imagens grandes. Um toque para jogar, sem menus nem definições onde se perder.
+No games yet	Ainda não há jogos

@@ -10,9 +10,20 @@
 // Play from here sends rewind-play:<id> (the runtime closes the menu), leaving any other way rewind-back:<now>.
 
 namespace {
+// Read in one go at the file's size (tens of MB of pictures for a Play game: no doubling buffer).
 std::vector<uint8_t> rewind_read_bytes(const fs::path& path) {
-    std::ifstream file(path, std::ios::binary);
-    return std::vector<uint8_t>(std::istreambuf_iterator<char>(file), {});
+    std::vector<uint8_t> bytes;
+    FILE* file = std::fopen(path.c_str(), "rb");
+    if (!file) return bytes;
+    if (std::fseek(file, 0, SEEK_END) == 0) {
+        const long size = std::ftell(file);
+        if (size > 0 && size < (256l << 20) && std::fseek(file, 0, SEEK_SET) == 0) {
+            bytes.resize(size_t(size));
+            bytes.resize(std::fread(bytes.data(), 1, bytes.size(), file));
+        }
+    }
+    std::fclose(file);
+    return bytes;
 }
 } // namespace
 
@@ -22,9 +33,37 @@ void App::rewind_drop_textures() {
     rewind_textures.clear();
 }
 
+// Off the page, however it was left (B, Play from here, the Menu button, the runtime's own view change): the
+// textures and pictures go, and a list still on its way is read and deleted when it lands (it is RAM on RG DS OS).
+void App::rewind_leave() {
+    rewind_screen.close();
+    rewind_drop_textures();
+    rewind_moments = {};
+    if (rewind_opening) rewind_discard = true;
+    rewind_opening = rewind_open_ = false;
+    rewind_final.clear();
+}
+
+// Every frame, any page: what the Rewind page left behind.
+void App::rewind_tidy() {
+    if (settings.page != Page::Rewind && (rewind_opening || rewind_open_ || !rewind_textures.empty() ||
+                                          !rewind_moments.moments.empty()))
+        rewind_leave();
+    if (!rewind_discard || !menu_pending_token.empty() || menu_status["state"] == "busy") return;
+    rewind_discard = false;
+    const fs::path control = o.data / "session/emulator.control";
+    play::MomentList list;
+    const auto bytes = rewind_read_bytes(fs::path(control.string() + ".rewind"));
+    list.parse(std::string(bytes.begin(), bytes.end()), {});
+    std::error_code ignored;
+    fs::remove(fs::path((list.files.empty() ? control.string() + ".rewind" : list.files) + ".thumbs"), ignored);
+}
+
 void App::open_rewind() {
     if (menu_status["state"] == "busy" || !menu_pending_token.empty()) return;
     rewind_drop_textures();
+    rewind_discard = false;
+    menu_status["rewind"] = ""; // only this open's answer counts (a request that could not be written leaves it)
     rewind_opening = true;
     rewind_open_ = false;
     rewind_final.clear();
@@ -54,6 +93,7 @@ void App::rewind_poll() {
         std::error_code ignored;
         fs::remove(thumbs, ignored);
         if (!listed) {
+            rewind_moments = {};
             settings.page = Page::QuickMenu;
             settings.focus = 13;
             show_detail("Rewind", locale.text(menu_status["rewind"] == "rewind-unavailable"
@@ -80,9 +120,7 @@ void App::rewind_poll() {
     const bool leaving = rewind_final.rfind("rewind-back:", 0) == 0;
     emit_sound(leaving ? MenuCue::Back : MenuCue::Load);
     menu_request(rewind_final);
-    rewind_final.clear();
-    rewind_open_ = false;
-    rewind_drop_textures();
+    rewind_leave();
     // Back to the game menu either way (playing on closes it, and it opens on the menu next time).
     settings.page = Page::QuickMenu;
     settings.focus = leaving ? 13 : 0;
@@ -93,7 +131,7 @@ void App::rewind_action(int code) {
     if (!rewind_open_) {
         if (code == 3 || code == 7) {
             // Left before the moments came: nothing was looked at, and the engine lets "now" go by itself.
-            rewind_opening = false;
+            rewind_leave();
             settings.page = Page::QuickMenu;
             settings.focus = 13;
         }
@@ -138,11 +176,18 @@ SDL_Texture* App::rewind_texture(SDL_Renderer* r, uint32_t id, int w, int h) {
     if (auto it = rewind_textures.find(key); it != rewind_textures.end()) return it->second;
     const play::Moment* m = rewind_moments.find(id);
     if (!m || m->thumb.empty() || w <= 0 || h <= 0) return nullptr;
+    // The page draws a moment at three sizes at most (the top card, the middle card, the others): past that, the
+    // moment's textures start again.
+    size_t sizes = 0;
     for (auto it = rewind_textures.lower_bound({r, first});
-         it != rewind_textures.end() && it->first.first == r && it->first.second >> 32 == id;) {
-        if (it->second) s.DestroyTexture(it->second);
-        it = rewind_textures.erase(it);
-    }
+         it != rewind_textures.end() && it->first.first == r && it->first.second >> 32 == id; ++it)
+        sizes++;
+    if (sizes >= 3)
+        for (auto it = rewind_textures.lower_bound({r, first});
+             it != rewind_textures.end() && it->first.first == r && it->first.second >> 32 == id;) {
+            if (it->second) s.DestroyTexture(it->second);
+            it = rewind_textures.erase(it);
+        }
     auto& texture = rewind_textures[key];
     std::vector<uint32_t> px(size_t(w) * h);
     const auto& t = m->thumb;

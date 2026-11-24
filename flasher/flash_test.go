@@ -51,7 +51,7 @@ func TestWriteImage(t *testing.T) {
 	f, _ := os.OpenFile(disk, os.O_RDWR, 0)
 	defer f.Close()
 	var phases []string
-	n, err := writeImage(path, fileTarget{f}, int64(size), func(phase string, done, total int64) {
+	n, err := writeImage(path, fileTarget{f}, &Plan{Total: int64(size)}, func(phase string, done, total int64) {
 		if len(phases) == 0 || phases[len(phases)-1] != phase {
 			phases = append(phases, phase)
 		}
@@ -79,7 +79,7 @@ func TestVerifyCatchesBadCard(t *testing.T) {
 	disk := filepath.Join(t.TempDir(), "disk")
 	f, _ := os.Create(disk)
 	defer f.Close()
-	_, err := writeImage(path, corruptTarget{fileTarget{f}}, 4*chunk, func(string, int64, int64) {})
+	_, err := writeImage(path, corruptTarget{fileTarget{f}}, &Plan{Total: 4 * chunk}, func(string, int64, int64) {})
 	if err == nil {
 		t.Fatal("a card that reads back different passed the check")
 	}
@@ -92,7 +92,7 @@ func TestDamagedImage(t *testing.T) {
 	os.WriteFile(path, data, 0o644)
 	f, _ := os.Create(filepath.Join(t.TempDir(), "disk"))
 	defer f.Close()
-	if _, err := writeImage(path, fileTarget{f}, 2*chunk, func(string, int64, int64) {}); err == nil {
+	if _, err := writeImage(path, fileTarget{f}, &Plan{Total: 2 * chunk}, func(string, int64, int64) {}); err == nil {
 		t.Fatal("a damaged gzip passed")
 	}
 }
@@ -141,7 +141,7 @@ func TestVerifyAfterReaderReset(t *testing.T) {
 	defer f.Close()
 	var dropped, reopened bool
 	var phases []string
-	_, err := writeImage(path, droppingTarget{fileTarget{f}, &dropped, &reopened}, 3*chunk, func(phase string, done, total int64) {
+	_, err := writeImage(path, droppingTarget{fileTarget{f}, &dropped, &reopened}, &Plan{Total: 3 * chunk}, func(phase string, done, total int64) {
 		if len(phases) == 0 || phases[len(phases)-1] != phase {
 			phases = append(phases, phase)
 		}
@@ -178,7 +178,7 @@ func TestPartitionTableLast(t *testing.T) {
 	f, _ := os.OpenFile(disk, os.O_RDWR, 0)
 	defer f.Close()
 	var early bool
-	if _, err := writeImage(path, headWatch{fileTarget{f}, &early}, 5*chunk, func(string, int64, int64) {}); err != nil {
+	if _, err := writeImage(path, headWatch{fileTarget{f}, &early}, &Plan{Total: 5 * chunk}, func(string, int64, int64) {}); err != nil {
 		t.Fatal(err)
 	}
 	if early {
@@ -212,7 +212,7 @@ func TestRepairsWhatTheOSWrote(t *testing.T) {
 	f, _ := os.Create(disk)
 	defer f.Close()
 	var reads int
-	if _, err := writeImage(path, mountingTarget{fileTarget{f}, &reads}, 5*chunk, func(string, int64, int64) {}); err != nil {
+	if _, err := writeImage(path, mountingTarget{fileTarget{f}, &reads}, &Plan{Total: 5 * chunk}, func(string, int64, int64) {}); err != nil {
 		t.Fatal(err)
 	}
 	if got, _ := os.ReadFile(disk); !bytes.Equal(got[:len(raw)], raw) {
@@ -225,7 +225,7 @@ func TestInlineCheckCatchesBadChunk(t *testing.T) {
 	f, _ := os.Create(filepath.Join(t.TempDir(), "disk"))
 	defer f.Close()
 	var phases []string
-	_, err := writeImage(path, corruptTarget{fileTarget{f}}, 6*chunk, func(phase string, done, total int64) {
+	_, err := writeImage(path, corruptTarget{fileTarget{f}}, &Plan{Total: 6 * chunk}, func(phase string, done, total int64) {
 		if len(phases) == 0 || phases[len(phases)-1] != phase {
 			phases = append(phases, phase)
 		}

@@ -272,8 +272,8 @@ class SettingsTests(unittest.TestCase):
             "20 tap 614 130\n60 drag 614 410\n100 release\n140 click 160 200\n180 click 72 452\n220 click 550 452\n",
             extra=("--settings",)
         )
-        # At the end of the grouped root (docs/SETTINGS_PLAN.md) the first whole row is System (section 5, Page::System = 9).
-        self.assertIn("\n9 5 ", self.state.read_text(), self.state.read_text())
+        # At the end of the grouped root (docs/SETTINGS_PLAN.md) the first whole row is Files (section 12, Page::Files = 58).
+        self.assertIn("\n58 12 ", self.state.read_text(), self.state.read_text())
         self.assertFalse(self.system_prefs.exists())
 
     def test_in_game_shader_button_opens_options_for_the_active_engine(self):

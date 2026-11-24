@@ -76,6 +76,7 @@ struct InputTestAccess {
     return in.pad_down(b, down);
   }
   static void axis(Input& in, SDL_GameControllerAxis a, Sint16 v) { in.axis(a, v); }
+  static void hold_mod(Input& in, bool down) { in.pad_mod_down_ = down; }
   static void physical_axis(Input& in, SDL_GameControllerAxis a, Sint16 v) { in.physical_axis(a, v); }
   static bool pen_down(const Input& in) { return in.stylus_down_ != 0; }
   static bool key_free(const Input& in, SDL_Keycode k) { return in.key_control_free(k); }
@@ -512,7 +513,7 @@ void test_extra_defaults_match_configure() {
   CHECK(std::string(Input::mod_default(true)) == "guide");
   CHECK(std::string(Input::mod_default(false)) == "none");
   CHECK(std::string(Input::stylus_button_default()) == "rightstick");
-  CHECK(std::string(Input::stylus_dpad_default()) == "none");
+  CHECK(std::string(Input::stylus_hold_default()) == "none");
   {
     Config c;
     CHECK(std::string(Input::stylus_axis_default(c)) == "right");
@@ -694,14 +695,90 @@ void test_stick_dpad_names_a_stick() {
   }
 }
 
-// Under the pad.stylus_dpad chord the d-pad stick is the pen's, as the d-pad
+// The Guitar Grip's frets default to L1, L2, R2, R1. While it is in they take
+// those controls from DS L/R, and from a stylus hold on the same trigger (an
+// L2 hold used to eat the red fret); out of the slot the controls are as before.
+void test_guitar_grip_frets() {
+  constexpr u32 kLR = (1u << B::BTN_L) | (1u << B::BTN_R);
+  Rig r;
+  r.set("pad.stylus_hold", "+lefttrigger");
+  Input& in = r.go();
+  in.set_guitar_grip(true);
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_LEFTSHOULDER, true));
+  T::physical_axis(in, SDL_CONTROLLER_AXIS_TRIGGERLEFT, 32767);
+  T::physical_axis(in, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 32767);
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, true));
+  ds::input::Frame f = in.frame();
+  CHECK(f.frets == 0xF && (f.buttons & kLR) == 0);
+  T::physical_axis(in, SDL_CONTROLLER_AXIS_TRIGGERLEFT, 0);
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_LEFTSHOULDER, false));
+  f = in.frame();
+  CHECK(f.frets == 0xC); // yellow and blue still held
+  const int x0 = in.stylus_x();
+  for (int i = 0; i < 8; ++i) in.update_stylus();
+  CHECK(in.stylus_x() == x0); // the hold never engaged
+  in.set_guitar_grip(false);
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_LEFTSHOULDER, true));
+  f = in.frame();
+  CHECK(f.frets == 0 && (f.buttons & (1u << B::BTN_L))); // L1 is DS L again
+}
+
+// The strum bindings play a stroke down the strings, then a lifted frame,
+// alternating direction; the d-pad's vertical pair is theirs only while the
+// grip is in, a fret is held and the menu is shut.
+void test_guitar_grip_strum() {
+  constexpr u32 kUpDown = (1u << B::BTN_UP) | (1u << B::BTN_DOWN);
+  Rig r;
+  Input& in = r.go();
+  in.set_guitar_grip(true);
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_DPAD_DOWN, true)); // no fret: the game's d-pad
+  ds::input::Frame plain = in.frame();
+  CHECK((plain.buttons & (1u << B::BTN_DOWN)) && !plain.down);
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_LEFTSHOULDER, true)); // green, with down still held...
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_DPAD_DOWN, false));   // ...whose release is still the game's
+  CHECK((in.frame().buttons & kUpDown) == 0);
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_DPAD_DOWN, true));
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_DPAD_DOWN, false));
+  int ys[5];
+  for (int i = 0; i < 5; ++i) {
+    const ds::input::Frame f = in.frame();
+    CHECK((f.buttons & kUpDown) == 0);
+    ys[i] = f.down ? f.y : -1;
+    if (i < 4) CHECK(f.down && f.x == 150);
+  }
+  CHECK(ys[0] < ys[1] && ys[1] < ys[2] && ys[2] < ys[3] && ys[4] == -1); // down the strings, then lifted
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_DPAD_UP, true));
+  const ds::input::Frame up = in.frame();
+  CHECK(up.down && up.y == ys[3]); // the next stroke goes back up
+  for (int i = 0; i < 5; ++i) in.frame();
+  CHECK(!in.frame().down);
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_DPAD_UP, false));
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_LEFTSHOULDER, false));
+  in.set_menu_open(true); // the menu navigates with the d-pad
+  CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_DPAD_DOWN, true));
+  CHECK((in.take_menu_presses() >> B::BTN_DOWN) & 1);
+
+  // A stickless handheld: a stylus hold on Select still moves the pen with
+  // the d-pad, the strum's up/down included, while no fret is held.
+  Rig r2;
+  r2.set("pad.stylus_hold", "back");
+  Input& in2 = r2.go();
+  in2.set_guitar_grip(true);
+  const int y0 = in2.stylus_y();
+  CHECK(T::pad(in2, SDL_CONTROLLER_BUTTON_BACK, true));
+  CHECK(T::pad(in2, SDL_CONTROLLER_BUTTON_DPAD_DOWN, true));
+  for (int i = 0; i < 8; ++i) in2.update_stylus();
+  CHECK(in2.stylus_y() > y0 && !in2.frame().down);
+}
+
+// Under the pad.stylus_hold chord the d-pad stick is the pen's, as the d-pad
 // is: the game lets go of it for as long as the chord is held, and a stick
 // still tilted on release is the d-pad again without having to move.
 void test_stick_dpad_moves_the_pen_under_the_chord() {
   constexpr u32 kRight = 1u << B::BTN_RIGHT,
                 kDpad = kRight | (1u << B::BTN_LEFT) | (1u << B::BTN_UP) | (1u << B::BTN_DOWN);
   Rig r;
-  r.set("pad.stylus_dpad", "leftshoulder");
+  r.set("pad.stylus_hold", "leftshoulder");
   Input& in = r.go();
   T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 30000);
   CHECK((in.frame().buttons & kDpad) == kRight);
@@ -775,10 +852,236 @@ void test_axis_remap() {
   CHECK(Input::axis_remap_default(SDL_CONTROLLER_AXIS_RIGHTX) == "rightx");
 }
 
+// pad.analog: sticks reach the frame as proportional values for a CPAD
+// patch, with a radial deadzone; off, the fields stay zero.
+void test_analog_sticks() {
+  {
+    Rig r;
+    r.set("pad.analog", "off");
+    Input& in = r.go();
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 32767);
+    const input::Frame f = in.frame();
+    CHECK(f.cpad_x == 0 && f.cpad_y == 0 && !f.zl && !f.zr);
+  }
+  {
+    Rig r;
+    r.set("pad.analog", "left");
+    Input& in = r.go();
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 32767);
+    input::Frame f = in.frame();
+    CHECK(f.cpad_x == 32767 && f.cpad_y == 0);
+    CHECK(f.cstick_x == 0 && f.cstick_y == 0);
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 3000); // inside the 6000 deadzone
+    f = in.frame();
+    CHECK(f.cpad_x == 0 && f.cpad_y == 0);
+    // A full diagonal clamps to full magnitude, not sqrt(2) times it.
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 32767);
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTY, 32767);
+    f = in.frame();
+    CHECK(f.cpad_x > 22000 && f.cpad_x < 24000);
+    CHECK(f.cpad_x == -f.cpad_y);
+  } // down the stick is down for the patch
+  {
+    Rig r;
+    r.set("pad.analog", "dual");
+    Input& in = r.go();
+    T::axis(in, SDL_CONTROLLER_AXIS_RIGHTY, -32768);
+    T::axis(in, SDL_CONTROLLER_AXIS_TRIGGERLEFT, 32767);
+    const input::Frame f = in.frame();
+    CHECK(f.cstick_y == 32767); // full up, positive as on a 3DS
+    CHECK(f.cpad_x == 0 && f.cpad_y == 0);
+    CHECK(f.zl && !f.zr);
+  }
+  {
+    Rig r;
+    r.set("pad.analog", "left").set("pad.analog_invert_y", "true");
+    Input& in = r.go();
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTY, 32767);
+    CHECK(in.frame().cpad_y == 32767);
+  }
+  { // Sensitivity: each stick its own; lower cuts the top, higher saturates sooner.
+    Rig r;
+    r.set("pad.analog", "dual")
+        .set("pad.analog_deadzone", "0")
+        .set("pad.analog_sensitivity_left", "50")
+        .set("pad.analog_sensitivity_right", "200");
+    Input& in = r.go();
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 32767);
+    T::axis(in, SDL_CONTROLLER_AXIS_RIGHTX, 16384);
+    input::Frame f = in.frame();
+    CHECK(f.cpad_x >= 16382 && f.cpad_x <= 16384);
+    CHECK(f.cstick_x >= 32766);
+    T::axis(in, SDL_CONTROLLER_AXIS_RIGHTX, 32767);
+    f = in.frame();
+    CHECK(f.cstick_x == 32767 || f.cstick_x == 32766);
+  } // capped, not doubled
+  {
+    Rig r;
+    r.set("pad.analog", "right").set("pad.analog_deadzone", "0").set("pad.analog_sensitivity_right", "50");
+    Input& in = r.go(); // the right stick as the CPad
+    T::axis(in, SDL_CONTROLLER_AXIS_RIGHTX, 32767);
+    const input::Frame f = in.frame();
+    CHECK(f.cpad_x >= 16382 && f.cpad_x <= 16384);
+  }
+  { // ZL/ZR are the two-stick mode's, and a hotkey chord is not a press.
+    Rig r;
+    r.set("pad.analog", "left");
+    Input& in = r.go();
+    T::axis(in, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 32767);
+    CHECK(!in.frame().zr);
+  }
+  {
+    Rig r;
+    r.set("pad.analog", "dual");
+    Input& in = r.go();
+    T::axis(in, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 32767);
+    T::hold_mod(in, true);
+    CHECK(!in.frame().zr);
+    T::hold_mod(in, false);
+    CHECK(in.frame().zr);
+  }
+  { // SDL reports only changes, so a control held through a reconfigure stays held.
+    Rig r;
+    r.set("pad.analog", "dual");
+    Input& in = r.go();
+    T::axis(in, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 32767);
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 32767);
+    r.go();
+    const input::Frame f = in.frame();
+    CHECK(f.zr && f.cpad_x == 32767);
+  }
+  {
+    Rig r;
+    r.set("pad.analog", "sideways");
+    Input& in = r.go(); // unparseable: off
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 32767);
+    CHECK(in.frame().cpad_x == 0);
+  }
+  {
+    Rig r;
+    Input& in = r.go(); // auto by default: two sticks here
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 32767);
+    T::axis(in, SDL_CONTROLLER_AXIS_RIGHTY, -32768);
+    T::axis(in, SDL_CONTROLLER_AXIS_TRIGGERLEFT, 32767);
+    const input::Frame f = in.frame();
+    CHECK(f.cpad_x == 32767 && f.cstick_y == 32767 && f.zl);
+  }
+}
+
+// While a patch runs, its sticks are its own: the pen, stick_dpad and
+// stick_face let go of them, and the modifier lends the pen its stick back.
+void test_analog_patch_claims_sticks() {
+  constexpr u32 kRight = 1u << B::BTN_RIGHT,
+                kDpad = kRight | (1u << B::BTN_LEFT) | (1u << B::BTN_UP) | (1u << B::BTN_DOWN);
+  { // No patch: the defaults as ever, the left stick on the d-pad, the right on the pen.
+    Rig r;
+    Input& in = r.go();
+    const int x0 = in.stylus_x();
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 30000);
+    T::axis(in, SDL_CONTROLLER_AXIS_RIGHTX, 30000);
+    in.update_stylus();
+    CHECK((in.frame().buttons & kDpad) == kRight);
+    CHECK(in.stylus_x() > x0);
+  }
+  {
+    Rig r;
+    Input& in = r.go();
+    in.set_analog_patch(true);
+    const int x0 = in.stylus_x();
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 30000);
+    T::axis(in, SDL_CONTROLLER_AXIS_RIGHTX, 30000);
+    in.update_stylus();
+    input::Frame f = in.frame();
+    CHECK((f.buttons & kDpad) == 0); // the stick steers, not the d-pad
+    CHECK(in.stylus_x() == x0);      // nor the pen
+    CHECK(f.cpad_x > 0 && f.cstick_x > 0);
+    T::hold_mod(in, true); // the pen borrows its stick
+    in.update_stylus();
+    f = in.frame();
+    CHECK(in.stylus_x() > x0);
+    CHECK(f.cstick_x == 0 && f.cpad_x > 0); // and the patch sees it centred
+    T::hold_mod(in, false);
+    in.set_analog_patch(false); // the d-pad comes back on the next event
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 30001);
+    CHECK((in.frame().buttons & kDpad) == kRight);
+  }
+  { // A direction held when the patch starts does not stay held.
+    Rig r;
+    Input& in = r.go();
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 30000);
+    CHECK((in.frame().buttons & kDpad) == kRight);
+    in.set_analog_patch(true);
+    CHECK((in.frame().buttons & kDpad) == 0);
+  }
+  { // One stick for the patch: the other keeps its job.
+    Rig r;
+    r.set("pad.analog", "left");
+    Input& in = r.go();
+    in.set_analog_patch(true);
+    const int x0 = in.stylus_x();
+    T::axis(in, SDL_CONTROLLER_AXIS_RIGHTX, 30000);
+    in.update_stylus();
+    CHECK(in.stylus_x() > x0);
+  }
+  { // A bound stylus_hold lends the pen its stick, and the modifier no longer does.
+    Rig r;
+    r.set("pad.stylus_hold", "leftstick");
+    Input& in = r.go();
+    in.set_analog_patch(true);
+    const int x0 = in.stylus_x();
+    T::axis(in, SDL_CONTROLLER_AXIS_RIGHTX, 30000);
+    T::hold_mod(in, true);
+    in.update_stylus();
+    CHECK(in.stylus_x() == x0 && in.frame().cstick_x > 0);
+    T::hold_mod(in, false);
+    CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_LEFTSTICK, true));
+    in.update_stylus();
+    CHECK(in.stylus_x() > x0 && in.frame().cstick_x == 0);
+    CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_LEFTSTICK, false));
+    const int x1 = in.stylus_x();
+    in.update_stylus();
+    CHECK(in.stylus_x() == x1 && in.frame().cstick_x > 0);
+  }
+  { // A trigger that is stylus_hold moves the pen and is not ZL as well.
+    Rig r;
+    r.set("pad.stylus_hold", "+lefttrigger");
+    Input& in = r.go();
+    in.set_analog_patch(true);
+    const int x0 = in.stylus_x();
+    T::axis(in, SDL_CONTROLLER_AXIS_RIGHTX, 30000);
+    T::axis(in, SDL_CONTROLLER_AXIS_TRIGGERLEFT, 32767);
+    T::axis(in, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 32767);
+    in.update_stylus();
+    const input::Frame f = in.frame();
+    CHECK(in.stylus_x() > x0 && !f.zl && f.zr);
+  }
+  { // The old name still binds it.
+    Rig r;
+    r.set("pad.stylus_dpad", "leftstick");
+    Input& in = r.go();
+    in.set_analog_patch(true);
+    const int x0 = in.stylus_x();
+    T::axis(in, SDL_CONTROLLER_AXIS_RIGHTX, 30000);
+    CHECK(T::pad(in, SDL_CONTROLLER_BUTTON_LEFTSTICK, true));
+    in.update_stylus();
+    CHECK(in.stylus_x() > x0);
+  }
+  { // Off: nothing is claimed even with a patch on.
+    Rig r;
+    r.set("pad.analog", "off");
+    Input& in = r.go();
+    in.set_analog_patch(true);
+    T::axis(in, SDL_CONTROLLER_AXIS_LEFTX, 30000);
+    CHECK((in.frame().buttons & kDpad) == kRight);
+  }
+}
+
 } // namespace
 } // namespace ds::sdl
 
 int main() {
+  ds::sdl::test_guitar_grip_frets();
+  ds::sdl::test_guitar_grip_strum();
   ds::sdl::test_fallback_is_inert_by_default();
   ds::sdl::test_fallback_rescues_an_orphaned_button();
   ds::sdl::test_fallback_yields_to_a_real_binding();
@@ -802,6 +1105,8 @@ int main() {
   ds::sdl::test_stick_dpad_names_a_stick();
   ds::sdl::test_stick_dpad_moves_the_pen_under_the_chord();
   ds::sdl::test_axis_remap();
+  ds::sdl::test_analog_sticks();
+  ds::sdl::test_analog_patch_claims_sticks();
   std::printf("input tests passed\n");
   return 0;
 }

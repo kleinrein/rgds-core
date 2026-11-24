@@ -63,6 +63,7 @@ Antarctica	Antarktis
 Any	Alla
 Applies immediately. Higher clocks use more battery.	Gäller direkt. Högre klockfrekvenser drar mer batteri.
 Applies immediately. Your game keeps its progress.	Gäller direkt. Dina spelframsteg behålls.
+Applies when the game starts without resuming.	Gäller när spelet startar utan att fortsätta.
 Apply	Verkställ
 APPLY	ANVÄND
 Applying shader…	Tillämpar shader…
@@ -447,6 +448,7 @@ Default controls saved.	Globala kontroller sparade.
 Glossy tiles	Blanka plattor
 Go back	Gå tillbaka
 Goes into	Hamnar i
+Going online…	Går online…
 Golden leaves	Gyllene löv
 Green	Grön
 Grey	Grå
@@ -457,12 +459,26 @@ Left stick down	Vänster styrspak ned
 Left stick left	Vänster styrspak vänster
 Left stick right	Vänster styrspak höger
 Left stick up	Vänster styrspak upp
+Online play is off.	Onlinespel är av.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Onlinespel är på med WiiLink WFC. Anslut från spelets Nintendo WFC-meny.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Onlinespel är på med Wiimmfi. Anslut från spelets Nintendo WFC-meny.
+Online play is on. Local wireless applies when it is off.	Onlinespel är på. Lokal trådlös gäller när det är av.
 Page	Sida
+Restart later	Starta om senare
+Restart now, unsaved progress is lost	Starta om nu, osparade framsteg går förlorade
+Restarting the game to apply the change…	Startar om spelet för att tillämpa ändringen…
+Restarting the game to change online play…	Startar om spelet för att ändra onlinespel…
+Restarting the game to change the microphone…	Startar om spelet för att ändra mikrofonen…
+Restarting the game to turn off local wireless…	Startar om spelet för att slå av lokal trådlös…
+Restarting the game to turn on local wireless…	Startar om spelet för att slå på lokal trådlös…
 Right stick down	Höger styrspak ned
 Right stick left	Höger styrspak vänster
 Right stick right	Höger styrspak höger
 Right stick up	Höger styrspak upp
 Storyware	Sagobok
+The game reads its language when it starts	Spelet läser sitt språk när det startar
+The game reads your nickname when it starts	Spelet läser ditt smeknamn när det startar
+Turning online play off…	Stänger av onlinespel…
 h	tim
 Haptic strength	Haptisk styrka
 Health	Hälsa
@@ -2017,3 +2033,14 @@ Could not open it	Kunde inte öppna den
 This folder is empty	Den här mappen är tom
 The trash is empty	Papperskorgen är tom
 No network places yet	Inga nätverksplatser än
+Files	Filer
+Theme, sound and Wi-Fi	Tema, ljud och Wi-Fi
+Your screenshots and photos, by game and date	Dina skärmbilder och foton efter spel och datum
+Games, saves and music on the card	Spel, sparfiler och musik på kortet
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare behöver BIOS-filerna för DS och DSi i BIOS-mappen
+This .cia is encrypted: copy the decrypted DSiWare file instead	Den här .cia-filen är krypterad: kopiera den dekrypterade DSiWare-filen i stället
+This .cia is not a DSiWare file	Den här .cia-filen är inte en DSiWare-fil
+Little kid	Litet barn
+Big pictures, one tap to play. No menus.	Stora bilder, ett tryck för att spela. Inga menyer.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	För de minsta spelarna: bara deras spel, som stora bilder. Ett tryck startar, och det finns inga menyer eller inställningar att gå vilse i.
+No games yet	Inga spel än

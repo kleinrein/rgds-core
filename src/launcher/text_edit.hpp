@@ -47,7 +47,8 @@ void App::finish_edit(bool commit) {
         if (commit && !name.empty() && field == 8) {
             // Each new profile starts on a picture and a colour of its own.
             const int number = int(profiles.profiles().size());
-            const auto id = profiles.add(name, new_profile_restricted, number % int(profile_picture_count));
+            const auto id = profiles.add(name, new_profile_restricted, number % int(profile_picture_count),
+                                         new_profile_simple);
             if (id.empty()) status = "Could not save all settings. Check storage.";
             else {
                 profile_editing = id;
@@ -103,11 +104,14 @@ void App::finish_edit(bool commit) {
         return;
     }
     if (edit_field == 5) {
-        if (commit) save_ds_setting("nickname", edit_buffer.empty() ? ds_owner_name() : edit_buffer);
+        const std::string before = ds_settings.count("nickname") ? ds_settings["nickname"] : ds_owner_name();
+        const std::string after = edit_buffer.empty() ? ds_owner_name() : edit_buffer;
+        if (commit && after != before) save_ds_setting("nickname", after);
         edit_buffer.clear();
         s.StopTextInput();
         settings.page = Page::DSControls;
         settings.focus = 4;
+        if (commit && after != before) ds_apply_in_game("nickname");
         dirty = true;
         return;
     }
@@ -128,7 +132,7 @@ void App::finish_edit(bool commit) {
         return;
     }
     if (edit_field == 3) {
-        if (commit && save_artwork_match(edit_buffer)) service_notice = "Matching title saved. Choose Fetch artwork.";
+        if (commit && save_artwork_match(edit_buffer)) notify("Matching title saved. Choose Fetch artwork.");
         edit_buffer.clear();
         s.StopTextInput();
         settings.page = Page::GameArtwork;
@@ -167,7 +171,7 @@ void App::finish_edit(bool commit) {
                     << '}';
             if (worker > 0 && (worker_action == "index" || worker_action == "status")) stop_worker();
             if (worker > 0 && worker_action != "device.info" && worker_action != "device.update-auto")
-                service_notice = "Wait for the current task to finish, then sign in.";
+                notify("Wait for the current task to finish, then sign in.");
             else start_worker("achievements.login", payload.str());
             auto sent = payload.str();
             std::fill(sent.begin(), sent.end(), '\0');
@@ -192,7 +196,7 @@ void App::finish_edit(bool commit) {
         std::ostringstream payload;
         payload << "{\"ssid\":" << std::quoted(username) << ",\"sspassword\":" << std::quoted(edit_buffer) << '}';
         if (worker > 0 && worker_action != "scrape") stop_worker();
-        if (worker > 0) service_notice = "Stop scraping before signing in";
+        if (worker > 0) notify("Stop scraping before signing in");
         else {
             service_notice.clear();
             start_worker("login", payload.str());
@@ -281,7 +285,7 @@ void App::achievements_action(int code) {
         else {
             if (worker > 0 && (worker_action == "index" || worker_action == "status")) stop_worker();
             if (worker > 0 && worker_action != "device.info" && worker_action != "device.update-auto")
-                service_notice = "Wait for the current task to finish, then sign out.";
+                notify("Wait for the current task to finish, then sign out.");
             else start_worker("achievements.logout");
         }
     });
@@ -297,7 +301,7 @@ void App::scraper_action() {
             if (n == 0) begin_edit(0);
             else {
                 if (worker > 0 && worker_action != "scrape") stop_worker();
-                if (worker > 0) service_notice = "Stop scraping before signing out";
+                if (worker > 0) notify("Stop scraping before signing out");
                 else start_worker("logout");
             }
         });
@@ -330,7 +334,7 @@ void App::scraper_action() {
         stop_worker();
     if (worker > 0) {
         std::ofstream(o.data / "scraper/cancel").put('\n');
-        service_notice = "Stopping after this request";
+        notify("Stopping after this request");
         return;
     }
     start_worker("scrape");

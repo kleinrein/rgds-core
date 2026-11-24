@@ -116,6 +116,7 @@ private:
     ProfileLibrary profiles_;
     std::vector<std::string> profile_errors_;
     const Profile* profile_ = nullptr;
+    Profile tall_profile_; // profile_ for a vertical arcade game with none of its own
     std::unique_ptr<Companion> companion_;
     std::unique_ptr<SaveWriter> writer_;
     SaveSlot save_;
@@ -133,6 +134,10 @@ private:
     void menu_rewind_restore(); // a look in effect: back to the moment the menu opened at
     uint32_t menu_now_ = 0;
     bool menu_previewed_ = false;
+    // Before playing on from an earlier moment: the battery save as it is, kept beside it (the first of the session
+    // as .before-rewind, never replaced; the latest as .before-rewind.last). False when it could not be kept.
+    bool keep_before_rewind(bool fresh);
+    bool rewind_backed_up_ = false;
     std::vector<uint32_t> menu_shown_;
     void close_rewind(uint32_t id);
     Timeline timeline_;

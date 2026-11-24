@@ -98,10 +98,23 @@ textures.
 moment. Both engines put back "now" before anything writes a save (DSCore's
 `flush_save` and autosave, Play's `flush` and `save_state_file`) and before the
 next frame runs, so a menu closed any other way than Back or Play from here
-(the menu button) never leaves the game on a moment only looked at. Playing from a
-moment on the DS works like a checkpoint load: the `.sav` is copied to
-`.sav.before-rewind`, then the moment's cartridge is written. In Play the cart
-RAM comes back in memory and the `.sav` changes when the game next saves.
+(the menu button) never leaves the game on a moment only looked at. Playing from an
+earlier moment keeps the battery save first, on every system: the first of the
+session as `<save>.before-rewind` (never replaced, so a second rewind cannot put
+a rewound save there), the latest as `<save>.before-rewind.last`. When the copy
+cannot be written (a full card), Play from here is refused. Then the moment's
+cartridge goes on: DSCore writes it at once; libretro cores write it at their
+next battery check; mGBA when the game next saves. Back, and Play from the
+moment the menu opened at, load nothing: the machine is still there.
+
+Failures never take the game down: the engines' `rgds_rewind_*` hooks and the
+per-frame take catch exceptions (out of memory is the likely one), the bridge
+answers "unavailable" when the list cannot be written, and a core that refuses a
+state is asked again a quarter step later (eight refusals before the first
+moment turn rewind off for that game). DSCore reuses an evicted moment's buffer
+for the next take and counts capacity, not size, against `DS_REWIND_MB`. The
+game menu frees its pictures and textures however the page is left, and the
+runtime deletes any picture file left in `/run/rgds` when the menu closes.
 
 Not in phase 1: the tree lives in memory and is gone when the game closes;
 translations for the new strings (English shows meanwhile).

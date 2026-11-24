@@ -37,6 +37,23 @@ struct Banner {
     std::vector<unsigned char> pixels;
     std::string title;
 };
+// Where the game (the SRL) starts in a DS file: 0, or a DSiWare .cia's content after its header, certificates,
+// ticket and TMD, each padded to 64 bytes (runtime/dsiware.py srl_span; an encrypted content has no readable icon).
+inline uint64_t srl_start(std::ifstream& file) {
+    unsigned char head[0x20]{};
+    file.seekg(0);
+    if (!file.read(reinterpret_cast<char*>(head), sizeof head)) {
+        file.clear();
+        return 0;
+    }
+    auto word = [&](int at) {
+        return uint64_t(head[at]) | (uint64_t(head[at + 1]) << 8) | (uint64_t(head[at + 2]) << 16) |
+               (uint64_t(head[at + 3]) << 24);
+    };
+    if (word(0) != 0x2020) return 0;
+    auto align = [](uint64_t x) { return (x + 0x3f) & ~uint64_t(0x3f); };
+    return align(align(align(align(word(0)) + word(8)) + word(12)) + word(16));
+}
 inline Banner read_banner(const fs::path& path) {
     Banner result;
     if (is_archive(path)) return result;
@@ -44,14 +61,15 @@ inline Banner read_banner(const fs::path& path) {
     if (!file) return result;
     file.seekg(0, std::ios::end);
     auto length = file.tellg();
-    if (length < 0x6c) return result;
-    file.seekg(0x68);
+    const uint64_t base = srl_start(file);
+    if (uint64_t(length) < base + 0x6c) return result;
+    file.seekg(std::streamoff(base + 0x68));
     unsigned char offset[4]{};
     if (!file.read(reinterpret_cast<char*>(offset), 4)) return result;
     uint32_t begin = offset[0] | (uint32_t(offset[1]) << 8) | (uint32_t(offset[2]) << 16) | (uint32_t(offset[3]) << 24);
-    if (begin < 0x200 || uint64_t(begin) + 0x440 > static_cast<uint64_t>(length)) return result;
+    if (begin < 0x200 || base + begin + 0x440 > static_cast<uint64_t>(length)) return result;
     std::array<unsigned char, 0x440> bytes{};
-    file.seekg(begin);
+    file.seekg(std::streamoff(base + begin));
     if (!file.read(reinterpret_cast<char*>(bytes.data()), bytes.size())) return result;
     result.pixels.resize(32 * 32 * 4);
     for (int y = 0; y < 32; y++)
@@ -150,7 +168,12 @@ class Media {
                 image.w = surface->w;
                 image.h = surface->h;
                 s.SetHint("SDL_RENDER_SCALE_QUALITY", icon || path.filename() == "icon.bmp" ? "0" : "1");
-                image.texture = s.CreateTextureFromSurface(r, surface);
+                // 24-bit pictures (Album thumbnails and views, the Files peek: runtime/screenshots.py writes them)
+                // became blank textures on the handheld's GLES renderer (2026-11-24) while the 32-bit covers drew:
+                // they go up as RGBA32, opaque, like every other picture.
+                SDL_Surface* rgba = surface->format->BytesPerPixel == 3 ? opaque_rgba(s, surface) : nullptr;
+                image.texture = s.CreateTextureFromSurface(r, rgba ? rgba : surface);
+                if (rgba) s.FreeSurface(rgba);
                 if (image.texture) {
                     image.bytes = bytes;
                     texture_bytes += bytes;
@@ -160,6 +183,23 @@ class Media {
         }
         trim(image_limit - 1);
         return image;
+    }
+    static SDL_Surface* opaque_rgba(Sdl& s, SDL_Surface* source) {
+        SDL_Surface* out = s.CreateRGBSurfaceWithFormat(0, source->w, source->h, 32, SDL_PIXELFORMAT_RGBA32);
+        if (!out) return nullptr;
+        const SDL_PixelFormat* f = source->format;
+        for (int y = 0; y < source->h; y++) {
+            const auto* from = static_cast<const unsigned char*>(source->pixels) + y * source->pitch;
+            auto* to = static_cast<unsigned char*>(out->pixels) + y * out->pitch;
+            for (int x = 0; x < source->w; x++, from += 3, to += 4) {
+                const uint32_t v = uint32_t(from[0] | from[1] << 8 | from[2] << 16);
+                to[0] = Uint8((v & f->Rmask) >> f->Rshift);
+                to[1] = Uint8((v & f->Gmask) >> f->Gshift);
+                to[2] = Uint8((v & f->Bmask) >> f->Bshift);
+                to[3] = 255;
+            }
+        }
+        return out;
     }
     static std::string image_key(const fs::path& path, bool icon) { return (icon ? "icon:" : "art:") + path.string(); }
     static std::string thumb_key(const fs::path& path) { return "thumb:" + path.string(); }

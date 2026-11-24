@@ -6,7 +6,7 @@ A voice changer on Home, after the DSi's sound app: record a word with the micro
 
 - **Home → Sound toy.** The tile comes after PictoChat and Music. In the column layout it sits beside Recents when it is the only app, and the last row holds three narrower tiles when PictoChat, Music and the toy are all there. **Settings → Sound → Sound toy** hides it (on by default).
 - **Record (X):** up to 10 seconds; X, A or B stops it early. The silence before and after the word is trimmed, the level is evened out, and the sound plays straight away.
-- **Voices (Left/Right, or tap a face):** 24 of them, six to a page; the arrows and dots under them turn the page, and Left/Right walks straight across pages. Changing the voice plays the sound again.
+- **Voices (Left/Right, or tap a face):** 24 of them, six to a page; the arrows and dots under them turn the page, a swipe or flick across the faces turns it too (the strip follows the finger; a short pull springs back), and Left/Right walks straight across pages. Changing the voice plays the sound again.
 
 | Page | Voices |
 |---|---|

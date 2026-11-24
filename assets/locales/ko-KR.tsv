@@ -63,6 +63,7 @@ Antarctica	남극
 Any	전체
 Applies immediately. Higher clocks use more battery.	바로 적용됩니다. 클럭이 높을수록 배터리를 많이 씁니다.
 Applies immediately. Your game keeps its progress.	바로 적용됩니다. 게임 진행은 그대로 유지됩니다.
+Applies when the game starts without resuming.	이어하지 않고 게임을 시작할 때 적용됩니다.
 Apply	적용
 APPLY	적용
 Applying shader…	필터 적용 중…
@@ -447,6 +448,7 @@ Default controls saved.	공통 조작 설정을 저장했습니다.
 Glossy tiles	반짝이는 타일
 Go back	뒤로
 Goes into	저장 위치
+Going online…	온라인에 연결하는 중…
 Golden leaves	황금 잎
 Green	초록색
 Grey	회색
@@ -457,12 +459,26 @@ Left stick down	왼쪽 스틱 아래
 Left stick left	왼쪽 스틱 왼쪽
 Left stick right	왼쪽 스틱 오른쪽
 Left stick up	왼쪽 스틱 위
+Online play is off.	온라인 플레이가 꺼져 있습니다.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	WiiLink WFC로 온라인 플레이가 켜졌습니다. 게임의 Nintendo WFC 메뉴에서 연결하세요.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Wiimmfi로 온라인 플레이가 켜졌습니다. 게임의 Nintendo WFC 메뉴에서 연결하세요.
+Online play is on. Local wireless applies when it is off.	온라인 플레이가 켜져 있습니다. 로컬 무선은 꺼져 있을 때 적용됩니다.
 Page	페이지
+Restart later	나중에 다시 시작
+Restart now, unsaved progress is lost	지금 다시 시작, 저장하지 않은 진행은 사라집니다
+Restarting the game to apply the change…	변경을 적용하려고 게임을 다시 시작하는 중…
+Restarting the game to change online play…	온라인 플레이를 바꾸려고 게임을 다시 시작하는 중…
+Restarting the game to change the microphone…	마이크를 바꾸려고 게임을 다시 시작하는 중…
+Restarting the game to turn off local wireless…	로컬 무선을 끄려고 게임을 다시 시작하는 중…
+Restarting the game to turn on local wireless…	로컬 무선을 켜려고 게임을 다시 시작하는 중…
 Right stick down	오른쪽 스틱 아래
 Right stick left	오른쪽 스틱 왼쪽
 Right stick right	오른쪽 스틱 오른쪽
 Right stick up	오른쪽 스틱 위
 Storyware	스토리웨어
+The game reads its language when it starts	게임은 시작할 때 언어를 읽습니다
+The game reads your nickname when it starts	게임은 시작할 때 닉네임을 읽습니다
+Turning online play off…	온라인 플레이를 끄는 중…
 h	시간
 Haptic strength	햅틱 강도
 Health	체력
@@ -2017,3 +2033,14 @@ Could not open it	열 수 없습니다
 This folder is empty	이 폴더는 비어 있습니다
 The trash is empty	휴지통이 비어 있습니다
 No network places yet	아직 네트워크 위치가 없습니다
+Files	파일
+Theme, sound and Wi-Fi	테마, 소리, Wi-Fi
+Your screenshots and photos, by game and date	게임과 날짜별 스크린샷과 사진
+Games, saves and music on the card	카드의 게임, 저장, 음악
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare를 실행하려면 BIOS 폴더에 DS와 DSi BIOS 파일이 필요합니다
+This .cia is encrypted: copy the decrypted DSiWare file instead	이 .cia는 암호화되어 있습니다. 복호화된 DSiWare 파일을 복사하세요
+This .cia is not a DSiWare file	이 .cia는 DSiWare 파일이 아닙니다
+Little kid	어린아이
+Big pictures, one tap to play. No menus.	큰 그림, 한 번 탭하면 시작. 메뉴 없음.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	가장 어린 플레이어를 위해: 그 아이의 게임만 큰 그림으로. 한 번 탭하면 시작되고, 헤맬 메뉴나 설정이 없어요.
+No games yet	아직 게임이 없어요

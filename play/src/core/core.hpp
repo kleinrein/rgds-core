@@ -79,6 +79,9 @@ public:
     // latest frame; a frame that does not fit is read back as usual.
     virtual void set_gl_target(unsigned texture, int w, int h) { (void)texture, (void)w, (void)h; }
     virtual bool drew_gl_target() const { return false; }
+    // A core whose frames went straight into a GL texture reads its latest frame back into picture() once (the game
+    // being left: its last frame for the launcher). False when there was nothing to read; picture() is then as it was.
+    virtual bool read_back_latest() { return false; }
     // A light gun aimed by touch (the NES Zapper): on, the second port is the gun; set_pointer aims it at a pixel
     // of picture() (-1: off the screen) with the trigger down or up. False when the system has none.
     virtual bool set_lightgun(bool on) {

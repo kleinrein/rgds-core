@@ -98,6 +98,16 @@ void request_stop(int) { stop_requested = true; }
 void keep_last_frame(const Picture& game) {
     const char* state = std::getenv("RGDS_AUTOSTATE_FILE");
     if (!state || !*state || !game.px || game.w <= 0 || game.h <= 0 || game.w > 4096 || game.h > 4096) return;
+    // An all-black picture is no frame at all (a GPU core that could not be read back): the launcher then uses the
+    // menu's capture or the checkpoint's own picture instead of a black card.
+    bool lit = false;
+    for (int y = 0; y < game.h && !lit; y += 4)
+        for (int x = 0; x < game.w; x += 4)
+            if (game.at(x, y) & 0x00ffffffu) {
+                lit = true;
+                break;
+            }
+    if (!lit) return;
     const std::filesystem::path target = std::filesystem::path(state).parent_path() / "last-frame.bmp";
     const int row = (game.w * 3 + 3) & ~3;
     std::vector<uint8_t> file(54 + size_t(row) * size_t(game.h), 0);
@@ -545,9 +555,26 @@ extern "C" __attribute__((visibility("default"))) int rgds_play_set_color(int pa
 
 // Rewind, called by the bridge as for DSCore's (rgds_rewind_* in its frontend, docs/TIME_TRAVEL_PLAN.md): the game
 // menu's Rewind screen lists the session's moments, has one loaded for a look, then plays from one or goes back.
+namespace {
+// Nothing thrown gets out to the bridge (out of memory, say): the menu hears "no" and the game goes on.
+template <class F, class R> R rewind_safely(F&& f, R failed) {
+    try {
+        return f();
+    } catch (const std::exception& e) {
+        std::fprintf(stderr, "play: rewind: %s\n", e.what());
+    } catch (...) {
+        std::fprintf(stderr, "play: rewind: failed\n");
+    }
+    return failed;
+}
+} // namespace
 extern "C" __attribute__((visibility("default"))) unsigned rgds_rewind_open() {
-    Session* s = cheat_session.load();
-    return s ? s->menu_rewind_open() : 0;
+    return rewind_safely(
+        [] {
+            Session* s = cheat_session.load();
+            return s ? s->menu_rewind_open() : 0u;
+        },
+        0u);
 }
 extern "C" __attribute__((visibility("default"))) int rgds_rewind_count() {
     Session* s = cheat_session.load();
@@ -556,19 +583,23 @@ extern "C" __attribute__((visibility("default"))) int rgds_rewind_count() {
 extern "C" __attribute__((visibility("default"))) int rgds_rewind_moment(int index, unsigned* id, unsigned* parent,
                                                                          unsigned long long* position, int* w, int* h,
                                                                          const uint32_t** px) {
-    Session* s = cheat_session.load();
-    if (!s || index < 0) return 0;
-    const auto ids = s->timeline().ids();
-    if (size_t(index) >= ids.size()) return 0;
-    const Moment* m = s->timeline().find(ids[size_t(index)]);
-    if (!m) return 0;
-    if (id) *id = m->id;
-    if (parent) *parent = m->parent;
-    if (position) *position = m->position;
-    if (w) *w = m->thumb.w;
-    if (h) *h = m->thumb.h;
-    if (px) *px = m->thumb.px.empty() ? nullptr : m->thumb.px.data();
-    return 1;
+    return rewind_safely(
+        [&] {
+            Session* s = cheat_session.load();
+            if (!s || index < 0) return 0;
+            const auto ids = s->timeline().ids();
+            if (size_t(index) >= ids.size()) return 0;
+            const Moment* m = s->timeline().find(ids[size_t(index)]);
+            if (!m) return 0;
+            if (id) *id = m->id;
+            if (parent) *parent = m->parent;
+            if (position) *position = m->position;
+            if (w) *w = m->thumb.w;
+            if (h) *h = m->thumb.h;
+            if (px) *px = m->thumb.px.empty() ? nullptr : m->thumb.px.data();
+            return 1;
+        },
+        0);
 }
 extern "C" __attribute__((visibility("default"))) double rgds_rewind_rate() {
     Session* s = cheat_session.load();
@@ -576,18 +607,26 @@ extern "C" __attribute__((visibility("default"))) double rgds_rewind_rate() {
 }
 extern "C" __attribute__((visibility("default"))) int rgds_rewind_show(unsigned id, int* screens, int* w, int* h,
                                                                        const uint32_t** px) {
-    Session* s = cheat_session.load();
-    Picture shown;
-    if (!s || !s->menu_rewind_show(id, shown) || !shown.px) return 0;
-    if (screens) *screens = 1;
-    if (w) *w = shown.w;
-    if (h) *h = shown.h;
-    if (px) *px = shown.px;
-    return 1;
+    return rewind_safely(
+        [&] {
+            Session* s = cheat_session.load();
+            Picture shown;
+            if (!s || !s->menu_rewind_show(id, shown) || !shown.px) return 0;
+            if (screens) *screens = 1;
+            if (w) *w = shown.w;
+            if (h) *h = shown.h;
+            if (px) *px = shown.px;
+            return 1;
+        },
+        0);
 }
 extern "C" __attribute__((visibility("default"))) int rgds_rewind_jump(unsigned id, int play) {
-    Session* s = cheat_session.load();
-    return s && s->menu_rewind_jump(id, play != 0) ? 1 : 0;
+    return rewind_safely(
+        [&] {
+            Session* s = cheat_session.load();
+            return s && s->menu_rewind_jump(id, play != 0) ? 1 : 0;
+        },
+        0);
 }
 
 // Cheats, called by the bridge as for DSCore's (rgds_cheat_* in its frontend): from its event hook on the main
@@ -813,6 +852,12 @@ int main(int argc, char** argv) {
     if (session.companion() && keyboard_first) session.companion()->set_keyboard_first(true, false);
     // A Flash game stays on the top screen, the big picture, touched there; the touch pad and keyboard below.
     if (lightgun && second == SecondCompanion && o.system != "flash") second = SecondSwap;
+    // A tall game is one screen over both panels, the upper half above: swapped, its halves would stand upside down.
+    // Its upper half is drawn as the lower one is, filling the panel with no frame (a frame or whole pixels would
+    // size the halves apart, and they must meet at the hinge).
+    const bool tall = session.companion() && session.companion()->tall_screen();
+    if (tall && second == SecondSwap) second = SecondCompanion;
+    const FrameChoice no_frame;
     // A game starting on the touch screen (swapped) shares the lower panel's textures instead.
     if (second == SecondSwap && lower.gl && lower.window) {
         gpu_panel = &lower;
@@ -945,9 +990,10 @@ int main(int argc, char** argv) {
         if (!device.empty()) top_touch.open_device(device);
     }
     // A pinch on the manual: every finger on the lower panel, read beside the bridge's one-finger stream (which
-    // games and the rest of the second screen keep). Opened only for a game with a manual; nothing is grabbed.
+    // games and the rest of the second screen keep). Opened only for a game with a manual or a touch pad (a second
+    // finger holds the mouse's button while the first slides); nothing is grabbed.
     rgds::TouchDevice pinch_touch;
-    if (session.companion() && session.companion()->has_manual()) {
+    if (session.companion() && (session.companion()->has_manual() || session.companion()->wants_fingers())) {
         const char* lower_device = std::getenv("RGDS_TOUCH_DEV");
         if (lower_device && *lower_device && std::string(lower_device) != "none") {
             pinch_touch.open_device(lower_device);
@@ -1011,6 +1057,7 @@ int main(int argc, char** argv) {
                 keyboard_first = now_keyboard;
                 stereo = s == SecondKeyboard && stereo_game;
                 second = s == SecondKeyboard ? SecondCompanion : s;
+                if (tall && second == SecondSwap) second = SecondCompanion;
             }
             if (!r.empty() && r != frame.name) frame = choose_frame(r, frames_folder, session.core().system());
             drawn_key = ~0ull;
@@ -1358,7 +1405,9 @@ int main(int argc, char** argv) {
                 if (p == &game_panel) {
                     const Picture shown = colour.apply(session.game(shader_live() && !play_screen()));
                     const bool on_top = p == gpu_panel && gpu_core_shared; // the panel the core's context shares
-                    draw_game(*p, shown, fit, frame, session.font(),
+                    const bool halves = tall && second == SecondCompanion;
+                    draw_game(*p, shown, halves && fit == FitInteger ? FitSharp : fit, halves ? no_frame : frame,
+                              session.font(),
                               on_top && session.core().drew_gl_target() && shown.w == p->game_w &&
                                   shown.h == p->game_h);
                     if (gpu_core_shared) {
@@ -1387,7 +1436,10 @@ int main(int argc, char** argv) {
         }
     }
     if (stop_requested) std::fprintf(stderr, "rgds-play: quit: asked to stop (signal)\n");
-    else keep_last_frame(session.core().picture());
+    else {
+        session.core().read_back_latest(); // PSP, N64, Dreamcast, Flash: their frames went straight to the panel
+        keep_last_frame(session.core().picture());
+    }
     device_pad.close();
     session.flush();
     std::fprintf(stderr, "rgds-play: saved, %llu frames\n", (unsigned long long)session.frames());

@@ -92,22 +92,27 @@ bool Database::open(const std::string& path, std::string& err) {
     err = path + " is empty";
     return false;
   }
-  file_.resize(static_cast<size_t>(len));
-  const bool read_ok = std::fread(file_.data(), 1, file_.size(), f) == file_.size();
+  std::vector<u8> file(static_cast<size_t>(len));
+  const bool read_ok = std::fread(file.data(), 1, file.size(), f) == file.size();
   std::fclose(f);
   if (!read_ok) {
-    file_.clear();
     err = "cannot read " + path;
     return false;
   }
+  return open_memory(std::move(file), path, err);
+}
 
+bool Database::open_memory(std::vector<u8> file, const std::string& label, std::string& err) {
+  file_ = std::move(file);
+  index_.clear();
+  name_.clear();
   if (file_.size() < ENTRY_LIST) {
-    err = path + " is too short to be a cheat database";
+    err = label + " is too short to be a cheat database";
     return false;
   }
   static const u8 magic[16] = {'R', '4', ' ', 'C', 'h', 'e', 'a', 't', 'C', 'o', 'd', 'e', 0, 1, 0, 0};
   if (std::memcmp(file_.data(), magic, sizeof magic) != 0) {
-    err = path + " is not a usrcheat database (bad magic)";
+    err = label + " is not a usrcheat database (bad magic)";
     return false;
   }
   const char* desc = reinterpret_cast<const char*>(file_.data() + 16);
@@ -124,7 +129,7 @@ bool Database::open(const std::string& path, std::string& err) {
     index_.push_back({code, checksum, offset});
   }
   if (index_.empty()) {
-    err = path + " has no usable entries";
+    err = label + " has no usable entries";
     return false;
   }
   return true;
@@ -147,14 +152,53 @@ bool load_for_rom(const std::string& db_path, const std::string& rom_path, GameC
   return load_for_header(db_path, header, out, err);
 }
 
-bool load_for_header(const std::string& db_path, const u8 header[512], GameCheats& out, std::string& err) {
+namespace {
+bool entry_for_header(const Database& db, const u8 header[512], GameCheats& out, std::string& err) {
   u32 game_code = 0;
   for (int i = 3; i >= 0; --i) game_code = (game_code << 8) | header[0x0C + static_cast<size_t>(i)];
-
-  Database db;
-  if (!db.open(db_path, err)) return false;
   err.clear();
   return db.best_entry(game_code, header_checksum(header), out, err);
+}
+} // namespace
+
+bool load_for_header(const std::string& db_path, const u8 header[512], GameCheats& out, std::string& err) {
+  Database db;
+  if (!db.open(db_path, err)) return false;
+  return entry_for_header(db, header, out, err);
+}
+
+bool load_analog_for_header(const std::string& path, const u8 header[512], GameCheats& out, std::string& err) {
+  if (!path.empty()) return load_for_header(path, header, out, err);
+  Database db;
+  if (!db.open_memory(builtin_analog_database(), "the built-in analog database", err)) return false;
+  return entry_for_header(db, header, out, err);
+}
+
+void enforce_exclusive(std::vector<Code>& codes, const std::vector<Group>& groups) {
+  for (size_t g = 0; g < groups.size(); ++g) {
+    if (!groups[g].exclusive) continue;
+    bool seen = false;
+    for (Code& c : codes) {
+      if (c.group != static_cast<int>(g) || !c.enabled) continue;
+      if (seen) c.enabled = false;
+      seen = true;
+    }
+  }
+}
+
+bool merge_analog(GameCheats& into, GameCheats analog, u32 checksum) {
+  if (analog.checksum != checksum) return false;
+  std::vector<Code> kept;
+  for (Code& c : into.codes)
+    if (!c.analog) kept.push_back(std::move(c));
+  into.codes = std::move(kept);
+  const int offset = static_cast<int>(into.groups.size());
+  for (Group& g : analog.groups) into.groups.push_back(std::move(g));
+  for (Code& c : analog.codes) {
+    if (c.group >= 0) c.group += offset;
+    into.codes.push_back(std::move(c));
+  }
+  return true;
 }
 
 bool Database::has(u32 game_code) const {
@@ -271,20 +315,12 @@ bool Database::parse_entry(const Entry& e, GameCheats& out, std::string& err) co
     c.group = group_left > 0 ? group : -1;
     c.words.reserve(words);
     for (u32 w = 0; w < words; ++w) c.words.push_back(r.u32le());
+    c.analog = !c.is_note() && c.name.rfind("CPAD", 0) == 0;
     out.codes.push_back(std::move(c));
     if (group_left > 0 && --group_left == 0) group = -1;
   }
 
-  // An exclusive category may arrive with several codes marked enabled; first wins.
-  for (size_t g = 0; g < out.groups.size(); ++g) {
-    if (!out.groups[g].exclusive) continue;
-    bool seen = false;
-    for (Code& c : out.codes) {
-      if (c.group != static_cast<int>(g) || !c.enabled) continue;
-      if (seen) c.enabled = false;
-      seen = true;
-    }
-  }
+  enforce_exclusive(out.codes, out.groups);
   return true;
 }
 

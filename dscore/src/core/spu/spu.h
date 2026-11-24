@@ -51,17 +51,10 @@ public:
 
   // Output ring (stereo frames). `take` copies up to `max_frames` into `dst`
   // (2 * frames s16) and returns the count.
+  void silence(u64 cycles);
   size_t available() const { return (wr_ - rd_) & (RING_FRAMES - 1); }
   size_t take(s16* dst, size_t max_frames);
   void drain() { rd_ = wr_; }
-  // Frontend pacing while STOP has gated the sound channels and capture DMA.
-  void sleep_output(u64 cycles) {
-    sleep_remainder_ += cycles;
-    while (sleep_remainder_ >= mix_period_) {
-      push(0, 0);
-      sleep_remainder_ -= mix_period_;
-    }
-  }
   u64 ring_overruns() const { return overruns_; } // stat only, not saved
 
   // Nominal DS rate; actual is output_rate_hz(). For device/buffer sizing,
@@ -117,6 +110,7 @@ private:
 
   static void ev_mix(NDS& nds, u32);
   void mix();
+  u64 silence_cycles_ = 0; // output pacing only; not emulated channel state
   void push(s16 l, s16 r);
 
   NDS& nds_;
@@ -137,7 +131,6 @@ private:
   static constexpr size_t RING_FRAMES = 16384; // half a second
   std::array<s16, RING_FRAMES * 2> ring_{};
   size_t rd_ = 0, wr_ = 0;
-  u64 sleep_remainder_ = 0;
   u64 overruns_ = 0; // frames the ring overwrote unheard
 };
 

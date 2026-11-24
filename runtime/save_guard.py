@@ -84,7 +84,11 @@ def game_saves(data, core, rom, identity):
     """(history folder name, the files that hold the game's own save)"""
     from library import game_key
     if core == DS:
-        return game_key(identity), [data / 'emulators' / DS / 'saves' / (rom.stem + '.sav')]
+        saves = data / 'emulators' / DS / 'saves'
+        import dsiware
+        if dsiware.kind(rom):  # DSiWare: DSCore names its saves by game code (dsi_nand_persist.cpp)
+            return game_key(identity), dsiware.save_files(saves, dsiware.game_code(rom))
+        return game_key(identity), [saves / (rom.stem + '.sav')]
     if core == 'rgds-play':
         from play_options import system_of
         system = system_of(identity)
@@ -112,7 +116,7 @@ def protect(data, core, rom, identity=None, build=None):
     identity = Path(identity or rom)
     try:
         # A save an earlier emulator left, or one beside the game, is the owner's: never another profile's first save.
-        if core == DS and is_owner(data): import_old_ds_save(data, rom)
+        if core == DS and is_owner(data) and not dsiware_title(rom): import_old_ds_save(data, rom)
         name, paths = game_saves(data, core, rom, identity)
         if name:
             files = [file for path in paths for file in files_under(path)]
@@ -123,6 +127,11 @@ def protect(data, core, rom, identity=None, build=None):
             keep_resume_point(data, state, data / HISTORY / game_key(identity) / 'resume', build)
     except (OSError, ValueError) as error:
         print('Save history: ' + str(error), file=sys.stderr)
+
+
+def dsiware_title(rom):
+    import dsiware
+    return dsiware.kind(rom) is not None
 
 
 def raw_ds_save(path):

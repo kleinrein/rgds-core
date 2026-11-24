@@ -45,6 +45,7 @@ void App::open_category() {
         if (media_sections()) open_music(); // Media: Music, Videos and Books
         else launch_media();                // an rgds-media without the shelves in the launcher
     } else if (toy_at(home_selected)) open_voice_toy();
+    else if (album_at(home_selected)) open_album();
     else if (home_selected == pictochat_tile) {
         if (pictochat_hidden() || (kid_locked() && !active_profile().allow_pictochat)) {
             status = "Not on this profile";
@@ -55,7 +56,7 @@ void App::open_category() {
     else {
         home_menu = false;
         library_view(int(home_selected) - 1);
-        remember_appearance();
+        remember_appearance(false); // where Home goes next time, not a setting
     }
     dirty = true;
 }
@@ -184,7 +185,7 @@ void App::choose_system(size_t index) {
     shown_system = listed_systems[index];
     systems_menu = false;
     library_view(0);
-    remember_appearance();
+    remember_appearance(false); // the system shown, remembered quietly
     dirty = true;
 }
 

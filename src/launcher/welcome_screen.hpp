@@ -43,6 +43,7 @@ void App::open_welcome() {
     welcome_fresh = false;
     welcome_return = settings.page;
     settings.page = Page::Welcome;
+    welcome_preset = 0; // every step again
     welcome_import_scan();
     welcome_enter(0);
 }
@@ -59,14 +60,64 @@ void App::welcome_begin() {
         refresh_other_systems();
     }
     welcome_import_scan();
+    welcome_apply_preset();
     welcome_enter(welcome_step);
+}
+
+// RG DS Flasher's Set up step: the language, time zone and name asked on the computer, put in userdata by the first
+// boot's handoff (os/buildroot/rootfs/usr/libexec/rgds/handoff). They are applied as if chosen here, and their steps
+// are skipped; Back still reaches them. Applied once: the file becomes flasher-setup.ini.done, which a setup that
+// comes back after a restart reads only to skip the same steps. Run setup again asks everything.
+void App::welcome_apply_preset() {
+    std::error_code ec;
+    const auto path = o.data / "flasher-setup.ini", done = fs::path(path.string() + ".done");
+    if (o.data.empty()) return;
+    if (!fs::exists(path, ec)) {
+        if (!fs::exists(done, ec)) return;
+        auto values = fields(done);
+        if (!values["language"].empty()) welcome_preset |= 1u << WelcomeLanguage;
+        if (!values["timezone"].empty()) welcome_preset |= 1u << WelcomeTime;
+        if (!values["name"].empty()) welcome_preset |= 1u << WelcomeName;
+        return;
+    }
+    auto values = fields(path);
+    fs::rename(path, done, ec);
+    const auto& languages = locale.languages();
+    const std::string language = values["language"];
+    if (std::any_of(languages.begin(), languages.end(), [&](const auto& l) { return l.first == language; })) {
+        preferences.language = language;
+        remember_appearance();
+        welcome_language_defaults(); // time and date formats for the language, and its zone unless one follows
+        welcome_preset |= 1u << WelcomeLanguage;
+    }
+    const std::string zone = values["timezone"];
+    if (std::find(timezones.begin(), timezones.end(), zone) != timezones.end()) {
+        system_preferences.timezone = zone;
+        try {
+            save_system_preferences(o.system_preferences, system_preferences);
+            apply_timezone();
+            welcome_preset |= 1u << WelcomeTime;
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+    if (!values["name"].empty()) {
+        save_owner_name(values["name"]);
+        welcome_preset |= 1u << WelcomeName;
+    }
 }
 
 void App::welcome_enter(int step, ViewTravel route) {
     welcome_step = std::clamp(step, 0, welcome_steps - 1);
-    // Bring over is a step only when there is something to bring.
-    if (welcome_step == WelcomeImport && !welcome_import_shown())
-        welcome_step = route == ViewTravel::Back ? WelcomeLanguage : WelcomeColour;
+    // Bring over is a step only when there is something to bring; what the flasher already answered is skipped too.
+    const auto skipped = [&](int s) {
+        return (s == WelcomeImport && !welcome_import_shown()) || (welcome_preset >> s & 1u);
+    };
+    while (skipped(welcome_step)) {
+        const int next = welcome_step + (route == ViewTravel::Back ? -1 : 1);
+        if (next < 0 || next >= welcome_steps) break;
+        welcome_step = next;
+    }
     welcome_focus = welcome_next;
     if (welcome_step == WelcomeLanguage) {
         const auto& languages = locale.languages();
@@ -124,7 +175,8 @@ void App::welcome_language_defaults() {
         {"ko-KR", {"Asia/Seoul", 0, 3}},
     };
     const auto found = regions.find(preferences.language);
-    if (!welcome_fresh || found == regions.end()) return;
+    // a zone RG DS Flasher was given stays: its step is skipped, so nothing would show the change
+    if (!welcome_fresh || found == regions.end() || (welcome_preset >> WelcomeTime & 1u)) return;
     system_preferences.timezone = std::get<0>(found->second);
     system_preferences.time_format = std::get<1>(found->second);
     system_preferences.date_format = std::get<2>(found->second);
@@ -347,12 +399,11 @@ void App::welcome_activate(int id) {
         if (id == 0) {
             if (worker > 0 && worker_action == "device.info") stop_worker();
             if (worker > 0) break;
-            if (device_status["usb_supported"] == "0")
-                service_notice = "USB data transfer is not available on this handheld.";
+            if (device_status["usb_supported"] == "0") notify("USB data transfer is not available on this handheld.");
             else start_worker(device_status["usb"] == "1" ? "device.usb-drive" : "device.usb-on");
         } else if (id == 1) {
             if (device_status["wifi_connected"] == "1") show_sharing_picker();
-            else service_notice = "Connect to Wi-Fi first";
+            else notify("Connect to Wi-Fi first");
         }
         break;
     case WelcomeLibrary:
@@ -650,7 +701,6 @@ void App::welcome_bottom(SDL_Renderer* r, int y) {
                                 : device_status["sharing"] != "1"         ? "Off"
                                 : device_status["sharing_mode"] == "open" ? "Open"
                                                                           : "Password protected"));
-        if (!service_notice.empty()) wrapped(r, service_notice, 28, y + 320, 16, 584, 2);
         break;
     }
     default: {

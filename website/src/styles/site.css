@@ -157,10 +157,12 @@ h3 { font-size: 1.0625rem; font-weight: 700; line-height: 1.35; }
 .split {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-  align-items: center;
+  align-items: start;
   gap: clamp(2rem, 5vw, 4.5rem);
 }
 .split .section-head { margin-bottom: 1.5rem; }
+/* The feature list runs much taller than the handheld beside it, so the handheld stays in view. */
+.split > img { position: sticky; top: 2rem; }
 .features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2rem; }
 .features li { padding-block: 1rem; border-top: 1px solid var(--line); }
 .features p { color: var(--muted); font-size: 0.9375rem; }
@@ -213,7 +215,7 @@ h3 { font-size: 1.0625rem; font-weight: 700; line-height: 1.35; }
 @media (max-width: 60rem) {
   .hero, .split { grid-template-columns: minmax(0, 1fr); }
   .hero-device { max-width: min(100%, 34rem); margin-inline: auto; }
-  .split > :first-child { order: 1; max-width: min(100%, 34rem); margin-inline: auto; }
+  .split > :first-child { order: 1; position: static; max-width: min(100%, 34rem); margin-inline: auto; }
   .facts, .shots.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .systems { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }

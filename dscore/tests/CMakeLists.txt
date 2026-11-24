@@ -50,9 +50,28 @@ add_executable(test_io io_test.cpp)
 target_link_libraries(test_io PRIVATE dsperate_core)
 add_test(NAME io COMMAND test_io)
 
+add_executable(test_sleep sleep_test.cpp)
+target_link_libraries(test_sleep PRIVATE dsperate_core)
+add_test(NAME sleep COMMAND test_sleep)
+
+add_executable(test_dsp_aac dsp_aac_test.cpp)
+target_link_libraries(test_dsp_aac PRIVATE dsperate_core)
+add_test(NAME dsp_aac COMMAND test_dsp_aac)
 add_executable(test_cart_save cart_save_test.cpp)
 target_link_libraries(test_cart_save PRIVATE dsperate_core)
 add_test(NAME cart_save COMMAND test_cart_save)
+
+add_executable(test_state_load state_load_test.cpp)
+target_link_libraries(test_state_load PRIVATE dsperate_core)
+add_test(NAME state_load COMMAND test_state_load)
+
+add_executable(test_state_roundtrip state_roundtrip_test.cpp)
+target_link_libraries(test_state_roundtrip PRIVATE dsperate_core)
+add_test(NAME state_roundtrip COMMAND test_state_roundtrip)
+
+add_executable(test_slot2 slot2_test.cpp)
+target_link_libraries(test_slot2 PRIVATE dsperate_core)
+add_test(NAME slot2 COMMAND test_slot2)
 
 add_executable(test_gpu3d gpu3d_test.cpp)
 target_link_libraries(test_gpu3d PRIVATE dsperate_core)
@@ -61,6 +80,7 @@ add_test(NAME gpu3d COMMAND test_gpu3d)
 add_executable(test_fastmem fastmem_test.cpp)
 target_link_libraries(test_fastmem PRIVATE dsperate_core)
 add_test(NAME fastmem COMMAND test_fastmem)
+set_tests_properties(fastmem PROPERTIES SKIP_RETURN_CODE 77)   # no shared memory on the host: reported as skipped
 
 add_executable(test_div64 div64_test.cpp)
 target_link_libraries(test_div64 PRIVATE dsperate_core)
@@ -193,14 +213,59 @@ add_executable(test_sd_card sd_card_test.cpp)
 target_link_libraries(test_sd_card PRIVATE dsperate_core)
 add_test(NAME sd_card COMMAND test_sd_card)
 
+# DSPERATE_HWCPIPE_DIR=<HWCPipe checkout>: Mali hardware counters in the
+# raster probes (hwc_probe.h, DS_PROBE_HWC=1). Off unless given.
+set(DSPERATE_HWCPIPE_DIR "" CACHE PATH "HWCPipe source tree for the probes' Mali counters (optional)")
+if(DSPERATE_HWCPIPE_DIR)
+  set(HWCPIPE_WERROR OFF CACHE BOOL "" FORCE)
+  add_subdirectory(${DSPERATE_HWCPIPE_DIR} hwcpipe EXCLUDE_FROM_ALL)
+endif()
+function(dsperate_probe_hwc target)
+  if(DSPERATE_HWCPIPE_DIR)
+    target_link_libraries(${target} PRIVATE hwcpipe)
+    target_compile_definitions(${target} PRIVATE DSPERATE_HWCPIPE=1)
+  endif()
+endfunction()
+
+# The same probe on the OpenGL ES raster (gl/gl_lean.h), for Vulkan-less devices (the RG35XX SP). Not a test.
+if(DSPERATE_GLES)
+  add_executable(gles_probe gles_probe.cpp)
+  target_link_libraries(gles_probe PRIVATE dsperate_core ${CMAKE_DL_LIBS})   # libEGL / libGLESv2 are dlopen'd
+  dsperate_probe_hwc(gles_probe)
+endif()
+
 # GPU raster probe (gpu-raster branch): times a recorded frame on the Vulkan raster. Not a test.
 if(DSPERATE_VULKAN AND DSPERATE_VULKAN_INCLUDE)   # the headers may be missing on a build host (CI), which switches the raster off
   add_executable(vk_probe vk_probe.cpp)
   target_link_libraries(vk_probe PRIVATE dsperate_core ${CMAKE_DL_LIBS})   # the Vulkan loader is dlopen'd; a static-libstdc++ toolchain needs dl named here
   target_include_directories(vk_probe PRIVATE ${DSPERATE_VULKAN_INCLUDE})
+  dsperate_probe_hwc(vk_probe)
 endif()
 
-# RGA probe (gpu-raster branch): times the Rockchip 2D scaler (V4L2 mem2mem) on a dma-buf frame. Device-only, not a test.
+include(CheckIncludeFileCXX)
+check_include_file_cxx(linux/dma-buf.h DSPERATE_HAVE_DMABUF_H)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  add_executable(rga_probe rga_probe.cpp)
+  # Per-source costs of the scanout dma-bufs (every /dev/dma_heap/*, udmabuf, DRM dumb): allocation, CPU
+  # writes, cache sync, KMS import. Device-only, not a test.
+  add_executable(dmabuf_probe dmabuf_probe.cpp ${PROJECT_SOURCE_DIR}/src/frontend/sdl/dmaheap.cpp)
+  target_include_directories(dmabuf_probe PRIVATE ${PROJECT_SOURCE_DIR}/src)
 endif()
+
+# GPU present probe: the fragment present against a nearest blit into imported dma-bufs. Device-only, not a test.
+if(DSPERATE_VULKAN AND DSPERATE_VULKAN_INCLUDE AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND DSPERATE_HAVE_DMABUF_H)
+  add_executable(vk_present_probe vk_present_probe.cpp ${PROJECT_SOURCE_DIR}/src/frontend/sdl/dmaheap.cpp)
+  target_link_libraries(vk_present_probe PRIVATE dsperate_core ${CMAKE_DL_LIBS})
+  target_include_directories(vk_present_probe PRIVATE ${DSPERATE_VULKAN_INCLUDE})
+  target_compile_definitions(vk_present_probe PRIVATE DSPERATE_PRESENT_SHADER_DIR="${PROJECT_SOURCE_DIR}/src/frontend/sdl/shaders")
+endif()
+
+# GpuPresent end to end into dma-heap buffers, against a CPU model of the compute present it replaced. Device-only, not a test.
+if(DSPERATE_VULKAN AND DSPERATE_VULKAN_INCLUDE AND SDL2_FOUND AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND DSPERATE_HAVE_DMABUF_H)
+  add_executable(gpu_present_probe gpu_present_probe.cpp ${PROJECT_SOURCE_DIR}/src/frontend/sdl/gpu_present.cpp ${PROJECT_SOURCE_DIR}/src/frontend/sdl/dmaheap.cpp)
+  target_link_libraries(gpu_present_probe PRIVATE dsperate_core ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS})
+  target_include_directories(gpu_present_probe PRIVATE ${DSPERATE_VULKAN_INCLUDE} ${SDL2_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR})
+  target_compile_definitions(gpu_present_probe PRIVATE DSPERATE_PRESENT_SHADER_DIR="${PROJECT_SOURCE_DIR}/src/frontend/sdl/shaders")
+endif()
+
+# The frontend's translations: the .po reader, locale names, user catalogs,
+# and every built-in po/*.po loading cleanly.

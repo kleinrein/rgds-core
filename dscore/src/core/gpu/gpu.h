@@ -38,6 +38,8 @@ namespace ds::gpu {
 class Gpu {
 public:
   explicit Gpu(NDS& nds);
+  // Before the 3D engine goes (NDS::~NDS): nothing of this one may still be drawing from it.
+  void stop_jobs() { join_worker(); }
   void reset();
 
   // Scheduler callbacks.
@@ -201,6 +203,10 @@ public:
   void scale_image(int screen, const u32* src);
   bool scaling() const { return scale_[0].px && scale_[1].px; }
   u16 line() const { return line_; }
+  // A VCOUNT write (GBATEK: only during lines 202..212): the next scanline is
+  // `v` instead of line_ + 1. Wireless games use it to line their frames up
+  // with the host's. Never pending at line 0, where states are taken.
+  void request_vcount(u16 v) { next_vcount_ = v; }
 
   Engine2D engine[2];
 
@@ -215,6 +221,7 @@ public:
 private:
   NDS& nds_;
   u16 line_ = 0;
+  u16 next_vcount_ = 0xFFFF; // a VCOUNT write waiting for the next scanline
   bool hblank_done_ = false; // this line's HBlank event has run (its render, if any, is behind us)
   bool frame_begun_ = false;
   bool screens_on_ = false; // POWCNT1 bit 0, latched at frame start
@@ -251,6 +258,7 @@ private:
   void update_phase();
   u16 master_bright_g_[2] = {0, 0}; // guest-visible; the engines hold the render-side value
   u32 capcnt_ = 0;
+  void capcnt_set(u32 v);
   bool capture_on_ = false;
   std::array<u16, 16> fifo_{};
   u8 fifo_rd_ = 0, fifo_wr_ = 0;
@@ -306,6 +314,19 @@ private:
   // (reach_engines answers for the live map's windows). Cleared at the join.
   bool snapshot_stale_ = false;
   void snapshot_map(int k);
+  // Bank snapshot for a deferred batch (DS_2D_SNAP=0 turns it off). Games that
+  // stream VRAM in VBlank store into what the batch is still reading, and the
+  // store used to wait for the whole batch. While that keeps happening the
+  // batch is handed a copy of the banks its engines read, so the store only
+  // lifts the trap and lands. Not for a frame that captures or displays an
+  // LCDC bank (those write or read the live bank from the job).
+  static constexpr u32 SNAP_HOLD = 8; // frames a snapshot is kept up after a store last met a busy batch
+  u32 snap_want_ = 0;
+  bool snap_hit_ = false;  // this frame: a store reached a deferred batch still drawing
+  bool snap_live_ = false; // the deferred jobs in flight read the snapshot
+  std::unique_ptr<u8[]> snap_mem_;
+  u8* snap_bank_[9] = {};
+  void take_snapshot(u32 engines);
   // Engines an address can change: bit 0 A, bit 1 B; LCDC only A (and only when trapped); else both.
   u32 reach_engines(u32 addr) const {
     if ((addr >> 24) != 0x06) return 3;
@@ -430,7 +451,14 @@ private:
   void finish_a();
 
 public:
-  void journal_full() { join_worker(JoinSite::Journal); } // Engine2D::queue on a full journal
+  // Engine2D::queue on a full journal: the engine's lines the pending writes
+  // are for are drawn now (which replays them in order), so what is left is
+  // the current line's.
+  void journal_full(int engine) {
+    join_worker(JoinSite::Journal);
+    catch_up(1u << engine);
+  }
+
 private:
   static void worker_job(void* self);
 

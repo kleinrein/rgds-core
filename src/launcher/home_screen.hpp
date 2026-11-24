@@ -43,17 +43,22 @@ bool App::home_column_move(int code) {
         dirty = true;
         return true;
     }
-    // The rows as home_column_tiles lays them out (by their top edge), each left to right.
-    std::array<std::vector<int>, 4> rows;
-    for (const auto& tile : home_column_tiles())
-        rows[size_t(std::clamp((tile.box.y - 20) / 100, 0, 3))].push_back(int(tile.index));
-    int row = 0, column = home_column_memory;
+    // The rows as home_column_tiles lays them out (by their top edge), each left to right. The rows differ in
+    // width (one, two, then the app dock), so up and down land on the tile under the one you leave: the nearest to
+    // the column you last moved sideways into while it still lies inside this tile, else to this tile's centre.
+    std::array<std::vector<SDL_Rect>, 4> boxes;
+    std::array<std::vector<size_t>, 4> rows;
+    for (const auto& tile : home_column_tiles()) {
+        const size_t at = size_t(std::clamp((tile.box.y - 20) / 100, 0, 3));
+        rows[at].push_back(tile.index);
+        boxes[at].push_back(tile.box);
+    }
+    int row = 0, column = 0;
     for (int i = 0; i < 4; i++) {
-        const auto& tiles = rows[size_t(i)];
-        const auto at = std::find(tiles.begin(), tiles.end(), int(home_selected));
-        if (at != tiles.end()) {
+        const auto at = std::find(rows[size_t(i)].begin(), rows[size_t(i)].end(), home_selected);
+        if (at != rows[size_t(i)].end()) {
             row = i;
-            if (tiles.size() > 1) column = int(at - tiles.begin());
+            column = int(at - rows[size_t(i)].begin());
             break;
         }
     }
@@ -62,13 +67,40 @@ bool App::home_column_move(int code) {
         dirty = true;
         return true;
     }
-    const auto width = [&](int r) { return int(rows[size_t(r)].size()); };
-    if (code == 8 || code == 9) row = std::clamp(row + (code == 8 ? -1 : 1), 0, 3);
-    else if (code == 0 || code == 1)
-        column = std::clamp(std::min(column, width(row) - 1) + (code == 0 ? -1 : 1), 0, std::max(0, width(row) - 1));
-    else return false;
-    if (width(row) > 1) home_column_memory = column;
-    select_navigation(size_t(rows[size_t(row)][size_t(std::clamp(column, 0, width(row) - 1))]), false);
+    const SDL_Rect here = boxes[size_t(row)][size_t(column)];
+    if (code == 8 || code == 9) {
+        const int target = std::clamp(row + (code == 8 ? -1 : 1), 0, 3);
+        const auto& line = boxes[size_t(target)];
+        int best = 0;
+        if (home_column_memory >= here.x && home_column_memory < here.x + here.w) {
+            const int want = home_column_memory;
+            const auto distance = [&](int k) {
+                const auto& b = line[size_t(k)];
+                return want < b.x ? b.x - want : want >= b.x + b.w ? want - (b.x + b.w) + 1 : 0;
+            };
+            for (int i = 1; i < int(line.size()); i++)
+                if (distance(i) < distance(best)) best = i;
+        } else {
+            // No column to keep: the outer tile on this tile's side, so Recents leads down to the first app and
+            // Settings to the last, and the full-width last game to Games.
+            const bool right = here.x + here.w / 2 > 320;
+            for (int i = 0; i < int(line.size()); i++) {
+                const auto& b = line[size_t(i)];
+                if (b.x < here.x + here.w && b.x + b.w > here.x) {
+                    best = i;
+                    if (!right) break;
+                }
+            }
+        }
+        row = target;
+        column = best;
+    } else if (code == 0 || code == 1) {
+        column = std::clamp(column + (code == 0 ? -1 : 1), 0, int(rows[size_t(row)].size()) - 1);
+        // Only a place in the app dock is worth keeping; in the two-tile rows the side says it all.
+        const auto& b = boxes[size_t(row)][size_t(column)];
+        home_column_memory = row == 3 ? b.x + b.w / 2 : -1;
+    } else return false;
+    select_navigation(rows[size_t(row)][size_t(column)], false);
     return true;
 }
 
@@ -110,28 +142,27 @@ void App::home_column_bottom(SDL_Renderer* r, int y) {
                 if (summary_ready)
                     label(r, "Your last game will appear here", bx + 96, by + 48 + sink, 14, "muted", 480);
             }
-        } else {
-            // The low tiles of the last row (Settings, and the apps beside it) have a smaller icon and no second
-            // line; three of them share the row with a smaller one still.
-            const bool low = b.h < 80, narrow = b.w < 200;
-            const int icon = narrow ? 32 : low ? 36 : 48, text_x = narrow ? 56 : 80, size = narrow ? 18 : 22;
-            category_icon(r, tile.index, bx + (narrow ? 14 : low ? 22 : 16), by + (b.h - icon) / 2 + sink, icon);
+        } else if (b.w < 200) {
+            // The app dock: the icon over its name, both centred, one size for every app.
             const std::string title = locale.text(category_title(tile.index));
-            const bool note_row = !low;
-            raw_label(r, title, bx + text_x, centred_label_y(title, size, by + b.h / 2 + sink - (note_row ? 9 : 0)),
-                      size, "ink", b.w - text_x - 12);
-            std::string note;
+            // The Sound toy's face draws a fifth larger than its box (category_icon): a smaller box evens it out.
+            const int icon = toy_at(tile.index) ? 36 : 42;
+            category_icon(r, tile.index, bx + (b.w - icon) / 2, by + 29 - icon / 2 + sink, icon);
+            const int size = label_width(title, 16, false) <= b.w - 12 ? 16 : 14;
+            const int width = std::min(label_width(title, size, false), b.w - 12);
+            raw_label(r, title, bx + (b.w - width) / 2, centred_label_y(title, size, by + 64 + sink), size, "ink",
+                      b.w - 12);
+        } else {
+            const std::string title = locale.text(category_title(tile.index));
+            category_icon(r, tile.index, bx + 16, by + (b.h - 48) / 2 + sink, 48);
+            raw_label(r, title, bx + 80, centred_label_y(title, 22, by + b.h / 2 + sink - 9), 22, "ink", b.w - 92);
+            // The wide tiles are the collections and Settings.
+            std::string note = locale.text("Theme, sound and Wi-Fi");
             if (tile.index >= 1 && tile.index <= 3) {
                 const auto& g = summary.groups[tile.index - 1];
                 note = summary_ready ? locale.text(std::to_string(g.games) + (g.games == 1 ? " game" : " games")) : "…";
-            } else if (pictochat_at(tile.index))
-                note = locale.text(kid_locked() && !active_profile().allow_pictochat ? "Not on this profile"
-                                   : device_status["wifi_connected"] == "1"          ? "Wi-Fi connected"
-                                                                                     : "Draw and chat");
-            else if (music_at(tile.index)) note = music_home_note();
-            else if (media_at(tile.index)) note = locale.text("Films and books");
-            else if (toy_at(tile.index)) note = locale.text("Record your voice and change it");
-            if (!note.empty() && note_row) raw_label(r, note, bx + 80, by + b.h / 2 + 8 + sink, 14, "muted", b.w - 96);
+            }
+            raw_label(r, note, bx + 80, by + b.h / 2 + 8 + sink, 14, "muted", b.w - 96);
         }
         if (selected) chat_brackets(r, bx, by + sink, b.w, b.h, theme.at("accent"), 4);
     }

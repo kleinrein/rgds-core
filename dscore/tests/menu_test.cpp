@@ -177,12 +177,67 @@ void test_utf8_folds_to_ascii_glyphs() {
   const Canvas ca{a.data(), 200, 200, 20}, cb{b.data(), 200, 200, 20};
   CHECK(draw_text(ca, 0, 0, 2, 0xFFFFFFFF, accented) == draw_text(cb, 0, 0, 2, 0xFFFFFFFF, plain));
   CHECK(a == b); // pixel for pixel the same word
-  // Something with no Latin base draws as '?' rather than nothing.
+  // A character no font has draws as '?' rather than nothing (U+0E01, Thai).
   std::vector<u32> q(200 * 20, 0), z(200 * 20, 0);
-  draw_text(Canvas{q.data(), 200, 200, 20}, 0, 0, 2, 0xFFFFFFFF, "\xE3\x81\x82"); // あ
+  draw_text(Canvas{q.data(), 200, 200, 20}, 0, 0, 2, 0xFFFFFFFF, "\xE0\xB8\x81");
   draw_text(Canvas{z.data(), 200, 200, 20}, 0, 0, 2, 0xFFFFFFFF, "?");
   CHECK(q == z);
-  CHECK(text_width(2, "\xE3\x81\x82") == text_width(2, "?"));
+  CHECK(text_width(2, "\xE0\xB8\x81") == text_width(2, "?"));
+}
+
+// What the 5x7 font lacks comes from the built-in DSi fonts (ui_font.h):
+// kana, simplified Chinese (GB 2312, only in the China table), Hangul and
+// Cyrillic all draw ink of their own, not the '?', and text_width agrees
+// with where draw_text leaves the pen, at every scale.
+void test_fallback_glyphs() {
+  using ds::sdl::Canvas;
+  using ds::sdl::draw_text;
+  using ds::sdl::text_width;
+  const char* samples[] = {
+      "\xE3\x81\x82",             // あ
+      "\xE8\xAE\xBE\xE7\xBD\xAE", // 设置 (simplified; not in JIS X 0208)
+      "\xED\x95\x9C",             // 한
+      "\xD0\x96",                 // Ж
+  };
+  for (const char* t : samples) {
+    for (int scale = 1; scale <= 8; ++scale) {
+      const int W = 64 * scale, H = 16 * scale;
+      std::vector<u32> a(static_cast<size_t>(W) * H, 0), qm(static_cast<size_t>(W) * H, 0);
+      const int end = draw_text(Canvas{a.data(), static_cast<u32>(W), W, H}, 0, 4 * scale, scale, 0xFFFFFFFF, t);
+      draw_text(Canvas{qm.data(), static_cast<u32>(W), W, H}, 0, 4 * scale, scale, 0xFFFFFFFF, "?");
+      CHECK(end == text_width(scale, t));
+      CHECK(a != qm);
+      CHECK(std::any_of(a.begin(), a.end(), [](u32 p) { return p != 0; }));
+      // Hard-edged like the 5x7 font: ink or nothing, no grey edge.
+      CHECK(std::all_of(a.begin(), a.end(), [](u32 p) { return p == 0 || p == 0xFFFFFFFF; }));
+    }
+  }
+  // Mixed with ASCII, the widths still add up.
+  const char* mixed = "SLOT \xE8\xAE\xBE 3";
+  std::vector<u32> m(400 * 40, 0);
+  CHECK(draw_text(Canvas{m.data(), 400, 400, 40}, 0, 0, 2, 0xFFFFFFFF, mixed) == text_width(2, mixed));
+  // At scale 2 and up, a CJK glyph's ink is as tall as a 5x7 capital, give or take its own bearing.
+  for (int scale = 2; scale <= 8; scale += 2) {
+    const int W = 64 * scale, H = 20 * scale, top = 4 * scale;
+    std::vector<u32> a(static_cast<size_t>(W) * H, 0);
+    draw_text(Canvas{a.data(), static_cast<u32>(W), W, H}, 0, top, scale, 0xFFFFFFFF, "\xE5\x8F\xA3"); // 口
+    int y0 = H, y1 = -1;
+    for (int y = 0; y < H; ++y)
+      for (int x = 0; x < W; ++x)
+        if (a[static_cast<size_t>(y) * W + x]) {
+          y0 = std::min(y0, y);
+          y1 = std::max(y1, y);
+        }
+    CHECK(y1 >= y0);
+    const int h = y1 - y0 + 1;
+    CHECK(h >= 5 * scale && h <= 8 * scale);
+    CHECK(y0 >= top - scale && y1 <= top + 8 * scale);
+  }
+  // The name editor keeps case; the menu folds Cyrillic onto capitals like a-z.
+  std::vector<u32> lo(200 * 40, 0), up(200 * 40, 0);
+  draw_text(Canvas{lo.data(), 200, 200, 40}, 0, 0, 2, 0xFFFFFFFF, "\xD0\xB6"); // ж
+  draw_text(Canvas{up.data(), 200, 200, 40}, 0, 0, 2, 0xFFFFFFFF, "\xD0\x96"); // Ж
+  CHECK(lo == up);
 }
 
 void test_cheevos_row_hidden_without_a_host() {
@@ -1036,6 +1091,16 @@ void test_setting_steps() {
   const ds::sdl::Setting& fl = find("emu.autosave");
   CHECK(ds::sdl::step_value(fl, "false", +1, h) == "true");
   CHECK(ds::sdl::step_value(fl, "true", +1, h) == "false");
+  // ANTI-ALIASING is off / on; the old enhanced mode's word in a file shows as on.
+  const ds::sdl::Setting* aap = nullptr;
+  for (int i = 0; i < ds::sdl::settings_count(ds::sdl::kVideoSettings); ++i)
+    if (!std::strcmp(ds::sdl::kVideoSettings[i].key, "video.aa")) aap = &ds::sdl::kVideoSettings[i];
+  CHECK(aap != nullptr);
+  const ds::sdl::Setting& aa = aap ? *aap : fl;
+  CHECK(ds::sdl::display_value(aa, "enhanced") == ds::sdl::display_value(aa, "true"));
+  CHECK(ds::sdl::display_value(aa, "enhanced") != ds::sdl::display_value(aa, "false"));
+  CHECK(ds::sdl::step_value(aa, "enhanced", +1, h) == "false");
+  CHECK(ds::sdl::step_value(aa, "false", +1, h) == "true");
   // GAME SPEED is a whole percent in the file, as --speed and the frontend
   // read it. As a 0..1 percent row it showed 100 as 10000% and wrote 1.
   const ds::sdl::Setting& sp = find("emu.speed");
@@ -1092,6 +1157,83 @@ void test_layout_page_rows() {
   CHECK(ds::sdl::step_value(box, "true", -1, h) == "true");
   FakeHost free;
   CHECK(ds::sdl::step_value(box, "true", +1, free) == "false");
+}
+
+// The analog rows are a page of their own, after CONTROLS, and DS OPTIONS
+// follows it.
+void test_analog_page() {
+  const auto has = [](const ds::sdl::Setting* t, const char* key) {
+    for (int i = 0; t[i].key; ++i)
+      if (!std::strcmp(t[i].key, key)) return true;
+    return false;
+  };
+  for (const char* k : {"pad.analog", "pad.analog_deadzone", "pad.analog_sensitivity_left",
+                        "pad.analog_sensitivity_right", "pad.analog_invert_y", "pad.analog_layout"}) {
+    CHECK(has(ds::sdl::kAnalogSettings, k));
+    CHECK(!has(ds::sdl::kEmuSettings, k));
+  }
+  FakeHost h;
+  Menu m;
+  m.set_settings_host(&h);
+  m.set_open(true);
+  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A)); // Options
+  for (int i = 0; i < 4; ++i) m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A)); // Analog
+  m.input(press(B::BTN_A)); // steps its first row
+  CHECK(!h.writes.empty() && h.writes.back() == "pad.analog");
+  m.input(press(B::BTN_B));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A)); // DS Options
+  int row = 0;
+  while (ds::sdl::kUserSettings[row].type == ds::sdl::Setting::Type::Text) ++row;
+  for (int i = 0; i < row; ++i) m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A));
+  CHECK(h.writes.back() == ds::sdl::kUserSettings[row].key);
+}
+
+// Analog codes live behind a link at the top of the Analog page: the Cheats
+// page lists the others, and goes when there are no others.
+void test_analog_cheats_link() {
+  std::vector<ds::cheat::Group> groups;
+  std::vector<ds::cheat::Code> codes(2);
+  codes[0].name = "Moon Jump";
+  codes[0].words = {0, 0};
+  codes[1].name = "CPAD";
+  codes[1].words = {0, 0};
+  codes[1].analog = true;
+  FakeHost h;
+  Menu m;
+  m.set_settings_host(&h);
+  m.set_cheats(&codes, &groups);
+  m.set_open(true);
+  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A)); // Cheats
+  m.input(press(B::BTN_A));
+  CHECK(codes[0].enabled && !codes[1].enabled);
+  m.input(press(B::BTN_B));
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A)); // Options
+  for (int i = 0; i < 4; ++i) m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A)); // Analog
+  m.input(press(B::BTN_A)); // the link
+  CHECK(h.writes.empty());
+  m.input(press(B::BTN_A));
+  CHECK(codes[1].enabled && m.cheats_dirty());
+  m.input(press(B::BTN_B)); // back on the Analog page
+  m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A));
+  CHECK(!h.writes.empty() && h.writes.back() == "pad.analog");
+
+  codes.erase(codes.begin()); // only an analog code left
+  Menu n;
+  n.set_settings_host(&h);
+  n.set_cheats(&codes, &groups);
+  n.set_open(true);
+  for (int i = 0; i < 3; ++i) n.input(press(B::BTN_DOWN));
+  n.input(press(B::BTN_A)); // no Cheats row: Options
+  n.input(press(B::BTN_A)); // Emulation, not a toggle
+  CHECK(codes[0].enabled);
 }
 
 // Local wireless is one row on the Emulation page rather than a page of its
@@ -1211,8 +1353,8 @@ void test_out_of_range_value_is_kept() {
 // or the first press on that row would jump somewhere unrelated.
 void test_defaults_are_reachable() {
   FakeHost h;
-  for (const ds::sdl::Setting* t :
-       {ds::sdl::kEmuSettings, ds::sdl::kVideoSettings, ds::sdl::kLayoutSettings, ds::sdl::kUserSettings}) {
+  for (const ds::sdl::Setting* t : {ds::sdl::kEmuSettings, ds::sdl::kVideoSettings, ds::sdl::kLayoutSettings,
+                                    ds::sdl::kUserSettings, ds::sdl::kAnalogSettings}) {
     for (int i = 0; i < ds::sdl::settings_count(t); ++i) {
       const ds::sdl::Setting& s = t[i];
       const std::string def = ds::sdl::default_value(s);
@@ -1342,6 +1484,24 @@ void test_controls_binding() {
   CHECK(h.writes.back() == "reset");
 }
 
+void test_controls_stylus_speed() {
+  FakeHost h;
+  Menu m;
+  m.set_settings_host(&h);
+  m.set_open(true);
+  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
+  m.input(press(B::BTN_A));                                // Options
+  for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN)); // CONTROLS
+  m.input(press(B::BTN_A));
+  for (int i = 0; i < 4; ++i) m.input(press(B::BTN_DOWN)); // STYLUS SPEED
+  m.input(press(B::BTN_LEFT));
+  CHECK(h.kv["pad.stylus_speed"] == "3.5");
+  CHECK(h.writes.back() == "pad.stylus_speed");
+  m.input(press(B::BTN_RIGHT));
+  CHECK(h.kv["pad.stylus_speed"] == "4.0");
+  CHECK(!h.capturing());
+}
+
 // With a pad, CLEAR and DEFAULTS are the west and north buttons by position:
 // rebinding DS Y/X can't move them, so a DS X press does nothing here.
 void test_controls_clear_and_reset_are_positional_on_a_pad() {
@@ -1454,7 +1614,7 @@ void test_text_editor() {
   m.set_open(true);
   for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
   m.input(press(B::BTN_A));                                // Options
-  for (int i = 0; i < 4; ++i) m.input(press(B::BTN_DOWN)); // DS OPTIONS
+  for (int i = 0; i < 5; ++i) m.input(press(B::BTN_DOWN)); // DS OPTIONS
   m.input(press(B::BTN_A));
   m.input(press(B::BTN_A));             // the nickname editor
   CHECK(h.writes.empty());              // opening writes nothing
@@ -1487,7 +1647,7 @@ void test_ds_options_with_a_firmware_dump() {
     m.set_open(true);
     for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
     m.input(press(B::BTN_A));
-    for (int i = 0; i < 4; ++i) m.input(press(B::BTN_DOWN));
+    for (int i = 0; i < 5; ++i) m.input(press(B::BTN_DOWN));
     m.input(press(B::BTN_A)); // DS OPTIONS
     m.input(press(B::BTN_DOWN));
     m.input(press(B::BTN_DOWN)); // FAVOURITE COLOUR, a stepped row
@@ -1507,7 +1667,7 @@ void test_save_target_switch() {
   m.set_open(true);
   for (int i = 0; i < 3; ++i) m.input(press(B::BTN_DOWN));
   m.input(press(B::BTN_A));                                // Options
-  for (int i = 0; i < 5; ++i) m.input(press(B::BTN_DOWN)); // the save row
+  for (int i = 0; i < 6; ++i) m.input(press(B::BTN_DOWN)); // the save row
   CHECK(!h.save_per_game());
   m.input(press(B::BTN_RIGHT));
   CHECK(h.save_per_game());
@@ -1522,7 +1682,7 @@ void test_save_target_switch() {
   m2.set_open(true);
   for (int i = 0; i < 3; ++i) m2.input(press(B::BTN_DOWN));
   m2.input(press(B::BTN_A));
-  for (int i = 0; i < 5; ++i) m2.input(press(B::BTN_DOWN));
+  for (int i = 0; i < 6; ++i) m2.input(press(B::BTN_DOWN));
   m2.input(press(B::BTN_A));
   CHECK(!h2.save_per_game());
 }
@@ -1582,7 +1742,7 @@ void test_canvas_sizes() {
     m.input(press(B::BTN_A));
     m.draw(d);
     guards_intact(); // Options
-    for (int page = 0; page < 5; ++page) {
+    for (int page = 0; page < 6; ++page) {
       Menu p;
       p.set_settings_host(&host);
       p.set_cheats(&codes, &groups);
@@ -1652,6 +1812,7 @@ int main() {
   test_list_scrolls_within_bounds();
   test_cheevos_draw_bounds();
   test_utf8_folds_to_ascii_glyphs();
+  test_fallback_glyphs();
   test_toast_draw_bounds();
   test_marquee_resets_on_move();
   test_page_stack();
@@ -1659,6 +1820,8 @@ int main() {
   test_setting_steps();
   test_percent_round_trip();
   test_layout_page_rows();
+  test_analog_page();
+  test_analog_cheats_link();
   test_network_features_row();
   test_out_of_range_value_is_kept();
   test_defaults_are_reachable();
@@ -1666,6 +1829,7 @@ int main() {
   test_disabled_row_does_not_step();
   test_commit_on_closing();
   test_controls_binding();
+  test_controls_stylus_speed();
   test_controls_clear_and_reset_are_positional_on_a_pad();
   test_controls_list_can_shrink();
   test_controls_repaints_when_a_capture_is_cancelled();

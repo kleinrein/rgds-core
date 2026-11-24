@@ -58,6 +58,15 @@ codegen-units = 1
 panic = "unwind"
 strip = "debuginfo"
 
-# Ruffle's wgpu renderer with a ring of chunk buffers (vendor/ruffle_render_wgpu, see its Cargo.toml).
+# Ruffle's wgpu renderer with a ring of chunk buffers (vendor/ruffle_render_wgpu, see its Cargo.toml), and the rest of
+# Ruffle from .cache/ruffle-src: the v0.8.0 tag with patches/*.patch applied (tools/build_ruffle.py makes it, and
+# `python3 tools/build_ruffle.py --source` on its own). Every Ruffle crate named anywhere by its git address is listed,
+# so the patched core and the renderer share one copy of each.
 [patch."https://github.com/ruffle-rs/ruffle"]
 ruffle_render_wgpu = { path = "vendor/ruffle_render_wgpu" }
+ruffle_core = { path = "../../.cache/ruffle-src/core" }
+ruffle_render = { path = "../../.cache/ruffle-src/render" }
+ruffle_video_software = { path = "../../.cache/ruffle-src/video/software" }
+swf = { path = "../../.cache/ruffle-src/swf" }
+naga-agal = { path = "../../.cache/ruffle-src/render/naga-agal" }
+naga-pixelbender = { path = "../../.cache/ruffle-src/render/naga-pixelbender" }

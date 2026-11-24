@@ -23,6 +23,10 @@ void App::top(SDL_Renderer* r, int y) {
         boot_scene(r, y);
         return;
     }
+    if (settings.page == Page::KidHome && !sn.open) {
+        kid_home_top(r, y);
+        return;
+    }
     if (chat_open) {
         chat_top(r, y);
         return;
@@ -37,6 +41,10 @@ void App::top(SDL_Renderer* r, int y) {
     }
     if (sn.open) {
         snake_top(r, y);
+        return;
+    }
+    if (o.game_menu && settings.page == Page::KidMenu) {
+        kid_menu_top(r, y);
         return;
     }
     if (o.game_menu) {
@@ -105,16 +113,11 @@ void App::top(SDL_Renderer* r, int y) {
         }
         const SystemStats& stats = system_stats_for(systems_selected);
         const bool played = stats.played_ready;
-        const std::array<std::string, 3> values = {
-            std::to_string(stats.games), played ? std::to_string(stats.sessions) : "…",
-            played ? std::to_string(stats.seconds / 3600) + "h " + std::to_string((stats.seconds / 60) % 60) + "m"
-                   : "…"};
-        const std::array<std::string, 3> captions = {"Games", "Times played", "Time played"};
-        for (int i = 0; i < 3; i++) {
-            int x = 52 + i * 182;
-            raw_label(r, values[i], x + (172 - label_width(values[i], 24)) / 2, y + 282, 24, "ink", 172);
-            label(r, captions[i], x + (172 - label_width(captions[i], 16)) / 2, y + 316, 16, "muted", 172);
-        }
+        stat_tiles(r, y + 300,
+                   {std::to_string(stats.games), played ? std::to_string(stats.sessions) : "…",
+                    played ? hours_minutes(stats.seconds) : "…"},
+                   {"Games", "Times played", "Time played"},
+                   {int(SettingsIcon::Cartridge), int(SettingsIcon::Play), int(SettingsIcon::Clock)});
         return;
     }
     if (home_menu) {
@@ -141,21 +144,22 @@ void App::top(SDL_Renderer* r, int y) {
             voice_home_top(r, y);
             return;
         }
+        if (album_at(home_selected)) {
+            category_icon(r, home_selected, 272, y + 132, 96);
+            centered(r, category_title(home_selected), y + 261, 2, "ink");
+            centered_wrapped(r, "Your screenshots and photos, by game and date", y + 312, 18, 500, 2, "muted");
+            return;
+        }
         // The collection and its three numbers, centred in the card.
         category_icon(r, home_selected, 288, y + 148, 64);
         centered(r, category_title(home_selected), y + 228, 2, "ink");
         const auto& stats = summary.groups[home_selected > 1 ? home_selected - 1 : 0];
-        std::array<std::string, 3> values = {summary_ready ? std::to_string(stats.games) : "…",
-                                             summary_ready ? std::to_string(stats.sessions) : "…",
-                                             summary_ready ? std::to_string(stats.seconds / 3600) + "h " +
-                                                                 std::to_string((stats.seconds / 60) % 60) + "m"
-                                                           : "…"};
-        const std::array<std::string, 3> captions = {"Games", "Times played", "Time played"};
-        for (int i = 0; i < 3; i++) {
-            int x = 52 + i * 182;
-            raw_label(r, values[i], x + (172 - label_width(values[i], 24)) / 2, y + 282, 24, "ink", 172);
-            label(r, captions[i], x + (172 - label_width(captions[i], 16)) / 2, y + 316, 16, "muted", 172);
-        }
+        stat_tiles(r, y + 300,
+                   {summary_ready ? std::to_string(stats.games) : "…",
+                    summary_ready ? std::to_string(stats.sessions) : "…",
+                    summary_ready ? hours_minutes(stats.seconds) : "…"},
+                   {"Games", "Times played", "Time played"},
+                   {int(SettingsIcon::Cartridge), int(SettingsIcon::Play), int(SettingsIcon::Clock)});
         if (banner_shown()) update_banner(r, y + 408);
         else if (!library_ready) centered(r, "Preparing your cartridges…", y + 423, 1, "muted");
         else if (return_writes_pending()) centered(r, "Restoring settings…", y + 423, 1, "muted");
@@ -208,6 +212,10 @@ void App::bottom(SDL_Renderer* r, int y) {
         port_manager_menu(r, y);
         return;
     }
+    if (settings.page == Page::KidMenu) {
+        kid_menu_bottom(r, y);
+        return;
+    }
     if (settings.page == Page::BootWarning) {
         boot_bottom(r, y);
         return;
@@ -223,6 +231,10 @@ void App::bottom(SDL_Renderer* r, int y) {
     }
     if (o.boot_startup && !library_ready) {
         boot_scene(r, y);
+        return;
+    }
+    if (settings.page == Page::KidHome && !sn.open) {
+        kid_home_bottom(r, y);
         return;
     }
     rect(r, 0, y, 640, 480, "background");

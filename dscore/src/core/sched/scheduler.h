@@ -50,6 +50,7 @@ enum class EventId : u8 {
   CamTransfer,
   CartPower1,
   CartPower2,
+  DsiDsp,
   Count
 };
 
@@ -103,6 +104,9 @@ public:
   void settle(EventId id);
   // schedule() overwrites a live event rather than refusing to re-arm it.
   bool armed(EventId id) const { return (armed_ & (1u << static_cast<u32>(id))) != 0; }
+  // When an armed event is due and what it carries (for a subsystem that must re-make its event on load).
+  u64 at(EventId id) const { return at_[static_cast<u32>(id)]; }
+  u32 param(EventId id) const { return param_[static_cast<u32>(id)]; }
 
   // Current time, including the running CPU's cycles consumed so far, so
   // events scheduled mid-instruction are stamped relative to its position.
@@ -164,7 +168,6 @@ public:
 
   // Bounded by the GPU's frame flag instead of a deadline: entered once per frame.
   u64 run_until_frame();
-  void run_sleep(u64 cycles);
   // Stops at the frame flag or `until`, whichever first.
   u64 run_until_or_frame(u64 until);
 

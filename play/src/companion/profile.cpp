@@ -254,6 +254,17 @@ bool Condition::match(Core& core) const {
     return true;
 }
 
+Profile tall_profile(const std::string& system, const std::string& title) {
+    Profile p;
+    p.system = system;
+    p.title = title;
+    p.file = "(tall screen)";
+    p.has_screens = true;
+    p.screens.tall = true;
+    p.screens.plain_pad = true;
+    return p;
+}
+
 bool parse_profile(const std::string& text, const std::string& file, Profile& out, std::string& error) {
     out = Profile{};
     out.file = file;
@@ -484,7 +495,10 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
                 ok = value == "yes" || value == "no";
                 out.screens.pointer = value == "yes";
             } else if (key == "stretch") ok = parse_int(value, out.screens.stretch) && out.screens.stretch >= 1;
-            else if (key == "match") {
+            else if (key == "tall") {
+                ok = value == "yes" || value == "no";
+                out.screens.tall = value == "yes";
+            } else if (key == "match") {
                 auto w = words(value);
                 ok = w.size() == 2 && parse_int(w[0], out.screens.match_w) && parse_int(w[1], out.screens.match_h);
             } else if (key == "touch") {
@@ -521,7 +535,7 @@ bool parse_profile(const std::string& text, const std::string& file, Profile& ou
     if (out.codes.empty()) return fail("[game] codes is missing");
     if (out.title.empty()) return fail("[game] title is missing");
     if (out.has_hud && out.hud.on.empty()) return fail("[hud] on is missing");
-    if (out.has_screens && (out.screens.top.empty() || out.screens.bottom.empty()))
+    if (out.has_screens && !out.screens.tall && (out.screens.top.empty() || out.screens.bottom.empty()))
         return fail("[screens] needs top and bottom");
     for (const auto& v : out.views)
         if (v.format.empty()) return fail("[view" + (v.name.empty() ? "" : "." + v.name) + "] format is missing");

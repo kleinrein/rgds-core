@@ -65,6 +65,15 @@ Gpu::Gpu(NDS& nds) : engine{Engine2D(nds, 0), Engine2D(nds, 1)}, nds_(nds) {
   if (split_) worker_b_.start(&Gpu::worker_b_job, this, ThreadRole::Line, "2d-engine-b");
 }
 
+// DISPCAPCNT is read as each line is drawn. In a batched frame the lines
+// before the write are drawn first, with the value they had: a game that
+// changes the capture's source or blend mid-frame gets it from that line on.
+void Gpu::capcnt_set(u32 v) {
+  if (v == capcnt_) return;
+  if (capture_on_) catch_up(1);
+  capcnt_ = v;
+}
+
 void Gpu::reset() {
   join_worker();
   presentation_smooth_ = !std::getenv("RGDS_3D_SMOOTH") || std::atoi(std::getenv("RGDS_3D_SMOOTH")) != 0;
@@ -90,6 +99,7 @@ void Gpu::reset() {
     for (auto& image : enhanced_) image.clear();
   disarm_trap();
   line_ = 0;
+  next_vcount_ = 0xFFFF;
   hblank_done_ = false;
   lazy_frame_ = false;
   per_line_[0] = per_line_[1] = false;
@@ -146,7 +156,7 @@ void Gpu::reg_write(u32 addr, u32 width, u32 value) {
   if (r >= 0x64 && r < 0x70) {
     if (width == 32) {
       switch (r) {
-      case 0x64: capcnt_ = value & 0xEF3F1F1F; return;
+      case 0x64: capcnt_set(value & 0xEF3F1F1F); return;
       case 0x68:
         fifo_[fifo_wr_] = value & 0xFFFF;
         fifo_[fifo_wr_ + 1] = value >> 16;
@@ -158,8 +168,8 @@ void Gpu::reg_write(u32 addr, u32 width, u32 value) {
     }
     if (width == 16) {
       switch (r) {
-      case 0x64: capcnt_ = (capcnt_ & 0xFFFF0000) | (value & 0x1F1F); return;
-      case 0x66: capcnt_ = (capcnt_ & 0x0000FFFF) | ((value & 0xEF3F) << 16); return;
+      case 0x64: capcnt_set((capcnt_ & 0xFFFF0000) | (value & 0x1F1F)); return;
+      case 0x66: capcnt_set((capcnt_ & 0x0000FFFF) | ((value & 0xEF3F) << 16)); return;
       case 0x68: fifo_[fifo_wr_] = value; return;
       case 0x6A:
         fifo_[fifo_wr_ + 1] = value;
@@ -170,10 +180,10 @@ void Gpu::reg_write(u32 addr, u32 width, u32 value) {
       }
     }
     switch (r) {
-    case 0x64: capcnt_ = (capcnt_ & 0xFFFFFF00) | (value & 0x1F); return;
-    case 0x65: capcnt_ = (capcnt_ & 0xFFFF00FF) | ((value & 0x1F) << 8); return;
-    case 0x66: capcnt_ = (capcnt_ & 0xFF00FFFF) | ((value & 0x3F) << 16); return;
-    case 0x67: capcnt_ = (capcnt_ & 0x00FFFFFF) | ((value & 0xEF) << 24); return;
+    case 0x64: capcnt_set((capcnt_ & 0xFFFFFF00) | (value & 0x1F)); return;
+    case 0x65: capcnt_set((capcnt_ & 0xFFFF00FF) | ((value & 0x1F) << 8)); return;
+    case 0x66: capcnt_set((capcnt_ & 0xFF00FFFF) | ((value & 0x3F) << 16)); return;
+    case 0x67: capcnt_set((capcnt_ & 0x00FFFFFF) | ((value & 0xEF) << 24)); return;
     case 0x68: fifo_[fifo_wr_] = static_cast<u16>(value * 0x0101); return;
     case 0x6A: fifo_[fifo_wr_ + 1] = static_cast<u16>(value * 0x0101); return;
     case 0x6B: fifo_wr_ = (fifo_wr_ + 2) & 0xF; return;
@@ -232,6 +242,13 @@ void Gpu::vram_store_trap(Cpu cpu, u32 addr) {
   const u32 stale = snapshot_stale_ ? 3u : 0u;
   if (a_deferred_) {
     if ((reach_engines(addr) | stale) & (b_deferred_ ? 3u : 1u)) {
+      const bool busy = !worker_.done() || (b_deferred_ && !worker_b_.done());
+      if (busy) snap_hit_ = true;
+      // On a snapshot the batch cannot see the store: the trap has nothing left to guard.
+      if (snap_live_ && busy) {
+        disarm_trap();
+        return;
+      }
       prof::add(prof::C_2D_A_JOIN_STORES, 1);
       join_worker(JoinSite::Trap);
     }
@@ -289,6 +306,20 @@ void Gpu::vram_store_trap(Cpu cpu, u32 addr) {
 // `moved_2d`: engines whose read views this remap actually moves. CENSUS
 // ONLY for now -- the catch-up below is still unconditional.
 bool Gpu::vram_remap_begin(u32 moved_2d, const VramMap* next) {
+  // LCDC (bit 2) is an engine A view only while A displays a VRAM bank or
+  // a capture writes one; otherwise a bank entering or leaving it changes
+  // nothing the 2D render reads, and the remap needs no catch-up or join
+  // (the trap, if armed, is re-applied by the bus over the remapped pages).
+  // Dragon Quest IX streams textures by flipping banks through LCDC hundreds
+  // of times a frame.
+  if (moved_2d & 4) {
+    const bool lcdc_read = ((engine[0].dispcnt() >> 16) & 3) == 2 || capture_on_ || capture_render_;
+    moved_2d = (moved_2d & 3) | (lcdc_read ? 1u : 0u);
+  }
+  if (!moved_2d) {
+    prof::add(prof::C_VRAM_REMAP_2D_STILL, 1);
+    return trap_armed_;
+  }
   // A job in flight keeps rendering against its snapshot; the live map may
   // change under it as long as the write trap still covers every bank it
   // reads at the bank's new address: an engine window that is trapped, or
@@ -381,20 +412,20 @@ bool Gpu::vram_remap_begin(u32 moved_2d, const VramMap* next) {
   join_worker(JoinSite::Remap);
   engine[0].vram_remapped();
   engine[1].vram_remapped();
-  const bool was = trap_armed_;
-  if (was) disarm_trap();
-  return was;
+  // The trap stays armed across the remap: the bus re-applies it over the
+  // pages it rewrites (the rest keep theirs), and vram_remap_end's arm_trap
+  // only redoes the windows if the arming itself changed.
+  return trap_armed_;
 }
 void Gpu::vram_remap_end(bool trapped) {
   if (trapped) {
     arm_trap();
     return;
   }
-  // Kept armed across the remap (a job in flight on its snapshot): the page
-  // table just rebuilt dropped the trap bits of every page it touched. The
-  // capture read trap comes back in its generic form, over every page the
-  // bank backs now -- the guest reads it through the new mapping otherwise.
-  if (trap_armed_) nds_.bus.set_vram_trap(true, trap_lcdc_, trap_mask_);
+  // Kept armed across the remap (a job in flight on its snapshot); the bus
+  // re-applied the trap over the pages it rewrote. The capture read trap
+  // comes back in its generic form, over every page the bank backs now --
+  // the guest reads it through the new mapping otherwise.
   if (read_trap_reapply_) {
     read_trap_reapply_ = false;
     if (read_trap_bank_ >= 0) {
@@ -421,8 +452,43 @@ void Gpu::release_read_trap() {
   read_trap_reapply_ = false;
 }
 
+void Gpu::take_snapshot(u32 engines) {
+  const VramMap& live = nds_.bus.vram_map();
+  if (!snap_mem_) {
+    u32 total = 0;
+    for (u32 sz : mem::Bus::VRAM_BANK_SIZES) total += sz;
+    snap_mem_.reset(new u8[total]);
+  }
+  auto banks_of = [](const VramView& v) {
+    u32 m = 0;
+    const u32 n = v.blocks() ? v.blocks() : 1;
+    for (u32 b = 0; b < n; ++b) m |= v.mask[b];
+    return m;
+  };
+  u32 m = 0;
+  if (engines & 1)
+    m |= banks_of(live.abg) | banks_of(live.aobj) | banks_of(live.abg_extpal) | banks_of(live.aobj_extpal);
+  if (engines & 2)
+    m |= banks_of(live.bbg) | banks_of(live.bobj) | banks_of(live.bbg_extpal) | banks_of(live.bobj_extpal);
+  u8* p = snap_mem_.get();
+  for (int i = 0; i < 9; ++i) {
+    const u32 sz = mem::Bus::VRAM_BANK_SIZES[i];
+    if (m & (1u << i)) {
+      std::memcpy(p, live.bank(i), sz);
+      snap_bank_[i] = p;
+    } else snap_bank_[i] = live.bank(i);
+    p += sz;
+  }
+}
+
 void Gpu::snapshot_map(int k) {
   const VramMap& live = nds_.bus.vram_map();
+  if (snap_live_) {
+    job_map_[k] = live;
+    job_map_[k].rebase(snap_bank_);
+    job_map_gen_[k] = ~0u;
+    return;
+  }
   if (job_map_gen_[k] == live.generation()) return;
   job_map_[k] = live;
   job_map_gen_[k] = live.generation();
@@ -601,7 +667,10 @@ void Gpu::async_probe_check(bool at_line0) {
 void Gpu::on_scanline_start() {
   prof::Scope hook(prof::GPU_LINE);
   nds_.io.set_hblank(false);
-  line_ = static_cast<u16>((line_ + 1) % SCANLINES_PER_FRAME);
+  if (next_vcount_ != 0xFFFF) {
+    line_ = next_vcount_;
+    next_vcount_ = 0xFFFF;
+  } else line_ = static_cast<u16>((line_ + 1) % SCANLINES_PER_FRAME);
   hblank_done_ = false;
 
   // Display lines evaluate window edges in step_engine; the rest go through the latch.
@@ -845,6 +914,9 @@ void Gpu::begin_frame() {
   lag_frame_ = !run_fifo_ && !g_no_lag;
   lag_trap_hits_ = 0;
   lag_trap_stores_ = 0;
+  if (snap_hit_) snap_want_ = SNAP_HOLD;
+  else if (snap_want_) --snap_want_;
+  snap_hit_ = false;
   arm_trap();
   if (lazy_frame_) prof::add(prof::C_2D_LAZY_FRAMES, 1);
   if (lag_frame_ && !lazy_frame_) prof::add(prof::C_2D_LAG_FRAMES, 1);
@@ -940,6 +1012,7 @@ void Gpu::join_worker(JoinSite site) {
     }
   }
   snapshot_stale_ = false;
+  snap_live_ = false;
   if (b_deferred_) { // as finish_a: writes the guest made meanwhile were journaled past the frame
     b_deferred_ = false;
     if (line_ == 0 || (line_ == 262 && hblank_done_)) skipped_[1] = false;
@@ -1029,10 +1102,16 @@ void Gpu::render_ranges(u32 af, u32 al, u32 bf, u32 bl) {
     // VBlank, when games stream VRAM. A per-line engine A outside a lag frame
     // (lag dropped mid-frame) has none, so its last line is drawn and joined now.
     prof::add(prof::C_RR_DEFER_A, 1);
+    const bool b_split = split_ && b_has && bl == SCREEN_H - 1 && b_len >= 24 && trap_armed_ && (trap_mask_ & 2);
+    static const bool snap_on = !(std::getenv("DS_2D_SNAP") && std::getenv("DS_2D_SNAP")[0] == '0');
+    if (snap_on && snap_want_ && !capture_render_ && !trap_lcdc_) {
+      take_snapshot(b_split ? 3u : 1u);
+      snap_live_ = true;
+    }
     hand(true, false);
     a_handed = true;
     a_deferred_ = true;
-    if (split_ && b_has && bl == SCREEN_H - 1 && b_len >= 24 && trap_armed_ && (trap_mask_ & 2)) {
+    if (b_split) {
       // Engine B's batch to its own worker, deferred to the same join: only a
       // batch run to the last line (everything journaled meanwhile is past the
       // frame) with the trap over the whole VRAM window (a lag frame's guards
@@ -2150,6 +2229,14 @@ template <class S> void Gpu::sync_state(S& s) {
   s.begin("GPU ");
   s.fields(line_, hblank_done_, frame_begun_, screens_on_, master_bright_g_, capcnt_, capture_on_, fifo_, fifo_rd_,
            fifo_wr_, fifo_line_, run_fifo_);
+  if constexpr (S::reading) {
+    if (line_ >= SCANLINES_PER_FRAME) {
+      s.fail("scanline");
+      return;
+    }
+    fifo_rd_ &= 0xF;
+    fifo_wr_ &= 0xE; // display FIFO positions: the write side steps by two
+  }
   s.fields(fb_); // what the display shows until the next frame (and the thumbnail)
   s.end();
   engine[0].sync_state(s);

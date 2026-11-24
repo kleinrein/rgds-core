@@ -84,8 +84,8 @@ u32 Engine2DRegs::read(u32 addr, u32 width) {
 }
 
 // Guest side: keep the read mirror current, then hand the write to the
-// journal. Byte writes outside byte-addressed registers merge into a
-// halfword here, so the journal only ever carries what apply_write handles.
+// journal. A byte write to a readable register merges into a halfword here;
+// the write-only ones are journaled as bytes.
 void Engine2DRegs::write(u32 addr, u32 width, u32 value) {
   const u32 r = addr & 0xFFF;
   if (width == 8) {
@@ -96,10 +96,16 @@ void Engine2DRegs::write(u32 addr, u32 width, u32 value) {
       queue(J_REG, r, 8, value & 0xFF);
       return;
     }
-    // BG0HOFS on engine A also scrolls the 3D layer even when powered down;
-    // journaled byte-wise since the write-only register can't be merged.
-    if (!num_ && (r == 0x10 || r == 0x11)) queue(J_REG, r, 8, value & 0xFF);
+    // The scroll, affine and reference registers are write-only: a byte is
+    // journaled as a byte, since there is no other half to read back and
+    // merge with. BG0HOFS on engine A also scrolls the 3D layer, even when
+    // the engine is powered down.
+    if (r >= 0x10 && r < 0x40) {
+      if (g_enabled_ || (!num_ && r < 0x12)) queue(J_REG, r, 8, value & 0xFF);
+      return;
+    }
     if (!g_enabled_) return;
+    if (r == 0x4E || r == 0x4F || r >= 0x55) return; // nothing there, and nothing to merge into its neighbour
     switch (r) {
     case 0x40:
     case 0x41:
@@ -207,8 +213,17 @@ void Engine2DRegs::queue(u8 kind, u32 addr, u32 width, u32 value) {
   }
   u32 n = jn_.load(std::memory_order_relaxed);
   if (n == JOURNAL_CAP) {
-    nds_.gpu.journal_full();
+    // Full: draw the lines below the frontier (Gpu::journal_full), keep the
+    // entries those lines did not consume. Only a journal full of writes to
+    // one line is applied ahead of its time.
+    nds_.gpu.journal_full(num_);
     n = jn_.load(std::memory_order_relaxed);
+    if (jpos_) {
+      std::memmove(journal_.data(), journal_.data() + jpos_, (n - jpos_) * sizeof(JEntry));
+      n -= static_cast<u32>(jpos_);
+      jpos_ = 0;
+      jn_.store(n, std::memory_order_relaxed);
+    }
     if (n == JOURNAL_CAP) {
       apply_pending();
       jn_.store(0, std::memory_order_relaxed);
@@ -279,8 +294,8 @@ void Engine2DRegs::apply(u8 kind, u32 addr, u32 width, u32 value) {
   }
 }
 
-// Render side. `addr` here is the register offset; byte writes only reach
-// the byte-addressed registers (write() merged the rest).
+// Render side. `addr` here is the register offset; byte writes reach the
+// byte-addressed and the write-only registers (write() merged the rest).
 void Engine2DRegs::apply_write(u32 addr, u32 width, u32 value) {
   const u32 r = addr & 0xFFF;
   if (width == 8) {
@@ -290,15 +305,29 @@ void Engine2DRegs::apply_write(u32 addr, u32 width, u32 value) {
       if (num_) dispcnt_ &= 0xC0B1FFF7;
       return;
     }
-    if (!num_ && r == 0x10) {
-      nds_.gpu3d.set_render_xpos(static_cast<u16>(value & 0xFF), 0x00FF);
-      return;
-    }
-    if (!num_ && r == 0x11) {
-      nds_.gpu3d.set_render_xpos(static_cast<u16>(value << 8), 0xFF00);
-      return;
-    }
+    if (!num_ && r == 0x10) nds_.gpu3d.set_render_xpos(static_cast<u16>(value & 0xFF), 0x00FF);
+    if (!num_ && r == 0x11) nds_.gpu3d.set_render_xpos(static_cast<u16>(value << 8), 0xFF00);
     if (!enabled_) return;
+    if (r >= 0x10 && r < 0x40) { // one byte of a write-only register: the rest of it stays
+      const u32 shift = (r & 1) * 8;
+      const auto put16 = [&](u32 old) { return (old & ~(0xFFu << shift)) | ((value & 0xFF) << shift); };
+      if (r < 0x20) {
+        u16& ofs = (r & 2) ? bgvofs_[(r - 0x10) / 4] : bghofs_[(r - 0x10) / 4];
+        ofs = static_cast<u16>(put16(ofs) & 0x1FF);
+      } else if ((r & 0xF) < 8) {
+        const int i = r >= 0x30;
+        s16& m = (r & 6) == 0 ? pa_[i] : (r & 6) == 2 ? pb_[i] : (r & 6) == 4 ? pc_[i] : pd_[i];
+        m = static_cast<s16>(put16(static_cast<u16>(m)));
+      } else {
+        const int i = r >= 0x38;
+        s32& ref = (r & 4) ? ref_y_[i] : ref_x_[i];
+        const u32 sh = (r & 3) * 8;
+        const u32 raw = (static_cast<u32>(ref) & ~(0xFFu << sh)) | ((value & 0xFF) << sh);
+        ref = static_cast<s32>(raw << 4) >> 4; // 28 bits, signed
+        ((r & 4) ? ref_y_reload_[i] : ref_x_reload_[i]) = ref;
+      }
+      return;
+    }
     switch (r) {
     case 0x40: win0_[1] = value; return;
     case 0x41: win0_[0] = value; return;
@@ -605,6 +634,7 @@ template <class S> void Engine2DRegs::sync_fields(S& s) {
            obj_mosaic_h_, bldcnt_, bldalpha_, eva_, evb_, evy_, dispcnt_hist_, layer_enable_, obj_enable_,
            forced_blank_, win0_active_, win1_active_, bg_mosaic_y_, bg_mosaic_ymax_, obj_mosaic_y_, bg_mosaic_latch_,
            obj_mosaic_latch_, bg_mosaic_line_, obj_mosaic_line_);
+  if constexpr (S::reading) screen_ &= 1; // 0 = top, 1 = bottom: indexes the frame pages
 }
 template void Engine2DRegs::sync_fields<state::Writer>(state::Writer&);
 template void Engine2DRegs::sync_fields<state::Reader>(state::Reader&);

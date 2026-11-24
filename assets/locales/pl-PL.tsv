@@ -63,6 +63,7 @@ Antarctica	Antarktyda
 Any	Wszystkie
 Applies immediately. Higher clocks use more battery.	Działa od razu. Wyższe taktowanie zużywa więcej baterii.
 Applies immediately. Your game keeps its progress.	Działa od razu. Postęp gry zostaje zachowany.
+Applies when the game starts without resuming.	Obowiązuje, gdy gra startuje bez wznawiania.
 Apply	Zastosuj
 APPLY	ZASTOSUJ
 Applying shader…	Stosowanie filtra…
@@ -447,6 +448,7 @@ Default controls saved.	Wspólne sterowanie zapisane.
 Glossy tiles	Błyszczące płytki
 Go back	Wróć
 Goes into	Trafia do
+Going online…	Łączenie z siecią…
 Golden leaves	Złote liście
 Green	Zielony
 Grey	Szary
@@ -457,12 +459,26 @@ Left stick down	Lewa gałka w dół
 Left stick left	Lewa gałka w lewo
 Left stick right	Lewa gałka w prawo
 Left stick up	Lewa gałka w górę
+Online play is off.	Gra online jest wyłączona.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Gra online włączona z WiiLink WFC. Połącz się z menu Nintendo WFC w grze.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Gra online włączona z Wiimmfi. Połącz się z menu Nintendo WFC w grze.
+Online play is on. Local wireless applies when it is off.	Gra online jest włączona. Lokalna sieć bezprzewodowa zadziała, gdy będzie wyłączona.
 Page	Strona
+Restart later	Uruchom ponownie później
+Restart now, unsaved progress is lost	Uruchom ponownie teraz, niezapisany postęp przepadnie
+Restarting the game to apply the change…	Ponowne uruchamianie gry, aby zastosować zmianę…
+Restarting the game to change online play…	Ponowne uruchamianie gry, aby zmienić grę online…
+Restarting the game to change the microphone…	Ponowne uruchamianie gry, aby zmienić mikrofon…
+Restarting the game to turn off local wireless…	Ponowne uruchamianie gry, aby wyłączyć lokalną sieć bezprzewodową…
+Restarting the game to turn on local wireless…	Ponowne uruchamianie gry, aby włączyć lokalną sieć bezprzewodową…
 Right stick down	Prawa gałka w dół
 Right stick left	Prawa gałka w lewo
 Right stick right	Prawa gałka w prawo
 Right stick up	Prawa gałka w górę
 Storyware	Książeczka
+The game reads its language when it starts	Gra odczytuje swój język przy starcie
+The game reads your nickname when it starts	Gra odczytuje twoją nazwę przy starcie
+Turning online play off…	Wyłączanie gry online…
 h	godz.
 Haptic strength	Siła haptyki
 Health	Zdrowie
@@ -2017,3 +2033,14 @@ Could not open it	Nie udało się otworzyć
 This folder is empty	Ten folder jest pusty
 The trash is empty	Kosz jest pusty
 No network places yet	Brak miejsc sieciowych
+Files	Pliki
+Theme, sound and Wi-Fi	Motyw, dźwięk i Wi-Fi
+Your screenshots and photos, by game and date	Twoje zrzuty ekranu i zdjęcia według gry i daty
+Games, saves and music on the card	Gry, zapisy i muzyka na karcie
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare wymaga plików BIOS DS i DSi w folderze BIOS
+This .cia is encrypted: copy the decrypted DSiWare file instead	Ten plik .cia jest zaszyfrowany: skopiuj odszyfrowany plik DSiWare
+This .cia is not a DSiWare file	Ten plik .cia nie jest plikiem DSiWare
+Little kid	Maluch
+Big pictures, one tap to play. No menus.	Duże obrazki, jedno dotknięcie, by grać. Bez menu.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	Dla najmłodszych graczy: tylko ich gry, jako duże obrazki. Jedno dotknięcie uruchamia grę, bez menu i ustawień, w których można się zgubić.
+No games yet	Jeszcze nie ma gier

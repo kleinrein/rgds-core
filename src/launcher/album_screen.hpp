@@ -1,5 +1,5 @@
 #pragma once
-// Screenshots: Menu + R in the launcher, and the Album (Settings > Library > Album). The pictures themselves are
+// Screenshots: Menu + R in the launcher, and the Album (a Home app). The pictures themselves are
 // runtime/screenshots.py's: it writes the PNGs, the thumbnails and album.tsv, and the launcher runs it for every
 // change (save, delete, cover, view) so there is one album format. In a game the runner takes the picture
 // (game_menu.py); this page only shows what is there.
@@ -40,9 +40,9 @@ void App::load_album() {
 }
 
 void App::open_album() {
-    settings.section = 2;
-    settings.library_rows = library_row_count();
-    settings.remember(Page::LibraryOptions, library_row_count() - 2);
+    // A Home app since 2026-11-24: Back returns to Home, or to the Journal it was opened from (journal_open_photo).
+    album_from_journal = settings.page == Page::Journal;
+    if (album_from_journal) settings.remember(Page::Journal, settings.focus);
     settings.page = Page::Album;
     settings.focus = 0;
     album_viewing = false;
@@ -258,8 +258,8 @@ void App::album_action(int code) {
         return;
     }
     if (code == 3) {
-        back_to(Page::LibraryOptions);
-        settings.focus = library_row_count() - 2;
+        if (album_from_journal) back_to(Page::Journal);
+        else settings.back();
     } else if (code == 12) album_more();
     else if (album.empty()) return;
     else if (code == 8 || code == 9)

@@ -85,6 +85,21 @@ class WelcomeTests(unittest.TestCase):
         # Bring over (step 1) shows only when an old system's files are found: none here
         self.assertEqual(self.setup_file(), 'step=2\n')
 
+    def test_the_flashers_answers_are_taken_and_their_steps_skipped(self):
+        # RG DS Flasher's Set up step, as the first boot's handoff leaves it (flasher/preset.go)
+        (self.data / 'flasher-setup.ini').write_text('format=1\nlanguage=nb-NO\ntimezone=America/Chicago\nname=Ada\n')
+        self.assertEqual(self.run_ui()['page'], WELCOME_PAGE)
+        self.assertIn('language=nb-NO', self.ini('ui.ini') + self.ini('preferences.ini'))
+        self.assertIn('timezone=America/Chicago', self.ini('system.ini'))  # the zone asked for, not the language's
+        self.assertIn('nickname=Ada', self.ini('ds.ini'))
+        self.assertEqual(self.setup_file(), 'step=2\n')  # Language answered, nothing to bring over: Colour
+        self.assertFalse((self.data / 'flasher-setup.ini').exists())
+        # after a restart the same steps stay skipped; Back still reaches the language, and choosing it again
+        # leaves the zone the flasher was given
+        self.run_ui(self.keys('b', 'a'))
+        self.assertIn('timezone=America/Chicago', self.ini('system.ini'))
+        self.assertEqual(self.setup_file(), 'step=2\n')
+
     def test_the_name_reaches_ds_games_and_pictochat(self):
         (self.data / 'setup.ini').write_text('step=3\n')
         self.run_ui(

@@ -63,6 +63,7 @@ Antarctica	Antarctica
 Any	Any
 Applies immediately. Higher clocks use more battery.	Applies immediately. Higher clocks use more battery.
 Applies immediately. Your game keeps its progress.	Applies immediately. Your game keeps its progress.
+Applies when the game starts without resuming.	Applies when the game starts without resuming.
 Apply	Apply
 APPLY	APPLY
 Applying shader…	Applying shader…
@@ -447,6 +448,7 @@ Default controls saved.	Default controls saved.
 Glossy tiles	Glossy tiles
 Go back	Go back
 Goes into	Goes into
+Going online…	Going online…
 Golden leaves	Golden leaves
 Green	Green
 Grey	Grey
@@ -457,12 +459,26 @@ Left stick down	Left stick down
 Left stick left	Left stick left
 Left stick right	Left stick right
 Left stick up	Left stick up
+Online play is off.	Online play is off.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.
+Online play is on. Local wireless applies when it is off.	Online play is on. Local wireless applies when it is off.
 Page	Page
+Restart later	Restart later
+Restart now, unsaved progress is lost	Restart now, unsaved progress is lost
+Restarting the game to apply the change…	Restarting the game to apply the change…
+Restarting the game to change online play…	Restarting the game to change online play…
+Restarting the game to change the microphone…	Restarting the game to change the microphone…
+Restarting the game to turn off local wireless…	Restarting the game to turn off local wireless…
+Restarting the game to turn on local wireless…	Restarting the game to turn on local wireless…
 Right stick down	Right stick down
 Right stick left	Right stick left
 Right stick right	Right stick right
 Right stick up	Right stick up
 Storyware	Storyware
+The game reads its language when it starts	The game reads its language when it starts
+The game reads your nickname when it starts	The game reads your nickname when it starts
+Turning online play off…	Turning online play off…
 h	h
 Haptic strength	Haptic strength
 Health	Health
@@ -2017,3 +2033,14 @@ Could not open it	Could not open it
 This folder is empty	This folder is empty
 The trash is empty	The trash is empty
 No network places yet	No network places yet
+Files	Files
+Theme, sound and Wi-Fi	Theme, sound and Wi-Fi
+Your screenshots and photos, by game and date	Your screenshots and photos, by game and date
+Games, saves and music on the card	Games, saves and music on the card
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare needs the DS and DSi BIOS files in the BIOS folder
+This .cia is encrypted: copy the decrypted DSiWare file instead	This .cia is encrypted: copy the decrypted DSiWare file instead
+This .cia is not a DSiWare file	This .cia is not a DSiWare file
+Little kid	Little kid
+Big pictures, one tap to play. No menus.	Big pictures, one tap to play. No menus.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.
+No games yet	No games yet

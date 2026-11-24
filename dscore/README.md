@@ -41,7 +41,10 @@ hardware. No DraStic code is in this tree. See [docs/techniques](docs/techniques
   AArch64 and ARMv7, DS and DSi alike.
 - **Retail cartridges.** KEY1/KEY2 protocol, direct boot, per-title save-chip
   database (EEPROM and FLASH variants), and IR-cart pass-through for the
-  Pokémon titles that need it. The GBA slot is empty.
+  Pokémon titles that need it.
+- **Slot 2.** GBA cartridges with their saves, the Rumble Pak, the Guitar Grip
+  and the motion accessories (`src/core/slot2`). RG DS Core puts the Rumble Pak
+  in the slot when Game rumble is on.
 - **Zipped ROMs.** `.zip` files holding an `.nds` load directly (detected by
   magic, not extension), with an on-disk unpack cache. No zip64, 7z or rar.
 - **2D.** Both engines complete: every BG mode, sprites, windows, mosaic,
@@ -84,8 +87,15 @@ hardware. No DraStic code is in this tree. See [docs/techniques](docs/techniques
 - **DSi hardware.** SD card slot backed by a host folder (synced back, deletions
   included), microphone, DSi Wi-Fi, PictoChat, and Download Play from the Menu.
 - **Save states, the recompiler, idle skip and fastmem** all work in DSi sessions.
-- **Not yet:** the DSP (titles that start it warn, and camera or DSP audio apps
-  will not work) and DSi-enhanced carts in DSi mode (they run as DS games).
+- **The DSP.** The SDK's AAC, G711 and graphics programs run as melonDS's
+  high-level rewrites (AAC decoded by FAAD2); any other DSP program runs on
+  teakra, exactly and far slower than real time on a handheld
+  ([src/core/dsp/README.md](src/core/dsp/README.md)).
+- **DSi-enhanced cards as a DSi** with `emu.dsi_enhanced` (best in a game's own
+  file) and the DSi BIOS pair; a DSi-only card always runs as one. DSi sessions
+  use the exact timing model unless `emu.timing` says otherwise.
+- **Cameras** see a still picture (`emu.dsi_camera_image`) or colour bars; there
+  is no live camera.
 
 ### Local wireless and internet
 

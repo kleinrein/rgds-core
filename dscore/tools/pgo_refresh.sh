@@ -12,7 +12,8 @@
 #          made (each edited function silently loses its profile). Exit 1 if
 #          the compiler/flags differ, 2 if only sources moved, 0 if current.
 # default  an instrumented aarch64 cross build, trained under qemu on the
-#          recorded scenes, three cart boots from frame 0 and (where the dumps are there) two DSiWare titles, writes
+#          recorded scenes, three cart boots from frame 0, five of them again through the GPU route with a
+#          raster that draws nothing, and (where the dumps are there) two DSiWare titles, writes
 #          the .gcda files into pgo/aarch64/ and a MANIFEST; then a "use" build
 #          from the committed profile in a *different* directory, reporting how
 #          many functions failed to find their profile (should be none straight
@@ -20,7 +21,8 @@
 # --no-dsi trains the DS scenes only, for a profile to ship without the DSi
 #          dumps to hand. The DSi scenes are also skipped on their own when
 #          DS_DSI is unset or has no bios/ pair in it (it wants bios/ with
-#          biosdsi9/7.bin and dsifirmware.bin, and games/ with the titles). MANIFEST records which scenes actually ran.
+#          biosdsi9/7.bin and dsifirmware.bin -- or the dsi_bios9/7.bin and dsi_firmware.bin
+#          names ROCKNIX uses -- and games/ with the titles). MANIFEST records which scenes actually ran.
 # --gcc N  builds a *secondary* aarch64 profile with that GCC major version
 #          (aarch64-linux-gnu-g++-N, installed alongside the default one) into
 #          pgo/aarch64-gcc<full version>/, which CMakeLists prefers whenever a
@@ -106,7 +108,7 @@ esac
 # profile keeps the plain pgo/<arch>.
 PROFILE="$HERE/pgo/$ARCH"
 [ -z "$GCC" ] || PROFILE="$PROFILE-gcc$("$PGO_CXX" -dumpfullversion)"
-CONF=(-G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DDSPERATE_TESTS=OFF -DDSPERATE_PGO_DIR="$PROFILE")
+CONF=(-G Ninja -DCMAKE_BUILD_TYPE=Release -DDSPERATE_TESTS=OFF -DDSPERATE_PGO_DIR="$PROFILE")
 if [ -n "$TOOLCHAIN" ]; then
   CONF+=(-DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" ${GCC:+-DDS_CROSS_GCC=$GCC})
 else
@@ -147,10 +149,18 @@ DS_DSI=${DS_DSI:-}
 DSI_OK=0; DSI_WHY=""
 if [ $DSI = 0 ]; then DSI_WHY="--no-dsi"
 elif [ -z "$DS_DSI" ]; then DSI_WHY="DS_DSI not set"
-elif [ ! -f "$DS_DSI/bios/biosdsi9.bin" ] || [ ! -f "$DS_DSI/bios/biosdsi7.bin" ]; then DSI_WHY="no DSi BIOS pair in $DS_DSI/bios"
-elif [ ! -f "$DS_DSI/bios/dsifirmware.bin" ]; then DSI_WHY="no DSi firmware in $DS_DSI/bios"
-else DSI_OK=1
+else
+  # Either spelling of the three files: the bare names, or ROCKNIX's, which is
+  # what the dumps are kept under so melonDS can share them on the device.
+  first() { for f; do [ -f "$f" ] && { echo "$f"; return 0; }; done; return 0; }
+  DSI_B9=$(first "$DS_DSI/bios/biosdsi9.bin" "$DS_DSI/bios/dsi_bios9.bin")
+  DSI_B7=$(first "$DS_DSI/bios/biosdsi7.bin" "$DS_DSI/bios/dsi_bios7.bin")
+  DSI_FW=$(first "$DS_DSI/bios/dsifirmware.bin" "$DS_DSI/bios/dsi_firmware.bin")
+  if [ -z "$DSI_B9" ] || [ -z "$DSI_B7" ]; then DSI_WHY="no DSi BIOS pair in $DS_DSI/bios"
+  elif [ -z "$DSI_FW" ]; then DSI_WHY="no DSi firmware in $DS_DSI/bios"
+  fi
 fi
+[ -n "$DSI_WHY" ] || DSI_OK=1
 echo "== instrumented build for $ARCH -> $PROFILE"
 mkdir -p "$PROFILE"
 find "$PROFILE" -name '*.gcda' -delete
@@ -174,15 +184,37 @@ train st     --frames 2400 "$DS_ROMS/Legend of Zelda, The - Spirit Tracks.nds" &
 # attract-mode demo, which starts around frame 1200 -- hence the frame count,
 # and hence this being the longest run of the batch.
 train nsmb   --frames 1500 "$DS_ROMS/New Super Mario Bros..nds" &
-SCENES="mlbis sm64 etody dbori meteos gsdd st nsmb"
+# Mid-song, from a save state: the CPU raster under the game's AA with a
+# display capture read back at every VBlank, slot 2's Guitar Grip, and frets
+# and strums in the replay. A save-state format change voids the .dss; record
+# the scene again then (--record with --load-state keeps the start frame).
+train ghontour --guitar-grip --save "$HERE/scenes/ghontour.sav" --load-state "$HERE/scenes/ghontour.dss" \
+  --replay "$HERE/scenes/ghontour.dsin" --frames 1200 "$DS_ROMS/Guitar Hero - On Tour.nds" &
+# The GPU route's side of the CPU: the geometry stream and the list built from it, the texture arena, the submit
+# thread, and the 2D engines' split compose with its merge from the record (display captures above all: Golden
+# Sun and Spirit Tracks capture every frame). No GPU answers under qemu, so the raster is the one that draws
+# nothing (DS_GPU3D_API=null, gpu_raster.cpp), which is the same for the Vulkan and the OpenGL ES raster, and
+# DS_SPLIT3D=present runs the split with no presenter. Without these runs all of that was built cold, and a
+# PGO build was the slower one with GPU 3D on (Golden Sun's title: 555-566 of 1500 frames over 16.7 ms against
+# 107-113 unprofiled, 2026-11-20). The scenes are ones above again, so both routes weigh in the profile.
+# Once each is enough: four times each measured 0.2-0.3 ms better on Golden Sun's title on the RG DS Plus, inside
+# the runs' own spread (42-53 against 47-59 frames of 1500 over 16.7 ms), and a run of the instrumented build on
+# the device itself did no better either.
+train_gpu() { echo "  train: $1"; shift; DS_GPU3D_API=null DS_SPLIT3D=present $Q "$G" "${C[@]}" --gpu3d "$@" > /dev/null 2>&1 || echo "  (run failed: $*)"; }
+train_gpu gpu-gsdd  --frames 2400 "$DS_ROMS/Golden Sun - Dark Dawn.nds" &
+train_gpu gpu-st    --frames 2400 "$DS_ROMS/Legend of Zelda, The - Spirit Tracks.nds" &
+train_gpu gpu-nsmb  --frames 1500 "$DS_ROMS/New Super Mario Bros..nds" &
+train_gpu gpu-sm64  --replay "$HERE/scenes/sm64.dsin"  --frames 600 "$DS_ROMS/Super Mario 64 DS.nds" &
+train_gpu gpu-dbori --replay "$HERE/scenes/dbori.dsin" --frames 600 "$DS_ROMS/Dragon Ball - Origins.nds" &
+SCENES="mlbis sm64 etody dbori meteos gsdd st nsmb ghontour gpu-gsdd gpu-st gpu-nsmb gpu-sm64 gpu-dbori"
 if [ $DSI_OK = 1 ]; then
   # BIOS-only DSiWare: the launcher's hand-off is emulated over a synthetic
   # NAND, so this needs the four BIOS dumps and the DSi firmware but no NAND
   # image. --dsi-persist keeps the titles' saves out of the asset directory
   # and --dsi-offline makes sure a training run never reaches the network.
   DC=(--direct --bios9 "$DS_BIOS/bios9.bin" --bios7 "$DS_BIOS/bios7.bin"
-      --bios9i "$DS_DSI/bios/biosdsi9.bin" --bios7i "$DS_DSI/bios/biosdsi7.bin"
-      --firmware "$DS_DSI/bios/dsifirmware.bin"
+      --bios9i "$DSI_B9" --bios7i "$DSI_B7"
+      --firmware "$DSI_FW"
       --dsi --dsi-hle-launch --dsi-offline --dsi-persist "$BUILD/dsi-saves")
   mkdir -p "$BUILD/dsi-saves"
   train_dsi() { echo "  train: $1"; shift; $Q "$G" "${DC[@]}" "$@" > /dev/null 2>&1 || echo "  (run failed: $*)"; }
@@ -216,7 +248,10 @@ ninja -C "$VBUILD" > "$VBUILD/pgo-warnings.log" 2>&1 || { tail -20 "$VBUILD/pgo-
 # and the two fallbacks (miniz's inflate, the reference kernels). What matters
 # is whether anything *outside* those groups went untrained -- that is a scene
 # that stopped running, and it used to hide behind a count.
-UNTRAINED='src/frontend/sdl/|rcheevos|cheevos|tools#|miniz|kernels_ref'
+# Four more are the SDL frontend's alone though they are built elsewhere: the window layout and the display tier
+# choice (src/frontend/video), the menu's translations (src/frontend/i18n), and the table of games that read a
+# GBA cartridge (core/slot2/compat.cpp: only the frontend's slot-2 prompt asks it).
+UNTRAINED='src/frontend/sdl/|src#frontend#video#|src#frontend#i18n#|slot2#compat|rcheevos|cheevos|tools#|miniz|kernels_ref'
 missing=$(grep -c "data file not found" "$VBUILD/pgo-warnings.log" || true)
 unexpected=$(grep "data file not found" "$VBUILD/pgo-warnings.log" | grep -cE -v "$UNTRAINED" || true)
 mismatch=$(grep -c "control flow of function" "$VBUILD/pgo-warnings.log" || true)   # "source locations ... changed" is benign: the counts still apply

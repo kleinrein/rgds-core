@@ -96,8 +96,45 @@ Most systems run with nothing extra. A few need, or run better with, a BIOS from
 | Atari 7800 (ProSystem)                     | Optional                             | `7800 BIOS (U).rom`                         | Shows the Atari logo first.                                                                     |
 | Atari 5200 (a5200)                         | Optional                             | `5200.rom`                                  | Without it the free Altirra OS runs. A few games need the real one.                             |
 | Atari Lynx (Handy)                         | Optional                             | `lynxboot.img`                              | Without it the core starts the cartridge itself.                                                |
+| DSiWare (DSCore)                           | **Required**                         | `bios9.bin`, `bios7.bin`, `dsi_bios9.bin`, `dsi_bios7.bin` | All four: the DS pair and the DSi pair (melonDS's and DraStic's names work too, also in an `nds` subfolder). DS games need none. DSiWare goes in the DS folder as `.nds`, `.dsi`, `.srl` or a decrypted `.cia`; its saves are kept per player as `GAMECODE.pub`/`.prv`, and each player gets a DSi SD card folder. No camera or DSP sound yet. |
 
-No BIOS is needed for DS (DSCore has its own), GBA, Game Boy, NES, SNES, Master System, Mega Drive, N64, PSP, ZX Spectrum, Commodore 64, Amstrad CPC, DOS, Atari 2600, WonderSwan, Neo Geo Pocket, Virtual Boy, PICO-8, Game & Watch, the two-monitor arcade games, ScummVM and Flash.
+No BIOS is needed for DS games (DSCore has its own), GBA, Game Boy, NES, SNES, Master System, Mega Drive, N64, PSP, ZX Spectrum, Commodore 64, Amstrad CPC, DOS, Atari 2600, WonderSwan, Neo Geo Pocket, Virtual Boy, PICO-8, Game & Watch, the two-monitor arcade games, ScummVM and Flash.
+
+## Thanks
+
+RG DS Core stands on a lot of other people's work. Thank you all.
+
+**[DSperate](https://github.com/beebono/DSperate)** by beebono is the heart of it. DSCore, the DS engine here, is a fork of DSperate ([what we changed](dscore/FORK.md)), and every DS game you play on this handheld runs on its recompiler, renderer and timing. Thanks also to everyone who sends it fixes; several of theirs are in DSCore too. DSperate itself builds on two emulators it learned from:
+
+- **DraStic** by Exophase, whose JIT and NEON rendering techniques DSperate reimplements from scratch. Exophase approved sharing the debug build those techniques were studied from.
+- **[melonDS](https://github.com/melonDS-emu/melonDS)**, the reference DSperate checks itself against, frame by frame and instruction by instruction. Its local wireless protocol lets an RG DS play with a melonDS user. Its DSi DSP programs and its copy of [teakra](https://github.com/wwylele/teakra) (with [FAAD2](https://github.com/knik0/faad2) for AAC) are how DSiWare's DSP sound runs here.
+
+**Other emulators**
+
+- [mGBA](https://github.com/mgba-emu/mgba) for GBA, Game Boy and Game Boy Color in RG DS Play.
+- [Tanuki3DS](https://github.com/burhanr13/Tanuki3DS) for the Nintendo 3DS.
+- [Ruffle](https://github.com/ruffle-rs/ruffle) for Flash games, with packs from [Flashpoint Archive](https://flashpointarchive.org/).
+- The [libretro](https://www.libretro.com/) project and the authors of every core we ship: FCEUmm, Snes9x, PicoDrive, Beetle PCE Fast, Mupen64Plus-Next, PCSX ReARMed, PPSSPP, Flycast, Fuse, VICE, PUAE, DOSBox Pure, blueMSX, Caprice32, Stella 2014, ProSystem, a5200, Handy, Beetle VB, Beetle WonderSwan, Beetle NeoPop, Gearcoleco, FreeIntv, fake-08, gw-libretro, FinalBurn Neo, MAME 2003-Plus and ScummVM.
+
+**The system underneath**
+
+- [BananaLinux](https://github.com/JorreFog/BananaLinux) by JorreFog, whose RG DS board layer RG DS OS started from, and [ROCKNIX](https://github.com/ROCKNIX/distribution), whose kernel patches, panel and joypad drivers made the hardware work.
+- [Buildroot](https://buildroot.org/), the Linux kernel, [Mesa](https://mesa3d.org/)'s Panfrost and PanVK (with the [FristOneRR PanVK](https://github.com/FristOneRR-Admin/FristOneRR-Panvk-Source) tree), [SDL](https://www.libsdl.org/), [Samba](https://www.samba.org/), [libslirp](https://gitlab.freedesktop.org/slirp/libslirp), miniz, FFmpeg, libopenmpt, mpv and bluez-alsa with libopenaptx and libldac.
+- [PortMaster](https://portmaster.games/) and its port makers, for the hundreds of ports that run here.
+
+**Online services and game knowledge**
+
+- [RetroAchievements](https://retroachievements.org/) and its rcheevos library.
+- [Wiimmfi](https://wiimmfi.de/) and WiiLink, which keep DS online play alive.
+- [GameTDB](https://www.gametdb.com/), [ScreenScraper](https://www.screenscraper.fr/), [libretro-thumbnails](https://github.com/libretro-thumbnails/libretro-thumbnails) and the [libretro database](https://github.com/libretro/libretro-database) for covers and game information.
+- [GBA DS](https://github.com/kyannon/gba-ds) by kyannon, whose shadow-map idea became our second-screen maps; the [pret](https://github.com/pret) and other disassembly projects and [Data Crystal](https://datacrystal.tcrf.net/) for the memory maps behind them.
+
+**Looks and sound**
+
+- jdgleaver's [DraStic DS shaders](https://github.com/jdgleaver/drastic_ds_shaders), Pokefan531's GBA colour model, SameBoy's Game Boy palettes and the [Nunito](https://github.com/google/fonts/tree/main/ofl/nunito) typeface.
+- Nintendo's DSi Menu, which the look of the launcher pays homage to, and the Nokia phones Snake came from.
+
+Licences and exact versions are in [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ## Developing
 

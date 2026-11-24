@@ -63,6 +63,7 @@ Antarctica	Etelämanner
 Any	Kaikki
 Applies immediately. Higher clocks use more battery.	Tulee voimaan heti. Suurempi kellotaajuus kuluttaa enemmän akkua.
 Applies immediately. Your game keeps its progress.	Tulee voimaan heti. Pelisi edistyminen säilyy.
+Applies when the game starts without resuming.	Tulee voimaan, kun peli käynnistyy jatkamatta.
 Apply	Käytä
 APPLY	KÄYTÄ
 Applying shader…	Otetaan suodatinta käyttöön…
@@ -447,6 +448,7 @@ Default controls saved.	Yhteiset ohjainasetukset tallennettu.
 Glossy tiles	Kiiltävät laatat
 Go back	Palaa
 Goes into	Kohde
+Going online…	Yhdistetään verkkoon…
 Golden leaves	Kultaiset lehdet
 Green	Vihreä
 Grey	Harmaa
@@ -457,12 +459,26 @@ Left stick down	Vasen sauva alas
 Left stick left	Vasen sauva vasen
 Left stick right	Vasen sauva oikea
 Left stick up	Vasen sauva ylös
+Online play is off.	Verkkopeli on pois.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Verkkopeli on päällä: WiiLink WFC. Yhdistä pelin Nintendo WFC -valikosta.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Verkkopeli on päällä: Wiimmfi. Yhdistä pelin Nintendo WFC -valikosta.
+Online play is on. Local wireless applies when it is off.	Verkkopeli on päällä. Paikallinen langaton tulee voimaan, kun se on pois.
 Page	Sivu
+Restart later	Käynnistä myöhemmin
+Restart now, unsaved progress is lost	Käynnistä nyt, tallentamaton edistyminen menetetään
+Restarting the game to apply the change…	Peli käynnistyy uudelleen muutoksen käyttöönottamiseksi…
+Restarting the game to change online play…	Peli käynnistyy uudelleen verkkopelin muuttamiseksi…
+Restarting the game to change the microphone…	Peli käynnistyy uudelleen mikrofonin muuttamiseksi…
+Restarting the game to turn off local wireless…	Peli käynnistyy uudelleen paikallisen langattoman sulkemiseksi…
+Restarting the game to turn on local wireless…	Peli käynnistyy uudelleen paikallisen langattoman käynnistämiseksi…
 Right stick down	Oikea sauva alas
 Right stick left	Oikea sauva vasen
 Right stick right	Oikea sauva oikea
 Right stick up	Oikea sauva ylös
 Storyware	Satukirja
+The game reads its language when it starts	Peli lukee kielensä käynnistyessään
+The game reads your nickname when it starts	Peli lukee nimesi käynnistyessään
+Turning online play off…	Verkkopeli pois…
 h	h
 Haptic strength	Haptiikan voimakkuus
 Health	Terveys
@@ -2017,3 +2033,14 @@ Could not open it	Sitä ei voitu avata
 This folder is empty	Tämä kansio on tyhjä
 The trash is empty	Roskakori on tyhjä
 No network places yet	Ei vielä verkkosijainteja
+Files	Tiedostot
+Theme, sound and Wi-Fi	Teema, ääni ja Wi-Fi
+Your screenshots and photos, by game and date	Kuvakaappauksesi ja kuvasi pelin ja päivän mukaan
+Games, saves and music on the card	Pelit, tallennukset ja musiikki kortilla
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare tarvitsee DS- ja DSi-BIOS-tiedostot BIOS-kansioon
+This .cia is encrypted: copy the decrypted DSiWare file instead	Tämä .cia on salattu: kopioi sen sijaan purettu DSiWare-tiedosto
+This .cia is not a DSiWare file	Tämä .cia ei ole DSiWare-tiedosto
+Little kid	Pieni lapsi
+Big pictures, one tap to play. No menus.	Isot kuvat, yksi napautus pelaa. Ei valikoita.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	Pienimmille pelaajille: vain heidän pelinsä isoina kuvina. Yksi napautus aloittaa, eikä valikoita tai asetuksia, joihin eksyä.
+No games yet	Ei vielä pelejä

@@ -327,10 +327,11 @@ class PageTests(Base):
 
     def test_turning_a_kid_into_an_adult_and_back_starts_safe(self):
         folder = self.kid(age=12, active=False)
-        self.run_ui(self.to_kid() + ['a'], flags=('--settings',))
+        # Who it's for opens Adult, Kid and Little kid on the one it is now.
+        self.run_ui(self.to_kid() + ['a', 'Left', 'a'], flags=('--settings',))
         info = read_fields(folder / 'profile.ini')
         self.assertEqual((info['restricted'], info['age'], info['unrated']), ('0', '-1', 'show'))
-        self.run_ui(self.to_kid() + ['a'], flags=('--settings',))
+        self.run_ui(self.to_kid() + ['a', 'Right', 'a'], flags=('--settings',))
         info = read_fields(folder / 'profile.ini')
         self.assertEqual((info['restricted'], info['age'], info['unrated']), ('1', '7', 'hide'))
 

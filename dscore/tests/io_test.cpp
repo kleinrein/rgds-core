@@ -8,6 +8,8 @@
 #include "core/input/input_log.h"
 
 #include <cstdio>
+#include <fstream>
+#include <vector>
 #include <cstring>
 #include <memory>
 
@@ -201,7 +203,7 @@ static void test_stop_resume() {
   // Enter in the middle of a scanline, as SDK sleep does.
   nds.sched.run_until(1234);
   nds.io.write(Cpu::ARM7, 0x04000301, 8, 0xC0);
-  CHECK_EQ(nds.sleeping, true);
+  CHECK_EQ(nds.io.sleeping, true);
   const auto time = nds.sched.now();
   const auto line = nds.gpu.line();
   const auto pc9 = nds.cpu(Cpu::ARM9).hot.regs[15];
@@ -218,9 +220,9 @@ static void test_stop_resume() {
   nds.run_frame();
   CHECK_EQ(nds.spu.available() > 500, true);
   nds.io.request_irq(Cpu::ARM7, 3); // disabled IRQ must not wake STOP
-  CHECK_EQ(nds.sleeping, true);
+  CHECK_EQ(nds.io.sleeping, true);
   nds.io.set_lid(false);
-  CHECK_EQ(nds.sleeping, false);
+  CHECK_EQ(nds.io.sleeping, false);
   CHECK_EQ(nds.cpu(Cpu::ARM7).halted, false);
   nds.run_frame();
   CHECK_EQ(nds.gpu.line(), 0u);
@@ -267,8 +269,112 @@ static void test_input() {
   nds.io.set_touch(400, -8, true);                             // clamped to the screen
   CHECK_EQ(tsc_read(nds, 5), 255u << 4);
   CHECK_EQ(tsc_read(nds, 1), 0u);
+  // Chained conversions: the control byte of the next sample clocks out the
+  // low byte of the one before; an unwired channel reads full scale.
+  {
+    nds.io.set_touch(100, 50, true);
+    auto spi = [&](u8 v) {
+      nds.io.write(Cpu::ARM7, 0x040001C0, 16, 0x8000 | 0x0800 | 0x0200);
+      nds.io.write(Cpu::ARM7, 0x040001C2, 8, v);
+      nds.sched.run_until(nds.sched.now() + 4000);
+      return static_cast<u8>(nds.io.read(Cpu::ARM7, 0x040001C2, 8));
+    };
+    spi(0xD0);                              // X
+    const u8 xhi = spi(0), xlo = spi(0x90); // ... its low byte comes back under the Y control byte
+    const u8 yhi = spi(0), ylo = spi(0);
+    CHECK_EQ(static_cast<u32>((xhi << 5) | (xlo >> 3)), 100u << 4);
+    CHECK_EQ(static_cast<u32>((yhi << 5) | (ylo >> 3)), 50u << 4);
+    CHECK_EQ(spi(0), 0u); // past the sample: zeros
+    nds.io.write(Cpu::ARM7, 0x040001C0, 16, 0);
+    CHECK_EQ(tsc_read(nds, 2), 0xFFFu); // battery channel
+  }
   nds.io.set_touch(0, 0, false);
   CHECK_EQ(nds.io.read(Cpu::ARM7, 0x04000136, 16) & 0x40, 0x40u);
+
+  // RTC: the hour in both modes, and the alarm and per-minute interrupts.
+  {
+    io::Rtc& r = nds.io.rtc;
+    const io::Rtc keep = r;
+    const u8 t2359[7] = {0x26, 0x11, 0x21, 6, 0x23 | 0x40, 0x59, 0x59};
+    r.status1 = 0x02;
+    std::memcpy(r.datetime, t2359, 7);
+    nds.io.rtc_step_second();
+    CHECK(r.datetime[4] == 0x00 && r.datetime[2] == 0x22 && r.datetime[3] == 0); // midnight: next day, flag clear
+    r.datetime[4] = 0x11;
+    r.datetime[5] = 0x59;
+    r.datetime[6] = 0x59;
+    nds.io.rtc_step_second();
+    CHECK(r.datetime[4] == (0x12 | 0x40)); // noon: the PM flag in 24-hour mode
+    r.status1 = 0x00;
+    r.datetime[4] = 0x11;
+    r.datetime[5] = 0x59;
+    r.datetime[6] = 0x59; // 12-hour mode, 11:59:59 AM
+    nds.io.rtc_step_second();
+    CHECK(r.datetime[4] == 0x40 && r.datetime[2] == 0x22); // 0 PM, same day
+    r.datetime[4] = 0x11 | 0x40;
+    r.datetime[5] = 0x59;
+    r.datetime[6] = 0x59;
+    nds.io.rtc_step_second();
+    CHECK(r.datetime[4] == 0x00 && r.datetime[2] == 0x23); // 0 AM, next day
+
+    io::CpuIo& c7 = nds.io.cpu_io[1];
+    nds.io.rcnt = 0x8100;
+    c7.if_ = 0;
+    r.status1 = 0x02;
+    r.status2 = 0x04;
+    r.irq_flag = 0; // INT1: alarm 1
+    r.alarm1[0] = 0;
+    r.alarm1[1] = 0x80 | 0x07;
+    r.alarm1[2] = 0x80 | 0x30; // 07:30, any day
+    r.datetime[4] = 0x07;
+    r.datetime[5] = 0x28;
+    r.datetime[6] = 0x59;
+    nds.io.rtc_step_second();
+    CHECK(!(c7.if_ & (1u << io::IRQ_RTC))); // 07:29
+    r.datetime[6] = 0x59;
+    nds.io.rtc_step_second();
+    CHECK(c7.if_ & (1u << io::IRQ_RTC)); // 07:30
+    CHECK(r.status1 & 0x10);
+    c7.if_ = 0;
+    r.datetime[6] = 0x59;
+    nds.io.rtc_step_second();
+    CHECK(!(c7.if_ & (1u << io::IRQ_RTC)) && !(r.irq_flag & 0x10)); // 07:31: the line drops
+    r.status2 = 0x02;
+    r.datetime[6] = 0x59; // per-minute edge
+    nds.io.rtc_step_second();
+    CHECK(c7.if_ & (1u << io::IRQ_RTC));
+    nds.io.rcnt = 0;
+    c7.if_ = 0;
+    r = keep;
+  }
+
+  // ROMCTRL by halves and bytes reads what the 32-bit access reads.
+  nds.io.write(Cpu::ARM9, 0x040001A4, 32, 0x00416657);
+  CHECK_EQ(nds.io.read(Cpu::ARM9, 0x040001A4, 16), nds.io.read(Cpu::ARM9, 0x040001A4, 32) & 0xFFFF);
+  CHECK_EQ(nds.io.read(Cpu::ARM9, 0x040001A6, 16), nds.io.read(Cpu::ARM9, 0x040001A4, 32) >> 16);
+  CHECK_EQ(nds.io.read(Cpu::ARM9, 0x040001A5, 8), 0x66u);
+  nds.io.write(Cpu::ARM9, 0x040001A4, 16, 0x1234);
+  CHECK_EQ(nds.io.read(Cpu::ARM9, 0x040001A4, 32) & 0x1FFF, 0x1234u & 0x1FFF);
+  CHECK_EQ(nds.io.read(Cpu::ARM9, 0x040001A6, 16) & 0x003F, 0x0041u & 0x003F); // the other half kept
+
+  // EXMEMCNT: bits 0-6 are one copy per CPU, the rest the ARM9's.
+  nds.io.write(Cpu::ARM9, 0x04000204, 16, 0x0015);
+  nds.io.write(Cpu::ARM7, 0x04000204, 16, 0xFF6A);
+  CHECK_EQ(nds.io.read(Cpu::ARM9, 0x04000204, 16) & 0x7F, 0x15u);
+  CHECK_EQ(nds.io.read(Cpu::ARM7, 0x04000204, 16) & 0x7F, 0x6Au);
+  CHECK_EQ(nds.io.read(Cpu::ARM7, 0x04000204, 16) & 0xFF80, nds.io.read(Cpu::ARM9, 0x04000204, 16) & 0xFF80);
+
+  // A byte written to IF acknowledges that byte's bits only.
+  nds.io.cpu_io[0].if_ = 0x00010101;
+  nds.io.write(Cpu::ARM9, 0x04000214, 8, 0x01);
+  CHECK_EQ(nds.io.cpu_io[0].if_, 0x00010100u);
+  nds.io.write(Cpu::ARM9, 0x04000216, 8, 0x01);
+  CHECK_EQ(nds.io.cpu_io[0].if_, 0x00000100u);
+  nds.io.cpu_io[0].if_ = 0;
+  // A byte written to a timer's reload keeps the reload's other byte, not the counter's.
+  nds.io.write(Cpu::ARM9, 0x0400010C, 16, 0xAB00);
+  nds.io.write(Cpu::ARM9, 0x0400010C, 8, 0xCD);
+  CHECK_EQ(nds.io.cpu_io[0].timers[3].reload, 0xABCDu);
   CHECK_EQ(tsc_read(nds, 1), 0xFFFu);
 }
 
@@ -334,6 +440,76 @@ static void test_input_log() {
   std::remove(path);
 }
 
+// The analog patch channel: with NDS::analog_patch set, apply() leaves the
+// frame's sticks and ZL/ZR at 0x027FFDF0 in the layout the ARM9 hook reads;
+// without it, guest RAM is untouched. The nub is written unrotated (the
+// relay's 45-degree rotation compensates the New 3DS C-Stick's diagonal
+// sensor mounting, which host sticks do not have).
+static void test_analog_apply() {
+  constexpr u32 kOut = 0x027FFDF0;
+  { // No patch: nothing is written, however the sticks are pushed.
+    NDS nds;
+    input::Frame f;
+    f.cpad_x = 32767;
+    f.cpad_y = 32767;
+    f.zl = true;
+    input::apply(nds, f);
+    CHECK_EQ(r32(nds, kOut), 0u);
+    CHECK_EQ(r32(nds, kOut + 4), 0u);
+  }
+  NDS nds;
+  nds.analog_patch = true;
+  input::Frame f;
+  f.cpad_x = 32767;   // +127
+  f.cpad_y = -32768;  // -128
+  f.cstick_x = 32767; // nub +X only: written through as (+127, 0)
+  f.cstick_y = 0;
+  f.zl = true;
+  f.zr = false;
+  // The plain CPAD variant leaves the nub/ZL/ZR word zero, as its 3DS
+  // patch does: the same ARM9 hook would otherwise turn the camera.
+  input::apply(nds, f);
+  CHECK_EQ(r32(nds, kOut), 0x807Fu); // CPadY<<8 | CPadX
+  CHECK_EQ(r32(nds, kOut + 4), 0u);
+  // The nub variant makes the second word live.
+  nds.analog_full = true;
+  input::apply(nds, f);
+  CHECK_EQ(r32(nds, kOut), 0x807Fu);
+  const u32 nub = r32(nds, kOut + 4);
+  CHECK_EQ(nub & 0xFF, 4u);          // ZL set (bit 2), ZR clear (bit 1)
+  CHECK_EQ((nub >> 8) & 0xFF, 127u); // no 45-degree rotation on host sticks:
+  CHECK_EQ((nub >> 16) & 0xFF, 0u);  // a pure right push stays pure right
+  // The extended (Metroid) layout: ZL/ZR byte at +4, nub as s16 at
+  // +6/+8, gyro words zero at +10. (Regression: this code's hook read
+  // the packed layout's Y byte as its X and a never-written +8 as Y,
+  // so the camera turned one way and never pitched.)
+  nds.analog_layout = NDS::AnalogLayout::Extended;
+  input::apply(nds, f);
+  CHECK_EQ(r32(nds, kOut), 0x807Fu);
+  CHECK_EQ(r32(nds, kOut + 4), 0x007F0004u); // ZL byte at +4, (s16)nub_x low byte at +6
+  CHECK_EQ(r16(nds, kOut + 6), 127);         // (s16)nub_x, unrotated
+  CHECK_EQ(r16(nds, kOut + 8), 0);           // (s16)nub_y
+  CHECK_EQ(r32(nds, kOut + 12), 0u);         // gyro words stay zero
+  // Centred sticks and released triggers clear the words again.
+  nds.analog_layout = NDS::AnalogLayout::Packed;
+  input::apply(nds, input::Frame{});
+  CHECK_EQ(r32(nds, kOut), 0u);
+  CHECK_EQ(r32(nds, kOut + 4), 0u);
+  // The log round-trips the analog fields (DSIN v3).
+  const char* path = "/tmp/dsperate_input_log_test.bin";
+  {
+    input::Log w;
+    CHECK_EQ(w.open_write(path), true);
+    w.write(f);
+  }
+  input::Log r;
+  CHECK_EQ(r.open_read(path), true);
+  input::Frame got;
+  CHECK_EQ(r.read(got), true);
+  CHECK_EQ(got == f, true);
+  std::remove(path);
+}
+
 // ---- RTC free-running clock ------------------------------------------------
 // The clock only runs when a frontend asks for it; what is tested here is the
 // carry, because a game may have written its own date into the chip and
@@ -384,7 +560,7 @@ static void test_rtc_clock() {
   // Second, minute and hour carry.
   set_date(nds, 0x26, 0x09, 0x02, 3, 0x11, 0x59, 0x59);
   advance_seconds(nds, 1);
-  CHECK_DATE(nds, 0x26, 0x09, 0x02, 0x12, 0x00, 0x00);
+  CHECK_DATE(nds, 0x26, 0x09, 0x02, 0x12 | 0x40, 0x00, 0x00); // the PM flag is set from noon in 24-hour mode too
   set_date(nds, 0x26, 0x09, 0x02, 3, 0x23, 0x59, 0x59);
   advance_seconds(nds, 1);
   CHECK_DATE(nds, 0x26, 0x09, 0x03, 0x00, 0x00, 0x00);
@@ -586,6 +762,17 @@ static void test_generated_firmware() {
   CHECK_EQ(nds->load_bios("/dev/null", "/dev/null", "", user, &err), false);
   CHECK_EQ(err.empty(), false);
   CHECK_EQ(nds->load_bios("/dev/null", "/nonexistent/bios7.bin", "", user, &err), false); // one half only
+  // A firmware of no real image size (a mis-saved download) is refused, not
+  // booted on: the game would get a settings block it rejects.
+  {
+    std::ofstream f("io_test_badfw.bin", std::ios::binary);
+    std::vector<char> junk(0x30000, 'x');
+    f.write(junk.data(), static_cast<std::streamsize>(junk.size()));
+  }
+  err.clear();
+  CHECK_EQ(nds->load_bios("", "", "io_test_badfw.bin", user, &err), false);
+  CHECK_EQ(err.find("not a firmware dump") != std::string::npos, true);
+  std::remove("io_test_badfw.bin");
 }
 
 static void test_power_off() {
@@ -652,7 +839,38 @@ static void test_dma_ignores_tcm() {
   CHECK_EQ(r32(nds, alias), 0x11111111u);      // the RAM beneath took it
 }
 
+// What the DSi cameras look at: a frame of YUV pairs, from the built-in bars or any RGB picture.
+static void test_camera_frames() {
+  using C = ds::io::DsiCamera;
+  std::vector<u32> f(C::W * C::H / 2);
+  C::colour_bars(f.data());
+  CHECK((f[0] & 0xFF) == 191 && ((f[0] >> 8) & 0xFF) == 128 && (f[0] >> 24) == 128); // the grey bar: no colour
+  const u32 blue = f[C::W / 2 - 1];                                                  // the last bar
+  CHECK((blue & 0xFF) < 40 && ((blue >> 8) & 0xFF) > 200 && (blue >> 24) < 128);
+  CHECK((f[(C::H - 1) * (C::W / 2)] & 0xFF) == 0 &&
+        ((f[C::H * (C::W / 2) - 1] >> 16) & 0xFF) == 255); // the ramp's ends
+  // A wide picture loses its sides, not its shape: red, a white middle third, red.
+  std::vector<u8> rgb(900 * 100 * 3);
+  for (int y = 0; y < 100; ++y)
+    for (int x = 0; x < 900; ++x) {
+      u8* p = &rgb[(y * 900 + x) * 3];
+      const bool mid = x >= 400 && x < 500;
+      p[0] = 255;
+      p[1] = p[2] = mid ? 255 : 0;
+    }
+  C::frame_from_rgb(rgb.data(), 900, 100, f.data());
+  const u32 centre = f[240 * (C::W / 2) + 160], edge = f[240 * (C::W / 2)];
+  CHECK((centre & 0xFF) == 255 && (edge & 0xFF) < 100 &&
+        (edge >> 24) > 200); // white in the middle, red (high V) at the edge
+  u32 white = 0;
+  for (int x = 0; x < C::W / 2; ++x) white += (f[x] & 0xFF) == 255;
+  CHECK(white > 220 && white < 260); // 100 of the 133 columns kept: three quarters
+  C::frame_from_rgb(nullptr, 0, 0, f.data());
+  CHECK((f[0] & 0xFF) == 191); // nothing to show: the bars
+}
+
 int main() {
+  test_camera_frames();
   test_div();
   test_sqrt();
   test_vramcnt_layout();
@@ -661,11 +879,68 @@ int main() {
   test_mic_and_lid();
   test_stop_resume();
   test_input_log();
+  test_analog_apply();
   test_rtc_clock();
   test_firmware_override();
   test_generated_firmware();
   test_power_off();
   test_dma_ignores_tcm();
+  // ARM7 BIOS read protection: all ones to code outside the BIOS, and below
+  // BIOSPROT to BIOS code above it; code fetch is not a data read.
+  {
+    mem::Bus::bios7_protect = true;
+    NDS n2;
+    u32 word = 0x12345678;
+    std::memcpy(n2.bus.bios7.get() + 0x100, &word, 4);
+    std::memcpy(n2.bus.bios7.get() + 0x2000, &word, 4);
+    n2.io.arm7_bios_prot = 0x1204;
+    CpuContext& a7 = n2.cpu(Cpu::ARM7);
+    a7.hot.regs[15] = 0x02380008;
+    CHECK_EQ(n2.bus.read32(Cpu::ARM7, 0x2000), 0xFFFFFFFFu);
+    CHECK_EQ(n2.bus.read16(Cpu::ARM7, 0x2000), 0xFFFFu);
+    CHECK_EQ(n2.bus.read8(Cpu::ARM7, 0x100), 0xFFu);
+    a7.hot.regs[15] = 0x00002008; // BIOS code above the protected part
+    CHECK_EQ(n2.bus.read32(Cpu::ARM7, 0x2000), 0x12345678u);
+    CHECK_EQ(n2.bus.read32(Cpu::ARM7, 0x100), 0xFFFFFFFFu);
+    a7.hot.regs[15] = 0x00000208; // and inside it
+    CHECK_EQ(n2.bus.read32(Cpu::ARM7, 0x100), 0x12345678u);
+    CHECK_EQ(n2.bus.read8(Cpu::ARM7, 0x101), 0x56u);
+    a7.hot.regs[15] = 0x02380008;
+    CHECK_EQ(n2.bus.fetch(Cpu::ARM7, 0x100, 32), 0x12345678u);
+  }
+  // DSi power button and volume keys: BPTWL flags, and IRQ2 bit 6 once register 0x12 enables it.
+  {
+    NDS d;
+    d.dsi = true;
+    d.io.bptwl_reset();
+    u8* r = d.io.dsi.bptwl_regs;
+    d.io.dsi.if2 = 0;
+    r[0x40] = 0x10;
+    d.io.dsi_volume_button(true);
+    CHECK(r[0x40] == 0x15 && (r[0x10] & 0x40) && !(d.io.dsi.if2 & (1u << io::IRQ2_BPTWL))); // flagged, interrupt off
+    r[0x12] = 0x01;
+    r[0x10] = 0;
+    d.io.dsi_volume_button(false);
+    CHECK(r[0x40] == 0x10 && (d.io.dsi.if2 & (1u << io::IRQ2_BPTWL)));
+    d.io.dsi.if2 = 0;
+    r[0x10] = 0;
+    d.io.dsi_power_button(true);
+    CHECK(r[0x10] == 0x08); // pressed
+    d.io.dsi_power_button(false);
+    CHECK(r[0x10] == 0x09 && !d.dsi_soft_reset_pending); // a tap: reset, left to software
+    r[0x10] = 0;
+    d.io.dsi_power_button(true);
+    d.sched.run_until(d.sched.now() + ARM9_CLOCK_HZ);
+    d.io.dsi_power_button(true);
+    d.io.dsi_power_button(true);
+    CHECK(r[0x10] == 0x0A && !d.power_off); // held: shutdown, flagged once
+    d.io.dsi_power_button(false);
+    CHECK(r[0x10] == 0x0A);
+    r[0x12] = 0x00; // interrupt off: the controller acts itself
+    d.io.dsi_power_button(true);
+    d.io.dsi_power_button(false);
+    CHECK(d.dsi_soft_reset_pending);
+  }
   if (failures) {
     std::fprintf(stderr, "%d failure(s)\n", failures);
     return 1;

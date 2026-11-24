@@ -3,6 +3,7 @@
 // the HUD): those with a companion profile. The player picks a profile by the
 // cartridge's game code, or, for Game Boy carts too old to have one, by its
 // header title (play/src/app/session.cpp); this finds the same file the same way.
+#include "launcher/model.hpp"
 #include <cctype>
 #include <cstdint>
 #include <cstdio>
@@ -139,8 +140,13 @@ inline bool dual_screen_game(const fs::path& rom, const std::string& system, con
             if (codes.count(name_code(file.path().filename().string()))) return result = true;
         return result;
     }
-    // An arcade set is always a .zip, known by its MAME name ("punchout").
-    if (system == "arcade") return result = profile_codes(profiles / system).count(name_code(rom.stem().string())) > 0;
+    // An arcade set is always a .zip, known by its short name: a two-monitor cabinet ("punchout") by its profile, a
+    // vertical game by the set list (the player stands it over both panels, the tall screen).
+    if (system == "arcade") {
+        const auto set = arcade_catalog().find(lower(rom.stem().string()));
+        return result = profile_codes(profiles / system).count(name_code(rom.stem().string())) > 0 ||
+                        (set != arcade_catalog().end() && set->second.vertical());
+    }
     if (ext == ".ZIP" || ext == ".7Z") return result;
     if (system == "nes" || system == "snes" || system == "sms" || system == "md" || system == "n64" || system == "zx" ||
         system == "c64" || system == "gw") {

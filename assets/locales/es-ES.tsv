@@ -63,6 +63,7 @@ Antarctica	Antártida
 Any	Todos
 Applies immediately. Higher clocks use more battery.	Se aplica al instante. Más frecuencia consume más batería.
 Applies immediately. Your game keeps its progress.	Se aplica al instante. Se conserva el progreso.
+Applies when the game starts without resuming.	Se aplica cuando el juego empieza sin reanudar.
 Apply	Aplicar
 APPLY	APLICAR
 Applying shader…	Aplicando filtro…
@@ -447,6 +448,7 @@ Default controls saved.	Controles globales guardados.
 Glossy tiles	Baldosas brillantes
 Go back	Volver
 Goes into	Se guarda en
+Going online…	Conectando en línea…
 Golden leaves	Hojas doradas
 Green	Verde
 Grey	Gris
@@ -457,12 +459,26 @@ Left stick down	Palanca izquierda abajo
 Left stick left	Palanca izquierda izquierda
 Left stick right	Palanca izquierda derecha
 Left stick up	Palanca izquierda arriba
+Online play is off.	El juego en línea está desactivado.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Juego en línea activado con WiiLink WFC. Conéctate desde el menú Nintendo WFC del juego.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Juego en línea activado con Wiimmfi. Conéctate desde el menú Nintendo WFC del juego.
+Online play is on. Local wireless applies when it is off.	El juego en línea está activado. El inalámbrico local se aplica cuando esté desactivado.
 Page	Página
+Restart later	Reiniciar más tarde
+Restart now, unsaved progress is lost	Reiniciar ahora, se pierde el progreso sin guardar
+Restarting the game to apply the change…	Reiniciando el juego para aplicar el cambio…
+Restarting the game to change online play…	Reiniciando el juego para cambiar el juego en línea…
+Restarting the game to change the microphone…	Reiniciando el juego para cambiar el micrófono…
+Restarting the game to turn off local wireless…	Reiniciando el juego para desactivar el inalámbrico local…
+Restarting the game to turn on local wireless…	Reiniciando el juego para activar el inalámbrico local…
 Right stick down	Palanca derecha abajo
 Right stick left	Palanca derecha izquierda
 Right stick right	Palanca derecha derecha
 Right stick up	Palanca derecha arriba
 Storyware	Libro de cuentos
+The game reads its language when it starts	El juego lee su idioma al empezar
+The game reads your nickname when it starts	El juego lee tu apodo al empezar
+Turning online play off…	Desactivando el juego en línea…
 h	h
 Haptic strength	Intensidad háptica
 Health	Salud
@@ -2017,3 +2033,14 @@ Could not open it	No se pudo abrir
 This folder is empty	Esta carpeta está vacía
 The trash is empty	La papelera está vacía
 No network places yet	Aún no hay lugares de red
+Files	Archivos
+Theme, sound and Wi-Fi	Tema, sonido y Wi-Fi
+Your screenshots and photos, by game and date	Tus capturas y fotos, por juego y fecha
+Games, saves and music on the card	Juegos, partidas y música de la tarjeta
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare necesita los archivos BIOS de DS y DSi en la carpeta BIOS
+This .cia is encrypted: copy the decrypted DSiWare file instead	Este .cia está cifrado: copia el archivo DSiWare descifrado
+This .cia is not a DSiWare file	Este .cia no es un archivo DSiWare
+Little kid	Peque
+Big pictures, one tap to play. No menus.	Imágenes grandes, un toque para jugar. Sin menús.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	Para los más pequeños: solo sus juegos, en imágenes grandes. Un toque y a jugar, sin menús ni ajustes en los que perderse.
+No games yet	Aún no hay juegos

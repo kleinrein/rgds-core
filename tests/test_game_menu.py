@@ -554,6 +554,42 @@ class GameMenuTests(unittest.TestCase):
         self.assertEqual(read_fields(self.menu.status)['state'], 'error')
         self.assertIsNone(self.menu.pending)
 
+    def test_online_play_switches_live_in_dscore(self):
+        self.menu.core = 'rgds-experimental'
+        self.request('online:1', token='online-on')
+        self.assertEqual(self.menu.pending['action'], 'online:1')
+        self.assertEqual(read_fields(self.menu.status)['message'], 'Going online…')
+        self.result('online-applied')
+        self.assertIsNone(self.menu.pending)
+        self.assertFalse(self.menu.restart)
+        self.assertEqual(read_fields(self.menu.status)['state'], 'paused')
+        self.assertEqual(
+            read_fields(self.menu.status)['message'],
+            "Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu."
+        )
+        self.request('online:0', token='online-off')
+        self.result('online-applied')
+        self.assertEqual(read_fields(self.menu.status)['message'], 'Online play is off.')
+
+    def test_online_play_the_engine_cannot_apply_relaunches_from_a_checkpoint(self):
+        self.menu.core = 'rgds-experimental'
+        self.request('online:2', token='online-on')
+        self.result('online-unavailable')
+        self.assertTrue(self.menu.restart)
+        self.assertTrue(self.menu.restart_same_core)
+        self.assertFalse(self.menu.reset_state)
+        self.assertEqual(self.menu.pending['action'], 'save-quit')
+        self.assertEqual(read_fields(self.menu.status)['message'], 'Restarting the game to change online play…')
+
+    def test_launch_time_ds_settings_relaunch_to_the_same_moment(self):
+        self.menu.core = 'rgds-experimental'
+        self.request('relaunch:wireless-on', token='wireless')
+        self.assertTrue(self.menu.restart)
+        self.assertTrue(self.menu.restart_same_core)
+        self.assertFalse(self.menu.reset_state)
+        self.assertEqual(self.menu.pending['action'], 'save-quit')
+        self.assertEqual(read_fields(self.menu.status)['message'], 'Restarting the game to turn on local wireless…')
+
     def test_cheat_requests_need_dscore_and_a_valid_shape(self):
         self.menu.send('cheat:0:1')
         self.assertIsNone(self.menu.pending)

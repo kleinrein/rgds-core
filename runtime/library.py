@@ -70,28 +70,22 @@ def record_session(path, started, seconds):
 
 
 def banner_data(path, code=None):
-    archive = None
+    import dsiware  # the game in a .zip, or inside a DSiWare .cia
     try:
-        if path.suffix.lower() == ".zip":
-            archive = zipfile.ZipFile(path)
-            games = [i for i in archive.infolist() if Path(i.filename).suffix.lower() in (".nds", ".dsi")]
-            if len(games) != 1: return None
-            stream = archive.open(games[0])
-        else:
-            stream = path.open("rb")
-        with stream:
+        with dsiware.open_srl(path) as found:
+            if found is None: return None
+            stream, base, size = found
+            stream.seek(base)
             header = stream.read(0x6c)
             if len(header) != 0x6c: return None
             if code is not None: code.append(header[12:16].decode("ascii", errors="replace"))
             offset = struct.unpack_from("<I", header, 0x68)[0]
-            if offset < 0x200 or offset > 16 * 1024**2: return None
-            stream.seek(offset)
+            if offset < 0x200 or offset > 16 * 1024**2 or offset + 0x440 > size: return None
+            stream.seek(base + offset)
             banner = stream.read(0x440)
             return banner if len(banner) == 0x440 else None
-    except (OSError, ValueError, zipfile.BadZipFile):
+    except (OSError, ValueError, zipfile.BadZipFile, EOFError):
         return None
-    finally:
-        if archive: archive.close()
 
 
 def index_banner(data, rom):

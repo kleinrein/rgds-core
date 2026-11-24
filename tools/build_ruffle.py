@@ -6,6 +6,11 @@
     python3 tools/build_ruffle.py --headless  also build/ruffle/flash-headless (examples/headless.rs): a game run with
                                             no screen, to time it or catch a crash on the handheld
 
+    python3 tools/build_ruffle.py --source  only the patched Ruffle source (for a plain `cargo build` in play/ruffle)
+
+Ruffle itself is built from .cache/ruffle-src: its release tag cloned once, with play/ruffle/patches/*.patch applied
+(play/ruffle/Cargo.toml's [patch] section points there). A changed patch is applied to a clean tree at the next build.
+
 Cargo cross-compiles with zig as the linker, as tools/build.py builds the launcher, so neither Buildroot's Rust (too
 old for Ruffle 0.8.0) nor the build VM's disk is needed: os/buildroot/package/libretro-ruffle installs the result.
 The Rust version is play/ruffle/rust-toolchain.toml's (rustup installs it and the aarch64 target when missing).
@@ -26,6 +31,38 @@ OUT = ROOT / "build/ruffle"
 TARGET_DIR = ROOT / ".cache/ruffle-target"
 TARGET = "aarch64-unknown-linux-gnu"
 ZIG_TARGET = "aarch64-linux-gnu.2.17"
+
+
+# Ruffle's release, the tag play/ruffle/Cargo.toml names too: bump them together.
+RUFFLE_URL = "https://github.com/ruffle-rs/ruffle"
+RUFFLE_TAG = "v0.8.0"
+SOURCE = ROOT / ".cache/ruffle-src"
+PATCHES = CRATE / "patches"
+
+
+def ruffle_source():
+    """Ruffle at its tag with play/ruffle/patches applied, where play/ruffle/Cargo.toml's [patch] looks for it."""
+    patches = sorted(PATCHES.glob("*.patch"))
+    want = hashlib.sha256(RUFFLE_TAG.encode() + b"".join(p.name.encode() + p.read_bytes() for p in patches)).hexdigest()
+    stamp = SOURCE / ".rgds-patches"
+    if stamp.is_file() and stamp.read_text().strip() == want:
+        return
+    git = ["git", "-c", "advice.detachedHead=false"]
+    if not (SOURCE / ".git").exists():
+        SOURCE.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run([*git, "clone", "--quiet", "--depth", "1", "--branch", RUFFLE_TAG, RUFFLE_URL, str(SOURCE)],
+                       check=True)
+    else:
+        if subprocess.run([*git, "rev-parse", "--verify", "--quiet", f"refs/tags/{RUFFLE_TAG}"], cwd=SOURCE,
+                          capture_output=True).returncode:
+            subprocess.run([*git, "fetch", "--quiet", "--depth", "1", "origin", f"refs/tags/{RUFFLE_TAG}:refs/tags/{RUFFLE_TAG}"],
+                           cwd=SOURCE, check=True)
+        subprocess.run([*git, "checkout", "--quiet", "--force", RUFFLE_TAG], cwd=SOURCE, check=True)
+        subprocess.run([*git, "clean", "--quiet", "-fd"], cwd=SOURCE, check=True)
+    for patch in patches:
+        subprocess.run([*git, "apply", "--whitespace=nowarn", str(patch)], cwd=SOURCE, check=True)
+    stamp.write_text(want + "\n")
+    print(f"Ruffle {RUFFLE_TAG} with {len(patches)} patch(es) in {SOURCE.relative_to(ROOT)}")
 
 
 def toolchain():
@@ -75,11 +112,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--host", action="store_true", help="build for this computer instead of the handheld")
     parser.add_argument("--headless", action="store_true", help="also build the headless runner")
+    parser.add_argument("--source", action="store_true", help="only prepare the patched Ruffle source")
     parser.add_argument("--features", default="", help="Cargo features to build with, comma-separated")
     parser.add_argument("--pgo-generate", metavar="DIR",
                         help="instrumented build: a run on the handheld writes its profile into DIR there")
     parser.add_argument("--pgo-use", metavar="PROFDATA", help="build optimised with a merged profile (.profdata)")
     args = parser.parse_args()
+    ruffle_source()
+    if args.source:
+        return 0
     channel = toolchain()
     env = os.environ.copy()
     env["CARGO_TARGET_DIR"] = str(TARGET_DIR)

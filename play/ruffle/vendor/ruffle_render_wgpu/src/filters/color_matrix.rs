@@ -1,7 +1,7 @@
 use crate::backend::RenderTargetMode;
 use crate::buffer_pool::TexturePool;
 use crate::descriptors::Descriptors;
-use crate::filters::{FilterSource, FilterVertex, VERTEX_BUFFERS_DESCRIPTION_FILTERS};
+use crate::filters::{FilterSource, VERTEX_BUFFERS_DESCRIPTION_FILTERS};
 use crate::surface::target::CommandTarget;
 use crate::utils::SampleCountMap;
 use std::sync::OnceLock;
@@ -11,10 +11,6 @@ use wgpu::util::StagingBelt;
 pub struct ColorMatrixFilter {
     bind_group_layout: wgpu::BindGroupLayout,
     pipeline_layout: wgpu::PipelineLayout,
-    vertex_buffer: wgpu::Buffer,
-    uniform_buffer: wgpu::Buffer,
-    vertices_size: wgpu::BufferSize,
-    uniform_size: wgpu::BufferSize,
     pipelines: SampleCountMap<OnceLock<wgpu::RenderPipeline>>,
 }
 
@@ -54,35 +50,16 @@ impl ColorMatrixFilter {
             label: create_debug_label!("Color matrix filter binds").as_deref(),
         });
 
-        let vertices_size = std::mem::size_of::<[FilterVertex; 4]>() as u64;
-        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size: vertices_size,
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[Some(&bind_group_layout)],
             immediate_size: 0,
         });
 
-        let uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size: uniform_size,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-
         Self {
             pipelines: Default::default(),
             pipeline_layout,
-            vertex_buffer,
-            uniform_buffer,
             bind_group_layout,
-            vertices_size: wgpu::BufferSize::new(vertices_size).expect("Definitely not zero."),
-            uniform_size: wgpu::BufferSize::new(uniform_size).expect("Definitely not zero."),
         }
     }
 
@@ -132,7 +109,7 @@ impl ColorMatrixFilter {
         descriptors: &Descriptors,
         texture_pool: &mut TexturePool,
         draw_encoder: &mut wgpu::CommandEncoder,
-        staging_belt: &mut StagingBelt,
+        _staging_belt: &mut StagingBelt,
         source: &FilterSource,
         filter: &ColorMatrixFilterArgs,
     ) -> CommandTarget {
@@ -154,12 +131,10 @@ impl ColorMatrixFilter {
             draw_encoder,
         );
         let source_view = source.texture.create_view(&Default::default());
-        staging_belt
-            .write_buffer(draw_encoder, &self.uniform_buffer, 0, self.uniform_size)
-            .copy_from_slice(bytemuck::cast_slice(&filter.matrix));
-        staging_belt
-            .write_buffer(draw_encoder, &self.vertex_buffer, 0, self.vertices_size)
-            .copy_from_slice(bytemuck::cast_slice(&[source.vertices()]));
+        let uniform_buffer =
+            crate::filters::fresh_buffer(descriptors, bytemuck::cast_slice(&filter.matrix), wgpu::BufferUsages::UNIFORM);
+        let vertex_buffer =
+            crate::filters::fresh_buffer(descriptors, bytemuck::cast_slice(&[source.vertices()]), wgpu::BufferUsages::VERTEX);
         let filter_group = descriptors
             .device
             .create_bind_group(&wgpu::BindGroupDescriptor {
@@ -178,7 +153,7 @@ impl ColorMatrixFilter {
                     },
                     wgpu::BindGroupEntry {
                         binding: 2,
-                        resource: self.uniform_buffer.as_entire_binding(),
+                        resource: uniform_buffer.as_entire_binding(),
                     },
                 ],
             });
@@ -191,7 +166,7 @@ impl ColorMatrixFilter {
 
         render_pass.set_bind_group(0, &filter_group, &[]);
 
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+        render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
         render_pass.set_index_buffer(
             descriptors.quad.index_buffer.slice(..),
             wgpu::IndexFormat::Uint32,

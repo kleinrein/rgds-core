@@ -11,6 +11,7 @@
 
 #include <cassert>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <algorithm>
 
@@ -46,6 +47,7 @@ Bus::Bus(NDS& nds)
       nwram{take_buf(NWRAM_BANK_SIZE), take_buf(NWRAM_BANK_SIZE), take_buf(NWRAM_BANK_SIZE)},
       bios9i(take_buf(BIOS9I_SIZE)), bios7i(take_buf(BIOS7I_SIZE)), nds_(nds) {
   if (fastmem_requested() && !arena_) std::fprintf(stderr, "fastmem: no shared-memory backing (memfd or tmpfs); off\n");
+  PageTable::code_bits_range(vram.get(), VRAM_TOTAL);
   std::memset(bios9.get(), 0, BIOS9_SIZE);
   std::memset(bios7.get(), 0, BIOS7_SIZE);
 }
@@ -153,7 +155,7 @@ void Bus::update_wifi_timings() {
 
 void Bus::update_gba_slot_timings() {
   // Only bits 0-4 and 7 reach the slot timings (5-6 are the PHI output).
-  const u16 ex = nds_.io.exmemcnt & 0x9F;
+  const u16 ex = nds_.io.exmemcnt_slot2() & 0x9F;
   if (gba_slot_applied_ == ex) return;
   gba_slot_applied_ = ex;
   prof::add(prof::C_BUS_GBA_TIMING, 1);
@@ -233,6 +235,14 @@ void Bus::update_main_ram() {
 #endif
 }
 
+// DS_BIOS7_PROT=1: the DS ARM7 BIOS answers reads by where they come from, as
+// the hardware does. Off by default: its own reads (the SWI table, the sound
+// tables) then leave the recompilers' fast path, 0.06-0.19 ms a frame on the
+// RG DS Plus (2026-11-21), and no game is known to need it.
+bool Bus::bios7_protect = [] {
+  const char* e = std::getenv("DS_BIOS7_PROT");
+  return e && e[0] == '1';
+}();
 // DS: 4 KB ARM9 image mirrored over the top 64 KB, 16 KB ARM7 image at 0.
 // DSi: 64 KB images unless SCFG_BIOS switched a CPU back to its DS image;
 // hidden upper halves read as all ones via the slow path.
@@ -249,9 +259,15 @@ void Bus::update_bios_map() {
     map_page_aligned(pt9, 0xFFFF0000, BIOS9_SIZE, bios9.get(), RO, 0xFFFFFFFFu - 0xFFF);
     pt9.map(0xFFFFF000, 0x1000, bios9.get(), RO);
   }
-  // DSi ARM7 BIOS: left unmapped so every access goes through io_read, which
-  // applies the BIOS protection rules.
-  if (!(nds_.dsi && !(scfg_bios & 0x0200))) pt7.map(0x00000000, BIOS7_SIZE, bios7.get(), RO);
+  // DSi ARM7 BIOS, and the DS one under bios7_protect: left unmapped so every
+  // data read goes through io_read, which applies the BIOS protection rules;
+  // code is fetched through Bus::fetch.
+  if (!bios7_protect && !(nds_.dsi && !(scfg_bios & 0x0200))) pt7.map(0x00000000, BIOS7_SIZE, bios7.get(), RO);
+#if DSPERATE_JIT
+  // The DSi's switch to the DS BIOS images puts other code at the same addresses.
+  jit::remapped(nds_.cpu(Cpu::ARM9), 0xFFFF0000, 0xFFFFFFFF);
+  jit::remapped(nds_.cpu(Cpu::ARM7), 0x00000000, 0x0000FFFF);
+#endif
 }
 
 void Bus::update_vram_timings() {
@@ -362,6 +378,10 @@ void Bus::apply_wram(bool nwram, bool windows_only) {
     }
     wram_key_[c] = key;
     std::memcpy(wram_win_[c], win, sizeof win);
+#if DSPERATE_JIT
+    // WRAMCNT or a DSi window moved: code translated from 03xxxxxx may be other bytes now.
+    jit::remapped(nds_.cpu(c ? Cpu::ARM7 : Cpu::ARM9), 0x03000000, 0x03FFFFFF);
+#endif
   }
 }
 
@@ -427,28 +447,72 @@ void Bus::update_vram() {
   // A remap mid-frame changes what the deferred 2D render reads: lines past
   // HBlank are rendered now against the old views, and the write trap
   // (which the remap drops) is re-armed after. Which engine's views moved,
-  // per engine's four fetch views plus extended palettes; LCDC counts for
-  // engine A. Census only for now: gpu's catch-up stays unconditional.
+  // per engine's four fetch views plus extended palettes; bit 2 for LCDC,
+  // which the gpu counts for engine A only while something reads it.
   const auto view_moved = [&](const gpu::VramView& a, const gpu::VramView& b) { return differs(a, b); };
   const u32 moved_2d =
       ((view_moved(next.abg, vram_map_.abg) || view_moved(next.aobj, vram_map_.aobj) ||
-        view_moved(next.abg_extpal, vram_map_.abg_extpal) || view_moved(next.aobj_extpal, vram_map_.aobj_extpal) ||
-        next.lcdc_mask != vram_map_.lcdc_mask)
+        view_moved(next.abg_extpal, vram_map_.abg_extpal) || view_moved(next.aobj_extpal, vram_map_.aobj_extpal))
            ? 1u
            : 0u) |
       ((view_moved(next.bbg, vram_map_.bbg) || view_moved(next.bobj, vram_map_.bobj) ||
         view_moved(next.bbg_extpal, vram_map_.bbg_extpal) || view_moved(next.bobj_extpal, vram_map_.bobj_extpal))
            ? 2u
-           : 0u);
+           : 0u) |
+      (next.lcdc_mask != vram_map_.lcdc_mask ? 4u : 0u);
+  // Only the guest ranges whose hosts can have changed are rebuilt and
+  // diffed: an engine window whose view moved (its 2 MB of mirrors), the
+  // ARM7 window likewise, and of LCDC the banks that entered or left it.
+  // Every other entry keeps its page -- and its trap bits. Dragon Quest IX flips banks A-D between LCDC and texture
+  // slots up to 800 times a frame while streaming textures; the whole-region
+  // rebuild (two 64 KB tables filled, compared and re-armed per store) cost
+  // 200 us a flip on the A55, 100-180 ms frames.
+  static const u32 lcdc_base[9] = {0x00000, 0x20000, 0x40000, 0x60000, 0x80000, 0x90000, 0x94000, 0x98000, 0xA0000};
+  // LCDC's 1 MB mirrors: only the first is laid into the page table. The
+  // slow path resolves the others by the low 20 bits (vram_view_for), and a
+  // flip of a 128 KB bank then costs 64 entries, not 512. DS_LCDC_MIRRORS
+  // maps more (up to 8) for an A/B.
+  static const u32 lcdc_mirrors = [] {
+    const char* e = std::getenv("DS_LCDC_MIRRORS");
+    const int v = e ? std::atoi(e) : 1;
+    return static_cast<u32>(v < 1 ? 1 : v > 8 ? 8 : v);
+  }();
+  const u32 lcdc_end = 0x06800000 + lcdc_mirrors * 0x100000;
+  struct Range {
+    u32 addr, size;
+  };
+  Range r9[12], r7[1];
+  u32 n9 = 0, n7 = 0;
+  const bool full = !vram_hosts_valid_;
+  if (full) {
+    r9[n9++] = {0x06000000, 0x01000000};
+    r7[n7++] = {0x06000000, 0x01000000};
+  } else {
+    if (view_moved(next.abg, vram_map_.abg)) r9[n9++] = {0x06000000, 0x00200000};
+    if (view_moved(next.bbg, vram_map_.bbg)) r9[n9++] = {0x06200000, 0x00200000};
+    if (view_moved(next.aobj, vram_map_.aobj)) r9[n9++] = {0x06400000, 0x00200000};
+    if (view_moved(next.bobj, vram_map_.bobj)) r9[n9++] = {0x06600000, 0x00200000};
+    if (view_moved(next.arm7, vram_map_.arm7)) r7[n7++] = {0x06000000, 0x01000000};
+    if (const u32 d = next.lcdc_mask ^ vram_map_.lcdc_mask) {
+      u32 lo = 0x100000, hi = 0;
+      for (int i = 0; i < 9; ++i)
+        if (d & (1u << i)) {
+          lo = std::min(lo, lcdc_base[i]);
+          hi = std::max(hi, lcdc_base[i] + VRAM_BANK_SIZES[i]);
+        }
+      for (u32 mirror = 0x06800000; mirror < lcdc_end; mirror += 0x100000) r9[n9++] = {mirror + lo, hi - lo};
+    }
+  }
   const bool trapped = nds_.gpu.vram_remap_begin(moved_2d, &next);
   vram_map_ = next;
-  // Whole 16 MB region described as one host pointer per page, applied as a
-  // diff. Blocks backed by one bank map into the page table; blocks with
-  // overlapping banks stay unmapped so the slow path can OR them together.
+  // Each range: the new host per page into the scratch table, diffed in
+  // runs against what the page table holds, changed runs remapped. Blocks
+  // backed by one bank map; blocks with overlapping banks stay unmapped so
+  // the slow path can OR them together.
   u8** const h9 = vram_hosts_[0].get();
   u8** const h7 = vram_hosts_[1].get();
-  std::memset(h9, 0, VRAM_PAGES * sizeof(u8*));
-  std::memset(h7, 0, VRAM_PAGES * sizeof(u8*));
+  u8** const p9 = vram_hosts_prev_[0].get(); // what the tables hold now
+  u8** const p7 = vram_hosts_prev_[1].get();
   auto set_pages = [](u8** hosts, u32 addr, u32 size, u8* host) {
     u8** pg = hosts + ((addr - 0x06000000) >> PAGE_SHIFT);
     for (u32 i = 0; i < size / PAGE_SIZE; ++i) pg[i] = host + i * PAGE_SIZE;
@@ -458,56 +522,100 @@ void Bus::update_vram() {
       for (u32 b = 0; b < v.blocks(); ++b)
         if (v.ptr[b]) set_pages(hosts, mirror + b * gpu::VramView::BLOCK, gpu::VramView::BLOCK, v.ptr[b]);
   };
-  map_view(h9, vram_map_.abg, 0x06000000, 0x06200000);
-  map_view(h9, vram_map_.bbg, 0x06200000, 0x06400000);
-  map_view(h9, vram_map_.aobj, 0x06400000, 0x06600000);
-  map_view(h9, vram_map_.bobj, 0x06600000, 0x06800000);
-  map_view(h7, vram_map_.arm7, 0x06000000, 0x07000000);
-  static const u32 lcdc_base[9] = {0x00000, 0x20000, 0x40000, 0x60000, 0x80000, 0x90000, 0x94000, 0x98000, 0xA0000};
-  for (int i = 0; i < 9; ++i) {
-    if (!(vram_map_.lcdc_mask & (1u << i))) continue;
-    for (u32 mirror = 0x06800000; mirror < 0x07000000; mirror += 0x100000)
-      set_pages(h9, mirror + lcdc_base[i], VRAM_BANK_SIZES[i], banks[i]);
-  }
-  // Only runs of pages whose host changed go through the page table.
-  auto apply = [&](PageTable& pt, u8** cur, u8** prev) {
-    constexpr u32 CHUNK = 256; // entries (512 KB of guest space)
-    u32 run = 0;
-    bool in_run = false;
-    for (u32 i = 0; i <= VRAM_PAGES; i += CHUNK) {
-      const bool d = i < VRAM_PAGES && std::memcmp(cur + i, prev + i, CHUNK * sizeof(u8*)) != 0;
-      if (d) {
-        if (!in_run) {
-          run = i;
-          in_run = true;
-        }
-      } else if (in_run) {
-        pt.remap(0x06000000 + (run << PAGE_SHIFT), (i - run) << PAGE_SHIFT, cur + run, RW);
-        in_run = false;
+  auto fill9 = [&](const Range& r) {
+    const u32 end = r.addr + r.size;
+    std::memset(h9 + ((r.addr - 0x06000000) >> PAGE_SHIFT), 0, (r.size >> PAGE_SHIFT) * sizeof(u8*));
+    auto window = [&](const gpu::VramView& v, u32 base, u32 bend) {
+      if (r.addr < bend && end > base) map_view(h9, v, base, bend);
+    };
+    window(vram_map_.abg, 0x06000000, 0x06200000);
+    window(vram_map_.bbg, 0x06200000, 0x06400000);
+    window(vram_map_.aobj, 0x06400000, 0x06600000);
+    window(vram_map_.bobj, 0x06600000, 0x06800000);
+    if (end <= 0x06800000) return;
+    for (int i = 0; i < 9; ++i) {
+      if (!(vram_map_.lcdc_mask & (1u << i))) continue;
+      for (u32 mirror = 0x06800000; mirror < lcdc_end; mirror += 0x100000) {
+        const u32 a = mirror + lcdc_base[i];
+        if (a < end && a + VRAM_BANK_SIZES[i] > r.addr) set_pages(h9, a, VRAM_BANK_SIZES[i], banks[i]);
       }
     }
   };
-  for (u32 w = 0; w < VRAM_PAGES / 64; ++w) {
-    u64 m = 0;
-    for (u32 b = 0; b < 64; ++b)
-      if (h9[w * 64 + b]) m |= u64{1} << b;
-    vram_mapped9_[w] = m;
+  auto fill7 = [&](const Range& r) {
+    std::memset(h7 + ((r.addr - 0x06000000) >> PAGE_SHIFT), 0, (r.size >> PAGE_SHIFT) * sizeof(u8*));
+    map_view(h7, vram_map_.arm7, 0x06000000, 0x07000000);
+  };
+  auto apply = [&](PageTable& pt, u8** cur, u8** prev, const Range& r) {
+    const u32 p0 = (r.addr - 0x06000000) >> PAGE_SHIFT, p1 = p0 + (r.size >> PAGE_SHIFT);
+    if (full) pt.remap(r.addr, r.size, cur + p0, RW);
+    else {
+      constexpr u32 CHUNK = 32; // entries (64 KB of guest space)
+      u32 run = 0;
+      bool in_run = false;
+      for (u32 i = p0;; i += CHUNK) {
+        const u32 n = i < p1 ? std::min(CHUNK, p1 - i) : 0;
+        const bool d = n && std::memcmp(cur + i, prev + i, n * sizeof(u8*)) != 0;
+        if (d) {
+          if (!in_run) {
+            run = i;
+            in_run = true;
+          }
+        } else if (in_run) {
+          pt.remap(0x06000000 + (run << PAGE_SHIFT), (std::min(i, p1) - run) << PAGE_SHIFT, cur + run, RW);
+          in_run = false;
+        }
+        if (!n) break;
+      }
+    }
+    std::memcpy(prev + p0, cur + p0, (p1 - p0) * sizeof(u8*));
+  };
+  for (u32 k = 0; k < n9; ++k) {
+    fill9(r9[k]);
+    apply(pt9, h9, p9, r9[k]);
   }
-  if (!vram_hosts_valid_) {
-    pt9.remap(0x06000000, 0x01000000, h9, RW);
-    pt7.remap(0x06000000, 0x01000000, h7, RW);
-    vram_hosts_valid_ = true;
-  } else {
-    apply(pt9, h9, vram_hosts_prev_[0].get());
-    apply(pt7, h7, vram_hosts_prev_[1].get());
+  for (u32 k = 0; k < n7; ++k) {
+    fill7(r7[k]);
+    apply(pt7, h7, p7, r7[k]);
   }
-  std::swap(vram_hosts_[0], vram_hosts_prev_[0]);
-  std::swap(vram_hosts_[1], vram_hosts_prev_[1]);
+  vram_hosts_valid_ = true;
+  // The mapped-page bits of the touched words, then the write trap back over
+  // them where it is armed: the remap drops it from every entry it rewrites.
+  for (u32 k = 0; k < n9; ++k) {
+    const u32 p0 = (r9[k].addr - 0x06000000) >> PAGE_SHIFT, p1 = p0 + (r9[k].size >> PAGE_SHIFT);
+    for (u32 w = p0 / 64; w < (p1 + 63) / 64; ++w) {
+      u64 m = 0;
+      for (u32 b = 0; b < 64; ++b)
+        if (p9[w * 64 + b]) m |= u64{1} << b;
+      vram_mapped9_[w] = m;
+    }
+    if (!vram_trap_on_) continue;
+    const u32 a = r9[k].addr & ~u32{64 * PAGE_SIZE - 1},
+              e = (r9[k].addr + r9[k].size + 64 * PAGE_SIZE - 1) & ~u32{64 * PAGE_SIZE - 1};
+    bool armed;
+    if (a >= 0x06800000) armed = vram_trap_lcdc_;
+    else if (full)
+      armed = vram_trap_windows_ != 0 || vram_trap_lcdc_; // the whole region: set_vram_trap below sorts the windows
+    else
+      armed = (vram_trap_windows_ >> (((a >> 21) & 1))) &
+              1; // 0x06000000/0x06400000 engine A, 0x06200000/0x06600000 engine B
+    if (!armed) continue;
+    if (full) {
+      set_vram_trap(true, vram_trap_lcdc_, vram_trap_windows_);
+      break;
+    }
+    pt9.set_write_trap_bits(a >> PAGE_SHIFT, (e - a) >> PAGE_SHIFT,
+                            vram_mapped9_ + ((a - 0x06000000) >> PAGE_SHIFT) / 64, true);
+  }
   nds_.gpu.vram_remap_end(trapped);
   if (watch_on && (watch_addr >> 24) == 0x06) {
     pt9.map_mmio(watch_addr & ~0x7FFu, 0x800);
     pt7.map_mmio(watch_addr & ~0x7FFu, 0x800);
   }
+#if DSPERATE_JIT
+  // Code run from VRAM (the ARM7's work-RAM banks) and a bank mapped elsewhere.
+  jit::remapped(nds_.cpu(Cpu::ARM9), 0x06000000, 0x06FFFFFF);
+  jit::remapped(nds_.cpu(Cpu::ARM7), 0x06000000, 0x06FFFFFF);
+#endif
 }
 
 // Slow-path VRAM access for blocks with overlapping banks (and LCDC gaps).
@@ -607,8 +715,8 @@ void Bus::update_tcm(CpuContext& cpu, bool force) {
   }
   if (watch_on) pt.map_mmio(watch_addr & ~0x7FFu, 0x800);
   const u32 ctl = cpu.cp15_control;
-  if (ctl & (1u << 16)) { // DTCM enabled
-    const u32 base = cpu.cp15_dtcm & 0xFFFFF000;
+  if (ctl & (1u << 16)) {           // DTCM enabled
+    const u32 base = cpu.dtcm_base; // aligned to the window's size, as the timing table and melonDS have it
     u32 size = 512u << ((cpu.cp15_dtcm >> 1) & 0x1F);
     if (size < DTCM_SIZE) size = DTCM_SIZE;
     for (u32 off = 0; off < size; off += DTCM_SIZE) {
@@ -658,6 +766,17 @@ u32 Bus::io_read(Cpu cpu, u32 addr, u32 width) {
     return v;
   }
   if ((addr & 0xFF000000) == 0x04000000) return nds_.io.read(cpu, addr, width);
+  // The DS ARM7 BIOS reads as all ones to code outside it, and below BIOSPROT
+  // to code above it (melonDS NDS::ARM7Read). r15 is the interpreter's, and
+  // the recompilers' on a slow-path load.
+  if (bios7_code(cpu, addr)) {
+    const u32 pc = nds_.cpu(cpu).hot.regs[15], prot = nds_.io.arm7_bios_prot;
+    if (pc >= BIOS7_SIZE || (addr < prot && pc >= prot))
+      return width == 32 ? 0xFFFFFFFFu : width == 16 ? 0xFFFFu : 0xFFu;
+    u32 v = 0;
+    std::memcpy(&v, bios7.get() + (addr & ~(width / 8 - 1)), width / 8);
+    return v;
+  }
   // DSi: BIOS halves SCFG_BIOS hides read as all ones on both CPUs.
   if (nds_.dsi && (cpu == Cpu::ARM9 ? addr >= 0xFFFF0000 : addr < 0x00010000)) {
     const u32 ones = width == 32 ? 0xFFFFFFFFu : width == 16 ? 0xFFFFu : 0xFFu;
@@ -673,13 +792,60 @@ u32 Bus::io_read(Cpu cpu, u32 addr, u32 width) {
     return v;
   }
   if ((addr & 0xFF000000) == 0x06000000) return vram_read(cpu, addr, width);
+  if (!nds_.dsi && addr >= 0x08000000 && addr < 0x0B000000) return slot2_read(cpu, addr, width);
   if ((addr & 0xFF000000) == 0x08000000 || (addr & 0xFF000000) == 0x09000000) {
-    // Open bus pattern per GBATEK.
+    // DSi: no slot 2. Open bus pattern per GBATEK.
     u32 v = static_cast<u32>((addr >> 1) & 0xFFFF) | (static_cast<u32>(((addr + 2) >> 1) & 0xFFFF) << 16);
-    if (rumble_pak && !nds_.dsi) v &= 0xFFFDFFFDu; // the Rumble Pak pulls D1 low
     return width == 8 ? (v >> ((addr & 1) * 8)) & 0xFF : width == 16 ? v & 0xFFFF : v;
   }
   return 0;
+}
+
+// Slot 2 (melonDS's NDS.cpp ARM9/ARM7 Read/Write for 0x08-0x0A): the CPU
+// EXMEMCNT bit 7 does not give the slot to reads zeros and writes nothing.
+// The ROM bus is 16 bits wide, the SRAM bus 8; wider accesses are split.
+// An empty slot reads back the address on the ROM bus, with the bits the
+// slowest wait states let decay, and 0xFF on the SRAM bus.
+namespace {
+const bool slot2_trace = std::getenv("DS_SLOT2_TRACE") != nullptr; // log every slot-2 access the owning CPU makes
+}
+u32 Bus::slot2_read(Cpu cpu, u32 addr, u32 width) {
+  if (((nds_.io.exmemcnt & 0x80) != 0) != (cpu == Cpu::ARM7)) return 0;
+  slot2::Device* dev = nds_.slot2.get();
+  u32 v;
+  if (addr >= 0x0A000000) {
+    auto rd = [&](u32 a) -> u32 { return dev ? dev->sram_read8(a) : 0xFF; };
+    v = rd(addr);
+    if (width >= 16) v |= rd(addr + 1) << 8;
+    if (width == 32) v |= rd(addr + 2) << 16 | rd(addr + 3) << 24;
+  } else {
+    static constexpr u16 decay[4] = {0xFE08, 0x0000, 0x0000,
+                                     0xFFFF}; // by the ROM's first-access wait (EXMEMCNT bits 2-3)
+    const u16 open = decay[(nds_.io.exmemcnt_slot2() >> 2) & 3];
+    auto rd = [&](u32 a) -> u32 { return dev ? dev->rom_read16(a) : (((a >> 1) & 0xFFFF) | open); };
+    v = width == 8 ? ((addr & 1) ? rd(addr - 1) >> 8 : rd(addr) & 0xFF) : rd(addr);
+    if (width == 32) v |= rd(addr + 2) << 16;
+  }
+  if (slot2_trace)
+    std::fprintf(stderr, "[slot2] arm%d read%u %08x = %0*x pc %08x frame %llu\n", cpu == Cpu::ARM9 ? 9 : 7, width, addr,
+                 static_cast<int>(width / 4), v, nds_.cpu(cpu).hot.regs[15],
+                 static_cast<unsigned long long>(nds_.frame_count));
+  return v;
+}
+void Bus::slot2_write(Cpu cpu, u32 addr, u32 width, u32 v) {
+  if (((nds_.io.exmemcnt & 0x80) != 0) != (cpu == Cpu::ARM7)) return;
+  if (slot2_trace)
+    std::fprintf(stderr, "[slot2] arm%d write%u %08x = %0*x pc %08x frame %llu\n", cpu == Cpu::ARM9 ? 9 : 7, width,
+                 addr, static_cast<int>(width / 4), v, nds_.cpu(cpu).hot.regs[15],
+                 static_cast<unsigned long long>(nds_.frame_count));
+  slot2::Device* dev = nds_.slot2.get();
+  if (!dev) return;
+  if (addr >= 0x0A000000) {
+    for (u32 i = 0; i < width / 8; ++i) dev->sram_write8(addr + i, static_cast<u8>(v >> (i * 8)));
+  } else if (width >= 16) { // byte stores to the ROM bus go nowhere
+    dev->rom_write16(addr, static_cast<u16>(v));
+    if (width == 32) dev->rom_write16(addr + 2, static_cast<u16>(v >> 16));
+  }
 }
 void Bus::io_write(Cpu cpu, u32 addr, u32 width, u32 v) {
   if (watch_on && (addr & ~0x7FFu) == (watch_addr & ~0x7FFu) && watch_host[cpu == Cpu::ARM9 ? 0 : 1]) {
@@ -716,10 +882,8 @@ void Bus::io_write(Cpu cpu, u32 addr, u32 width, u32 v) {
   }
   case 0x08:
   case 0x09:
-    if (rumble_pak && static_cast<u16>(v) != rumble_state) {
-      rumble_state = static_cast<u16>(v);
-      rumble_moves++;
-    }
+  case 0x0A:
+    if (!nds_.dsi) slot2_write(cpu, addr, width, v);
     return;
   default: return;
   }
@@ -727,6 +891,9 @@ void Bus::io_write(Cpu cpu, u32 addr, u32 width, u32 v) {
 
 void Bus::set_vram_trap(bool on, bool lcdc, u32 windows) {
   PageTable& pt9 = nds_.cpu(Cpu::ARM9).page_table;
+  vram_trap_on_ = on;
+  vram_trap_lcdc_ = lcdc;
+  vram_trap_windows_ = windows;
   // Only over mapped pages (~330 of the 8K in the engine windows).
   auto range = [&](u32 addr, u32 size) {
     const u32 first = (addr - 0x06000000) >> PAGE_SHIFT;
@@ -876,7 +1043,15 @@ u32 Bus::read32(Cpu cpu, u32 addr) { return io_read(cpu, addr, 32); }
 void Bus::write8(Cpu cpu, u32 addr, u8 v) { io_write(cpu, addr, 8, v); }
 void Bus::write16(Cpu cpu, u32 addr, u16 v) { io_write(cpu, addr, 16, v); }
 void Bus::write32(Cpu cpu, u32 addr, u32 v) { io_write(cpu, addr, 32, v); }
+bool Bus::bios7_code(Cpu cpu, u32 addr) const {
+  return bios7_protect && cpu == Cpu::ARM7 && addr < BIOS7_SIZE && (!nds_.dsi || (nds_.io.dsi.scfg_bios & 0x0200));
+}
 u32 Bus::fetch(Cpu cpu, u32 addr, u32 width) {
+  if (bios7_code(cpu, addr)) {
+    u32 v = 0;
+    std::memcpy(&v, bios7.get() + (addr & ~(width / 8 - 1)), width / 8);
+    return v;
+  }
   if (nds_.dsi && cpu == Cpu::ARM7 && addr < 0x00010000 && !(nds_.io.dsi.scfg_bios & 0x0200)) {
     if (addr >= 0x8000 && (nds_.io.dsi.scfg_bios & 0x0100)) return width == 32 ? 0xFFFFFFFFu : 0xFFFFu;
     u32 v = 0;

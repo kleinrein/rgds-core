@@ -242,7 +242,6 @@ void App::update_card(SDL_Renderer* r, int y) {
     if (stage == UpdateStage::Offered) {
         std::string message = update_status["message"];
         if (update_status["state"] != "error") message = "A new version is ready to download.";
-        if (!service_notice.empty()) message = service_notice;
         wrapped(r, message, x + 28, body + 18, 20, w - 56, 2);
         label(r, "What's new", x + 28, body + 80, 14, "muted", w - 56);
         sunken_track(r, x + 20, body + 102, w - 40, 126, 12);
@@ -292,7 +291,6 @@ void App::update_card(SDL_Renderer* r, int y) {
     glitter_bar(r, x + 24, body + 128, w - 48, 34, update_shown, now, moving && stage != UpdateStage::Paused);
     std::string message = update_status["message"];
     if (stage == UpdateStage::Paused && state != "error") message = "Download paused. Retry to continue.";
-    if (!service_notice.empty() && stage != UpdateStage::Running) message = service_notice;
     const std::string speed = update_speed();
     const int speed_width = speed.empty() ? 0 : label_width(speed, 16, false);
     wrapped(r, message, x + 28, body + 176, 18, w - 56 - (speed_width ? speed_width + 16 : 0), 2);
@@ -324,7 +322,7 @@ bool App::update_now() {
         start_worker("device.update-download");
         // Another task (an artwork scrape, a Wi-Fi scan) holds the worker: say so rather than wait silently.
         if (worker_action != "device.update-download") {
-            service_notice = "Finishing another task. Press Y again in a moment.";
+            notify("Finishing another task. Press Y again in a moment.");
             sound_intent(MenuCue::Error);
         } else sound_intent(MenuCue::Confirm);
     }

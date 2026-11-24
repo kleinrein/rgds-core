@@ -48,7 +48,7 @@ import zlib
 
 from fields import read_fields, write_fields
 from library import game_key
-from play_options import ARCADE_SETS
+from play_options import arcade_catalog
 
 # Folder names the old systems use, to this card's folders (rcS makes them; the session scans them).
 FOLDERS = {
@@ -95,12 +95,18 @@ FOLDERS = {
     "atari5200": "atari5200",
     "atarilynx": "lynx",
     "lynx": "lynx",
-    # an arcade folder's sets: only the two-monitor cabinets the core runs come over (Game.wanted)
+    # an arcade folder's sets: only those a core here runs come over (Game.wanted)
     "arcade": "arcade",
     "mame": "arcade",
     "mame2003": "arcade",
     "mame2003-plus": "arcade",
     "mame2003plus": "arcade",
+    "fbneo": "arcade",
+    "fba": "arcade",
+    "neogeo": "arcade",
+    "cps1": "arcade",
+    "cps2": "arcade",
+    "cps3": "arcade",
     "wonderswan": "wonderswan",
     "wonderswancolor": "wonderswan",
     "wswan": "wonderswan",
@@ -159,6 +165,11 @@ STOCK_FOLDERS = {
     "pico": "pico8",
     "arcade": "arcade",
     "mame": "arcade",
+    "fbneo": "arcade",
+    "neogeo": "arcade",
+    "cps1": "arcade",
+    "cps2": "arcade",
+    "cps3": "arcade",
 }
 # BananaOS's systems.conf ids whose folder is not the id (its own banana/systems.conf can say otherwise)
 BANANA_FOLDERS = {"megadrive": "megadrive", "pico-8": "pico-8"}
@@ -312,9 +323,9 @@ class Game:
 
     @property
     def wanted(self):
-        """A game this card has a place for: in an arcade folder, only a set the core is built with."""
+        """A game this card has a place for: in an arcade folder, only a set a core here runs (or a board's BIOS)."""
         if self.ours != "arcade": return bool(self.ours)
-        return self.rel.suffix.lower() == ".zip" and self.rel.stem.lower() in ARCADE_SETS
+        return self.rel.suffix.lower() in (".zip", ".7z") and self.rel.stem.lower() in arcade_catalog()
 
     def destination(self, roms):
         return Path(roms) / self.ours / self.rel

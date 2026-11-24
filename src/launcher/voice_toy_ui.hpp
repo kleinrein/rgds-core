@@ -1,6 +1,7 @@
 #pragma once
 // The sound toy's screen state (voice_toy_screen.hpp draws and drives it; the sound is voice_toy.hpp, played by
 // MenuAudio). Kept apart from App so main.cpp only carries one member for it.
+#include "launcher/kinetics.hpp"
 #include "launcher/voice_toy.hpp"
 #include "platform/sdl_dynamic.hpp"
 #include <array>
@@ -47,7 +48,14 @@ struct VoiceToyUi {
     std::vector<float> demo; // preview: a made-up "hello" stands in for the microphone
     Uint32 record_at = 0;
     // Touch.
-    enum class Touch { None, Pad, Button } touch = Touch::None;
+    enum class Touch { None, Pad, Button, Strip } touch = Touch::None;
+    // The voice strip swipes between pages: it follows the finger (strip_dx), and after a turn or a short pull it
+    // slides the rest of the way from strip_from to rest over strip_ms.
+    int strip_x0 = 0;
+    float strip_dx = 0, strip_from = 0;
+    Uint32 strip_at = 0;
+    static constexpr int strip_width = 600, strip_ms = 260;
+    FingerSpeed strip_speed;
     int button = -1, last_column = -1;
     float last_value = 0;
     bool painted = false;

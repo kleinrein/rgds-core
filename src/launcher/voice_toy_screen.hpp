@@ -101,11 +101,8 @@ bool App::voice_write_startup() {
     return !ec;
 }
 
-void App::voice_toast(const std::string& text) {
-    vt.toast = text;
-    vt.toast_until = s.GetTicks() + 2200;
-    dirty = true;
-}
+// Already translated words; shown on the launcher's toast stack (toast_screen.hpp) like every other notice.
+void App::voice_toast(const std::string& text) { toast(text, toast::Severity::Info, false); }
 
 void App::open_voice_toy() {
     if (vt.open || launching || probe || !sound_toy_available()) return;
@@ -139,7 +136,7 @@ void App::voice_pause() {
 void App::voice_play() {
     const auto& clip = vt.clips[size_t(vt.slot)];
     if (clip.empty()) {
-        voice_toast(locale.text("Press Record and say hello!"));
+        toast("Press Record and say hello!");
         emit_sound(MenuCue::Error);
         return;
     }
@@ -154,13 +151,32 @@ void App::voice_set_voice(int voice) {
     voice = (voice + voice_toy::voice_count) % voice_toy::voice_count;
     auto& style = vt.styles[size_t(vt.slot)];
     style.voice = voice_toy::Voice(voice);
-    vt.page = voice / voice_toy::voices_per_page; // the strip follows the voice
+    const int page = voice / voice_toy::voices_per_page; // the strip follows the voice
+    if (page != vt.page) voice_turn_page(page, page > vt.page ? 1 : -1);
     haptics.play(static_cast<Haptic>(MenuCue::Navigate));
     if (!vt.clips[size_t(vt.slot)].empty()) {
         voice_save_style(vt.slot);
         voice_play(); // hear it straight away, as the DSi did
     }
     dirty = true;
+}
+
+// A new page of voices: it slides in from the side it was turned towards, starting from where the finger left the
+// strip (from_dx) so a swipe carries on instead of jumping.
+void App::voice_turn_page(int page, int direction, float from_dx) {
+    vt.page = page;
+    vt.strip_from = from_dx + float(direction * VoiceToyUi::strip_width);
+    vt.strip_at = s.GetTicks();
+    if (!vt.strip_at) vt.strip_at = 1;
+    dirty = true;
+}
+
+// Where the shown page sits now: under the finger while it drags, else easing back to rest (ease-out cubic).
+float App::voice_strip_offset(Uint32 now) const {
+    if (vt.touch == VoiceToyUi::Touch::Strip) return vt.strip_dx;
+    if (!vt.strip_at || !preferences.animations) return 0;
+    const float u = std::clamp(float(now - vt.strip_at) / VoiceToyUi::strip_ms, 0.f, 1.f);
+    return vt.strip_from * std::pow(1 - u, 3.f);
 }
 
 void App::voice_set_slot(int slot) {
@@ -184,18 +200,18 @@ void App::voice_clear_bend() {
         style.bend.fill(0);
         sounds.bend_toy(style.bend);
         voice_save_style(vt.slot);
-        voice_toast(locale.text("Drawing cleared"));
+        toast("Drawing cleared");
         emit_sound(MenuCue::Disable);
         return;
     }
     if (vt.clips[size_t(vt.slot)].empty()) {
-        voice_toast(locale.text("Nothing to clear"));
+        toast("Nothing to clear");
         emit_sound(MenuCue::Error);
         return;
     }
     if (!vt.erase_armed_until || int32_t(now - vt.erase_armed_until) > 0) {
         vt.erase_armed_until = now + 3000;
-        voice_toast(locale.text("Press Erase again to delete this sound"));
+        toast("Press Erase again to delete this sound");
         emit_sound(MenuCue::Navigate);
         return;
     }
@@ -213,13 +229,13 @@ void App::voice_clear_bend() {
         fs::remove(voice_folder() / "startup.wav", ec);
         fs::remove(voice_folder() / "startup.ini", ec);
     }
-    voice_toast(locale.text("Sound erased"));
+    toast("Sound erased");
     emit_sound(MenuCue::Disable);
 }
 
 void App::voice_toggle_startup() {
     if (vt.clips[size_t(vt.slot)].empty()) {
-        voice_toast(locale.text("Record a sound first"));
+        toast("Record a sound first");
         emit_sound(MenuCue::Error);
         return;
     }
@@ -228,16 +244,16 @@ void App::voice_toggle_startup() {
         vt.startup_slot = -1;
         fs::remove(voice_folder() / "startup.wav", ec);
         fs::remove(voice_folder() / "startup.ini", ec);
-        voice_toast(locale.text("The handheld starts quietly again"));
+        toast("The handheld starts quietly again");
         emit_sound(MenuCue::Disable);
     } else {
         vt.startup_slot = vt.slot;
         if (voice_write_startup()) {
-            voice_toast(locale.text("Plays when the handheld starts"));
+            toast("Plays when the handheld starts");
             emit_sound(MenuCue::Enable);
         } else {
             vt.startup_slot = -1;
-            voice_toast(locale.text("Could not save the sound"));
+            toast("Could not save the sound");
             emit_sound(MenuCue::Error);
         }
     }
@@ -279,7 +295,7 @@ void App::voice_record_start() {
     int channel[2];
     if (::pipe(channel) != 0) {
         vt.recording = false;
-        voice_toast(locale.text("Microphone unavailable"));
+        toast("Microphone unavailable");
         return;
     }
     const auto helper = (o.app / "runtime/microphone_test.py").string(), data = o.data.string();
@@ -296,7 +312,7 @@ void App::voice_record_start() {
     if (child < 0) {
         ::close(channel[0]);
         vt.recording = false;
-        voice_toast(locale.text("Microphone unavailable"));
+        toast("Microphone unavailable");
         return;
     }
     setpgid(child, child);
@@ -337,7 +353,7 @@ void App::voice_record_stop(bool keep) {
     vt.taking.clear();
     vt.taking.shrink_to_fit();
     if (prepared.empty()) {
-        voice_toast(locale.text("Nothing heard. Hold the handheld closer and try again."));
+        toast("Nothing heard. Hold the handheld closer and try again.");
         emit_sound(MenuCue::Error);
         return;
     }
@@ -347,7 +363,7 @@ void App::voice_record_stop(bool keep) {
     vt.styles[size_t(slot)].bend.fill(0); // a new word starts unbent; the voice stays as chosen
     if (!voice_toy::write_wav(voice_folder() / ("slot-" + std::to_string(slot + 1) + ".wav"), vt.clips[size_t(slot)],
                               voice_toy::rate))
-        voice_toast(locale.text("Could not save the sound"));
+        toast("Could not save the sound");
     voice_save_style(slot);
     voice_play();
 }
@@ -380,8 +396,9 @@ void App::voice_poll_record(Uint32 now) {
                 vt.line.clear();
                 if (first != "rec") {
                     voice_record_stop(false);
-                    voice_toast(locale.text(first == "busy" ? "Return home before testing the physical microphone."
-                                                            : "Microphone unavailable"));
+                    toast(first == "busy" ? "Return home before testing the physical microphone."
+                                          : "Microphone unavailable",
+                          toast::Severity::Warning);
                     emit_sound(MenuCue::Error);
                     return;
                 }
@@ -399,7 +416,7 @@ void App::voice_poll_record(Uint32 now) {
     if (vt.taking.size() >= voice_toy::max_samples || (ended && vt.streaming)) voice_record_stop(true);
     else if (ended || (!vt.streaming && now - vt.record_at > 4000)) {
         voice_record_stop(false);
-        voice_toast(locale.text("Microphone unavailable"));
+        toast("Microphone unavailable");
         emit_sound(MenuCue::Error);
     }
 }
@@ -439,7 +456,10 @@ bool App::voice_tick(Uint32 now) {
         vt.toast.clear();
         dirty = true;
     }
-    const bool moving = vt.recording || playing;
+    const bool sliding = vt.strip_at && now - vt.strip_at < Uint32(VoiceToyUi::strip_ms) && preferences.animations;
+    if (vt.strip_at && !sliding) vt.strip_at = 0;
+    if (sliding) dirty = true;
+    const bool moving = vt.recording || playing || sliding || vt.touch == VoiceToyUi::Touch::Strip;
     // About 30 frames a second is plenty for a playhead, a level and a talking face.
     if (moving && now - vt.drawn_at >= 33) {
         vt.drawn_at = now;
@@ -658,18 +678,34 @@ void App::voice_bottom(SDL_Renderer* r, int y) {
     voice_pad(r, y);
     // The voices: a face and a name on each.
     const int pages = (voice_toy::voice_count + voice_toy::voices_per_page - 1) / voice_toy::voices_per_page;
-    for (int place = 0; place < voice_toy::voices_per_page; place++) {
-        const int i = vt.page * voice_toy::voices_per_page + place;
-        if (i >= voice_toy::voice_count) break;
-        const int x = voice_x(place), top = y + voices_y;
-        const bool chosen = int(vt.styles[size_t(vt.slot)].voice) == i, pressed = held && vt.button == 10 + place;
-        raised_pill(r, x, top, voice_w, voice_h, control_radius + 4, theme.at(chosen ? "accent" : "panel"),
-                    pressed ? 1 : 0);
-        const int sink = pressed ? 2 : 0;
-        voice_face(r, i, x + voice_w / 2, top + 29 + sink, 54, 0);
-        const std::string name = locale.text(voice_toy::voice_names[size_t(i)]);
-        const int width = std::min(voice_w - 8, label_width(name, 14, false));
-        raw_label(r, name, x + (voice_w - width) / 2, top + 54 + sink, 14, chosen ? "on_accent" : "ink", voice_w - 8);
+    const int offset = int(std::lround(voice_strip_offset(s.GetTicks())));
+    const auto voice_page = [&](int page, int dx) {
+        page = (page + pages) % pages;
+        for (int place = 0; place < voice_toy::voices_per_page; place++) {
+            const int i = page * voice_toy::voices_per_page + place;
+            if (i >= voice_toy::voice_count) break;
+            const int x = voice_x(place) + dx, top = y + voices_y;
+            if (x + voice_w < 0 || x >= 640) continue;
+            const bool chosen = int(vt.styles[size_t(vt.slot)].voice) == i,
+                       pressed = held && !dx && page == vt.page && vt.button == 10 + place;
+            raised_pill(r, x, top, voice_w, voice_h, control_radius + 4, theme.at(chosen ? "accent" : "panel"),
+                        pressed ? 1 : 0);
+            const int sink = pressed ? 2 : 0;
+            voice_face(r, i, x + voice_w / 2, top + 29 + sink, 54, 0);
+            const std::string name = locale.text(voice_toy::voice_names[size_t(i)]);
+            const int width = std::min(voice_w - 8, label_width(name, 14, false));
+            raw_label(r, name, x + (voice_w - width) / 2, top + 54 + sink, 14, chosen ? "on_accent" : "ink",
+                      voice_w - 8);
+        }
+    };
+    {
+        // Clipped to the panel's strip so a page sliding in never draws over the pad or the page dots.
+        const SDL_Rect clip{0, y + voices_y - 6, 640, voice_h + 12};
+        if (offset) s.RenderSetClipRect(r, &clip);
+        voice_page(vt.page, offset);
+        if (offset < 0) voice_page(vt.page + 1, offset + VoiceToyUi::strip_width);
+        if (offset > 0) voice_page(vt.page - 1, offset - VoiceToyUi::strip_width);
+        if (offset) s.RenderSetClipRect(r, nullptr);
     }
     // The pages: an arrow either side of a dot for each, the one shown lit.
     for (int side = 0; side < 2; side++) {
@@ -698,12 +734,6 @@ void App::voice_bottom(SDL_Renderer* r, int y) {
     footer_button(r, button_x[2], y + buttons_y, button_w,
                   voice_toy::bent(vt.styles[size_t(vt.slot)].bend) ? "Clear" : "Erase", "Y", false,
                   held && vt.button == 22);
-    if (!vt.toast.empty()) {
-        const int width = std::min(580, label_width(vt.toast, 16, false) + 36), left = 320 - width / 2;
-        alpha_round(r, left, y + 252, width, 36, 18, Color{20, 24, 30}, 230);
-        raw_label_colour(r, vt.toast, left + 18, centred_label_y(vt.toast, 16, y + 270), 16, Color{255, 255, 255},
-                         width - 28);
-    }
 }
 
 // ---- keys and touch
@@ -768,7 +798,7 @@ void App::voice_button(int button) {
     case 30:
     case 31: {
         const int pages = (voice_toy::voice_count + voice_toy::voices_per_page - 1) / voice_toy::voices_per_page;
-        vt.page = (vt.page + (button == 30 ? pages - 1 : 1)) % pages;
+        voice_turn_page((vt.page + (button == 30 ? pages - 1 : 1)) % pages, button == 30 ? -1 : 1);
         emit_sound(MenuCue::Navigate, button == 30 ? -1 : 1);
         dirty = true;
         break;
@@ -804,13 +834,23 @@ void App::voice_press(int x, int y) {
     dirty = true;
     vt.touch = VoiceToyUi::Touch::None;
     vt.button = voice_button_at(x, y);
+    vt.strip_x0 = x;
+    vt.strip_dx = 0;
+    vt.strip_speed.reset();
+    vt.strip_speed.add(s.GetTicks(), x);
+    const bool on_strip = y >= voices_y - 8 && y < voices_y + voice_h + 8 && !vt.recording;
     if (vt.button >= 0) {
         vt.touch = VoiceToyUi::Touch::Button;
         return;
     }
+    if (on_strip) { // between two voices: still a swipe
+        vt.touch = VoiceToyUi::Touch::Strip;
+        vt.strip_at = 0;
+        return;
+    }
     if (point_in(pad, x, y) && !vt.recording) {
         if (vt.clips[size_t(vt.slot)].empty()) {
-            voice_toast(locale.text("Press Record and say hello!"));
+            toast("Press Record and say hello!");
             return;
         }
         vt.touch = VoiceToyUi::Touch::Pad;
@@ -824,6 +864,15 @@ void App::voice_press(int x, int y) {
 
 void App::voice_drag(int x, int y) {
     if (vt.touch == VoiceToyUi::Touch::Pad) voice_paint(x, y);
+    // A voice pressed and then pulled sideways is a swipe through the pages, not a choice.
+    const bool on_voice = vt.touch == VoiceToyUi::Touch::Button && vt.button >= 10 && vt.button < 16;
+    if ((on_voice && std::abs(x - vt.strip_x0) > 14) || vt.touch == VoiceToyUi::Touch::Strip) {
+        if (vt.touch != VoiceToyUi::Touch::Strip) vt.strip_at = 0; // the finger catches a slide still running
+        vt.touch = VoiceToyUi::Touch::Strip;
+        vt.button = -1;
+        vt.strip_dx = float(x - vt.strip_x0);
+        vt.strip_speed.add(s.GetTicks(), x);
+    }
     dirty = true;
 }
 
@@ -834,6 +883,24 @@ void App::voice_release(int x, int y) {
     if (touch == VoiceToyUi::Touch::Button) {
         if (voice_button_at(x, y) == vt.button) voice_button(vt.button);
     } else if (touch == VoiceToyUi::Touch::Pad && vt.painted) voice_save_style(vt.slot);
+    else if (touch == VoiceToyUi::Touch::Strip) {
+        // Past a third of the strip, or a flick either way, turns the page; anything less springs back.
+        const Uint32 now = s.GetTicks();
+        const double speed = vt.strip_speed.estimate(now);
+        const int pages = (voice_toy::voice_count + voice_toy::voices_per_page - 1) / voice_toy::voices_per_page;
+        const float dx = vt.strip_dx;
+        const int turn = dx < -VoiceToyUi::strip_width / 3 || (speed < -.35 && dx < -12) ? 1
+                         : dx > VoiceToyUi::strip_width / 3 || (speed > .35 && dx > 12) ? -1
+                                                                                         : 0;
+        if (turn) {
+            voice_turn_page((vt.page + turn + pages) % pages, turn, dx);
+            emit_sound(MenuCue::Navigate, turn);
+        } else {
+            vt.strip_from = dx;
+            vt.strip_at = now ? now : 1;
+        }
+        vt.strip_dx = 0;
+    }
     vt.button = -1;
     vt.last_column = -1;
 }

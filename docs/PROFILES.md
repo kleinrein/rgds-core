@@ -7,7 +7,7 @@ With one person nothing changes: no extra screen, and every file stays where it 
 Profiles**. Once there are two, **Who's playing?** opens at startup (you can turn that off), and a chip on Home's bottom bar
 changes who is playing. On Home's carousel layout, use **Settings → Profiles → Change who's playing**.
 
-## Adult and Kid
+## Adult, Kid and Little kid
 
 An **Adult** profile has its own saves and look, with the settings open. Managing profiles needs the owner's PIN.
 
@@ -15,6 +15,19 @@ A **Kid** profile shows only games that fit its age, and needs the owner's PIN f
 Power, Library, Connectivity, System, Updates, Controls and managing profiles. Theme, Display, Sound and Statistics stay
 open. Ports, Homebrew shelves, PictoChat, cheats and local wireless are off, each with a switch on the profile's page; with
 PictoChat off its tile leaves Home. A Kid profile wears a **Kids** mark on **Who's playing?**.
+
+A **Little kid** profile is a Kid profile for the smallest players, with no menus at all. Its whole launcher is one
+screen: every game it may play, from every system, as big pictures, six to a page and always in the same order (by
+name). The chosen game shows large on the upper screen with its name. A tap on a picture, or A, plays it; the D-pad,
+L/R, the arrow buttons and a sideways swipe move through the pages, round and round. There is no Home, no settings, no
+search and no game switcher: any other screen (a key, a restored state, a game ending) comes back to this one. A
+grown-up leaves with **Select**, the **Menu** button or the small picture at the bottom (**Who's playing?**), then the
+owner's PIN. A new Little kid profile starts at age 3 with unrated games hidden, so approve its games as for a Kid.
+
+In a game, DS or any system RG DS Play runs, the Menu button opens just two big buttons over the paused game:
+**Play** (back to the game; B does the same) and **Home** (leaves it as Return home does, saving as the profile's
+auto-save says, back to the wall of games). There is no switcher, cheats, checkpoints or settings. **Select** is the
+grown-up's way to the whole game menu: the owner's PIN first, or straight there when the owner has none.
 
 A new profile opens **Games** straight onto every game in one list, sorted by name, instead of a Systems page first.
 Change that on the profile's own page under **Settings → Profiles** (**Games opens**: All games or Systems), or, for

@@ -34,6 +34,7 @@ std::string App::section_summary(int section) {
                    ? locale.text("Scanning…")
                    : locale.text(std::to_string(all_games.size()) + (all_games.size() == 1 ? " game" : " games"));
     case 6: return locale.text("Buttons, shortcut and fast-forward");
+    case 12: return locale.text("Games, saves and music on the card");
     case 4: {
         std::string wifi;
         if (device_status["wifi_supported"] != "0" && !device_status["wifi"].empty())
@@ -380,10 +381,9 @@ void App::settings_top(SDL_Renderer* r, int y) {
         centered(r, "DS controls", y + 203, 2, "ink");
         wrapped(
             r,
-            !ds_supported() ? "Use the engine's native controls for microphone and DS settings."
-            : status.empty()
-                ? "Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live."
-                : status,
+            !ds_supported()
+                ? "Use the engine's native controls for microphone and DS settings."
+                : "Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.",
             54, y + 264, 22, 532, 5);
         return;
     }
@@ -411,8 +411,9 @@ void App::settings_top(SDL_Renderer* r, int y) {
         raw_label(r, o.app.empty() ? "Development" : o.app.filename().string(), 52, y + 251, 20, "ink", 530);
         std::string message =
             update_status["message"].empty() ? "Check for updates when you are ready." : update_status["message"];
-        if (!service_notice.empty()) message = service_notice;
-        else if (worker_action.rfind("device.update-", 0) != 0 && !device_status["message"].empty())
+        // Errors and notices are toasts (toast_screen.hpp); the card keeps what is under way.
+        if (worker_action.rfind("device.update-", 0) != 0 && !device_status["message"].empty() &&
+            device_status["state"] != "error")
             message = device_status["message"];
         wrapped(r, message, 52, y + 288, 20, 530, 3);
         int progress = std::clamp(std::atoi(update_status["progress"].c_str()), 0, 100);
@@ -435,11 +436,9 @@ void App::settings_top(SDL_Renderer* r, int y) {
                          page == Page::Homebrew || page == Page::GameArtwork ||
                          (page == Page::Keyboard && edit_field == 3) ||
                          (settings.page == Page::Controls && control_capture);
-    // Operational feedback remains visible, without permanent advice cards.
+    // Work under way stays in the note; errors and notices are toasts on the lower screen (toast_screen.hpp).
     std::string message;
-    if (o.game_menu && (menu_status["state"] == "busy" || menu_status["state"] == "error"))
-        message = menu_status["message"];
-    else if (status.rfind("Could not save", 0) == 0) message = status;
+    if (o.game_menu && menu_status["state"] == "busy") message = menu_status["message"];
     else if (settings.page == Page::Graphics) {
         static const char* hints[] = {
             "True 3D resolution. 3x balances quality and speed; 5x is experimental.",
@@ -451,7 +450,7 @@ void App::settings_top(SDL_Renderer* r, int y) {
             "Every DS pixel the same size on the panel. Fit leaves a border, Fill crops the edges. Applies at the next start.",
             "The renderer currently running. Graphics changes apply during play.",
             "Save a checkpoint and restart with your chosen graphics settings."};
-        message = status.empty() ? hints[std::clamp(settings.focus, 0, 8)] : status;
+        message = hints[std::clamp(settings.focus, 0, 8)];
     } else if (settings.page == Page::EmulatorOptions) {
         if (settings.focus == list_count() - 1)
             message = "Restart from the title screen. In-game saves and save slots are kept.";
@@ -469,16 +468,13 @@ void App::settings_top(SDL_Renderer* r, int y) {
                           ? "Off gives smooth motion. Skipping frames can help speed. Restart to apply."
                           : "This emulator does not expose a frameskip setting.";
         else message = "Save & restart keeps your checkpoint and applies pending settings.";
-    } else if (settings.page == Page::Controls && controls_notice.rfind("Could not", 0) == 0) message = controls_notice;
-    else if (settings.page == Page::Controls && settings.focus == 0 && model.games.empty())
+    } else if (settings.page == Page::Controls && settings.focus == 0 && model.games.empty())
         message = "Per-game controls appear once a game is in your library.";
     else if (settings.page == Page::LibraryOptions) {
         if (backup_requested && worker_action == "device.library") {
             if (worker > 0) message = "Backing up your saves…";
-            else if (device_status["state"] == "error")
-                message = device_status["message"].empty() ? "The backup did not finish. Please try again."
-                                                           : device_status["message"];
-            else if (!device_status["message"].empty()) message = device_status["message"];
+            else if (device_status["state"] != "error" && !device_status["message"].empty())
+                message = device_status["message"];
         }
         if (message.empty()) {
             const int row = library_row(settings.focus);
@@ -492,18 +488,14 @@ void App::settings_top(SDL_Renderer* r, int y) {
             else if (row == 1) message = "Where covers and titles come from.";
             else if (row == 13) message = "Earn achievements from retroachievements.org while you play.";
         }
-    } else if (page == Page::System || page == Page::Network || page == Page::Wifi || page == Page::Bluetooth ||
-               page == Page::Maintenance) {
-        if (device_status["state"] == "error") message = device_status["message"];
     } else if (page == Page::Achievements) {
         if (worker > 0 && worker_action == "achievements.login") message = "Signing in…";
         else if (worker > 0 && worker_action == "achievements.logout") message = "Signing out…";
-        else if (!service_notice.empty()) message = service_notice;
-        else if (settings.focus == 1 || achievements_status["state"] == "error")
+        else if (settings.focus == 1 && achievements_status["state"] != "error")
             message = achievements_status["message"];
     } else if (page == Page::Scraper || page == Page::GameArtwork) {
         if (service["state"] == "scraping") message = service["completed"] + " / " + service["total"] + " games";
-        else if (!service_notice.empty()) message = service_notice;
+        else if (page == Page::Scraper && service["state"] == "error") message.clear();
         else message = page == Page::GameArtwork ? artwork_result["message"] : service["message"];
     }
     if (message.empty())
@@ -1228,12 +1220,12 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                     : i >= 10 ? (i == 10 ? 28 : 328)
                               : 28 + ((i - 1) % 3) * 200,
                 row = y + (i == 0 || i == 12 || i == 13 ? quick_top
-                           : i >= 10         ? quick_bottom_top
-                                             : quick_grid_top + ((i - 1) / 3) * quick_grid_pitch);
+                           : i >= 10                    ? quick_bottom_top
+                                                        : quick_grid_top + ((i - 1) / 3) * quick_grid_pitch);
             const int width = (i == 0 || i == 12) && !three_top ? 284
-                              : i == 0 || i == 12 || i == 13 ? 184
-                              : wide    ? 284
-                                        : 184,
+                              : i == 0 || i == 12 || i == 13    ? 184
+                              : wide                            ? 284
+                                                                : 184,
                       height = wide ? quick_wide_height : quick_tile_height;
             bool enabled = !busy && (i != 11 || cheats_available()) && (i != 13 || rewind_available()) &&
                            (!port_game() || port_tile(i)),

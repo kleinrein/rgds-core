@@ -16,6 +16,8 @@ from profiles import erase_removed, player_root, remove_profile
 
 BINARY = ROOT / 'build/host/rgds-launcher'
 PICKER, PROFILES, EDIT, CHOOSE = 48, 49, 50, 51  # Page::ProfilePicker and after: stored numbers, appended
+KID_HOME, KID_MENU = 61, 62  # Page::KidHome, Page::KidMenu: a Little kid's screen and game menu
+QUICK_MENU, PIN_PAD = 12, 54
 LIBRARY = 0
 # From --settings: the Profiles row in the root list.
 TO_PROFILES = ['Up'] * 12 + ['a']  # Profiles is the root's first row
@@ -194,6 +196,11 @@ class ManageTests(Base):
         self.run_ui(TO_PROFILES + ['Down', 'Down', 'Down', 'a', 'Right', 'a', 'Escape'], settings=True)
         self.assertFalse((self.data / 'profiles/p2').exists())
 
+    def test_a_new_little_kid_is_simple_and_starts_at_three(self):
+        self.run_ui(self.new_profile('Right', 'Right'), settings=True)
+        info = read_fields(self.data / 'profiles/p1/profile.ini')
+        self.assertEqual((info['restricted'], info['simple'], info['age'], info['unrated']), ('1', '1', '3', 'hide'))
+
     def test_the_name_being_typed_is_readable(self):
         # Found on the handheld: the name fields fell through to the password's stars, which look the same for any name.
         pictures = []
@@ -265,8 +272,15 @@ class ManageTests(Base):
 
     def test_who_its_for_picture_and_colour_are_saved(self):
         folder = self.add()
-        self.run_ui(self.edit_page() + ['a'], settings=True)
+        # Who it's for opens Adult, Kid and Little kid on the one it is now (Kid): Left is Adult.
+        report = self.run_ui(self.edit_page() + ['a', 'Left', 'a'], settings=True)
+        self.assertEqual((report['page'], report['profile_focus']), (EDIT, 0))
         self.assertEqual(read_fields(folder / 'profile.ini')['restricted'], '0')
+        self.run_ui(self.edit_page() + ['a', 'Right', 'Right', 'a'], settings=True)
+        info = read_fields(folder / 'profile.ini')
+        self.assertEqual((info['restricted'], info['simple'], info['age']), ('1', '1', '3'))
+        self.run_ui(self.edit_page() + ['a', 'Escape'], settings=True)  # B changes nothing
+        self.assertEqual(read_fields(folder / 'profile.ini')['simple'], '1')
         # A picture or a colour is applied at once and the page stays, to try another; B goes back.
         # Who it's for, Name, DS name, Birthday, Picture
         report = self.run_ui(self.edit_page() + ['Down'] * 4 + ['a', 'Right', 'a'], settings=True)
@@ -378,16 +392,16 @@ class ManageTests(Base):
     def test_pictochat_leaves_home_on_a_kid_profile_without_it(self):
         folder = self.add(active=True)
         with open(folder / 'ui.ini', 'a') as file:
-            file.write('sound_toy=0\n')  # no Sound toy either, so Recents spans its row
-        report = self.run_ui(['Down', 'Right'], boot=False)
-        self.assertEqual(report['profile'], 'p1')
-        self.assertNotEqual(report['home_selected'], 4)  # Recents spans the row: Right finds no PictoChat
+            file.write('sound_toy=0\n')  # no Sound toy either
+        # Down twice from Games is the app dock's first app: the Album alone without PictoChat, then PictoChat.
+        report = self.run_ui(['Down', 'Down', 'a'], boot=False)
+        self.assertEqual((report['profile'], report['chat_open']), ('p1', 0))
         report_tiles = report['home_tiles']
         with open(folder / 'profile.ini', 'a') as file:
             file.write('pictochat=1\n')
-        report = self.run_ui(['Down', 'Right'], boot=False)
+        report = self.run_ui(['Down', 'Down'], boot=False)
         self.assertEqual(report['home_selected'], 4)
-        self.assertEqual(report['home_tiles'], report_tiles)  # the column keeps its six tiles either way
+        self.assertEqual(report['home_tiles'], report_tiles)  # the column keeps its tiles either way
 
     def test_a_new_profiles_empty_recents_offers_the_games(self):
         self.add(restricted=0, active=True)  # has played nothing
@@ -436,6 +450,105 @@ class ManageTests(Base):
         self.assertEqual(report['page'], PICKER)
         report = self.run_ui(TO_PROFILES + ['tap 320 146', 'release 0 0'], settings=True)
         self.assertEqual(report['page'], EDIT)
+
+
+@unittest.skipUnless(BINARY.exists(), 'Build host launcher first')
+class LittleKidTests(Base):
+    def little(self):
+        folder = self.add(active=True)
+        with open(folder / 'profile.ini', 'a') as file:
+            file.write('simple=1\nunrated=show\nage=-1\n')
+        roms = self.data.parent / 'roms'
+        roms.mkdir()
+        for i, name in enumerate(['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel']):
+            (roms / (name + '.nds')).write_bytes(bytes(12) + b'K%03d' % i + bytes(0x200))
+        return roms
+
+    def run_with_roms(self, events, roms, seconds=3, flags=(), output=None):
+        script = self.data.parent / 'input.txt'
+        script.write_text(''.join(f'{300 + i * 110} {e if " " in e else "key " + e}\n' for i, e in enumerate(events)))
+        report = self.data.parent / 'report.json'
+        report.unlink(missing_ok=True)
+        result = subprocess.run(
+            [
+                str(BINARY), '--preview', '--data',
+                str(self.data), '--rom-dir',
+                str(roms), '--input-script',
+                str(script), '--cache-report',
+                str(report), '--seconds',
+                str(seconds), *flags
+            ],
+            cwd=ROOT,
+            env=dict(os.environ, SDL_VIDEODRIVER='dummy', SDL_AUDIODRIVER='dummy'),
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True
+        )
+        if output is not None: output.append(result.stdout)
+        return json.loads(report.read_text()) if report.exists() else {}
+
+    def test_a_little_kid_has_one_screen_and_keys_do_not_leave_it(self):
+        roms = self.little()
+        report = self.run_with_roms(['b', 'c', 'x', 'y', 'Escape', 'Tab'], roms)
+        self.assertEqual((report['page'], report['profile'], report['kid_games']), (KID_HOME, 'p1', 8))
+        self.assertEqual(self.run_with_roms(['Home'], roms)['page'], PICKER)  # no search: Who's playing?
+
+    def test_the_arrows_move_and_turn_the_page_round(self):
+        roms = self.little()
+        report = self.run_with_roms(['Right', 'Down'], roms)
+        self.assertEqual((report['kid_focus'], report['kid_page']), (4, 0))
+        report = self.run_with_roms(['Down', 'Down'], roms)  # past the bottom row: the next page, its last game
+        self.assertEqual((report['kid_focus'], report['kid_page']), (7, 1))
+        report = self.run_with_roms(['Right', 'Right', 'Right', 'Right', 'Right', 'Right'], roms)  # on, page by page
+        self.assertEqual((report['kid_focus'], report['kid_page']), (6, 1))
+        report = self.run_with_roms(['Left'], roms)  # before the first game: the last one
+        self.assertEqual((report['kid_focus'], report['kid_page']), (7, 1))
+
+    def test_select_asks_whos_playing_and_back_returns(self):
+        roms = self.little()
+        self.assertEqual(self.run_with_roms(['s'], roms)['page'], PICKER)
+        self.assertEqual(self.run_with_roms(['s', 'Escape'], roms)['page'], KID_HOME)
+        # Choosing the owner goes to the owner's own Home.
+        report = self.run_with_roms(['s', 'Left', 'a'], roms)
+        self.assertEqual((report['page'], report['profile']), (LIBRARY, 'owner'))
+
+    def menu(self, roms, core):
+        return ('--game-menu', '--game-core', core, '--game-rom', str(roms / 'Bravo.nds'))
+
+    def test_in_a_game_there_are_two_buttons_for_ds_and_play_alike(self):
+        roms = self.little()
+        for core in ('rgds-experimental', 'rgds-play'):
+            report = self.run_with_roms(['Down', 'Up', 'Down'], roms, flags=self.menu(roms, core))
+            self.assertEqual((report['page'], report['profile_focus']), (KID_MENU, 1), core)
+            # Play goes back to the game, Home leaves it; B plays on too.
+            for keys, action in ((['a'], 'resume'), (['Down', 'a'], 'quit'), (['b'], 'resume')):
+                said = []
+                self.run_with_roms(keys, roms, flags=self.menu(roms, core), output=said)
+                self.assertIn(' ' + action + ' after', said[0], (core, keys))
+            # Nothing else is reachable.
+            report = self.run_with_roms(['x', 'y', 'Tab', 'Right', 'Left'], roms, flags=self.menu(roms, core))
+            self.assertEqual(report['page'], KID_MENU, core)
+
+    def test_select_is_the_grown_ups_way_to_the_whole_game_menu(self):
+        roms = self.little()
+        menu = self.menu(roms, 'rgds-experimental')
+        self.assertEqual(self.run_with_roms(['s'], roms, flags=menu)['page'], QUICK_MENU)  # no owner's PIN
+        index = self.data / 'profiles/index.ini'
+        index.write_text(index.read_text() + 'owner_pin=' + self.stored_pin('1234') + '\n')
+        self.assertEqual(self.run_with_roms(['s'], roms, flags=menu)['page'], PIN_PAD)
+        self.assertEqual(self.run_with_roms(['s', 'Escape'], roms, flags=menu)['page'], KID_MENU)
+        # 1, 2, 3 along the pad's top row, then 4 below 1: the whole game menu.
+        keys = ['s', 'a', 'Right', 'a', 'Right', 'a', 'Down', 'Left', 'Left', 'a']
+        self.assertEqual(self.run_with_roms(keys, roms, flags=menu, seconds=4)['page'], QUICK_MENU)
+
+    @staticmethod
+    def stored_pin(pin, salt='0011223344556677'):
+        import hashlib
+        round_ = salt + ':' + pin
+        for _ in range(2000):
+            round_ = hashlib.sha256((round_ + salt).encode()).hexdigest()
+        return salt + ':' + round_
 
 
 class RemoveRuntimeTests(unittest.TestCase):

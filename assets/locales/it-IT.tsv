@@ -63,6 +63,7 @@ Antarctica	Antartide
 Any	Tutti
 Applies immediately. Higher clocks use more battery.	Effetto immediato. Frequenze più alte consumano più batteria.
 Applies immediately. Your game keeps its progress.	Effetto immediato. I progressi di gioco sono mantenuti.
+Applies when the game starts without resuming.	Si applica quando il gioco parte senza riprendere.
 Apply	Applica
 APPLY	APPLICA
 Applying shader…	Applicazione filtro…
@@ -447,6 +448,7 @@ Default controls saved.	Comandi globali salvati.
 Glossy tiles	Tessere lucide
 Go back	Indietro
 Goes into	Va in
+Going online…	Connessione online…
 Golden leaves	Foglie d’oro
 Green	Verde
 Grey	Grigio
@@ -457,12 +459,26 @@ Left stick down	Stick sinistro giù
 Left stick left	Stick sinistro sinistra
 Left stick right	Stick sinistro destra
 Left stick up	Stick sinistro su
+Online play is off.	Il gioco online è disattivato.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Gioco online attivo con WiiLink WFC. Connettiti dal menu Nintendo WFC del gioco.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Gioco online attivo con Wiimmfi. Connettiti dal menu Nintendo WFC del gioco.
+Online play is on. Local wireless applies when it is off.	Il gioco online è attivo. Il wireless locale si applica quando è spento.
 Page	Pagina
+Restart later	Riavvia più tardi
+Restart now, unsaved progress is lost	Riavvia ora, i progressi non salvati vanno persi
+Restarting the game to apply the change…	Riavvio del gioco per applicare la modifica…
+Restarting the game to change online play…	Riavvio del gioco per cambiare il gioco online…
+Restarting the game to change the microphone…	Riavvio del gioco per cambiare il microfono…
+Restarting the game to turn off local wireless…	Riavvio del gioco per disattivare il wireless locale…
+Restarting the game to turn on local wireless…	Riavvio del gioco per attivare il wireless locale…
 Right stick down	Stick destro giù
 Right stick left	Stick destro sinistra
 Right stick right	Stick destro destra
 Right stick up	Stick destro su
 Storyware	Libro illustrato
+The game reads its language when it starts	Il gioco legge la sua lingua all'avvio
+The game reads your nickname when it starts	Il gioco legge il tuo nome all'avvio
+Turning online play off…	Disattivazione del gioco online…
 h	h
 Haptic strength	Intensità aptica
 Health	Salute
@@ -2017,3 +2033,14 @@ Could not open it	Impossibile aprirlo
 This folder is empty	Questa cartella è vuota
 The trash is empty	Il cestino è vuoto
 No network places yet	Nessun percorso di rete
+Files	File
+Theme, sound and Wi-Fi	Tema, suono e Wi-Fi
+Your screenshots and photos, by game and date	I tuoi screenshot e le tue foto, per gioco e data
+Games, saves and music on the card	Giochi, salvataggi e musica sulla scheda
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare richiede i file BIOS DS e DSi nella cartella BIOS
+This .cia is encrypted: copy the decrypted DSiWare file instead	Questo .cia è cifrato: copia invece il file DSiWare decifrato
+This .cia is not a DSiWare file	Questo .cia non è un file DSiWare
+Little kid	Bimbo piccolo
+Big pictures, one tap to play. No menus.	Immagini grandi, un tocco per giocare. Niente menu.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	Per i più piccoli: solo i loro giochi, come immagini grandi. Un tocco e si gioca, senza menu o impostazioni in cui perdersi.
+No games yet	Ancora nessun gioco

@@ -43,6 +43,15 @@ public:
         (void)t;
         return false;
     }
+    // Every finger on the second screen now, for a view that takes more than the one touch() follows (the touch pad:
+    // a finger sliding while another holds the button). True when what draw() shows changed.
+    virtual bool wants_fingers() const { return false; }
+    virtual bool fingers(const std::vector<std::pair<int, int>>& down) {
+        (void)down;
+        return false;
+    }
+    // Once true when the view wants a tick from the motor (the touch pad's button taken by a press).
+    virtual bool take_click() { return false; }
     // Shown in place of a [hud] strip's band, not above it (a board of the same numbers).
     virtual bool covers_hud() const { return false; }
     // The boxes of a HUD split this view shows itself. While it covers the

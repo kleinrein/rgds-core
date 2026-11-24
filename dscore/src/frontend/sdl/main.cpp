@@ -14,6 +14,8 @@
 #include "core/frame_report.h"
 #include "core/input/input_log.h"
 #include "core/state/state.h"
+#include "core/safe_file.h"
+#include "frontend/camera_image.h"
 #include "core/io/dsi_nand_persist.h"
 #include "core/io/dsi_title_install.h"
 #include "core/io/dsi_nand_launch.h"
@@ -313,22 +315,34 @@ bool aa_on(const std::string& v) {
 }
 void apply_aa(NDS& nds, bool on) { nds.gpu3d.renderer().set_aa(on); }
 
-void load_save(NDS& nds, const std::string& path) {
-  if (!nds.cart) return;
+// False when the save file is there and could not be read: the game must not
+// start, or its first write would replace a save nobody has seen (upstream 12ac4c59).
+bool load_save(NDS& nds, const std::string& path) {
+  if (!nds.cart) return true;
   FILE* f = std::fopen(path.c_str(), "rb");
   if (!f) {
+    if (errno != ENOENT) {
+      std::fprintf(stderr, "save: cannot open %s: %s\n", path.c_str(), std::strerror(errno));
+      return false;
+    }
     if (!nds.cart->save_type_listed())
       VLOG("save: game code not in the save list; the chip is detected on first use\n");
-    return;
+    return true;
   }
   std::vector<u8> data;
   u8 buf[65536];
   for (size_t got; (got = std::fread(buf, 1, sizeof buf, f)) > 0;) data.insert(data.end(), buf, buf + got);
+  // A read cut short is not a save of another size: nothing is loaded, and no .bak is made from the part read.
+  const bool read_error = std::ferror(f) != 0;
   std::fclose(f);
+  if (read_error) {
+    std::fprintf(stderr, "save: cannot read %s (stopped after %zu bytes)\n", path.c_str(), data.size());
+    return false;
+  }
   const ds::cart::Cart::SaveLoad r = nds.cart->load_save(data.data(), data.size());
   if (r.fitted) {
     VLOG("save: loaded %zu bytes from %s\n", data.size(), path.c_str());
-    return;
+    return true;
   }
   // First write resizes to the chip's size, which would cut off/pad the
   // player's original: keep it as .bak.
@@ -341,13 +355,11 @@ void load_save(NDS& nds, const std::string& path) {
                  path.c_str(), data.size(), bak.c_str());
   if (FILE* e = std::fopen(bak.c_str(), "rb")) {
     std::fclose(e);
-    return;
+    return true;
   } // earlier original wins
-  if (FILE* o = std::fopen(bak.c_str(), "wb")) {
-    if (std::fwrite(data.data(), 1, data.size(), o) != data.size())
-      std::fprintf(stderr, "save: cannot write %s\n", bak.c_str());
-    std::fclose(o);
-  }
+  std::string err;
+  if (!ds::write_file_atomic(bak, data.data(), data.size(), err)) std::fprintf(stderr, "save: %s\n", err.c_str());
+  return true;
 }
 
 // The bytes on the card before the rename, then the rename itself: without both, a power cut in the seconds after a
@@ -1006,6 +1018,7 @@ static int run(int argc, char** argv) {
   const char* dns_arg = nullptr; // --dns: where the game's server lookups go (net.dns otherwise)
   long stats_from = 0;           // frames run but left out of timing statistics
   bool dsi_mode = false;
+  bool ds_mode = false; // --ds-mode: a title that can run either way runs as a DS
   const char* bios9i = nullptr;
   const char* bios7i = nullptr;
   const char* dsi_nand = nullptr;
@@ -1043,6 +1056,9 @@ static int run(int argc, char** argv) {
     else if (arg("--bios7")) cli.set("paths.bios7", argv[++i]);
     else if (arg("--firmware")) cli.set("paths.firmware", argv[++i]);
     else if (flag("--dsi-mode")) dsi_mode = true;
+    else if (flag("--dsi-enhanced")) cli.set("emu.dsi_enhanced", "true");
+    else if (flag("--no-dsi-enhanced")) cli.set("emu.dsi_enhanced", "false");
+    else if (flag("--ds-mode")) ds_mode = true;
     else if (arg("--bios9i")) bios9i = argv[++i];
     else if (arg("--bios7i")) bios7i = argv[++i];
     else if (arg("--dsi-nand")) dsi_nand = argv[++i];
@@ -1170,6 +1186,38 @@ static int run(int argc, char** argv) {
       std::fprintf(stderr, "%s also runs on a DS; no DSi BIOS pair, so it starts in DS mode\n", rom);
     }
   }
+  // A DSi-enhanced game card runs as a DS game unless emu.dsi_enhanced asks for the DSi (best set in a game's own
+  // file); a DSi-only card has no other way to run. --ds-mode keeps hybrid homebrew a DS program (upstream fda8b20d).
+  bool dsi_card = false;
+  {
+    u8 unit = 0;
+    u32 title_hi = 0;
+    const bool header = rom && !rom_shortcut && ds::io::file_dsi_header(rom, unit, title_hi);
+    const auto exists = [&](const char* given, const char* key) {
+      const std::string p = given ? std::string(given) : cfg.str(key);
+      return !p.empty() && std::filesystem::exists(p);
+    };
+    const bool have_bios = exists(bios9i, "paths.bios9i") && exists(bios7i, "paths.bios7i");
+    if (dsi_mode && !dsi_mode_asked && header && unit == 2 && ds_mode) {
+      dsi_mode = false;
+    } else if (!dsi_mode && !dsi_nand && header && (unit & 2) && title_hi != 0x00030004 && !(ds_mode && unit == 2)) {
+      ds::sdl::Config game = cfg; // the game's own files can turn it on for that game
+      char code[4];
+      if (peek_game_code(rom, code)) game.load(ds::sdl::Config::game_path_code(code));
+      game.load(ds::sdl::Config::game_path_rom(rom));
+      const bool want = unit == 3 || (cli.has("emu.dsi_enhanced") ? cli.flag("emu.dsi_enhanced", false)
+                                                                  : game.flag("emu.dsi_enhanced", false));
+      if (want && have_bios) dsi_mode = dsi_card = true;
+      else if (want)
+        std::fprintf(stderr,
+                     unit == 3 ? "%s is a DSi-only card and needs the DSi BIOS pair: --bios9i/--bios7i, or "
+                                 "paths.bios9i/paths.bios7i\n"
+                               : "console: DS (emu.dsi_enhanced needs the DSi BIOS pair, paths.bios9i/paths.bios7i, "
+                                 "to run %s as a DSi)\n",
+                     rom);
+      if (want && !have_bios && unit == 3) return 2;
+    }
+  }
   // paths.dsi_nand stands in for --dsi-nand only under --dsi-mode.
   const std::string dsi_nand_cfg = dsi_mode_asked && !dsi_nand ? cfg.str("paths.dsi_nand") : std::string();
   if (!dsi_nand_cfg.empty()) dsi_nand = dsi_nand_cfg.c_str();
@@ -1177,7 +1225,7 @@ static int run(int argc, char** argv) {
   const std::string shortcut_nand = dsi_nand ? std::string(dsi_nand) : cfg.str("paths.dsi_nand");
   if (dsi_mode) {
     // A game named with a NAND is DSiWare, installed into the session's NAND.
-    dsi_hle = !dsi_nand && rom;
+    dsi_hle = !dsi_nand && rom && !dsi_card;
     if (!dsi_nand && !rom) {
       std::fprintf(stderr, "%s needs --dsi-nand (or paths.dsi_nand in %s) or a DSiWare title\n", dsi_mode_by,
                    global_ini.c_str());
@@ -1188,7 +1236,7 @@ static int run(int argc, char** argv) {
       return 2;
     }
     // Without a NAND the title goes in the slot (NDS::prepare_dsi_hle).
-    if (!dsi_hle) {
+    if (!dsi_hle && !dsi_card) {
       dsi_title = rom;
       rom = nullptr;
     }
@@ -1302,8 +1350,12 @@ static int run(int argc, char** argv) {
   }
   // CPU timing model (core/cpu/timing_mode.h), fixed before anything runs or
   // the recompiler emits its stubs. DS_TIMING wins.
-  if (cfg.has("emu.timing") && !std::getenv("DS_TIMING")) ds::g_fast_timing = cfg.str("emu.timing") != "exact";
-  VLOG("cpu timing: %s\n", ds::g_fast_timing ? "fast" : "exact");
+  if (cfg.has("emu.timing") && !std::getenv("DS_TIMING") && !ds::set_timing(cfg.str("emu.timing").c_str()))
+    std::fprintf(stderr, "config: emu.timing = %s is not exact, fast or turbo; fast\n", cfg.str("emu.timing").c_str());
+  // A DSi session runs on the exact model unless told otherwise: the fast one is tuned on DS games, and DSi system
+  // software races it. It costs a DSiWare title 6-8% on an RK3566 (upstream b400fb94).
+  if (dsi_mode && !cfg.has("emu.timing") && !std::getenv("DS_TIMING")) ds::set_timing("exact");
+  VLOG("cpu timing: %s\n", ds::timing_name());
   if (cfg.num("emu.host_cores", 0) > 0)
     ds::set_host_cores(static_cast<ds::u32>(cfg.num("emu.host_cores", 0))); // DS_HOST_CORES still wins
   VLOG("host: %u cores\n", ds::host_cores());
@@ -1321,7 +1373,17 @@ static int run(int argc, char** argv) {
   }
 
   NDS nds;
-  nds.bus.rumble_pak = rgds::rumble_pak();
+  // The DS Rumble Pak in slot 2 (slot2/slot2.h) when RG DS Core's Game rumble is on.
+  if (rgds::rumble_pak()) nds.slot2 = std::make_unique<ds::slot2::RumblePak>();
+  {
+    // The DSi cameras' still (upstream c9602bc1): emu.dsi_camera_image, a picture (JPEG, PNG or BMP) by path or by
+    // name in paths.dsi_photos. None, or one that will not decode, is a test card's colour bars. No live camera.
+    std::string path = cfg.str("emu.dsi_camera_image"), err;
+    const std::string dir = cfg.str("paths.dsi_photos");
+    if (!path.empty() && path.find('/') == std::string::npos && !dir.empty()) path = dir + "/" + path;
+    if (!ds::frontend::set_camera_image(nds, path, err))
+      std::fprintf(stderr, "camera: %s; showing the colour bars\n", err.c_str());
+  }
   if (cfg.has("emu.idle_skip") && !std::getenv("DS_IDLE_SKIP"))
     nds.sched.set_idle_skip(cfg.str("emu.idle_skip").c_str()); // DS_IDLE_SKIP wins
   ds::bios::UserSettings user;
@@ -1430,6 +1492,38 @@ static int run(int argc, char** argv) {
     decltype(nds)& n;
     ~NetDriverOff() { n.io.set_net_driver(nullptr); }
   } net_driver_off{nds};
+  // RG DS: the game menu's Online play, live. The emulated AP beacons either way; only the stack behind it
+  // changes, so a game sitting in its Nintendo WFC menu just connects. Local wireless keeps the radio.
+  int online_mode = slirp ? (cfg.str("net.dns", "wiimmfi") == "wiilink" ? 2 : 1) : 0;
+  rgds::online_handler = [&](int mode) {
+    if (lan) return false;
+    if (mode == online_mode) return true;
+    nds.io.set_net_driver(nullptr);
+    slirp.reset();
+    online_mode = 0;
+    if (mode == 0) {
+      std::fprintf(stderr, "internet: off (game menu)\n");
+      return true;
+    }
+    const std::string where = mode == 2 ? "wiilink" : "wiimmfi";
+    auto dns = ds::net::SlirpDriver::Dns::Custom;
+    ds::u32 dns_addr = 0;
+    ds::net::SlirpDriver::parse_dns(where, dns, dns_addr);
+    auto next = std::make_unique<ds::net::SlirpDriver>();
+    if (!next->start(dns, dns_addr)) {
+      std::fprintf(stderr, "internet: %s (game menu)\n", next->error().c_str());
+      return false;
+    }
+    slirp = std::move(next);
+    nds.io.set_net_driver(slirp.get());
+    online_mode = mode;
+    std::fprintf(stderr, "internet: up, servers from %s (game menu)\n", where.c_str());
+    return true;
+  };
+  // Cleared before slirp and lan go (declared after them, so destroyed first).
+  struct OnlineOff {
+    ~OnlineOff() { rgds::online_handler = nullptr; }
+  } online_off;
 #else
   if (lan_host || lan_join || netplay || lan_guest)
     std::fprintf(stderr, "lan: local wireless is not built into this engine; playing alone\n");
@@ -1498,6 +1592,20 @@ static int run(int argc, char** argv) {
     nds.dsi_hle_launch = true; // NAND and settings made once the title is in the slot
     std::fprintf(stderr, rom_shortcut ? "console: DSi, a title from its NAND without the DSi Menu (EXPERIMENTAL)\n"
                                       : "console: DSi without a NAND (EXPERIMENTAL)\n");
+  } else if (dsi_card) {
+    // A game card in a DSi's slot: no NAND and no launcher, the card booted directly (NDS::setup_direct_boot_dsi).
+    std::string err;
+    if (!nds.load_dsi_bios(dsi_bios9i, dsi_bios7i, &err)) {
+      std::fprintf(stderr, "dsi bios: %s\n", err.c_str());
+      return 1;
+    }
+    if (!nds.bios_native_dsi) {
+      std::fprintf(stderr, "dsi bios: %s or %s not found\n", dsi_bios9i.c_str(), dsi_bios7i.c_str());
+      return 1;
+    }
+    if (!open_dsi_sd()) return 1;
+    nds.set_dsi(true);
+    std::fprintf(stderr, "console: DSi, for a DSi-enhanced game card (EXPERIMENTAL)\n");
   } else if (dsi_mode) {
     std::string err;
     if (!nds.load_dsi_bios(dsi_bios9i, dsi_bios7i, &err)) {
@@ -1617,6 +1725,11 @@ static int run(int argc, char** argv) {
   ds::prof::set_level(std::getenv("DS_PROFILE"));
   std::signal(SIGINT, on_signal);
   std::signal(SIGTERM, on_signal);
+  // The terminal or the session going away ends the run as SIGTERM does, saves written; a closed stderr or
+  // socket is a failed write, not the end of the process (upstream 12ac4c59).
+  std::signal(SIGHUP, on_signal);
+  std::signal(SIGQUIT, on_signal);
+  std::signal(SIGPIPE, SIG_IGN);
 
   // Display-engine tier owns the panel: dummy/offscreen video driver keeps
   // window/events/controllers but draws nothing. Decided before SDL_Init.
@@ -1986,7 +2099,11 @@ sdl_ready:
   (void)jit;
 #endif
   // A replay must start from the same battery save every time, so it's loaded read-only.
-  load_save(nds, session.sav);
+  if (!load_save(nds, session.sav)) {
+    // Nothing of this game may be written over a save that could not be read.
+    std::fprintf(stderr, "%s: the game's save cannot be read; not starting\n", session.sav.c_str());
+    return 2;
+  }
   const bool save_readonly = replay != nullptr;
   if (save_readonly) VLOG("save: read-only for the replay\n");
 
@@ -2041,7 +2158,8 @@ sdl_ready:
   // audio.mic_gate: the noise gate's multiple of the floor (default 5, 0 = off).
   ds::sdl::MicGate mic_gate(cfg.real("audio.mic_gate", 5.0));
   const double mic_gain = cfg.real("audio.mic_gain", 0.25);
-  constexpr size_t mic_per_frame = static_cast<u64>(ds::spu::Spu::SAMPLE_RATE) * ds::CYCLES_PER_FRAME / ds::ARM9_CLOCK_HZ;
+  constexpr size_t mic_per_frame =
+      static_cast<u64>(ds::spu::Spu::SAMPLE_RATE) * ds::CYCLES_PER_FRAME / ds::ARM9_CLOCK_HZ;
   static_assert(mic_per_frame == 547); // the product does not fit 32 bits: it wrapped to 35 once, gargling every game
   ds::sdl::MicQueue mic_queue(mic_per_frame);
   ds::sdl::MicBand mic_band(ds::spu::Spu::SAMPLE_RATE);
@@ -2304,11 +2422,11 @@ sdl_ready:
     p.photos_dir = p.saves_dir + "/dsi-photos";
     return p;
   };
-  ds::io::NandPersistPaths dsi_paths = rom_shortcut
-                                           ? ds::io::NandPersistPaths::beside(shortcut_nand, cfg.str("paths.saves"))
-                                       : dsi_hle  ? hle_paths(rom_path)
-                                       : dsi_mode ? ds::io::NandPersistPaths::beside(dsi_nand, cfg.str("paths.saves"))
-                                                  : ds::io::NandPersistPaths{};
+  ds::io::NandPersistPaths dsi_paths =
+      rom_shortcut           ? ds::io::NandPersistPaths::beside(shortcut_nand, cfg.str("paths.saves"))
+      : dsi_hle              ? hle_paths(rom_path)
+      : dsi_mode && dsi_nand ? ds::io::NandPersistPaths::beside(dsi_nand, cfg.str("paths.saves"))
+                             : ds::io::NandPersistPaths{};
   // Earlier saves go back into the made-up NAND; that becomes the export baseline.
   auto import_dsiware_saves = [&] {
     if (replay) return;
@@ -2454,8 +2572,9 @@ sdl_ready:
       }
       return mc;
     };
-    nds.io.bench.handler = [&, bench_control, bench_dir, bench_session, bench_temp](
-                               u32 command, const u32* args, std::array<u32, ds::io::BenchPort::BUFFER_WORDS>& buf) -> u32 {
+    nds.io.bench.handler = [&, bench_control, bench_dir, bench_session,
+                            bench_temp](u32 command, const u32* args,
+                                        std::array<u32, ds::io::BenchPort::BUFFER_WORDS>& buf) -> u32 {
       const std::string blob = bench_dir + "/impeccable-ds.bin";
       switch (command) {
       case 1: { // INFO
@@ -2552,7 +2671,7 @@ sdl_ready:
         std::fclose(f);
         return 1;
       }
-      case 9: shot_pending = true; return 1; // SHOT: a screenshot of this frame, in smoke runs
+      case 9: shot_pending = true; return 1;                 // SHOT: a screenshot of this frame, in smoke runs
       case 10: return static_cast<u32>(mono_ns() / 1000000); // NOW: real time in milliseconds
       default: return 0;
       }
@@ -2643,12 +2762,20 @@ sdl_ready:
                      size_t(mb ? std::max(8, std::atoi(mb)) : 128) << 20);
   }
   u32 rewind_now = 0;
+  bool rewind_backed_up = false; // this session's .sav.before-rewind is written (the save from before the first rewind)
   bool rewind_previewed = false; // never set now (no look loads anything); kept for the guard below
   const auto rewind_allowed = [&] { return rewind.enabled() && !save_readonly && !log.writing() && !net_live; };
+  // `out` comes in holding an evicted moment's buffer when there is one: written into in place, sized for the whole
+  // state up front, so a take neither grows a vector field by field nor faults in fresh pages.
+  size_t rewind_state_size = 0;
   const ds::sdl::RewindRing::Save rewind_save = [&](std::vector<u8>& out) {
     ds::state::Writer w;
+    w.data().swap(out);
+    w.data().clear();
+    if (rewind_state_size) w.data().reserve(rewind_state_size + rewind_state_size / 32);
     std::string err;
     if (!nds.save_state(w, err)) return false;
+    rewind_state_size = w.data().size();
     out.swap(w.data());
     return true;
   };
@@ -2704,15 +2831,34 @@ sdl_ready:
   rgds::rewind_show_handler = nullptr;
   rgds::rewind_jump_handler = [&](unsigned id, bool play) {
     if (!rewind_now) return false;
+    if (id == rewind_now) {
+      // Back, or Play from the moment the menu opened at: the machine is still there (a look loads nothing), so
+      // nothing is loaded. A load would flush the JIT, re-prime the renderer and mark the cartridge dirty for nothing.
+      rewind_previewed = false;
+      rewind.protect(0);
+      rewind_now = 0;
+      std::fprintf(stderr, "rewind: %s now, nothing to load\n", play ? "playing on from" : "back to");
+      return true;
+    }
     if (play) {
       // As a checkpoint load: the .sav as it was is kept beside it, then the moment's cartridge is written.
       rewind_guard();
       flush_save();
+      // The first of the session as .before-rewind, never replaced (a second Play from must not put a rewound save
+      // there); the latest as .before-rewind.last. As RG DS Play keeps a battery save.
       if (FILE* before = std::fopen(session.sav.c_str(), "rb")) {
         std::fclose(before);
-        std::error_code ignored;
-        std::filesystem::copy_file(session.sav, session.sav + ".before-rewind",
-                                   std::filesystem::copy_options::overwrite_existing, ignored);
+        std::error_code failed;
+        std::filesystem::copy_file(session.sav,
+                                   session.sav + (rewind_backed_up ? ".before-rewind.last" : ".before-rewind"),
+                                   std::filesystem::copy_options::overwrite_existing, failed);
+        if (!failed) rewind_backed_up = true;
+        if (failed) {
+          // No copy of the save (the card full, say): playing on would write over it, so the jump is refused.
+          std::fprintf(stderr, "rewind: cannot keep %s.before-rewind: %s\n", session.sav.c_str(),
+                       failed.message().c_str());
+          return false;
+        }
       }
     }
     std::string err;
@@ -2954,7 +3100,7 @@ sdl_ready:
       ds::input::apply(nds, in);
     } else {
       bool closed;
-      const bool lid_changed = lid.poll(closed, nds.sleeping);
+      const bool lid_changed = lid.poll(closed, nds.io.sleeping);
       // The guest wakes to the host's time: emulated time stood still while the host slept. Under
       // DS_LID_PULSE=0 a suspend can leave the lid unchanged, so the resume itself reseeds the clock too.
       if (lid.take_host_resumed() || (lid_changed && !closed)) nds.io.resync_rtc_clock();
@@ -3121,7 +3267,13 @@ sdl_ready:
 #endif
     nds.run_frame();
     rgds_completed_frames.fetch_add(1, std::memory_order_relaxed);
-    if (rewind_allowed()) rewind_take(false);
+    if (rewind_allowed()) {
+      try {
+        rewind_take(false);
+      } catch (const std::exception& e) { // out of memory, say: the game goes on without this moment
+        std::fprintf(stderr, "rewind: no moment taken: %s\n", e.what());
+      }
+    }
 #if DSPERATE_CHEEVOS
     // Exactly once per emulated frame: rcheevos keeps per-frame deltas.
     if (cheevos.on()) {
@@ -3129,10 +3281,19 @@ sdl_ready:
       cheevos.frame(nds);
     }
 #endif
-    if (nds.bus.rumble_pak) rgds::rumble_frame(std::exchange(nds.bus.rumble_moves, 0u));
+    if (nds.slot2 && nds.slot2->kind() == ds::slot2::Kind::RumblePak) {
+      // The motor's moves this frame: the pak counts them (a state load or reset may start the count again).
+      static u32 rumble_seen = 0;
+      const u32 events = nds.slot2->rumble_events();
+      rgds::rumble_frame(events >= rumble_seen ? events - rumble_seen : 0u);
+      rumble_seen = events;
+    }
     if (nds.dsi_dsp_started && !dsp_warned) {
       dsp_warned = true;
-      std::fprintf(stderr, "DSi DSP is not emulated.\n");
+      // Only a DSP program that is not one of the SDK's three gets here: those run at high level (upstream f404c600).
+      std::fprintf(
+          stderr,
+          "dsi: this title runs a DSP program of its own, on the exact DSP core: far slower than real time on a handheld\n");
     }
 
     if (nds.exit_requested) {

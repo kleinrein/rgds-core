@@ -3,7 +3,7 @@ use crate::buffer_pool::TexturePool;
 use crate::descriptors::Descriptors;
 use crate::filters::blur::BlurFilter;
 use crate::filters::{
-    FilterSource, FilterVertexWithDoubleBlur, VERTEX_BUFFERS_DESCRIPTION_FILTERS_WITH_DOUBLE_BLUR,
+    FilterSource, VERTEX_BUFFERS_DESCRIPTION_FILTERS_WITH_DOUBLE_BLUR,
 };
 use crate::surface::target::CommandTarget;
 use crate::utils::SampleCountMap;
@@ -26,10 +26,6 @@ struct BevelUniform {
 pub struct BevelFilter {
     bind_group_layout: wgpu::BindGroupLayout,
     pipeline_layout: wgpu::PipelineLayout,
-    vertex_buffer: wgpu::Buffer,
-    uniform_buffer: wgpu::Buffer,
-    vertices_size: wgpu::BufferSize,
-    uniform_size: wgpu::BufferSize,
     pipeline: SampleCountMap<OnceLock<wgpu::RenderPipeline>>,
 }
 
@@ -78,21 +74,6 @@ impl BevelFilter {
             label: create_debug_label!("Bevel filter binds").as_deref(),
         });
 
-        let vertices_size = std::mem::size_of::<[FilterVertexWithDoubleBlur; 4]>() as u64;
-        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size: vertices_size,
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-
-        let uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size: uniform_size,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[Some(&bind_group_layout)],
@@ -102,11 +83,7 @@ impl BevelFilter {
         Self {
             pipeline: Default::default(),
             pipeline_layout,
-            vertex_buffer,
-            uniform_buffer,
             bind_group_layout,
-            uniform_size: wgpu::BufferSize::new(uniform_size).expect("Definitely not zero."),
-            vertices_size: wgpu::BufferSize::new(vertices_size).expect("Definitely not zero."),
         }
     }
 
@@ -216,9 +193,8 @@ impl BevelFilter {
         shadow_color[0] *= shadow_color[3];
         shadow_color[1] *= shadow_color[3];
         shadow_color[2] *= shadow_color[3];
-        staging_belt
-            .write_buffer(draw_encoder, &self.uniform_buffer, 0, self.uniform_size)
-            .copy_from_slice(bytemuck::cast_slice(&[BevelUniform {
+        let uniform_buffer =
+            crate::filters::fresh_buffer(descriptors, bytemuck::cast_slice(&[BevelUniform {
                 highlight_color,
                 shadow_color,
                 strength: filter.strength.to_f32(),
@@ -231,12 +207,11 @@ impl BevelFilter {
                 },
                 knockout: if filter.is_knockout() { 1 } else { 0 },
                 composite_source: 1,
-            }]));
-        staging_belt
-            .write_buffer(draw_encoder, &self.vertex_buffer, 0, self.vertices_size)
-            .copy_from_slice(bytemuck::cast_slice(&[
+            }]), wgpu::BufferUsages::UNIFORM);
+        let vertex_buffer =
+            crate::filters::fresh_buffer(descriptors, bytemuck::cast_slice(&[
                 source.vertices_with_highlight_and_shadow(blur_offset)
-            ]));
+            ]), wgpu::BufferUsages::VERTEX);
         let filter_group = descriptors
             .device
             .create_bind_group(&wgpu::BindGroupDescriptor {
@@ -255,7 +230,7 @@ impl BevelFilter {
                     },
                     wgpu::BindGroupEntry {
                         binding: 2,
-                        resource: self.uniform_buffer.as_entire_binding(),
+                        resource: uniform_buffer.as_entire_binding(),
                     },
                     wgpu::BindGroupEntry {
                         binding: 3,
@@ -272,7 +247,7 @@ impl BevelFilter {
 
         render_pass.set_bind_group(0, &filter_group, &[]);
 
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+        render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
         render_pass.set_index_buffer(
             descriptors.quad.index_buffer.slice(..),
             wgpu::IndexFormat::Uint32,

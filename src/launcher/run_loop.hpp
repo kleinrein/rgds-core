@@ -203,7 +203,8 @@ int App::run() {
             else if (port_info_shown()) port_touch(point, now);
         }
         for (auto point : top_touch.poll())
-            if (++frame_log.top_touches && session_initialized && !(o.port_menu && port_idle)) zoom_top_touch(point.kind, point.x, point.y, now);
+            if (++frame_log.top_touches && session_initialized && !(o.port_menu && port_idle))
+                zoom_top_touch(point.kind, point.x, point.y, now);
         if (o.port_menu && port_idle) port_info_tick(now);
         if (!session_initialized) {
             if (o.seconds && now - began >= Uint32(o.seconds) * 1000) break;
@@ -379,6 +380,8 @@ int App::run() {
             (preferences.animations && (carousel.update(now) || shader_moving || list_animated ||
                                         now - selected_at < 190 || (!view_active && now - page_at < 150))) ||
             (settings.page == Page::ShaderPicker && shader_thumbs_pending);
+        watch_notices();
+        if (toasts_animating(now) || (!toasts.empty() && toasts.wait_ms(now) <= 1)) animated = true;
         if (animated) dirty = true;
         if (hardware.charging && !drawn_status_stamp.empty() && int((now / 420) % 4) != drawn_charge_phase)
             dirty = true;
@@ -445,7 +448,7 @@ int App::run() {
                     zoom_sprite_builds = 0;
                     for (int i = 0; i < FrameLog::Count; i++) {
                         const int n = i == FrameLog::TopDraw || i == FrameLog::TopPresent ? frame_log.top_frames
-                                                                                            : frame_log.frames;
+                                                                                          : frame_log.frames;
                         std::fprintf(frame_log.file, " %s=%.1f/%.1f", names[i], n ? frame_log.sum[i] / n : 0.0,
                                      frame_log.peak[i]);
                     }
@@ -493,6 +496,8 @@ int App::run() {
         if (o.game_menu && (!menu_pending_token.empty() || menu_status["state"] == "busy"))
             wait_ms = std::min(wait_ms, 20);
         if (chat_open) wait_ms = std::min(wait_ms, 40);
+        if (const int toast_wait = toasts.wait_ms(s.GetTicks()); toast_wait > 0)
+            wait_ms = std::min(wait_ms, toast_wait);
         if (sn.open) wait_ms = std::min(wait_ms, snake_wait(now)); // wakes on the snake's next step, to the ms
         if (music_moving) wait_ms = std::min(wait_ms, 16);
         else if (music_badge_phase(now) > 0) wait_ms = std::min(wait_ms, 100); // the status bar's dancing bars
@@ -590,6 +595,12 @@ int App::run() {
                << ",\"cheat_view\":" << int(cheat_view) << ",\"cheat_group\":" << cheat_group
                << ",\"cheats_available\":" << cheats_available() << ",\"settings_notice\":" << std::quoted(status)
                << ",\"picker_title\":" << std::quoted(picker_title) << ',';
+        report << "\"toasts\":["; // the cards still up, newest first (toast_screen.hpp)
+        for (size_t i = 0; i < toasts.cards.size(); ++i)
+            report << (i ? "," : "") << "{\"text\":" << std::quoted(toasts.cards[i].text)
+                   << ",\"severity\":" << int(toasts.cards[i].severity)
+                   << ",\"leaving\":" << (toasts.cards[i].left != 0) << '}';
+        report << "],";
         report << "\"visited_pages\":[";
         bool first_page = true;
         for (int page : visited_pages) {
@@ -612,10 +623,12 @@ int App::run() {
                << ',';
         report << "\"profile\":" << std::quoted(profiles.active())
                << ",\"profile_count\":" << profiles.profiles().size() << ",\"profile_focus\":" << settings.focus
-               << ",\"profile_unclear\":" << profiles.active_unclear() << ",\"all_games\":" << all_games.size()
-               << ",\"catalog_games\":" << catalog_games.size() << ",\"listed_systems\":" << listed_systems.size()
-               << ",\"visibility_loading\":" << visibility_loading << ",\"games_rows\":" << games_rows.size()
-               << ",\"games_tab\":" << games_tab << ",\"recent_games\":" << summary.recent_games.size()
+               << ",\"kid_focus\":" << kid_focus << ",\"kid_page\":" << kid_page_shown
+               << ",\"kid_games\":" << kid_games.size() << ",\"profile_unclear\":" << profiles.active_unclear()
+               << ",\"all_games\":" << all_games.size() << ",\"catalog_games\":" << catalog_games.size()
+               << ",\"listed_systems\":" << listed_systems.size() << ",\"visibility_loading\":" << visibility_loading
+               << ",\"games_rows\":" << games_rows.size() << ",\"games_tab\":" << games_tab
+               << ",\"recent_games\":" << summary.recent_games.size()
                << ",\"games_system\":" << std::quoted(games_system) << ",\"home_selected\":" << home_selected
                << ",\"home_tiles\":" << home_tiles() << ",\"music_badge\":" << music_badge_phase(s.GetTicks())
                << ",\"music_playing\":" << (music_ready && music.playing())

@@ -158,12 +158,53 @@ class PublicArtworkTests(unittest.TestCase):
                                                          Response(b'png')]) as opener, patch.object(art.time, 'sleep'):
             self.assertEqual(client.fetch('https://art.gametdb.com/ds/a.png'), b'png')
             self.assertEqual(opener.call_count, 2)
-        with patch.object(client, 'opener', side_effect=error) as opener, patch.object(art.time, 'sleep'):
+        with patch.object(client, 'opener', side_effect=error) as opener, patch.object(art.time, 'sleep') as sleep:
             with self.assertRaises(scraper.ScraperError):
                 client.fetch('https://art.gametdb.com/ds/a.png')
+            # The first outage is waited out (a Wi-Fi blip), then asked again...
             with self.assertRaises(scraper.ScraperError):
                 client.fetch('https://art.gametdb.com/ds/another.png')
-            self.assertEqual(opener.call_count, 2)
+            self.assertEqual(opener.call_count, 4)
+            self.assertGreaterEqual(sum(c.args[0] for c in sleep.call_args_list if c.args[0] == 0.25), 50)
+            # ...and a second outage gives the host up for the run: no more waiting per game.
+            sleep.reset_mock()
+            with self.assertRaises(scraper.ScraperError):
+                client.fetch('https://art.gametdb.com/ds/third.png')
+            self.assertEqual(opener.call_count, 4)
+            self.assertEqual(sleep.call_count, 0)
+
+    def test_a_blip_is_waited_out_and_the_next_game_still_downloads(self):
+        class Response(io.BytesIO):
+            def geturl(self):
+                return 'https://art.gametdb.com/ds/b.png'
+
+        error = urllib.error.URLError('down')
+        client = art.PublicClient()
+        with patch.object(client, 'opener', side_effect=[error, error, Response(b'png')]), \
+                patch.object(art.time, 'sleep'):
+            with self.assertRaises(scraper.ScraperError):
+                client.fetch('https://art.gametdb.com/ds/a.png')
+            self.assertEqual(client.fetch('https://art.gametdb.com/ds/b.png'), b'png')
+        self.assertNotIn('art.gametdb.com', client.unavailable)
+
+    def test_a_failed_sharper_cover_keeps_the_small_one_without_an_error(self):
+        import struct
+        with tempfile.TemporaryDirectory() as folder:
+            data = Path(folder)
+            rom = data / 'Mario.nds'
+            rom.write_bytes(b'\0' * 12 + b'ASME')
+            item = data / 'library' / game_key(rom)
+            item.mkdir(parents=True)
+            small = b'BM' + b'\0' * 16 + struct.pack('<ii', 128, 115) + b'\0' * 30
+            (item / 'box.bmp').write_bytes(small)
+            client = art.PublicClient()
+            with patch.object(client, 'artwork', side_effect=scraper.ScraperError('Could not reach artwork service.')):
+                scraper.scrape(data, client, [rom])
+            self.assertEqual((item / 'box.bmp').read_bytes(), small)
+            self.assertEqual(read_fields(item / 'artwork-status.ini')['state'], 'cached')
+            status = read_fields(data / 'scraper/status.ini')
+            self.assertEqual((status['failed'], status['cached']), ('0', '1'))
+            self.assertNotIn('sharp_checked', read_fields(item / 'info.ini'))  # tried again next run
 
     def test_stale_catalog_remains_usable_when_server_is_unavailable(self):
         import os

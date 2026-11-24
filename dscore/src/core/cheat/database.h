@@ -46,9 +46,33 @@ bool load_for_rom(const std::string& db_path, const std::string& rom_path, GameC
 // the ROM path may name a zip.
 bool load_for_header(const std::string& db_path, const u8 header[512], GameCheats& out, std::string& err);
 
+// An exclusive group may arrive with several codes enabled; the first wins.
+// Two alternative schemes over the same addresses cannot run at once.
+void enforce_exclusive(std::vector<Code>& codes, const std::vector<Group>& groups);
+
+// Appends a game's entry from the analog controls database to `into`. Only
+// an entry for exactly this ROM is taken: a
+// hook patches fixed addresses, so best_entry's first-revision fallback would
+// install it over the wrong code. An analog code already in `into` goes, since
+// the two would install over the same addresses and both match by name when
+// the enabled set is restored. False, leaving `into` alone, when `analog` is
+// another revision.
+bool merge_analog(GameCheats& into, GameCheats analog, u32 checksum);
+
+// The analog controls database DSperate is built with (analog_db/): shocoman's
+// CPAD codes, converted for emulators. Not under DSperate's licence; see
+// analog_db/README.md.
+std::vector<u8> builtin_analog_database();
+
+// load_for_header for the analog controls database: from `path`, or from the
+// built-in copy when `path` is empty.
+bool load_analog_for_header(const std::string& path, const u8 header[512], GameCheats& out, std::string& err);
+
 class Database {
 public:
   bool open(const std::string& path, std::string& err);
+  // The same over a file already in memory; `label` names it in errors.
+  bool open_memory(std::vector<u8> file, const std::string& label, std::string& err);
 
   const std::string& name() const { return name_; }
   bool has(u32 game_code) const;

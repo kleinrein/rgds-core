@@ -63,6 +63,7 @@ Antarctica	南极洲
 Any	全部
 Applies immediately. Higher clocks use more battery.	立即生效。频率越高越耗电。
 Applies immediately. Your game keeps its progress.	立即生效，游戏进度不受影响。
+Applies when the game starts without resuming.	在不继续的情况下启动游戏时生效。
 Apply	应用
 APPLY	应用
 Applying shader…	正在应用滤镜…
@@ -447,6 +448,7 @@ Default controls saved.	已保存通用按键设置。
 Glossy tiles	光泽方块
 Go back	返回
 Goes into	保存到
+Going online…	正在联机…
 Golden leaves	金叶子
 Green	绿色
 Grey	灰色
@@ -457,12 +459,26 @@ Left stick down	左摇杆 下
 Left stick left	左摇杆 左
 Left stick right	左摇杆 右
 Left stick up	左摇杆 上
+Online play is off.	联机已关闭。
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	已通过 WiiLink WFC 开启联机。请从游戏的 Nintendo WFC 菜单连接。
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	已通过 Wiimmfi 开启联机。请从游戏的 Nintendo WFC 菜单连接。
+Online play is on. Local wireless applies when it is off.	联机已开启。本地无线在联机关闭时生效。
 Page	页
+Restart later	稍后重启
+Restart now, unsaved progress is lost	立即重启，未保存的进度会丢失
+Restarting the game to apply the change…	正在重启游戏以应用更改…
+Restarting the game to change online play…	正在重启游戏以更改联机…
+Restarting the game to change the microphone…	正在重启游戏以更改麦克风…
+Restarting the game to turn off local wireless…	正在重启游戏以关闭本地无线…
+Restarting the game to turn on local wireless…	正在重启游戏以开启本地无线…
 Right stick down	右摇杆 下
 Right stick left	右摇杆 左
 Right stick right	右摇杆 右
 Right stick up	右摇杆 上
 Storyware	故事书
+The game reads its language when it starts	游戏会在启动时读取语言
+The game reads your nickname when it starts	游戏会在启动时读取你的名称
+Turning online play off…	正在关闭联机…
 h	小时
 Haptic strength	触感强度
 Health	体力
@@ -2017,3 +2033,14 @@ Could not open it	无法打开
 This folder is empty	此文件夹为空
 The trash is empty	回收站为空
 No network places yet	还没有网络位置
+Files	文件
+Theme, sound and Wi-Fi	主题、声音和 Wi-Fi
+Your screenshots and photos, by game and date	按游戏和日期整理的截图与照片
+Games, saves and music on the card	卡上的游戏、存档和音乐
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare 需要将 DS 和 DSi 的 BIOS 文件放在 BIOS 文件夹中
+This .cia is encrypted: copy the decrypted DSiWare file instead	此 .cia 已加密：请复制解密后的 DSiWare 文件
+This .cia is not a DSiWare file	此 .cia 不是 DSiWare 文件
+Little kid	小小孩
+Big pictures, one tap to play. No menus.	大图片，点一下就能玩。没有菜单。
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	给最小的玩家：只有他们的游戏，以大图片显示。点一下就开始玩，没有会迷路的菜单或设置。
+No games yet	还没有游戏

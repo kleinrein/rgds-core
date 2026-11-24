@@ -75,6 +75,7 @@ private:
     double frame_rate_ = 60;
     uint64_t base_step_ = 60, step_ = 60, position_ = 0, due_ = 0;
     bool available_ = true, sized_ = false;
+    int refused_ = 0; // save states refused in a row before the first one was taken
     std::string why_;
     uint32_t next_id_ = 1, head_ = 0, protected_ = 0;
     std::map<uint32_t, std::unique_ptr<Stored>> moments_;

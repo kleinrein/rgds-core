@@ -64,7 +64,7 @@ bool App::open_setting_picker() {
         show_experimental_resolution_picker();
     } else if (settings.page == Page::Scraper && row == 0) {
         if (worker > 0 && worker_action == "scrape") {
-            service_notice = "Stop scraping before changing source";
+            notify("Stop scraping before changing source");
             return true;
         }
         show_picker("Artwork source", {"Automatic", "GameTDB", "Libretro", "ScreenScraper"},

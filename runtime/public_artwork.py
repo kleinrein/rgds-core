@@ -68,6 +68,12 @@ def serials_url(system):
     ) + ".dat"
 
 
+def serials_file(system):
+    """The cache name of a system's No-Intro list. Game codes (names_for_code) and CRC names (game_info) both read
+    it: one file, downloaded once a week."""
+    return ("ds" if system == "nds" else system) + "-serials.dat"
+
+
 LIBRETRO = libretro_base("nds")
 SERIALS = serials_url("nds")
 HOSTS = {"thumbnails.libretro.com", "art.gametdb.com", "www.gametdb.com", "raw.githubusercontent.com"}
@@ -114,18 +120,19 @@ def rom_details(path):
     path = Path(path)
     # A .7z's contents are unreadable here (no 7z reader in Python): its file name names the game.
     if path.suffix.lower() == ".7z": return path.stem, ""
+    import dsiware  # a DSiWare .cia's game code is in the game inside it
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
-            entries = [i for i in archive.infolist() if Path(i.filename).suffix.lower() in (".nds", ".dsi")]
+            entries = [i for i in archive.infolist() if Path(i.filename).suffix.lower() in dsiware.SUFFIXES]
             if len(entries) != 1 or entries[0].file_size > 1024**3:
                 raise NotFound("ZIP must contain one DS game.")
-            with archive.open(entries[0]) as stream:
-                header = stream.read(16)
             name = Path(entries[0].filename).stem
     else:
-        with path.open("rb") as stream:
-            header = stream.read(16)
         name = path.stem
+    try:
+        header = dsiware.read_header(path, 16) or b""
+    except dsiware.Unreadable:
+        header = b""
     code = header[12:16].decode("ascii", errors="replace")
     return name, code if re.fullmatch(r"[A-Z0-9]{4}", code) and code not in ("####", "0000") else ""
 
@@ -196,6 +203,11 @@ class CoverIndex(HTMLParser):
             self.names.append(name[:-4])
 
 
+# After a host fails twice in a row it is left alone this long; a second outage in one run gives it up for the run.
+OUTAGE_PAUSE = 60
+OUTAGE_STRIKES = 2
+
+
 class PublicClient:
     def __init__(self, provider="auto", opener=None, cache=None, cancelled=None):
         if provider not in PROVIDERS[:3]: raise ScraperError("Unknown public artwork provider.")
@@ -212,8 +224,15 @@ class PublicClient:
     def fetch(self, url, limit=8 * 1024 * 1024):
         if not allowed(url): raise ScraperError("Unrecognized artwork address.")
         host = urllib.parse.urlsplit(url).hostname
-        if self.unavailable.get(host, 0) > time.monotonic():
-            raise ScraperError("Artwork service temporarily unavailable. Retry missing artwork later.")
+        until, strikes = self.unavailable.get(host, (0.0, 0))
+        if until > time.monotonic():
+            # The first outage is waited out: a Wi-Fi blip is a pause, not a run of games saved as errors.
+            # A host that fails again is down for this run, and the rest of the games do not wait for it.
+            if strikes >= OUTAGE_STRIKES:
+                raise ScraperError("Artwork service temporarily unavailable. Retry missing artwork later.")
+            for _ in range(max(0, int((until - time.monotonic()) / 0.25)) + 1):
+                if self.cancelled(): raise KeyboardInterrupt()
+                time.sleep(0.25)
         for attempt in range(2):
             if self.cancelled(): raise KeyboardInterrupt()
             delay = self.next_request - time.monotonic()
@@ -226,22 +245,25 @@ class PublicClient:
                         raise ScraperError("Artwork service returned an unexpected redirect.")
                     content = response.read(limit + 1)
                 if len(content) > limit: raise ScraperError("Artwork response exceeds the size limit.")
+                self.unavailable.pop(host, None)
                 return content
             except urllib.error.HTTPError as error:
                 try:
                     error.close()
                 except (AttributeError, KeyError, OSError):
                     pass  # an error without a body (fp=None)
-                if error.code == 404: raise NotFound("No matching cover found.") from None
+                if error.code == 404:
+                    self.unavailable.pop(host, None)  # it answered
+                    raise NotFound("No matching cover found.") from None
                 retryable = error.code in (408, 429, 500, 502, 503, 504)
                 if not retryable or attempt:
-                    self.unavailable[host] = time.monotonic() + 60
+                    self.unavailable[host] = (time.monotonic() + OUTAGE_PAUSE, strikes + 1)
                     raise ScraperError(
                         "Artwork service unavailable (HTTP %d). Retry missing artwork later." % error.code
                     ) from None
             except (urllib.error.URLError, TimeoutError, OSError):
                 if attempt:
-                    self.unavailable[host] = time.monotonic() + 60
+                    self.unavailable[host] = (time.monotonic() + OUTAGE_PAUSE, strikes + 1)
                     raise ScraperError("Could not reach artwork service. Check Wi-Fi.") from None
             finally:
                 self.next_request = time.monotonic() + (1.0 if attempt == 0 else 0.5)
@@ -283,9 +305,9 @@ class PublicClient:
         if not code: return []
         if system != "nds":
             if system not in self.serial_sets:
-                self.serial_sets[system] = self.catalog(system + "-serials.dat", serials_url(system), serial_index)
+                self.serial_sets[system] = self.catalog(serials_file(system), serials_url(system), serial_index)
             return self.serial_sets[system].get(code, [])
-        if self.serials is None: self.serials = self.catalog("ds-serials.dat", SERIALS, serial_index)
+        if self.serials is None: self.serials = self.catalog(serials_file("nds"), SERIALS, serial_index)
         return self.serials.get(code, [])
 
     def gametdb(self, name, code):

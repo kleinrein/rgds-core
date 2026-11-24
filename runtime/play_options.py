@@ -173,6 +173,13 @@ FOLDER_SYSTEMS = {
     "mame2003": "arcade",
     "mame2003-plus": "arcade",
     "mame2003plus": "arcade",
+    "fbneo": "arcade",
+    "fba": "arcade",
+    "finalburn": "arcade",
+    "neogeo": "arcade",
+    "cps1": "arcade",
+    "cps2": "arcade",
+    "cps3": "arcade",
     "flash": "flash",
     "adobe flash": "flash",
     "flashpoint": "flash",
@@ -206,17 +213,37 @@ FOLDER_EXTENSIONS = {
     # A zip first: a DOS game's folder may hold a .cue or an .iso that would make it a PlayStation or PSP game.
     "dos": (".zip", ".iso", ".cue", ".chd", ".ins", ".img", ".ima", ".vhd", ".m3u", ".m3u8"),
     "pico8": (".png",),
-    "arcade": (".zip",),
+    "arcade": (".zip", ".7z"),
     # Flashpoint's game zips (content/<host>/...) and folders of a game's files zipped up
     "flash": (".zip", ".spl")
 }
-# The arcade sets the core is built with (os/buildroot/package/libretro-mame2003-plus/two_monitors.py), by their
-# MAME names: the launcher lists only these (src/launcher/model.hpp arcade_sets) and only these come over from an old
-# card's MAME folder (migrate.py), not a collection of thousands this core cannot run.
+# The sets of Nintendo's two-monitor cabinets, by their MAME 0.78 names: they play through mame2003-plus, built with only
+# these boards (os/buildroot/package/libretro-mame2003-plus/two_monitors.py), whose frames play/profiles/arcade splits
+# over the panels. Every other arcade set is FBNeo's (arcade_catalog).
 ARCADE_SETS = (
     "punchout", "spnchout", "spnchotj", "armwrest", "vstennis", "wrecking", "balonfgt", "vsmahjng", "vsbball",
     "vsbballj", "vsbbalja", "iceclmrj"
 )
+ARCADE_CATALOG = Path(__file__).resolve().parent.parent / "assets/arcade/sets.tsv"
+_arcade_catalog = None
+
+
+def arcade_catalog():
+    """Every arcade set a core here can start, by its short name: (title, parent, flags) as tools/arcade_sets.py
+    wrote them (flags: b a board's BIOS, v vertical, x not working, m a two-monitor cabinet). Empty if missing."""
+    global _arcade_catalog
+    if _arcade_catalog is None:
+        _arcade_catalog = {}
+        try:
+            for line in ARCADE_CATALOG.read_text(encoding="utf-8").splitlines():
+                if line.startswith("#"): continue
+                name, title, parent, flags = (line.split("\t") + ["", "", ""])[:4]
+                _arcade_catalog[name] = (title, parent, flags)
+        except OSError:
+            pass
+    return _arcade_catalog
+
+
 # A disc in a Mega Drive folder is a Mega-CD one, in a PC Engine folder a CD-ROM one: they share those shelves.
 FOLDER_DISCS = {"md": ("segacd", SEGACD_DISCS), "pce": ("pcecd", PCECD_DISCS)}
 # The libretro core for a system, as RG DS OS installs it (os/buildroot/package/libretro-*).
@@ -253,7 +280,7 @@ LIBRETRO_CORES = {
     "dc": "flycast",
     "gw": "gw",
     "scummvm": "scummvm",
-    "arcade": "mame2003_plus",
+    "arcade": "fbneo",  # but the two-monitor cabinets' sets: mame2003_plus (libretro_core)
     "flash": "ruffle"
 }
 # A core's system folder when not the owner's BIOS folder: PPSSPP's assets come with the core and need no BIOS.
@@ -288,9 +315,11 @@ MGBA_SYSTEMS = ("gba", "gbc", "gb")
 NO_CHECKPOINTS = ("gw", "scummvm", "flash")
 
 
-def libretro_core(system):
-    """The installed core library for a libretro system, or None (not such a system, or not installed)."""
+def libretro_core(system, game=None):
+    """The installed core library for a libretro system (and game: an arcade set picks its core), or None (not such a
+    system, or not installed)."""
     name = LIBRETRO_CORES.get(system)
+    if system == "arcade" and game is not None and Path(game).stem.lower() in ARCADE_SETS: name = "mame2003_plus"
     if not name: return None
     path = LIBRETRO_DIR / (name + "_libretro.so")
     return path if path.is_file() else None

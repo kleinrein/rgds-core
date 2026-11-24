@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+#include "core/safe_file.h"
+#include <cerrno>
+#include <cstring>
 #include "config.h"
 
 #include <cstdio>
@@ -76,7 +79,13 @@ bool Config::load(const std::string& path) {
     const size_t eq = line.find('=');
     if (eq == std::string::npos) continue;
     std::string k = trim(line.substr(0, eq)), v = trim(line.substr(eq + 1));
-    if (const size_t c = v.find_first_of("#;"); c != std::string::npos) v = trim(v.substr(0, c));
+    // A comment after a value starts at a # or ; that follows a blank (or leads): one inside a word is the
+    // value's own (a path such as /roms/#1 or Disc;2 was cut there).
+    for (size_t c = v.find_first_of("#;"); c != std::string::npos; c = v.find_first_of("#;", c + 1))
+      if (c == 0 || v[c - 1] == ' ' || v[c - 1] == '\t') {
+        v = trim(v.substr(0, c));
+        break;
+      }
     const std::string key = section.empty() ? k : section + "." + k;
     if (retired(key)) {
       std::fprintf(stderr, "config: %s is retired (3D is drawn on the CPU only) and is ignored (%s)\n", key.c_str(),
@@ -114,14 +123,31 @@ bool Config::flag(const std::string& key, bool def) const {
   return def;
 }
 
-bool Config::store(const std::string& path, const std::string& key, const std::string& value) {
+bool Config::store(const std::string& file, const std::string& key, const std::string& value) {
+  // Through a link to the file it names: the replacement must not take the link's place.
+  std::string path = file;
+  if (char* real = ::realpath(file.c_str(), nullptr)) {
+    path = real;
+    std::free(real);
+  }
   std::string sec, name;
   split_key(key, sec, name);
   std::vector<std::string> lines;
   {
+    // A file that is there and cannot be read is not an empty one: writing
+    // back what was read would leave it holding this one key.
+    errno = 0;
     std::ifstream f(path);
+    if (!f && errno != ENOENT) {
+      std::fprintf(stderr, "config: cannot read %s: %s; not rewriting it\n", path.c_str(), std::strerror(errno));
+      return false;
+    }
     std::string line;
     while (std::getline(f, line)) lines.push_back(line);
+    if (f.bad()) {
+      std::fprintf(stderr, "config: cannot read all of %s; not rewriting it\n", path.c_str());
+      return false;
+    }
   }
   size_t sec_start = std::string::npos, sec_end = lines.size();
   for (size_t i = 0; i < lines.size(); ++i) {
@@ -157,9 +183,16 @@ bool Config::store(const std::string& path, const std::string& key, const std::s
       lines.insert(lines.begin() + static_cast<long>(at), entry);
     }
   }
-  std::ofstream f(path);
-  if (!f) return false;
-  for (const std::string& l : lines) f << l << '\n';
+  std::string text, err;
+  for (const std::string& l : lines) {
+    text += l;
+    text += '\n';
+  }
+  // Never truncated in place: a failed or interrupted write leaves the old settings.
+  if (!write_file_atomic(path, text.data(), text.size(), err)) {
+    std::fprintf(stderr, "config: %s\n", err.c_str());
+    return false;
+  }
   return true;
 }
 
@@ -174,6 +207,13 @@ void Config::write_default(const std::string& path, bool force) {
 # "game: ... [XXXX]" at start); the filename one wins, and is where a layout
 # picked with the hotkey is remembered.
 # Every line is a comment showing the default; delete the # to change one.
+
+[ui]
+# language = auto               # the menus' language: auto (the system's, from LANG), en, or a
+                                # code such as zh_CN. Built-in translations come from po/ in the
+                                # source; a <code>.po in a lang folder beside this file adds a
+                                # language or replaces one (docs/translating.md). Global only:
+                                # a game's own file cannot change it
 
 [user]                          # what games see as the console's owner when no firmware dump is
                                 # given (with a dump, its own settings apply), and the DSi's
@@ -218,15 +258,30 @@ void Config::write_default(const std::string& path, bool force) {
 # games = /path/to/games        # the library the loader card lists on a firmware boot (.nds and .zip,
                                 # one level; DSiWare .nds/.dsi/.srl/.cia too, zipped or not, marked
                                 # [DSi]). Unset, the picker says so.
+# dsi_photos = /path/to/folder  # pictures the DSi's cameras can be shown (JPEG, PNG, BMP; one level).
+                                # [emu] dsi_camera_image names one; DS OPTIONS in the menu picks it
 # dsi_games = /path/to/folder   # the DSi games folder (e.g. a frontend's own DSiWare folder): where
                                 # [emu] dsi_nand_shortcuts keeps its .dspr.nds files. Unset: games
                                 # above. The loader card lists the shortcuts from here too
 # saves = /path/to/saves        # battery saves. Default: next to the ROM
+# gba_games = /path/to/gba      # GBA ROMs (.gba, one level) for slot 2: a DS game that reads GBA
+                                # games (Pal Park, unlocks) offers the ones it takes before it starts.
+                                # See [slot2]
+# gba_saves = /path/to/saves    # their saves, <GBA ROM name>.sav. Default: next to the GBA ROM
 # states = /path/to/states      # save states (and the autosave's PNG). Default: next to the ROM
 # screenshots = /path/to/shots  # the screenshot hotkey. Default: the states directory
 # cache = /path/to/cache        # where zipped games are unpacked when they cannot be unpacked beside
                                 # the zip (a read-only card). Default: <zip dir>/.dsperate/. Kept
-                                # between runs (see [cart]); never /tmp, which is RAM on a handheld
+                                # between runs (see [cart]); never /tmp, which is RAM on a handheld.
+                                # Also holds vk_pipelines.bin, the compiled Vulkan pipelines (default
+                                # ~/.cache/dsperate/), which only --clear-cache deletes
+# analog_cheats = /path/to/usrcheat-analog.dat   # analog-control (CPAD) patches. DSperate has
+                                #   a database of them built in; a file here extends it rather than
+                                #   replacing it: a game the file has (an exact ROM match) takes the
+                                #   file's codes, and every other game keeps the built-in ones.
+                                #   Default: usrcheat-analog.dat beside the ROM, then in this
+                                #   directory, if either exists. Using "none" here disables
+                                #   analog codes entirely.
 # cheats = /path/to/usrcheat.dat # Action Replay database (the file, or a directory holding
                                 #   one). Default: beside the ROM, then in this directory.
                                 #   Loading it lists the codes; none are on until enabled
@@ -256,7 +311,6 @@ void Config::write_default(const std::string& path, bool force) {
 # dominant_ratio = auto         # auto: the dominant screen takes the largest whole scale that leaves the other
                                 # at least dominant_threshold of it, and the other grows into the room left;
                                 # or a number, the smaller screen's size relative to the dominant one (0.5)
-# dominant_threshold of it, and the other grows into the room left
 # dominant_threshold = 0.25     # auto: the smallest secondary it accepts, 0.1..0.99
 # dual_window = false           # one window per panel (dual-screen handhelds). DS_DUAL_SCREENS in the
                                 # environment sets each panel's SDL display and touch devices, e.g.
@@ -275,10 +329,13 @@ void Config::write_default(const std::string& path, bool force) {
 # lcd_grid = 0                  # LCD pixel grid: one dark seam per DS pixel, strength 0 (off) .. 1 (black)
 # seam = dark                   # dark: the grid above | blend: only the panel pixel straddling two DS
                                 # pixels is blended ("sharp shimmerless") | blend_linear: the same in
-                                # linear light
+                                # linear light. The Vulkan present (gpu_present) blends in its sampler
+                                # (a step or two from the CPU's)
 # chunky = false                # draw blocks of DS pixels as one flat cell, for panels at odd scales:
                                 # mean (or true) | extreme | mode | tl | min | max | false. The A30
-                                # display-engine tier draws the cells in its scaler: mean only
+                                # display-engine tier draws the cells in its scaler: mean only. Under
+                                # gpu_present the cells are drawn at DS resolution
+                                # on the CPU and the presenter scales them
 # chunky_threshold = 180        # extreme only: luma distance (0..255) an outlier needs to win over the mean
 # chunky_cell = auto            # panel pixels per cell: auto (4..16, whatever divides the screen) | pair
                                 # (2x2 DS pixels) | N (or the nearest size below N that divides the screen)
@@ -301,29 +358,9 @@ void Config::write_default(const std::string& path, bool force) {
                                 # renderer. Or name one: disp | fbdev | kms | dmabuf | surface | renderer
                                 # (one that won't open falls back to the renderer). The older disp = and
                                 # fbdev = keys are still read, and say so
-# gpu_present = true            # true | false | rga | vulkan. true: the panel is scaled and composed off
-                                # the CPU by the RGA (the Rockchip 2D accelerator, through V4L2: leaves the
-                                # GPU to the 3D layer) where the device has one, else by Vulkan (a compute
-                                # dispatch into the scanout dma-buf). rga / vulkan: that one only. Declines
-                                # cleanly to the CPU scanline scaler where neither works (no dma-buf
-                                # scanout, no Vulkan, no RGA).
-# sink = auto                   # where frames go. auto picks per device: the display engine's hardware
-                                # scaler where /dev/disp answers (Miyoo A30 and other Allwinner boards),
-                                # /dev/fb0 on the H700 handhelds' mali-only SDL2, KMS page flips on a bare
-                                # console, zero-copy dma-bufs under Wayland, else SDL's window surface or
-                                # renderer. Or name one: disp | fbdev | kms | dmabuf | surface | renderer
-                                # (one that won't open falls back to the renderer). The older disp = and
-                                # fbdev = keys are still read, and say so
-# gpu_present = true            # true | false | rga. rga: the Rockchip 2D accelerator (V4L2 rockchip-rga)
-                                # scales into the scanout buffer instead, leaving the GPU to the 3D layer.
-                                # true: scale and compose the panel on the GPU (Vulkan, into the scanout
-                                # dma-buf) instead of on the CPU scanline scaler. Default on where the
-                                # device has it; declines cleanly and falls back to the scanline tier
-                                # where it does not (no Vulkan, no DRM or no dma-heap). Measured on the
-                                # RG DS Plus: over-budget frames 72->42 % on Spirit Tracks, 47->28 % on
-                                # Golden Sun, 44->32 % on NSMB, with the longest stutter falling from
-                                # 291 frames to 3-9. Known cost: one 37-80 ms frame per ~1600 on Golden
-                                # Sun, the Mali tiler-heap stall
+# gpu_present = true            # the panel is scaled and composed off the CPU by Vulkan (a render pass
+                                # on the scanout dma-buf). Declines cleanly to the CPU scanline scaler
+                                # where that does not work (no dma-buf scanout, no Vulkan).
 # vsync = true
 # fps = false                   # frames-per-second counter in a corner of the primary screen. Counts
                                 # presented frames, so frameskip and fast forward show. The fps hotkey
@@ -336,7 +373,7 @@ void Config::write_default(const std::string& path, bool force) {
                                 # SDL's choice; SDL_AUDIODRIVER overrides
 # native_rate = true            # open the device at its own rate and resample here (false: 32768 Hz,
                                 # the sound daemon resamples)
-# buffer_size = auto           # how much sound is held ahead: auto, or milliseconds (20..200).
+# buffer_size = auto            # how much sound is held ahead: auto, or milliseconds (20..200).
                                 # Lower is less delay and less slack before a late frame is heard as
                                 # a gap. auto starts at 50 ms and raises it only when the machine is
                                 # keeping up and still ran the queue dry -- depth answers an
@@ -345,8 +382,9 @@ void Config::write_default(const std::string& path, bool force) {
                                 # counted whole DS frames (~16.7 ms each) and is still read here
 # mic = true                    # open the microphone
 # mic_dev = plughw:0,0          # ALSA capture device
-# mic_gain = 0.25
-# mic_gate = 5
+# mic_gain = 0.25               # microphone level, after the DC offset is removed
+# mic_gate = 5                  # noise gate: a frame quieter than this many times the quietest level
+                                # heard is sent as silence; 0 = off
 
 [cart]
 # cache_mb = 2048               # unpacked zipped games kept per directory, in MB; the least recently
@@ -359,9 +397,42 @@ void Config::write_default(const std::string& path, bool force) {
                                 # mounts) that fits with 128 MB to spare, where a page read mid-frame
                                 # is a round trip and shows as a hitch; local storage stays demand-paged
 
+[slot2]                         # the GBA slot. A DSi has none: DSiWare and --dsi-mode leave it empty
+# ask = true                    # before a game that reads GBA games starts (Pal Park, Advance Wars'
+                                # maps, Aria of Sorrow's ring...), pick one of those it takes from
+                                # paths.gba_games. Its "don't ask again" sets ask = false and gba
+                                # below in the game's own file; the menu's ASK FOR GBA GAME undoes it
+# gba =                         # the GBA game in slot 2 when not asking: a .gba path, or a file name
+                                # in paths.gba_games; none or empty for no game. --gba-rom sets it
+                                # for one run. Its save is written back as the game changes it
+# rumble = auto                 # auto | on | off: the DS Rumble Pak when no GBA game is in the slot.
+                                # auto: when the controller has a rumble motor (the handheld's own,
+                                # on ROCKNIX). Off under --record/--replay unless on
+# rumble_strength = 100         # percent, 10-100
+# guitar_grip = auto            # auto | off: the Guitar Grip for the Guitar Hero: On Tour games and
+                                # Band Hero, which need it to start. Its frets are keys/pad grip_green,
+                                # grip_red, grip_yellow, grip_blue, and take those controls from the
+                                # DS buttons sharing them while the grip is in the slot
+# motion = auto                 # auto | retail | homebrew | off: a motion accessory in slot 2 when no
+                                # GBA game or Guitar Grip is. retail: the DS Motion Pack; homebrew: the
+                                # DS Motion Card. auto: the pack, for Tony Hawk's Motion (which needs it)
+# motion_source = auto          # auto | pad | sensor | stick: what tilts it. pad: the controller's
+                                # own accelerometer (SDL); sensor: the handheld's (Linux IIO); stick:
+                                # a stick, up to 45 degrees each way. auto: the first of those there
+                                # is. A replay holds it flat
+# motion_stick = right          # right | left: the stick that tilts. It is the accessory's while one is
+                                # in the slot: the pen, stick_dpad and stick_face let go of it (the pen
+                                # has it back while stylus_hold is held). A handheld with one stick: left
+# motion_matrix =               # nine numbers: the rotation from the sensor's axes to the console's
+                                # (X right, Y up the screen, Z towards you), for a sensor the system
+                                # gives no mount matrix for. Empty: the system's, or none. A
+                                # controller's is taken as held like a handheld; lying flat, face
+                                # up: 1 0 0 0 0 -1 0 1 0
+# solar = 5                     # the solar sensor of a Boktai cartridge: 0 (dark) to 10 (full sun)
+
 [emu]
 # realtime = rr                 # rr | fifo | off: real-time scheduling for the emulator's threads
-#                               # (needs root or an rtprio limit)
+                                # (needs root or an rtprio limit)
 # rt_priority = 5
 # rt_relief = true              # with realtime on: the kernel caps the real-time class at
                                 # sched_rt_runtime_us of every sched_rt_period_us (95 % of a second
@@ -381,11 +452,17 @@ void Config::write_default(const std::string& path, bool force) {
                                 # emulation on its own, the 2D engines each paired with a 3D band,
                                 # audio/SDL/driver threads on the interrupt core (DS_PIN overrides)
 # jit = true                    # false = interpreter (much slower; for comparison)
-# timing = fast                 # CPU cycle model: fast (the default: a constant cost per memory access
+# timing = fast                 # CPU cycle model: fast (the default for DS games; a DSi session's is
+                                # exact, which its system software needs: a constant cost per memory access
                                 # and per jump; much cheaper to emulate, and games cannot tell in
                                 # practice) | exact (melonDS's per-access model: memory wait states,
                                 # fetch/data overlap, the ARM7's main-RAM rules; also the cartridge
-                                # bus clock per ROM word, which fast skips). Read at launch
+                                # bus clock per ROM word, which fast skips) | turbo (fast, with the
+                                # emulated ARM9 charged less than the console's: a game that drops
+                                # its own frame rate under load, as Okamiden does from 30 to 20 fps,
+                                # holds the higher one. It is not the console's speed: some games
+                                # may run wrong, glitch or hang with it, so it is not a default
+                                # and is best set per game). Read at launch
 # idle_skip = 1                 # skip a CPU busy-wait: 0 = never | 1 = only the GXSTAT swap poll |
                                 # all = every proven poll loop
 # autosave = false              # on quit, save a state to the hidden "auto" slot
@@ -398,6 +475,13 @@ void Config::write_default(const std::string& path, bool force) {
                                 # card may take nothing else): opening one starts the title straight from the NAND
                                 # (its saves and settings), skipping the DSi Menu and its slow load.
                                 # Kept up to date at every start; false removes every .dspr.nds there
+# dsi_enhanced = false          # EXPERIMENTAL. true: a DSi-enhanced game card (one that runs on both
+                                # consoles) runs as a DSi, booted straight from the card. Needs the
+                                # DSi BIOS pair, and costs frame time: the DSi's CPU is twice as fast.
+                                # false: it runs as the DS game it also is. Best set in a game's own
+                                # file (the menu's SAVE TO row). A DSi-only card always runs as a DSi
+# dsi_camera_image =            # a file name in [paths] dsi_photos: the still both DSi cameras see,
+                                # cut to 4:3 from its middle. Empty: colour bars. There is no live camera
 # dsi_hide_installed = false    # --dsi-mode: hide the NAND dump's own DSiWare from the DSi Menu for
                                 # the session (the dump is never changed); --dsi-hide-installed
 # autoload = false              # when a game starts and its auto slot exists, resume from it instead
@@ -449,6 +533,11 @@ void Config::write_default(const std::string& path, bool force) {
 # down = Down
 # left = Left
 # right = Right
+# grip_green = 1                # the Guitar Grip's frets, while it is in slot 2 ([slot2] guitar_grip)
+# grip_red = 2
+# grip_yellow = 3
+# grip_blue = 4
+# strum = Space                 # with the grip in and a fret held: a strum across the touch screen
 
 # Controller values are SDL controller button names (a b x y back guide
 # start leftstick rightstick leftshoulder rightshoulder dpup dpdown dpleft
@@ -475,12 +564,35 @@ void Config::write_default(const std::string& path, bool force) {
 # down = dpdown
 # left = dpleft
 # right = dpright
+# grip_green = leftshoulder     # the Guitar Grip's frets, while it is in slot 2; they take these
+# grip_red = +lefttrigger       # controls from DS L and R for the time
+# grip_yellow = +righttrigger
+# grip_blue = rightshoulder
+# strum = dpdown                # with the grip in and a fret held: a stroke across the touch
+# strum.alt = dpup              # screen's strings, alternating down and up, for a handheld without
+                                # one. With no fret held the control is the game's (and the stylus
+                                # hold's) as usual
 # stick_dpad = left             # left | right | none: a stick that also works the d-pad
                                 # (true/false are the old spellings of left/none)
 # stick_face = none             # none | left | right: a stick that also works the face buttons,
                                 # laid out as the DS has them (up X, down B, left Y, right A).
                                 # The pen's stick (stylus_axis) keeps the pen in both cases.
 # stick_deadzone = 12000
+# analog = auto                 # auto | off | left | right | dual: sticks for an analog controls
+                                # (CPAD) patch, used only while the game's CPAD cheat is on.
+                                # dual: left stick moves, right stick is the C-Stick/nub, and
+                                # the triggers act as ZL/ZR past 3/4 travel. auto: dual on a
+                                # pad with a right stick, else left. While the patch runs its
+                                # sticks are its own: the pen (stylus_axis), stick_dpad and
+                                # stick_face let go of them; hold stylus_hold (or, unbound,
+                                # the pad modifier) to move the pen with its stick.
+# analog_deadzone = 6000        # radial deadzone for those sticks, SDL units
+# analog_sensitivity_left = 100  # percent, 10-300: under 100 lowers the top speed, over 100
+# analog_sensitivity_right = 100 # reaches full speed with less travel
+# analog_invert_y = false       # flip those sticks' up and down
+# analog_layout = auto          # auto | packed | extended: how the game's patch expects stick
+                                # data arranged at 0x027FFDF0. auto reads it from the enabled
+                                # patch; extended is Metroid's (nub as s16 at +6/+8).
 # face_fix = auto               # auto: if the controller's SDL mapping has a/b or x/y swapped against
                                 # the kernel's button positions, correct it (logged at startup); off: trust SDL
 # axis_leftx = leftx            # Axis remapping, for a pad whose mapping reports a stick rotated,
@@ -492,7 +604,9 @@ void Config::write_default(const std::string& path, bool force) {
                                     # right (X) or down (Y), or pressing the trigger.
 # stylus_axis = right           # right | left | none: the stick that moves the pen over the
                                 # bottom screen (left takes the stick away from the d-pad)
-# stylus_dpad = none            # a button; while held the d-pad, and the stick_dpad stick, move the pen (e.g. leftshoulder)
+# stylus_hold = none            # a button; while held the d-pad, and the stick_dpad stick, move the pen (e.g. leftstick),
+                                # and so does the pen's own stick while an analog patch has it (pad.analog).
+                                # Unbound, the pad modifier lends a patch's stick to the pen. Was stylus_dpad
 # stylus_button = rightstick    # touches at the pen's position; mod+<it> is free for a hotkey
 # stylus_button.alt = none      # a second tap control, like a hotkey's .alt (e.g. +righttrigger)
 # stylus_speed = 4.0            # pen pixels per frame at full tilt
@@ -501,11 +615,12 @@ void Config::write_default(const std::string& path, bool force) {
 # stylus_hide = 90              # frames idle before the crosshair hides (0 = never shown)
 
 # Hotkeys: quit pause fast_forward (held) fast_forward_toggle save_state
-# ("pause" opens the pause menu: it stops the machine and draws save state,
-# load state and the slot list over the held frame, driven by the DS buttons)
 # load_state slot_next slot_prev volume_up volume_down mute layout_next
-# layout_prev screen_swap pip_corner_next fullscreen screenshot lid mic (held) fps. A value is a key name, or
-# "mod+name" meaning the modifier must be held with it; "none" unbinds.
+# layout_prev screen_swap pip_corner_next fullscreen screenshot lid
+# mic (held) fps. "pause" opens the pause menu: it stops the machine and
+# draws save state, load state and the slot list over the held frame,
+# driven by the DS buttons. A value is a key name, or "mod+name" meaning
+# the modifier must be held with it; "none" unbinds.
 # "mod" alone fires when the modifier is released with nothing else pressed
 # while it was held (pause = mod, quit = mod+start); one-shot actions only.
 # Every action also takes a second control, "<action>.alt" (pause.alt = F1,
@@ -537,8 +652,8 @@ void Config::write_default(const std::string& path, bool force) {
 # The same on the controller. The modifier is the pad's mode/home button
 # ("guide"); if it doubles as a DS button it is withheld from the game
 # while held and delivered as a tap when released alone, unless a hotkey
-# is "mod". A chord
-# "mod+start+back" needs both buttons (SDL calls the DS Select "back").
+# is "mod". A chord "mod+start+back" needs the modifier and both buttons
+# (SDL calls the DS Select "back").
 [padhotkeys]
 # modifier = guide
 # quit = mod+start+back
@@ -561,9 +676,9 @@ void Config::write_default(const std::string& path, bool force) {
 [cheevos]
 # RetroAchievements, Casual mode (formerly Softcore). Hardcore is NOT supported!
 # enabled = false
-# username =                    # who to sign in as (--cheevos-user overrides it for one run). The password is never stored in plaintext;
-                                # a successful sign-in keeps the token RetroAchievements returns, in
-                                # <config>/cheevos.token, mode 0600
+# username =                    # who to sign in as (--cheevos-user overrides it for one run). The
+                                # password is never stored: a successful sign-in keeps the token
+                                # RetroAchievements returns, in <config>/cheevos.token, mode 0600
 # token_file =                  # a token file another program wrote, in PPSSPP's format (the token
                                 # alone). --cheevos-token sets this. It wins over the stored sign-in
                                 # and is never written to; the username still comes from above

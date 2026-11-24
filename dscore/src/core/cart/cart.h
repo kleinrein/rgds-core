@@ -74,7 +74,14 @@ struct TwlHeader {
 };
 static_assert(sizeof(TwlHeader) == 0x378 - 0x180, "TWL header layout");
 
-enum class SaveType : u8 { None, EepromTiny, Eeprom, Flash, Detect }; // Detect: chip still unknown
+enum class SaveType : u8 {
+  None,
+  EepromTiny,
+  Eeprom,
+  Flash,
+  Detect,
+  Nand
+}; // Detect: chip still unknown; Nand: in the ROM chip, see below
 
 // Retail Slot-1 cartridge: ROM reads through the KEY1/KEY2 command protocol,
 // and the save chip on the AUXSPI bus.
@@ -87,11 +94,20 @@ public:
 
   const Header& header() const { return header_; }
   const TwlHeader& twl() const { return twl_; }
-  bool dsi_capable() const { return (header_.unit_code & 2) != 0; } // unit_code: 0 DS, 2 DS+DSi, 3 DSi only
+  bool dsi_capable() const { return (header_.unit_code & 2) != 0; }
+  bool dsi_mode() const {
+    return dsi_mode_;
+  } // the card is in its DSi mode (see dsi_cart_)   // unit_code: 0 DS, 2 DS+DSi, 3 DSi only
   // Bounded reads of the image; past the end the bytes are 0xFF, as on a card.
   void rom_read(u32 addr, u8* dst, u32 n) const { rom_->read(addr, dst, n); }
   u32 rom_read32_at(u32 addr) const { return rom_->read32(addr); }
-  u32 rom_size() const { return rom_->size(); }         // bytes in the image
+  u32 rom_size() const { return rom_->size(); } // bytes in the image
+  // A boot binary's size as the header claims it, held to what a card can
+  // carry into memory: no more than the card, nor than the largest main RAM.
+  u32 boot_size(u32 claimed) const {
+    const u32 most = rom_mask_ + 1 < (16u << 20) ? rom_mask_ + 1 : (16u << 20);
+    return claimed < most ? claimed : most;
+  }
   u32 rom_padded_size() const { return rom_mask_ + 1; } // what the card wraps at
   const RomSource& source() const { return *rom_; }
   u32 chip_id() const { return chip_id_; }
@@ -99,8 +115,9 @@ public:
   // Cart bus.
   void set_reset(bool reset); // /RES line (ROMCTRL bit 29)
   void command_start(const u8 cmd[8]);
-  u32 command_receive();    // next data word
-  void setup_direct_boot(); // cart already past KEY1 negotiation
+  u32 command_receive();           // next data word
+  void command_transmit(u32 word); // a data word of a write-direction command (ROMCTRL bit 30)
+  void setup_direct_boot();        // cart already past KEY1 negotiation
 
   // Save chip (AUXSPI).
   void spi_select() { spi_pos_ = 0; }
@@ -123,6 +140,15 @@ public:
   bool sram_dirty() const { return sram_dirty_; }
   u32 sram_writes() const { return sram_writes_; } // bumped on every chip write
   void clear_sram_dirty() { sram_dirty_ = false; }
+  // Set when a save state brought in save memory other than what was there:
+  // the save file on disk is then not what the game continues from, and the
+  // next write of it replaces something the game never saw.
+  bool sram_from_state() const { return sram_from_state_; }
+  void clear_sram_from_state() { sram_from_state_ = false; }
+  void set_sram_flags(bool dirty, bool from_state) {
+    sram_dirty_ = dirty;
+    sram_from_state_ = from_state;
+  }
 
   // A `B7` read at the cart's own arm9_rom_offset, which only happens when
   // the firmware's menu launches the card. Sticky until cleared; not in the
@@ -134,7 +160,9 @@ public:
   void decrypt_secure_area(u8 out[0x800]);
 
   // KEY1 (Blowfish) with the key table from the ARM7 BIOS.
-  void key1_init(u32 idcode, u32 level, u32 mod);
+  // `dsi_key`: the DSi's key table (ARM7i BIOS 0xC6D0), which a DSi card's
+  // DSi-mode secure area is under; otherwise the DS's (ARM7 BIOS 0x30).
+  void key1_init(u32 idcode, u32 level, u32 mod, bool dsi_key = false);
   void key1_encrypt(u32* data) const;
   void key1_decrypt(u32* data) const;
 
@@ -147,6 +175,19 @@ private:
   TwlHeader twl_{};
   u32 chip_id_ = 0;
   u32 rom_mask_ = 0;
+
+  // A DSi-enhanced or DSi-only card (and not a dump with the DSi part cut
+  // off): on a DSi the launcher wakes it with 3D instead of 3C, and from then
+  // on its DSi area (from dsi_base_) can be read, the first 0x3000 bytes of
+  // it only as the KEY1 secure area. Woken with 3C it is a DS card, and the
+  // whole DSi area reads as the DS area's last page does. Adapted from
+  // melonDS's NDSCart (GPLv3, melonDS team).
+  bool dsi_cart_ = false;
+  u32 dsi_base_ = 0;      // where the DSi area starts (header 0x92, in 512 KB units)
+  bool dsi_mode_ = false; // woken with 3D (or direct-booted on a DSi)
+  bool dsi_area_blocked(u32 addr) const {
+    return dsi_cart_ && listed_ && addr >= dsi_base_ && (!dsi_mode_ || addr < dsi_base_ + 0x3000);
+  }
 
   bool in_reset_ = true;
   u32 cmd_mode_ = 0; // 0 plain, 1 KEY1, 2 KEY2
@@ -167,6 +208,7 @@ private:
   u32 ir_pos_ = 0;
   std::vector<u8> sram_;
   bool sram_dirty_ = false;
+  bool sram_from_state_ = false;
   u32 sram_writes_ = 0;
   void mark_dirty() {
     sram_dirty_ = true;
@@ -180,6 +222,24 @@ private:
   u8 spi_eeprom(u8 v);
   u8 spi_flash(u8 v);
   u8 spi_chip(u8 v); // the byte to the chip the save type names
+
+  // NAND carts (WarioWare D.I.Y., Jam with the Band, Face Training): the save
+  // is a region of the ROM chip itself, reached with card commands and not the
+  // AUXSPI bus. The game opens a 128 KB window on it (B2), reads through B7,
+  // and writes 2 KB pages: write enable (85), the page's words (81), commit
+  // (82). 8B goes back to reading the ROM. Adapted from melonDS's
+  // CartRetailNAND (GPLv3, melonDS team).
+  u32 nand_base_ = 0;     // where the save starts in the card's address space (header 0x96 << 17)
+  u32 nand_window_ = 0;   // the open window's address; 0 = ROM mode
+  u32 nand_addr_ = 0;     // read or write position inside the window; 0 = none
+  u8 nand_status_ = 0x20; // bit 5 ready, bit 4 write enabled
+  std::array<u8, 0x800> nand_wbuf_{};
+  u32 nand_wpos_ = 0, nand_wlen_ = 0;
+  std::array<u8, 0x30> nand_id_{};
+  void nand_build_id();
+  bool nand_command(const u8 cmd[8]); // false: not a NAND command, the ROM's own
+  u32 nand_read32();
+  bool nand_window_ok() const { return nand_window_ >= nand_base_ && nand_window_ - nand_base_ < sram_.size(); }
 
   bool listed_ = true;
   std::vector<u8> detect_buf_; // SaveType::Detect transaction so far; not saved to state

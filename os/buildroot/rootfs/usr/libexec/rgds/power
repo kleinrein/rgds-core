@@ -31,7 +31,31 @@ NET=${RGDS_NET_CMD:-/usr/libexec/rgds/net}
 WLAN=${RGDS_WLAN_DIR:-/sys/class/net/wlan0}
 HCI=${RGDS_HCI_DIR:-/sys/class/bluetooth/hci0}
 BTCTL=${RGDS_BTCTL:-bluetoothctl}
+# Deep sleep watch (2026-11-24). Deep sleep (since 0.9.0: BL31's deep mode with the RK817 asleep on its sleep pin)
+# turned one tester's RG DS off on every sleep, an RG DS that also boots the stock Android from eMMC; 0.8.0's shallow
+# sleep was fine there. A marker on the card is written before every sleep and removed after the wake; if a boot
+# finds it (power boot-check, rcS), the sleep ended in a cold boot, and if that came soon after it went to sleep (so
+# not a battery run flat), sleep goes shallow (s2idle) on this handheld from then on. Removing
+# /data/rgds/sleep-shallow tries deep again. The PMIC's registers are saved before each sleep and at each boot so
+# a report shows what the PMIC held when it went down.
+DATA=${RGDS_DATA:-/data/rgds}
+PENDING=$DATA/sleep-pending
+SHALLOW=$DATA/sleep-shallow
+MEM_SLEEP=${RGDS_MEM_SLEEP:-/sys/power/mem_sleep}
+LOGS=${RGDS_LOGS:-/data/rgds/logs}
+PMIC_DUMP=${RGDS_PMIC_DUMP:-i2cdump -f -y 0 0x20 b}
 state=$RUN/suspend-state
+
+# the RK817's registers (read only) to a file in the logs folder
+pmic_save() {
+    $PMIC_DUMP > "$LOGS/$1.new" 2>&1 && mv -f "$LOGS/$1.new" "$LOGS/$1"
+    rm -f "$LOGS/$1.new"
+}
+
+# the kernel's sleep depth: the [bracketed] word in /sys/power/mem_sleep (deep or s2idle)
+sleep_mode() {
+    sed -n 's/.*\[\([a-z0-9]*\)\].*/\1/p' "$MEM_SLEEP" 2>/dev/null
+}
 
 suspend_now() {
     if [ -n "$RGDS_SUSPEND_CMD" ]; then $RGDS_SUSPEND_CMD; else echo mem > /sys/power/state; fi
@@ -115,6 +139,12 @@ suspend)
     started=$(cat $RTC/since_epoch 2>/dev/null)
     panels_save
     radios_down
+    # shallow on a handheld whose deep sleep ended in a cold boot, deep otherwise (written each time, so removing
+    # sleep-shallow takes effect at the next sleep)
+    if [ -f "$SHALLOW" ]; then echo s2idle > "$MEM_SLEEP"; else echo deep > "$MEM_SLEEP"; fi 2>/dev/null
+    pmic_save pmic-before-sleep.txt
+    echo "${started:-?} $(cat $BATTERY/capacity 2>/dev/null || echo ?) $(sleep_mode)" > "$PENDING" 2>/dev/null
+    sync
     wake=user
     tries=0
     while :; do
@@ -155,6 +185,7 @@ suspend)
         fi
         sync
     done
+    rm -f "$PENDING"
     echo 0 > $RTC/wakealarm 2>/dev/null
     panels_back
     echo 0 > $LED 2>/dev/null
@@ -169,7 +200,30 @@ suspend)
         echo $! > $RADIOS
     fi
     exit $rc;;
+boot-check)
+    # rcS, once per boot: what the PMIC holds now (after the stock OS too), then a sleep this boot came out of
+    pmic_save pmic-boot.txt
+    [ -f "$PENDING" ] || exit 0
+    set -- $(cat "$PENDING" 2>/dev/null)
+    rm -f "$PENDING"
+    sync
+    was=$1 capacity=$2 mode=$3
+    now=$(cat $RTC/since_epoch 2>/dev/null)
+    elapsed=
+    case "$was$now" in ''|*[!0-9]*) ;; *) [ "$now" -ge "$was" ] && elapsed=$((now - was)) ;; esac
+    case "$capacity" in ''|*[!0-9]*) capacity=0;; esac
+    what="a $mode sleep ended in a cold boot (battery $capacity % when it went to sleep, ${elapsed:-?} s before this boot)"
+    # soon after, or too soon for the charge it had to have run out: the sleep itself turned the handheld off
+    if [ "$mode" = deep ] && [ -n "$elapsed" ] &&
+        { [ "$elapsed" -lt 21600 ] || { [ "$capacity" -ge 50 ] && [ "$elapsed" -lt 172800 ]; }; }; then
+        : > "$SHALLOW"
+        echo "$(date '+%F %T') $what: sleep is shallow from now on (remove $SHALLOW to try deep again)" >> "$LOG"
+    else
+        echo "$(date '+%F %T') $what" >> "$LOG"
+    fi 2>/dev/null
+    sync
+    exit 0;;
 *)
-    echo "usage: power suspend" >&2
+    echo "usage: power suspend | boot-check" >&2
     exit 2;;
 esac

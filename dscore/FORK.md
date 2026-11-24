@@ -46,6 +46,59 @@ Ported by hand from later DSperate commits; a future upstream comparison should 
 | `442fdd6` | Adapted: the minimum closed time applies to switch closes; the pulse keeps its own rule |
 | `473b2a4` | Adapted: the RTC also resyncs on any host resume, since `DS_LID_PULSE=0` can leave the lid unchanged |
 
+## Upstream merge through `5ad9c21b` (v4.0.1, 2026-11-24)
+
+Every upstream commit from the pin to `5ad9c21b6a` (2026-11-22, 276 commits) was merged in one three-way merge,
+both sides clang-formatted with dscore/'s style first (the replay keeps each upstream commit's own diff, so a later
+comparison starts from there). The pinned commit above is still the fork point the build records name.
+
+**Taken from upstream:**
+
+- **The DSi's DSP** (`src/core/dsp`, `io/dsi_dsp.cpp`): the SDK's AAC, G711 and graphics programs as melonDS's
+  high-level rewrites (DSP_HLE, GPLv3), AAC through FAAD2 2.11.2 (GPL-2.0-or-later, AAC-LC only), anything else on
+  teakra (MIT, melonDS's copy; exact and far slower than real time on the RK3566). See `src/core/dsp/README.md`.
+- **DSi-enhanced game cards as a DSi** (`emu.dsi_enhanced`, `--dsi-enhanced`; a DSi-only card always), the DSi card
+  protocol and secure area; `--ds-mode` keeps hybrid homebrew a DS program. DSi sessions default to the exact timing
+  model (`emu.timing` still wins; `turbo` is new).
+- **DSi cameras** see a still picture (`emu.dsi_camera_image`, by path or by name in `paths.dsi_photos`) or colour
+  bars; stb_image decodes it (`src/frontend/camera_image.h`).
+- **Slot 2** (`src/core/slot2`): GBA cartridges with their saves, the Rumble Pak, the Guitar Grip and the motion
+  accessories. RG DS Core's Game rumble now puts upstream's Rumble Pak in the slot (our own bus hack is gone) and its
+  motor events drive `rgds_rumble` as before.
+- **Analog controls** for CPAD patches (`cheat/analog_db`, `pad.analog`) in the core and input code.
+- **Core accuracy and safety:** the code audit (CPU LDM/STM base rules, MSR SPSR, RTC interrupts, alarms and 12-hour
+  mode, DSi power and volume buttons, ARM7 BIOS read protection, idle-skip proof), every state index and size
+  bounded, local wireless not trusting a peer's lengths, sanitizer fixes, VCOUNT writes honoured (local wireless MP
+  timing: Mario Kart DS two consoles 40-58 -> 52-54 fps upstream), JIT fixes (remaps drop stale blocks, RRX carry
+  liveness, block-transfer polls, transparent huge pages for the code arena), NAND saves for WarioWare D.I.Y. and
+  others, atomic saves (`core/safe_file.h`), states that put the machine back when a load fails part way.
+- **Sleep:** upstream's whole-machine STOP (`Io::sleeping`, with its regression test) replaces DSCore's own
+  `NDS::sleeping`; the lid watcher reads `nds.io.sleeping`.
+- **GPU core, by hand** (`src/core/gpu` is otherwise ours): VCOUNT writes (`338097c8`), the deferred 2D batch's bank
+  snapshot (`5f9ee44a`), incremental VRAMCNT remap (`b78a7ee2`), the non-convex quad clip bound (`5d02c506`), the
+  2D/CPU-raster audit (`5712c0f4`: write-only register bytes, DISPCAPCNT mid-frame, stencil rows, rear-plane bitmaps
+  never kept as identical), state bounds (`42efdbd4`), sanitizer fixes (`55d16631`), `Gpu::stop_jobs`.
+- **Frontend, by hand into our `main.cpp`:** a save that cannot be read stops the launch (no write over it), a .bak
+  written atomically, SIGHUP and SIGQUIT end the run as SIGTERM does and SIGPIPE is ignored (`12ac4c59`); the
+  DSi-enhanced card path and DSi exact timing (`fda8b20d`, `b400fb94`); the camera still (`c9602bc1`); the DSP note
+  (`f404c600`). Upstream's input, config, audio and lid-independent frontend files merged as they were.
+
+**Kept ours** (upstream's version is not here): the GPU 3D raster and its Vulkan code (`src/core/gpu`, `gpu/vk`:
+upstream's lean raster at 1x/2x/4x merged in the present, the OpenGL ES raster, the edge cut and colour correction are
+built around a raster API our hi-res pipeline does not have), the presenters and display tiers
+(`gpu_present`, `video/`, `display*`, `dmaheap`, `kms_flips`, the RGA presenter upstream removed), `lid.*`, the
+headless frontend, `main.cpp` (upstream's pause menu, settings and its translation catalogs `frontend/i18n`, `po/`
+are not used: RG DS Core draws and translates its own menus; `i18n_shim.h` leaves the shared input code English),
+the PGO profiles and the top-level `CMakeLists.txt` (upstream's new PGO fingerprint drops -g and the build type, which rejects our profile; refresh the profile on the handheld after this merge), `configs/default.ini`.
+
+**Not ported yet** (worth doing next): the line rule for polygons squeezed to a line on the GPU raster (`ae9b2606`,
+`c2006c03`: The Dark Spire's dungeon; needs sub-pixel vertex positions in our raster), the rear plane's fog on the
+GPU raster (`d0ffc8be`), wireframe and crack fixes on the GPU raster (`10fc1589`, `10607eec`, `e8c1b6ae`);
+the frontend sides of slot 2 (a GBA game in the slot, the Guitar Grip's frets and strum, motion), analog controls
+and the LAN guest that keeps trying until its host answers (`af95809e`, `6a390c93`); upstream's late-capture,
+engine B repeat-line and hand-off optimisations in `gpu.cpp`; the KMS flip's yield under a real-time thread
+(`f7d11b55`).
+
 ## Pulling upstream changes
 
 Upstream history is not carried here. To rebase onto a newer DSperate, diff

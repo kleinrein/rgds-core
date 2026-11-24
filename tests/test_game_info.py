@@ -245,7 +245,7 @@ class GameInfoTests(unittest.TestCase):
                 'gba-esrb.dat': dat('esrb_rating', '"T"', crc),
                 'gba-publisher.dat': dat('publisher', '"Acme Games"', '00000000'),
                 'gba-franchise.dat': dat('franchise', '"Hero"', '00000000'),
-                'gba-nointro.dat': SERIALS.format(crc=crc)
+                'gba-serials.dat': SERIALS.format(crc=crc)
             }
         )
         info = game_info.GameInfo(client, ('info',))
@@ -258,6 +258,19 @@ class GameInfoTests(unittest.TestCase):
         self.assertEqual(saved['info_provider'], 'Libretro database')
         self.assertNotIn('publisher', saved)
         self.assertEqual(saved['info_title'], 'Hero Saga')
+
+    def test_game_codes_and_crc_names_share_one_cached_list(self):
+        import os
+        import public_artwork as art
+        cache = self.root / 'catalogs'
+        cache.mkdir()
+        (cache / 'gba-nointro.dat').write_text('an older copy')
+        client = art.PublicClient(cache=cache)
+        with patch.object(client, 'fetch', return_value=SERIALS.format(crc='0000ABCD').encode()) as fetch:
+            game_info.GameInfo(client, ('info',)).crc_names('gba')
+            client.names_for_code('ABCE', 'gba')
+        self.assertEqual(fetch.call_count, 1)
+        self.assertEqual(sorted(os.listdir(cache)), ['gba-serials.dat'])
 
     def test_zip_crc_comes_from_the_directory_without_unpacking(self):
         inner = b'gb' * 100
@@ -274,7 +287,7 @@ class GameInfoTests(unittest.TestCase):
         page = '<a href="Tetris%20(World).png">x</a><a href="Other.png">y</a>'
         client = Client(
             catalogs={
-                'gb-nointro.dat': names,
+                'gb-serials.dat': names,
                 'gb-snap.html': page,
                 'gb-title.html': page
             },

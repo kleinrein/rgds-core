@@ -44,7 +44,7 @@ void App::open_filter_sheet(bool to_filters) {
 void App::filter_tile(int tile) {
     if (tile < 3) {
         library_view(tile);
-        remember_appearance();
+        remember_appearance(false);
     } else if (tile < 6) {
         preferences.layout = tile - 3;
         cancel_navigation();

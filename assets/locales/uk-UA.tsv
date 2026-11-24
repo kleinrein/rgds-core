@@ -63,6 +63,7 @@ Antarctica	Антарктида
 Any	Будь-який
 Applies immediately. Higher clocks use more battery.	Застосовується одразу. Вищі частоти витрачають більше заряду.
 Applies immediately. Your game keeps its progress.	Застосовується одразу. Прогрес гри зберігається.
+Applies when the game starts without resuming.	Застосується, коли гра запуститься без продовження.
 Apply	Застосувати
 APPLY	ЗАСТОСУВАТИ
 Applying shader…	Застосування фільтра…
@@ -447,6 +448,7 @@ Default controls saved.	Спільне керування збережено.
 Glossy tiles	Глянцеві плитки
 Go back	Назад
 Goes into	Тека
+Going online…	Підключення до мережі…
 Golden leaves	Золоте листя
 Green	Зелений
 Grey	Сірий
@@ -457,12 +459,26 @@ Left stick down	Лівий стік вниз
 Left stick left	Лівий стік ліворуч
 Left stick right	Лівий стік праворуч
 Left stick up	Лівий стік вгору
+Online play is off.	Онлайн-гру вимкнено.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Онлайн-гру ввімкнено через WiiLink WFC. Підключіться в меню Nintendo WFC у грі.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Онлайн-гру ввімкнено через Wiimmfi. Підключіться в меню Nintendo WFC у грі.
+Online play is on. Local wireless applies when it is off.	Онлайн-гру ввімкнено. Локальний зв'язок запрацює, коли її вимкнено.
 Page	Сторінка
+Restart later	Перезапустити пізніше
+Restart now, unsaved progress is lost	Перезапустити зараз, незбережене зникне
+Restarting the game to apply the change…	Перезапуск гри, щоб застосувати зміну…
+Restarting the game to change online play…	Перезапуск гри, щоб змінити онлайн-гру…
+Restarting the game to change the microphone…	Перезапуск гри, щоб змінити мікрофон…
+Restarting the game to turn off local wireless…	Перезапуск гри, щоб вимкнути локальний зв'язок…
+Restarting the game to turn on local wireless…	Перезапуск гри, щоб увімкнути локальний зв'язок…
 Right stick down	Правий стік вниз
 Right stick left	Правий стік ліворуч
 Right stick right	Правий стік праворуч
 Right stick up	Правий стік вгору
 Storyware	Книжка
+The game reads its language when it starts	Гра читає свою мову під час запуску
+The game reads your nickname when it starts	Гра читає ваш псевдонім під час запуску
+Turning online play off…	Вимкнення онлайн-гри…
 h	год
 Haptic strength	Сила відгуку
 Health	Здоров’я
@@ -2017,3 +2033,14 @@ Could not open it	Не вдалося відкрити
 This folder is empty	Ця папка порожня
 The trash is empty	Кошик порожній
 No network places yet	Мережевих місць ще немає
+Files	Файли
+Theme, sound and Wi-Fi	Тема, звук і Wi-Fi
+Your screenshots and photos, by game and date	Ваші знімки екрана й фото за іграми та датами
+Games, saves and music on the card	Ігри, збереження й музика на картці
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	Для DSiWare потрібні файли BIOS DS і DSi у теці BIOS
+This .cia is encrypted: copy the decrypted DSiWare file instead	Цей .cia зашифровано: скопіюйте розшифрований файл DSiWare
+This .cia is not a DSiWare file	Цей .cia не є файлом DSiWare
+Little kid	Малюк
+Big pictures, one tap to play. No menus.	Великі картинки, один дотик — і гра. Без меню.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	Для наймолодших гравців: лише їхні ігри, великими картинками. Один дотик запускає гру, і немає меню чи налаштувань, у яких можна заблукати.
+No games yet	Ще немає ігор

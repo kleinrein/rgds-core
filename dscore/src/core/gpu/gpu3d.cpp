@@ -260,8 +260,14 @@ template <int comp, int plane, bool attribs> void clip_segment(Vertex& out, cons
   out.clipped = true;
 }
 
+// A convex polygon of 4 vertices leaves the six planes with at most 10. A quad that is not convex (a bow tie, a
+// dart) can gain a vertex for every second one it has at each of the six half-plane passes: 4, 6, 9, 13, 19, 28,
+// 42. The buffers hold that; what is kept is the first kPolyMax (Polygon::vtx), as before for every polygon that
+// fitted. (Guitar Hero: On Tour sends such a quad when its frame logic runs late; ten wrote past the stack buffer.)
+constexpr int kClipMax = 48, kPolyMax = 10;
+
 template <int comp, bool attribs> int clip_against_plane(Vertex* v, int nverts, int clipstart, bool far_clip) {
-  Vertex temp[10];
+  Vertex temp[kClipMax];
   int c = clipstart;
   if (clipstart == 2) {
     temp[0] = v[0];
@@ -333,7 +339,7 @@ template <bool attribs> int clip_polygon(Vertex* v, int nverts, int clipstart, b
   nverts = clip_against_plane<2, attribs>(v, nverts, clipstart, far_clip);
   nverts = clip_against_plane<1, attribs>(v, nverts, clipstart, far_clip);
   nverts = clip_against_plane<0, attribs>(v, nverts, clipstart, far_clip);
-  return nverts;
+  return std::min(nverts, kPolyMax);
 }
 
 } // namespace
@@ -1203,7 +1209,7 @@ void Gpu3D::emit_polygon_unclipped(const Vertex* const* src, int nverts, int cli
 // still be shared by index.
 void Gpu3D::emit_polygon_clipped(const Vertex* const* src, int nverts, int clipstart, const u16* reused_idx,
                                  int lastpolyverts, bool facing) {
-  Vertex clipped[10];
+  Vertex clipped[kClipMax];
   for (int i = 0; i < nverts; ++i) clipped[i] = *src[i];
 
   nverts = clip_polygon<true>(clipped, nverts, clipstart, cur_polygon_attr_ & (1 << 12));
@@ -1415,7 +1421,7 @@ void Gpu3D::box_test(const u32* params) {
   }
   static const int faces[6][4] = {{0, 1, 2, 3}, {4, 5, 6, 7}, {0, 3, 4, 5}, {1, 2, 7, 6}, {0, 1, 6, 5}, {2, 3, 4, 7}};
   for (const auto& f : faces) {
-    Vertex face[10];
+    Vertex face[kClipMax];
     for (int i = 0; i < 4; ++i) face[i] = cube[f[i]];
     if (clip_polygon<false>(face, 4, 0, cur_polygon_attr_ & (1 << 12)) > 0) {
       box_result_ = 1u << 1;
@@ -1841,7 +1847,14 @@ void Gpu3D::write(u32 addr, u32 width, u32 value) {
 }
 
 namespace {
-template <class S> void sync_vertex(S& s, Vertex& v) { s.fields(v.pos, v.col, v.tex, v.clipped, v.sx, v.sy, v.fcol); }
+template <class S> void sync_vertex(S& s, Vertex& v) {
+  s.fields(v.pos, v.col, v.tex, v.clipped, v.sx, v.sy, v.fcol);
+  if constexpr (S::reading) {
+    v.sx &= 0x1FF;
+    v.sy &= 0xFF;                     // what viewport_vertex leaves
+    for (s32& c : v.fcol) c &= 0x1FF; // 9-bit colour: the toon table is indexed by it
+  }
+}
 template <class S> void sync_polygon(S& s, Polygon& p) {
   s.fields(p.vtx, p.nverts, p.z, p.w, p.wbuffer, p.attr, p.texparam, p.texpal, p.degenerate, p.facing, p.translucent,
            p.shadow_mask, p.shadow, p.vtop, p.vbot, p.ytop, p.ybot, p.xtop, p.xbot, p.sort_key);
@@ -1875,6 +1888,15 @@ template <class S> void Gpu3D::sync_state(S& s) {
            poly_mode_, cur_vertex_, vertex_color_, texcoords_, raw_texcoords_, normal_, light_dir_, spec_recip_,
            light_color_, mat_diffuse_, mat_ambient_, mat_specular_, mat_emission_, use_shininess_, shininess_,
            polygon_attr_, cur_polygon_attr_, texparam_, texpal_, pos_test_, vec_test_);
+  if constexpr (S::reading) {
+    // The packed-command walk adds a parameter for each word until total_params; the log holds 32 and the table's most is 32.
+    if (parse_.num_cmds > 4 ||
+        (parse_.num_cmds && (parse_.total_params > 32 || parse_.param_count >= parse_.total_params))) {
+      s.fail("gx command parser");
+      return;
+    }
+    rstate_.fog_shift &= 0xF; // a shift count (DISP3DCNT bits 8-11)
+  }
   // temp_vtx_ travels in position order, so the slot permutation never reaches
   // the file.
   if constexpr (S::reading) reset_vptr();
@@ -1898,6 +1920,17 @@ template <class S> void Gpu3D::sync_state(S& s) {
     bank_ = bank_disk & 1;
     render_bank_ = bank_ ^ 1;
     raster_bank_ = pending_bank_ = render_bank_;
+  }
+  if constexpr (S::reading) {
+    // The next vertex lands in vptr_[vertex_in_poly_]: a position the mode would already have turned into a polygon is out.
+    if (poly_mode_ > 3 || vertex_in_poly_ >= ((poly_mode_ & 1) ? 4u : 3u)) {
+      s.fail("vertex position");
+      return;
+    }
+    if (num_vertices_ > VRAM_BANK || num_polygons_ > PRAM_BANK || num_opaque_ > num_polygons_) {
+      s.fail("polygon counts");
+      return;
+    } // sort_list and the emitters index with them
   }
   const Polygon** rlist = render_polys_[render_bank_].data();
   // Pointers into polygon RAM travel as indices.
@@ -1948,12 +1981,22 @@ template <class S> void Gpu3D::sync_state(S& s) {
     }
     for (u32 i = 0; i < nv[slot]; ++i) sync_vertex(s, vram_[b * VRAM_BANK + i]);
     for (u32 i = 0; i < np[slot]; ++i) {
-      if constexpr (S::reading) sync_polygon(s, pram_[b * PRAM_BANK + i]);
-      else {
+      if constexpr (S::reading) {
+        Polygon& p = pram_[b * PRAM_BANK + i];
+        sync_polygon(s, p);
+        for (u16& vi : p.vtx)
+          if (vi >= VRAM_BANK * 2) vi = 0; // the two saved slots of vertex RAM
+        // A drawn polygon's edge walk steps vtx[] by nverts and stops at vbot.
+        if (p.nverts > 10 || (!p.degenerate && (p.nverts == 0 || p.vtop >= p.nverts || p.vbot >= p.nverts))) {
+          s.fail("polygon");
+          return;
+        }
+      } else {
         Polygon copy = pram_[b * PRAM_BANK + i];
-        for (u32 j = 0; j < 10; ++j) copy.vtx[j] = static_cast<u16>(remap(copy.vtx[j], VRAM_BANK));
+        for (u32 j = 0; j < 10; ++j)
+          copy.vtx[j] = j < copy.nverts ? static_cast<u16>(remap(copy.vtx[j], VRAM_BANK)) : u16{0};
         sync_polygon(s, copy);
-      }
+      } // the slots past nverts hold whatever the record's last user left (often the unsaved bank's): written as 0, so a state saved, loaded and saved again is the same bytes
     }
   }
   // GXSTAT's busy flag must follow the restored scheduler timeline, not
@@ -1963,6 +2006,14 @@ template <class S> void Gpu3D::sync_state(S& s) {
     swap_busy_until_ = 0;
   }
   s.fields(swap_wait_, swap_busy_until_);
+  // A list swapped in since the last VBlank, and whether it equals the one
+  // before: the VBlank after the load decides from them whether the picture
+  // can be kept. An older state has neither and gets a fresh render.
+  if constexpr (S::reading) {
+    swapped_ = true;
+    list_same_ = false;
+  }
+  s.fields(swapped_, list_same_);
   s.end();
   renderer_.sync_output(s);
   stack_err_ = gxstat_ & 0x8000u;

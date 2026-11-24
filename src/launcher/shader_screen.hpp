@@ -189,9 +189,7 @@ void App::render_shader_preview(SDL_Renderer* r, int y) {
         round_rect(r, frame.x + frame.w - 73, y + 150, 66, 24, 5, "panel");
         label(r, "After", frame.x + frame.w - 64, y + 152, 16, "ink", 59);
     }
-    std::string note = status.rfind("Could not save", 0) == 0           ? status
-                       : o.game_menu && !menu_status["message"].empty() ? menu_status["message"]
-                                                                        : "";
+    std::string note = o.game_menu && menu_status["state"] == "busy" ? menu_status["message"] : "";
     if (note.empty()) key_hints(r, 30, y + 448, {{"L R", "Change group"}});
     else wrapped(r, note, 30, y + 433, 16, 580, 2);
 }

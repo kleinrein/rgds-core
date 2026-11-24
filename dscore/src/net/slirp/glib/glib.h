@@ -112,20 +112,22 @@ typedef gchar **GStrv;
 #define G_BYTE_ORDER G_LITTLE_ENDIAN
 #endif
 
-/* RGDS: libslirp's stream helpers need these GLib byte-order macros. */
+/* stream.c (the state save/load streams) converts with these. Missing, GCC
+ * 13 and older warn of an implicit declaration and the link never notices,
+ * since nothing pulls stream.o in; GCC 14 made that an error. */
 #if G_BYTE_ORDER == G_BIG_ENDIAN
-#define GUINT16_FROM_BE(v) ((guint16)(v))
-#define GUINT32_FROM_BE(v) ((guint32)(v))
+#define GUINT16_TO_BE(v) ((guint16)(v))
+#define GUINT32_TO_BE(v) ((guint32)(v))
 #else
-#define GUINT16_FROM_BE(v) ((guint16)__builtin_bswap16((guint16)(v)))
-#define GUINT32_FROM_BE(v) ((guint32)__builtin_bswap32((guint32)(v)))
+#define GUINT16_TO_BE(v) ((guint16)__builtin_bswap16((guint16)(v)))
+#define GUINT32_TO_BE(v) ((guint32)__builtin_bswap32((guint32)(v)))
 #endif
-#define GUINT16_TO_BE(v) GUINT16_FROM_BE(v)
-#define GUINT32_TO_BE(v) GUINT32_FROM_BE(v)
-#define GINT16_FROM_BE(v) ((gint16)GUINT16_FROM_BE(v))
-#define GINT16_TO_BE(v) GINT16_FROM_BE(v)
-#define GINT32_FROM_BE(v) ((gint32)GUINT32_FROM_BE(v))
-#define GINT32_TO_BE(v) GINT32_FROM_BE(v)
+#define GINT16_TO_BE(v) ((gint16)GUINT16_TO_BE(v))
+#define GINT32_TO_BE(v) ((gint32)GUINT32_TO_BE(v))
+#define GUINT16_FROM_BE(v) GUINT16_TO_BE(v)
+#define GUINT32_FROM_BE(v) GUINT32_TO_BE(v)
+#define GINT16_FROM_BE(v) GINT16_TO_BE(v)
+#define GINT32_FROM_BE(v) GINT32_TO_BE(v)
 
 #if !defined(_WIN32)
 #define G_OS_UNIX 1

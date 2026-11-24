@@ -370,7 +370,101 @@ void test_zipped_lookup() {
 
 } // namespace
 
+// The analog database joins a game's own cheats, for this exact ROM only.
+void test_merge_analog() {
+  cheat::GameCheats main;
+  main.groups.resize(1);
+  main.codes.resize(3);
+  main.codes[0].name = "Moon Jump";
+  main.codes[0].words = {0, 0};
+  main.codes[1].name = "CPAD";
+  main.codes[1].words = {0, 0}; // an old copy of the same patch
+  main.codes[1].analog = true;
+  main.codes[2].name = "CPAD note"; // no words: a note, kept
+
+  cheat::GameCheats analog;
+  analog.checksum = 0x1234;
+  analog.groups.resize(1);
+  analog.groups[0].exclusive = true;
+  analog.codes.resize(2);
+  analog.codes[0].name = "CPAD";
+  analog.codes[0].words = {1, 1};
+  analog.codes[0].group = 0;
+  analog.codes[0].analog = true;
+  analog.codes[1].name = "Helper";
+  analog.codes[1].words = {2, 2}; // in the file, but no hook
+
+  CHECK(!cheat::merge_analog(main, analog, 0x9999)); // another revision: hooks would miss
+  CHECK(main.codes.size() == 3);
+
+  CHECK(cheat::merge_analog(main, analog, 0x1234));
+  CHECK(main.codes.size() == 4);
+  CHECK(!main.codes[3].analog);
+  CHECK(main.codes[0].name == "Moon Jump" && !main.codes[0].analog);
+  CHECK(main.codes[1].is_note());
+  CHECK(main.codes[2].analog && main.codes[2].words[0] == 1);
+  CHECK(main.groups.size() == 2 && main.groups[1].exclusive);
+  CHECK(main.codes[2].group == 1); // renumbered past the game's own
+}
+
+// The database DSperate is built with: every entry parses, every real code
+// in it is an analog one, and SM64DS USA v1.0 is there at its own checksum
+// with both variants. The count of extended-layout ROMs is the one
+// docs/techniques/07 states.
+void test_builtin_analog() {
+  cheat::Database db;
+  std::string err;
+  CHECK(db.open_memory(cheat::builtin_analog_database(), "built-in", err));
+  CHECK(db.game_count() == 229);
+  size_t extended = 0, revisions = 0;
+  bool sm64ds = false;
+  std::vector<u32> seen;
+  for (const u32 code : db.game_codes()) {
+    bool dup = false;
+    for (const u32 s : seen) dup = dup || s == code;
+    if (dup) continue;
+    seen.push_back(code);
+    std::string one;
+    for (const cheat::GameCheats& g : db.entries_for(code, one)) {
+      ++revisions;
+      bool any_extended = false;
+      for (const cheat::Code& c : g.codes) {
+        CHECK(c.is_note() || c.analog);
+        if (!c.is_note() && cheat::reads_extended_analog(c)) any_extended = true;
+      }
+      if (any_extended) ++extended;
+      if (code == 0x454D5341u && g.checksum == 0xAEA63749u) { // "ASME"
+        bool plain = false, nub = false;
+        for (const cheat::Code& c : g.codes) {
+          if (c.name == "CPAD") plain = true;
+          if (c.analog_nub()) nub = true;
+        }
+        sm64ds = plain && nub;
+      }
+    }
+    CHECK(one.empty());
+  }
+  CHECK(revisions == 229);
+  CHECK(sm64ds);
+  std::printf("built-in analog database: %zu revisions, %zu extended\n", revisions, extended);
+  CHECK(extended == 64);
+}
+
+void test_enforce_exclusive() {
+  std::vector<cheat::Group> groups(2);
+  groups[0].exclusive = true;
+  std::vector<cheat::Code> codes(4);
+  for (cheat::Code& c : codes) c.enabled = true;
+  codes[0].group = codes[1].group = 0;
+  codes[2].group = 1; // not exclusive: left alone
+  cheat::enforce_exclusive(codes, groups);
+  CHECK(codes[0].enabled && !codes[1].enabled && codes[2].enabled && codes[3].enabled);
+}
+
 int main() {
+  test_merge_analog();
+  test_builtin_analog();
+  test_enforce_exclusive();
   test_header();
   test_basic_entry();
   test_categories();

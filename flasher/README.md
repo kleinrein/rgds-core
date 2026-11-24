@@ -1,14 +1,17 @@
 # RG DS Flasher
 
-Puts RG DS OS on a microSD card in five steps: **Download → Pick card → Flash → Verify → Done**. No Rufus or balenaEtcher needed, and nothing to install.
+Puts RG DS OS on a microSD card in six steps: **Download → Pick card → Set up → Flash → Verify → Done**. No Rufus or balenaEtcher needed, and nothing to install. On macOS it is an ordinary app with its own window (WKWebView, `window_darwin.m`); on Windows and Linux it shows its page in Edge or Chrome's app mode with a throwaway profile (`window.go`).
 
-1. It reads the latest release on GitHub (`kleinrein/rgds-core`) and downloads `RG-DS-OS-<version>.img.gz` (or the `RG-DS-OS-Plus-` one; RG DS is the default). It checks the file against its `.sha256` and keeps it, so the next card needs no download. A stopped download picks up where it left off. Offline, it offers the saved copy.
-2. It lists removable cards only. Internal disks, the system disk, disk images and USB hard drives are never listed. Anything over 256 GB is shown but can't be picked, and neither can a card smaller than the image.
-3. Before writing it asks "Erase this card?" and names the card. It warns when the card has a `roms` folder.
-4. It unpacks the image on the fly and writes every byte raw to the whole disk, zero blocks included. The first 4 MiB (partition tables, U-Boot at 32 KiB) is zeroed first and written last, so while the flasher works the card looks blank and no OS mounts anything on it. Each other chunk is read back and compared while writing goes on, two chunks behind so the reader's cache isn't what answers.
-5. A final pass reads everything back again. Any chunk that no longer matches is rewritten from the image and checked again. Then the partition table goes on and is checked, and the card is ejected.
+1. It reads the latest release on GitHub (`kleinrein/rgds-core`) and downloads `RG-DS-OS-<version>.img.gz` (the same card starts an RG DS and an RG DS Plus, so the first screen asks which handheld it is for: that only changes the slot advice, TF1 on the Plus. The `RG-DS-OS-Plus-` image, which always loads the Plus's device tree, is a fallback box under the Plus tile for a Plus whose screens stayed black). It checks the file against `<image>.sig`, a note naming the image, its size and sha256 signed with the same Ed25519 key the handheld's updates trust (`sign.go`, `trust.json` from `packaging/update-trust.json`). Releases from before signing fall back to the `.sha256`. A stopped download picks up where it left off. The image is removed when the flasher closes after a successful flash, so nothing big stays behind.
+2. It looks through the image once (`plan.go`, about 3 s) for the parts worth writing. 0.9.1's image is 1680 MiB, of which 384 MiB are written: the empty second system slot and the first slot past the end of its squashfs are skipped. A partition's first chunk is always written, FAT and anything unknown are written in full, and a chunk is skipped only when it really is all zeros.
+3. It lists removable cards only. Internal disks, the system disk, disk images and USB hard drives are never listed. Anything over 256 GB is shown but can't be picked, and neither can a card smaller than the image.
+4. **Set up** (optional, `preset.go`): language and time zone (from this computer to start with; the lists are the launcher's own, copied by `build.sh`), the DS name and a Wi-Fi network. The answers go on the card as `preset.ini` in the same bundle the saves use (below). The Wi-Fi password goes as the WPA key made from it, never as typed. On the first boot `handoff` adds the network to `wifi.conf` and leaves the rest in `userdata/flasher-setup.ini`; setup applies them and skips those steps.
+5. Before writing it asks "Erase this card?" and names the card. It warns when the card has a `roms` folder, and offers **Keep a copy of the whole card on this computer first** (`backup.go`): every byte, gzip'd, into `~/RG DS backup/<card> <date>.img.gz` with a `.info` beside it (size, sha256, card). Backups found there are listed on the first step, and putting one back is an ordinary flash, byte for byte.
+6. It checks the card holds what it says (`probe.go`): a marker on about 400 places across the whole card, read back after all are written. A fake card (one that wraps, or drops writes past its real size) stops the flash with its real size, and gets back what was on those places.
+7. It unpacks the image on the fly and writes the planned chunks raw. The first 4 MiB (partition tables, U-Boot at 32 KiB) is zeroed first and written last, so while the flasher works the card looks blank and no OS mounts anything on it. Each other chunk is read back and compared while writing goes on, two chunks behind so the reader's cache isn't what answers.
+8. A final pass reads everything written back again. Any chunk that no longer matches is rewritten from the image and checked again. Then the partition table goes on and is checked, and the card is ejected.
 
-Everything it does is logged to `flasher.log` next to the saved image (`~/Library/Caches/RG DS Flasher/` on macOS, `%LOCALAPPDATA%\RG DS Flasher\` on Windows, `~/.cache/RG DS Flasher/` on Linux): steps, error numbers, and the disk before and after. After a failure, the UI links to it (**Show log**).
+Everything it does is logged to `flasher.log` in the cache folder (`~/Library/Caches/RG DS Flasher/` on macOS, `%LOCALAPPDATA%\RG DS Flasher\` on Windows, `~/.cache/RG DS Flasher/` on Linux): steps, error numbers, and the disk before and after. After a failure, the UI links to it (**Show log**).
 
 ## Coming from BananaOS
 
@@ -60,7 +63,7 @@ flasher/build.sh          # all targets into flasher/dist/, plus SHA256SUMS
 flasher/build.sh --test   # runs the Go tests first
 ```
 
-It needs Go 1.21 or newer, which fetches the toolchain `go.mod` pins (Go 1.25: older linkers make macOS binaries that macOS 26 won't start). There's no cgo and no outside module, so it cross-compiles from any OS. The macOS app comes out universal when `lipo` is there. With `CODESIGN_IDENTITY="Developer ID Application: …"` it is signed for notarization; without it, it is signed ad hoc.
+It needs Go 1.21 or newer, which fetches the toolchain `go.mod` pins (Go 1.25: older linkers make macOS binaries that macOS 26 won't start). There's no outside module. Windows and Linux are pure Go and cross-compile from any OS. The macOS app uses cgo for its own window, so it is built on a Mac with Xcode's command line tools, one clang per architecture, and comes out universal; built anywhere else it falls back to the browser window. `RGDS_FLASHER_BROWSER=1` shows the browser window on a Mac build too. `build.sh` also refreshes `trust.json`, `ui/languages.tsv` and `ui/timezones.txt` from the repository. With `CODESIGN_IDENTITY="Developer ID Application: …"` it is signed for notarization; without it, it is signed ad hoc.
 
 `tools/own_os_release.py` builds the flasher and attaches the three files to every OS release (`--no-flasher` leaves them out). To add them to a release that is already out:
 
@@ -73,7 +76,7 @@ The README links `releases/latest/download/RG-DS-Flasher-…`, so those links fo
 ## Options and testing
 
 ```sh
-"RG DS Flasher" --image path/to/RG-DS-OS-0.8.0.img.gz   # flash a local image (checked against a .sha256 next to it)
+"RG DS Flasher" --image path/to/RG-DS-OS-0.8.0.img.gz   # flash a local image (checked against a .sig or .sha256 next to it)
 "RG DS Flasher" --list                                  # print the cards it would offer
 "RG DS Flasher" --no-window                             # print the address instead of opening a window
 ```
@@ -88,6 +91,6 @@ RGDS_FLASHER_DISK_IMAGES=1 "RG DS Flasher" --no-window
 
 This also lists other attached images (Xcode simulator runtimes, for example). Pick yours by its `/dev/diskN`. Those others are root-owned, so writing to one would ask for your password first.
 
-`go test ./...` covers the write and verify path against a file: zero blocks, a padded last sector, a card that reads back wrong, a damaged gzip, and a reader that drops the card before the check. `RGDS_NET=1 go test -run Network` checks that the API and the release-page fallback find the same assets.
+`go test ./...` covers the write and verify path against a file: zero blocks, a padded last sector, a card that reads back wrong, a damaged gzip, and a reader that drops the card before the check. `features_test.go` covers the skip plan on a GPT image, fake cards that wrap or drop writes, signed notes (good, tampered, wrong image, unknown key), the Wi-Fi key against IEEE 802.11i's test vector, and a whole-card backup going back byte for byte. `RGDS_NET=1 go test -run Network` checks that the API and the release-page fallback find the same assets.
 
 The UI's colours, font (Nunito) and logo come from `themes/default/`, `assets/fonts/source/` and `assets/brand/`. `build.sh` copies the font and logo into `ui/`. `packaging/` holds the app icon (rendered from `assets/brand/mark.svg`), the Windows manifest and the resource script that `rsrc_windows_amd64.syso` is compiled from. To regenerate that file, run `llvm-windres --target=x86_64-w64-mingw32 -O coff flasher.rc ../rsrc_windows_amd64.syso` in `packaging/`.

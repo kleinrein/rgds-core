@@ -63,6 +63,7 @@ Antarctica	南極
 Any	すべて
 Applies immediately. Higher clocks use more battery.	すぐに反映されます。クロックが高いほどバッテリーを多く使います。
 Applies immediately. Your game keeps its progress.	すぐに反映されます。ゲームの進行はそのままです。
+Applies when the game starts without resuming.	再開せずに起動したときに反映されます。
 Apply	適用
 APPLY	適用
 Applying shader…	フィルターを適用中…
@@ -447,6 +448,7 @@ Default controls saved.	共通の操作設定を保存しました。
 Glossy tiles	つやタイル
 Go back	戻る
 Goes into	保存先
+Going online…	オンラインに接続中…
 Golden leaves	金の葉
 Green	グリーン
 Grey	グレー
@@ -457,12 +459,26 @@ Left stick down	左スティック 下
 Left stick left	左スティック 左
 Left stick right	左スティック 右
 Left stick up	左スティック 上
+Online play is off.	オンラインはオフです。
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	WiiLink WFCでオンラインがオンです。ゲームのNintendo WFCメニューから接続してください。
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Wiimmfiでオンラインがオンです。ゲームのNintendo WFCメニューから接続してください。
+Online play is on. Local wireless applies when it is off.	オンラインがオンです。ローカル通信はオフのときに使えます。
 Page	ページ
+Restart later	あとで再起動
+Restart now, unsaved progress is lost	今すぐ再起動、保存していない進行は消えます
+Restarting the game to apply the change…	変更を反映するため再起動中…
+Restarting the game to change online play…	オンライン設定を変えるため再起動中…
+Restarting the game to change the microphone…	マイクを変えるため再起動中…
+Restarting the game to turn off local wireless…	ローカル通信をオフにするため再起動中…
+Restarting the game to turn on local wireless…	ローカル通信をオンにするため再起動中…
 Right stick down	右スティック 下
 Right stick left	右スティック 左
 Right stick right	右スティック 右
 Right stick up	右スティック 上
 Storyware	ストーリーウェア
+The game reads its language when it starts	ゲームは起動時に言語を読み込みます
+The game reads your nickname when it starts	ゲームは起動時に名前を読み込みます
+Turning online play off…	オンラインをオフにしています…
 h	時間
 Haptic strength	触覚の強さ
 Health	体力
@@ -2017,3 +2033,14 @@ Could not open it	開けませんでした
 This folder is empty	このフォルダは空です
 The trash is empty	ゴミ箱は空です
 No network places yet	ネットワークの場所はまだありません
+Files	ファイル
+Theme, sound and Wi-Fi	テーマ・サウンド・Wi-Fi
+Your screenshots and photos, by game and date	ゲームと日付ごとのスクリーンショットと写真
+Games, saves and music on the card	カードのゲーム・セーブ・音楽
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWareにはBIOSフォルダにDSとDSiのBIOSファイルが必要です
+This .cia is encrypted: copy the decrypted DSiWare file instead	この.ciaは暗号化されています。復号したDSiWareファイルをコピーしてください
+This .cia is not a DSiWare file	この.ciaはDSiWareファイルではありません
+Little kid	小さな子ども
+Big pictures, one tap to play. No menus.	大きな絵、タップひとつで遊べる。メニューなし。
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	いちばん小さなプレイヤーに：その子のゲームだけを大きな絵で。タップひとつで遊べて、迷うメニューや設定はありません。
+No games yet	まだゲームがありません

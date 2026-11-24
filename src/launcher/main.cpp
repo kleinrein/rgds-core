@@ -1,7 +1,7 @@
 #include "launcher/model.hpp"
 #include "../../play/src/ui/frame_styles.hpp" // the frames per system (shared with the player)
 #include "../../play/src/ui/gb_palettes.hpp"  // the Game Boy palettes and corrections (shared with the player)
-#include "launcher/photo_play_sources.hpp"        // the player's canvas and console frames, for photo mode
+#include "launcher/photo_play_sources.hpp"    // the player's canvas and console frames, for photo mode
 #include "launcher/photo_mode.hpp"
 #include "launcher/rewind_play_sources.hpp" // the player's Rewind screen, for the game menu's
 #include "platform/sdl_dynamic.hpp"
@@ -46,6 +46,7 @@
 #include "launcher/pictochat_app.hpp"
 #include "launcher/voice_toy_ui.hpp"
 #include "launcher/snake_ui.hpp"
+#include "launcher/toast.hpp"
 #include "launcher/music_ui.hpp"
 #include "platform/touch.hpp"
 #include "platform/uinput_pointer.hpp"
@@ -166,7 +167,7 @@ static bool same_hardware(const SystemStatus& a, const SystemStatus& b) {
 struct Section {
     const char* title;
 };
-static const std::array<Section, 12> sections = {{{"Theme"},
+static const std::array<Section, 13> sections = {{{"Theme"},
                                                   {"Power"},
                                                   {"Library"},
                                                   {"Sound"},
@@ -177,7 +178,8 @@ static const std::array<Section, 12> sections = {{{"Theme"},
                                                   {"Power off"},
                                                   {"Updates"},
                                                   {"Display"},
-                                                  {"Profiles"}}};
+                                                  {"Profiles"},
+                                                  {"Files"}}};
 
 struct Options {
     bool independent = false, mainline = false;
@@ -422,8 +424,7 @@ class App {
     }
     int view_page() const {
         return int(settings.page) + (chat_open ? 1000 + 100 * int(chat.view) : 0) +
-               (music_open ? 2000 + music_view_depth() : 0) +
-               (vt.open ? 3000 : 0) + (sn.open ? 4000 : 0);
+               (music_open ? 2000 + music_view_depth() : 0) + (vt.open ? 3000 : 0) + (sn.open ? 4000 : 0);
     }
     struct SoundState {
         Page page;
@@ -669,15 +670,15 @@ class App {
     // Since the 2026-11-11 regroup (docs/SETTINGS_PLAN.md) the rest run Browser layout, then the per-system rows
     // (System defaults, Default shader, Artwork sources), then saves (Auto-load, Auto-save, Back up all saves).
     int library_row(int shown) const {
-        // RetroAchievements (13), Album (14) and Files (15) come last, in a group of their own, so no row above them
-        // moved.
-        static constexpr int rest[] = {5, 11, 4, 1, 2, 3, 8, 13, 14, 15};
+        // RetroAchievements (13) comes last, in a group of its own. Album (14) and Files (15) were the two rows after
+        // it until they became Home apps (2026-11-24); their ids stay unused.
+        static constexpr int rest[] = {5, 11, 4, 1, 2, 3, 8, 13};
         if (shown == 0) return 10;
         if (shown == 1) return 9;
-        if (preferences.show_systems) return shown == 2 ? 12 : rest[std::clamp(shown - 3, 0, 9)];
-        return rest[std::clamp(shown - 2, 0, 9)];
+        if (preferences.show_systems) return shown == 2 ? 12 : rest[std::clamp(shown - 3, 0, 7)];
+        return rest[std::clamp(shown - 2, 0, 7)];
     }
-    int library_row_count() const { return preferences.show_systems ? 13 : 12; }
+    int library_row_count() const { return preferences.show_systems ? 11 : 10; }
     // With Games opens all games: the one system the filter sheet narrowed the list to, or empty for every game.
     std::string browse_system;
     // The first collection's name: the system being browsed, or every game.
@@ -758,7 +759,8 @@ class App {
             list_focus = focus;
             // A row that opens a group brings its caption into view with it.
             const char* group = list_group(focus);
-            int bottom = row_top(focus) + list_row_height(), top = row_top(focus) - (group && *group ? group_caption : 0);
+            int bottom = row_top(focus) + list_row_height(),
+                top = row_top(focus) - (group && *group ? group_caption : 0);
             if (top < list_scroll) list_scroll = top;
             if (bottom > list_scroll + list_height) list_scroll = bottom - list_height;
             list_scroll = std::clamp(list_scroll, 0, list_max_scroll());
@@ -779,19 +781,21 @@ class App {
     // Home tiles: Settings, Games, Favourites, Recents, then the console's PictoChat and, when Settings > Sound >
     // Music player is on, Music. The two optional tiles take the places after Recents in that order, so a profile
     // without PictoChat has Music in its place (music_tile). The DSi column adds the last played game.
-    // The Sound toy (voice_toy_screen.hpp) comes after Music, so the last played game moved from 6 to 7 (the state
-    // file keeps the old numbers: see save_state).
-    static constexpr size_t home_count = 8, pictochat_tile = 4, last_played_tile = 7;
-    size_t home_shown() const {
-        return 4 + (pictochat_hidden() ? 0 : 1) + (app_slot() ? 1 : 0) + (sound_toy_available() ? 1 : 0);
-    }
-    size_t toy_tile() const { return 4 + (pictochat_hidden() ? 0 : 1) + (app_slot() ? 1 : 0); }
+    // The Album (2026-11-24, out of Settings > Library) follows Music, and the Sound toy (voice_toy_screen.hpp) comes
+    // last. (Files left Library for the Settings root instead: Home stays for everyday things.) The last played game is past every positional tile; the state file keeps the old numbers (see
+    // save_state).
+    static constexpr size_t home_count = 10, pictochat_tile = 4, last_played_tile = 9;
+    size_t album_tile() const { return 4 + (pictochat_hidden() ? 0 : 1) + (app_slot() ? 1 : 0); }
+    size_t toy_tile() const { return album_tile() + 1; }
+    size_t home_shown() const { return toy_tile() + (sound_toy_available() ? 1 : 0); }
+    bool album_at(size_t tile) const { return tile == album_tile(); }
     bool toy_at(size_t tile) const { return sound_toy_available() && tile == toy_tile(); }
-    // The tiles after Recents, in order: PictoChat, Music, Sound toy (those this profile has).
+    // The tiles after Recents, in order: PictoChat, Music, Album, Sound toy (those this profile has).
     std::vector<size_t> home_apps() const {
         std::vector<size_t> apps;
         if (!pictochat_hidden()) apps.push_back(pictochat_tile);
         if (app_slot()) apps.push_back(music_tile());
+        apps.push_back(album_tile());
         if (sound_toy_available()) apps.push_back(toy_tile());
         return apps;
     }
@@ -1329,6 +1333,7 @@ class App {
     }
     void ds_controls_row(SDL_Renderer* r, int y, int i);
     void ds_controls_action();
+    void ds_apply_in_game(const std::string& key);
     std::vector<std::string> wireless_names() const;
     int ds_wireless();
     std::vector<std::string> online_names() const;
@@ -1518,8 +1523,7 @@ class App {
                 status = "Not available";
                 emit_sound(MenuCue::Error);
             }
-        }
-        else if (menu_status["state"] == "error") {
+        } else if (menu_status["state"] == "error") {
             settings.page = Page::LeaveGame;
             settings.focus = 0;
         } else menu_request("quit");
@@ -1801,7 +1805,7 @@ class App {
     void open_achievements() {
         settings.section = 2;
         settings.library_rows = library_row_count();
-        settings.remember(Page::LibraryOptions, library_row_count() - 3);
+        settings.remember(Page::LibraryOptions, library_row_count() - 1);
         settings.page = Page::Achievements;
         settings.focus = 0;
         service_notice.clear();
@@ -1818,6 +1822,7 @@ class App {
     pid_t album_child = -1;
     std::string album_task;
     bool album_viewing = false, shot_requested = false;
+    bool album_from_journal = false; // Back from the Album returns to the Journal, not Home
     Uint32 shutter_at = 0, launcher_menu_at = 0;
     bool launcher_menu_held = false, launcher_menu_chorded = false, launcher_r_held = false;
     fs::path album_root() const;
@@ -2033,7 +2038,7 @@ class App {
     play::Words rewind_words;
     // Each moment's picture as a texture, made once when its card first shows (per renderer: one window a panel).
     std::map<std::pair<SDL_Renderer*, uint64_t>, SDL_Texture*> rewind_textures; // per moment and drawn size
-    bool rewind_opening = false, rewind_open_ = false;
+    bool rewind_opening = false, rewind_open_ = false, rewind_discard = false;
     std::string rewind_final; // the request to send once the menu is free
     bool rewind_available() const {
         return rewind_tile_shown() && (experimental_game() || active_engine() == play_core);
@@ -2050,6 +2055,8 @@ class App {
     void rewind_action(int code);
     void rewind_pointer(int x, int y, int phase);
     void rewind_drop_textures();
+    void rewind_leave();
+    void rewind_tidy();
     SDL_Texture* rewind_texture(SDL_Renderer* r, uint32_t id, int w, int h);
     void rewind_picture(SDL_Renderer* r, uint32_t id, const play::Box& box);
     void rewind_top(SDL_Renderer* r, int y);
@@ -2145,7 +2152,8 @@ class App {
     std::string birthday_text(DsBirthday birthday) const;
     std::string month_name(int month) const; // 1-12, in the menus' language
     void reload_themes();
-    void remember_appearance();
+    // announce: "Settings saved" for a setting the player changed; navigation that is only remembered says nothing.
+    void remember_appearance(bool announce = true);
     // Theme & display uses the shared settings list, four roomy rows per
     // screen: 0 colour mode, 1 accent colour, 2 high contrast, 3 typeface,
     // 4 icon style, 5 screen brightness, 6 animations, 7 touch indicator.
@@ -2200,8 +2208,9 @@ class App {
     ProfileChoice profile_choice = ProfileChoice::Kind;
     std::string profile_editing;
     Page picker_return = Page::Library;
-    bool picker_at_boot = false, boot_lock = false, look_follows_player = false, new_profile_restricted = false, profile_removing = false,
-         new_profile_flow = false, visibility_loading = false, visibility_changed = false, profile_erasing = false,
+    bool picker_at_boot = false, boot_lock = false, look_follows_player = false, new_profile_restricted = false,
+         new_profile_simple = false, kind_editing = false, profile_removing = false, new_profile_flow = false, visibility_loading = false, visibility_changed = false,
+         profile_erasing = false,
          profile_remove_backup = false; // the Back up first switch on the removal question
     VisibilityRules active_rules, games_rules;
     CatalogReader visibility_reader, games_reader;
@@ -2233,6 +2242,32 @@ class App {
     const Profile& active_profile() const;
     const std::string& owner_pin() const;
     bool page_open_to_kid(Page page) const;
+    bool page_open_to_little_kid(Page page) const;
+    // A Little kid's screen (kid_home_screen.hpp)
+    std::vector<Game> kid_games;
+    std::string kid_games_stamp;
+    size_t kid_focus = 0;
+    int kid_page_shown = 0, kid_page_from = 0;
+    Uint32 kid_moved_at = 0, kid_page_at = 0, kid_pressed_at = 0;
+    const std::vector<Game>& kid_home_games();
+    void open_kid_home(bool reset);
+    SDL_Rect kid_tile_box(int slot) const;
+    int kid_page_count();
+    void kid_move_to(size_t index, int direction);
+    void kid_page_step(int direction);
+    void kid_play(size_t index);
+    void kid_home_action(int code);
+    void kid_home_tap(int x, int y);
+    void kid_home_release(int x, int y);
+    void kid_cover(SDL_Renderer* r, const Game& game, SDL_Rect box, bool focused, bool urgent);
+    void kid_triangle(SDL_Renderer* r, int cx, int cy, int size, int direction, Color fill);
+    void kid_home_top(SDL_Renderer* r, int y);
+    void kid_home_bottom(SDL_Renderer* r, int y);
+    void kid_menu_action(int code);
+    void kid_menu_tap(int x, int y);
+    void kid_menu_choose(int choice);
+    void kid_menu_top(SDL_Renderer* r, int y);
+    void kid_menu_bottom(SDL_Renderer* r, int y);
     static bool section_open_to_kid(int section);
     bool kid_locked() const;
     void enforce_lock(Uint32 now);
@@ -2530,6 +2565,11 @@ class App {
     void label_colour(SDL_Renderer* r, const std::string& value, int x, int y, int pixels, Color ink, int width);
     void raw_label_colour(SDL_Renderer* r, const std::string& value, int x, int y, int pixels, Color ink, int width);
     void check_mark(SDL_Renderer* r, int cx, int cy, Color ink);
+    // Three numbers along the bottom of a Home-style card (collections, systems, music): inset tiles, each with an
+    // accent badge, the number and its caption, as Playtime's tiles. icons are SettingsIcon, or MusicGlyph when music.
+    void stat_tiles(SDL_Renderer* r, int y, const std::array<std::string, 3>& values,
+                    const std::array<std::string, 3>& captions, const std::array<int, 3>& icons, bool music = false);
+    static std::string hours_minutes(uint64_t seconds);
     void ring(SDL_Renderer* r, int x, int y, int radius, const std::string& key);
     void icon(SDL_Renderer* r, int kind, int x, int y, const std::string& key);
     void gear(SDL_Renderer* r, int x, int y);
@@ -2715,6 +2755,7 @@ class App {
     bool welcome_import_focused = false; // the focus went to Bring them over once the scan found something
     bool welcome_import_pending = false; // the scan waits for the worker another job holds (the first library index)
     bool welcome_import_rescan = false;  // games may have come over, and the library index may have given way
+    unsigned welcome_preset = 0;         // steps RG DS Flasher's Set up answered (flasher-setup.ini), by bit
     int welcome_step = 0, welcome_focus = welcome_next;
     Page welcome_return = Page::Library;
     bool welcome_needed();
@@ -2725,6 +2766,7 @@ class App {
     void welcome_finish();
     void welcome_detour_end();
     void welcome_language_defaults();
+    void welcome_apply_preset();
     // Coming from another system (runtime/migrate.py): found by a scan when setup opens, shown only then.
     void welcome_import_scan();
     bool welcome_import_shown();
@@ -3016,29 +3058,27 @@ class App {
     };
     std::vector<HomeTile> home_column_tiles() const {
         // Every edge sits on a rule of the lower screen's 20 px grid (rules at 19-20, 39-40, ...).
-        // The apps (PictoChat, Music, Sound toy: those shown) fill in after Recents: the first beside Recents, the
-        // others beside Settings in the last row, which holds three narrower tiles when all three are there.
+        // Three rows of wide tiles (the last game; Games, Favourites; Recents, Settings), then the apps
+        // (PictoChat, Music or Media, Album, Sound toy: those shown) as one row of equal square-ish tiles,
+        // icon over name, like a dock. Their widths share the row's 600 px; the odd pixels go to the later ones.
         const auto apps = home_apps();
-        std::vector<HomeTile> tiles = {
-            {{20, 20, 600, 80}, last_played_tile}, {{20, 120, 280, 80}, 1}, {{340, 120, 280, 80}, 2}};
-        if (!apps.empty()) {
-            tiles.push_back({{20, 220, 280, 80}, 3});
-            tiles.push_back({{340, 220, 280, 80}, apps[0]});
-        } else tiles.push_back({{20, 220, 600, 80}, 3});
-        if (apps.size() == 3) {
-            tiles.push_back({{20, 320, 160, 60}, 0});
-            tiles.push_back({{220, 320, 180, 60}, apps[1]});
-            tiles.push_back({{440, 320, 180, 60}, apps[2]});
-        } else if (apps.size() == 2) {
-            tiles.push_back({{20, 320, 280, 60}, 0});
-            tiles.push_back({{340, 320, 280, 60}, apps[1]});
-        } else tiles.push_back({{20, 320, 600, 60}, 0});
+        std::vector<HomeTile> tiles = {{{20, 20, 600, 80}, last_played_tile},
+                                       {{20, 120, 280, 80}, 1},
+                                       {{340, 120, 280, 80}, 2},
+                                       {{20, 220, 280, 80}, 3},
+                                       {{340, 220, 280, 80}, 0}};
+        const int count = int(apps.size()), gap = 16, room = 600 - gap * (count - 1);
+        for (int i = 0, x = 20; i < count; i++) {
+            const int w = room / count + (i >= count - room % count ? 1 : 0);
+            tiles.push_back({{x, 320, w, 80}, apps[size_t(i)]});
+            x += w + gap;
+        }
         return tiles;
     }
     static constexpr SDL_Rect home_bar_chip{108, 420, 164, 48}, home_bar_left{20, 420, 80, 48},
         home_bar_right{540, 420, 80, 48}, home_bar_mark{280, 420, 80, 48};
     // Up and down walk the rows, left and right the two tiles of a row.
-    int home_column_memory = 0; // the column (Games/Recents or Favourites/PictoChat) you were last in
+    int home_column_memory = -1; // the x centre of the app you last moved sideways to in the dock, else -1
     // Down from the last row walks onto the bottom bar: 0 brightness, 1 the
     // update mark (only while one is waiting), 2 the clock. -1 is the tiles.
     int home_bar_focus = -1;
@@ -3404,6 +3444,27 @@ class App {
     MusicClient music;
     MusicUi mu;
     bool music_open = false, music_ready = false;
+    // ---- Toasts (toast.hpp, toast_screen.hpp): every notice, warning and error, as a card on the lower screen.
+    toast::Stack toasts;
+    std::unordered_map<uint64_t, int> toast_widths;
+    Uint32 toast_drawn_at = 0;
+    struct NoticeSeen {
+        std::string status, update, menu, controls;
+        bool primed = false;
+    } notice_seen;
+    void toast(const std::string& source, toast::Severity severity, bool translate = true);
+    void toast(const std::string& source); // the look follows the words (toast::infer)
+    // A page's own notice: kept in service_notice too, for the pages and tests that read it.
+    void notify(const std::string& source);
+    void notify(const std::string& source, toast::Severity severity);
+    std::vector<std::string> toast_lines(const std::string& value, int pixels, int width, int rows);
+    SDL_Rect toast_box(const toast::Card& card, int y);
+    void draw_toasts(SDL_Renderer* r, int y);
+    bool toasts_animating(Uint32 now) const;
+    bool toast_touch(int x, int y);
+    bool toast_held = false; // a touch that began on a card: the rest of it goes nowhere else
+    void worker_finished_toast(Uint32 now);
+    void watch_notices();
     // ---- Snake (snake_screen.hpp): the easter egg, five quick taps on the battery on Home's upper screen.
     SnakeUi sn;
     bool snake_available() const;
@@ -3461,6 +3522,8 @@ class App {
     void voice_play();
     void voice_set_voice(int voice);
     void voice_set_slot(int slot);
+    void voice_turn_page(int page, int direction, float from_dx = 0);
+    float voice_strip_offset(Uint32 now) const;
     void voice_clear_bend();
     void voice_toggle_startup();
     void voice_record_start();
@@ -3500,7 +3563,7 @@ class App {
     std::string music_time(int64_t ms) const;
     std::string music_count(size_t count, const char* one, const char* many);
     std::string music_format_line();
-    void music_toast(const std::string& text);
+    void music_toast(const std::string& text, toast::Severity severity = toast::Severity::Info);
     void music_glyph(SDL_Renderer* r, MusicGlyph glyph, int cx, int cy, int size, Color ink, int alpha = 255);
     void music_art(SDL_Renderer* r, const std::string& key, SDL_Rect box, int radius, MusicGlyph stand_in);
     MusicLevel& music_level();
@@ -3710,9 +3773,9 @@ class App {
     void finish_launch(bool reopen);
     void start_launch_runner(Uint32 now);
     void start_media_runner(Uint32 now);
-    void launch_media();         // the Media tile: rgds-media on both panels, as a game is started
-    bool media_launch = false;   // the launch running is RG DS Media's
-    mutable int media_found = -1; // the program is installed (-1: not looked yet)
+    void launch_media();                // the Media tile: rgds-media on both panels, as a game is started
+    bool media_launch = false;          // the launch running is RG DS Media's
+    mutable int media_found = -1;       // the program is installed (-1: not looked yet)
     mutable int media_index_found = -1; // ...and new enough for `--index` (the shelves in the launcher)
     void media_home_top(SDL_Renderer* r, int y);
     void poll_launch(Uint32 now);
@@ -3887,11 +3950,13 @@ public:
 #include "launcher/media_shelf.hpp"
 #include "launcher/voice_toy_screen.hpp"
 #include "launcher/snake_screen.hpp"
+#include "launcher/toast_screen.hpp"
 #include "launcher/panels.hpp"
 #include "launcher/home_screen.hpp"
 #include "launcher/library_screen.hpp"
 #include "launcher/colours_screen.hpp"
 #include "launcher/profiles_screen.hpp"
+#include "launcher/kid_home_screen.hpp"
 #include "launcher/cheats_screen.hpp"
 #include "launcher/shader_screen.hpp"
 #include "launcher/controls_editor.hpp"
@@ -3926,14 +3991,22 @@ static int self_test() {
     Model empty;
     empty.move(-99);
     ok = ok && empty.selected == 0;
+    // An arcade folder lists the sets a core here runs, by their titles: not a board's BIOS, not an unknown zip. A
+    // vertical set (Galaga) gets the two-screens mark: it stands over both panels.
+    fs::create_directories(root / "arcade");
+    for (const char* set : {"galaga", "punchout", "neogeo", "notaset"})
+        std::ofstream(root / "arcade" / (std::string(set) + ".zip")).put('x');
+    const auto arcade = scan_system({root / "arcade"}, "arcade");
+    ok = ok && arcade.size() == 2 && arcade[0].title == "Galaga (Namco rev. B)" && arcade[1].title == "Punch-Out!!" &&
+         arcade_catalog().at("galaga").vertical() && arcade_catalog().at("neogeo").bios();
     { // A file another system shares counts for a system only in its own folder; the player's system on a shared shelf.
         const fs::path r = "/data/roms";
         ok = ok && system_for_path(r / "psx/Game.cue") == "psx" && system_for_path(r / "Game.cue") == "psx" &&
              system_for_path(r / "psp/Game.iso") == "psp" && system_for_path(r / "md/Game.bin") == "md" &&
              system_for_path(r / "segacd/Game.cue") == "md" && system_for_path(r / "pcecd/Game.chd") == "pce" &&
-             system_for_path(r / "msx/Game.rom") == "msx" &&
-             system_for_path(r / "cpc/Game.dsk") == "cpc" && system_for_path(r / "amstrad/Game.sna") == "cpc" &&
-             system_for_path(r / "Game.cdt") == "cpc" && system_for_path(r / "intellivision/Game.rom") == "intellivision" &&
+             system_for_path(r / "msx/Game.rom") == "msx" && system_for_path(r / "cpc/Game.dsk") == "cpc" &&
+             system_for_path(r / "amstrad/Game.sna") == "cpc" && system_for_path(r / "Game.cdt") == "cpc" &&
+             system_for_path(r / "intellivision/Game.rom") == "intellivision" &&
              system_for_path(r / "pce/Game.zip") == "pce" && system_for_path(r / "zx/Game.dsk") == "zx" &&
              system_for_path(r / "nds/Game.zip") == "nds" && system_for_path(r / "pico8/Cart.p8.png") == "pico8" &&
              system_for_path(r / "nes/cover.png") == "nds" && system_for_path(r / "dc/Game.chd") == "dc" &&
@@ -3941,22 +4014,24 @@ static int self_test() {
              system_for_path(r / "dos/Doom.zip") == "dos" && system_for_path(r / "MS-DOS/Game.cue") == "dos" &&
              system_for_path(r / "Game.dosz") == "dos" && system_for_path(r / "Game.zip") == "nds" &&
              system_for_path(r / "Game.vb") == "vb" && system_for_path(r / "Virtual Boy/Game.bin") == "vb" &&
-             system_for_path(r / "arcade/punchout.zip") == "arcade" &&
-             system_for_path(r / "Game.swf") == "flash" && system_for_path(r / "flash/Game.zip") == "flash" &&
+             system_for_path(r / "arcade/punchout.zip") == "arcade" && system_for_path(r / "Game.swf") == "flash" &&
+             system_for_path(r / "flash/Game.zip") == "flash" &&
              system_for_path(r / "Flashpoint/Game.zip") == "flash" &&
-             system_for_path(r / "MAME/vstennis.zip") == "arcade" &&
-             system_for_path(r / "Game.a78") == "atari7800" && system_for_path(r / "atari7800/Game.bin") == "atari7800" &&
-             system_for_path(r / "Atari 5200/Game.bin") == "atari5200" && system_for_path(r / "Game.a52") == "atari5200" &&
-             system_for_path(r / "Game.lnx") == "lynx" && system_for_path(r / "lynx/Game.zip") == "lynx" &&
-             system_for_path(r / "Game.wsc") == "wonderswan" && system_for_path(r / "WonderSwan Color/Game.zip") == "wonderswan" &&
+             system_for_path(r / "MAME/vstennis.zip") == "arcade" && system_for_path(r / "Game.a78") == "atari7800" &&
+             system_for_path(r / "atari7800/Game.bin") == "atari7800" &&
+             system_for_path(r / "Atari 5200/Game.bin") == "atari5200" &&
+             system_for_path(r / "Game.a52") == "atari5200" && system_for_path(r / "Game.lnx") == "lynx" &&
+             system_for_path(r / "lynx/Game.zip") == "lynx" && system_for_path(r / "Game.wsc") == "wonderswan" &&
+             system_for_path(r / "WonderSwan Color/Game.zip") == "wonderswan" &&
              system_for_path(r / "Game.ngc") == "ngp" && system_for_path(r / "ngpc/Game.zip") == "ngp" &&
              system_for_path(r / "atari2600/Game.bin") == "atari";
-        ok = ok && play_subsystem(r / "md/Game.cue", "md") == "segacd" && play_subsystem(r / "md/Game.bin", "md") == "md" &&
-             system_for_path(r / "pico/Game.md") == "pico" && system_for_path(r / "Sega Pico/Game.bin") == "pico" &&
-             system_for_path(r / "pico/Game.zip") == "pico" && system_for_path(r / "md/Game.md") == "md" &&
-             play_subsystem(r / "pico/Game.md", "pico") == "pico" && play_subsystem(r / "segacd/Game.zip", "md") == "segacd" &&
-             play_subsystem(r / "pce/Game.zip", "pce") == "pce" && play_subsystem(r / "pce/Game.ccd", "pce") == "pcecd" &&
-             play_subsystem(r / "sms/Game.sg", "sms") == "sg";
+        ok = ok && play_subsystem(r / "md/Game.cue", "md") == "segacd" &&
+             play_subsystem(r / "md/Game.bin", "md") == "md" && system_for_path(r / "pico/Game.md") == "pico" &&
+             system_for_path(r / "Sega Pico/Game.bin") == "pico" && system_for_path(r / "pico/Game.zip") == "pico" &&
+             system_for_path(r / "md/Game.md") == "md" && play_subsystem(r / "pico/Game.md", "pico") == "pico" &&
+             play_subsystem(r / "segacd/Game.zip", "md") == "segacd" &&
+             play_subsystem(r / "pce/Game.zip", "pce") == "pce" &&
+             play_subsystem(r / "pce/Game.ccd", "pce") == "pcecd" && play_subsystem(r / "sms/Game.sg", "sms") == "sg";
     }
     { // One IMA ADPCM block of rising nibbles must decode to a rising ramp of the declared length.
         std::vector<uint8_t> wav = {'R', 'I', 'F', 'F', 0, 0, 0,    0, 'W', 'A', 'V',  'E',  'f',  'm',
@@ -4080,8 +4155,10 @@ int main(int argc, char** argv) {
                     entry.substr(0, eq) == "nds")
                     throw std::runtime_error("--system-dir needs gba=, gbc= or gb= and a folder");
                 o.system_roots.emplace_back(entry.substr(0, eq), entry.substr(eq + 1));
-            } else if (arg == "--app") o.app = value();
-            else if (arg == "--data") o.data = value();
+            } else if (arg == "--app") {
+                o.app = value();
+                arcade_catalog_file() = o.app / "assets/arcade/sets.tsv";
+            } else if (arg == "--data") o.data = value();
             else if (arg == "--state") o.state = value();
             else if (arg == "--top-display") o.top = value();
             else if (arg == "--bottom-display") o.bottom = value();

@@ -3,6 +3,7 @@
 //
 // ARM-state executor (ARMv5TE). melonDS is the behavioural reference for
 // DS-specific corners, including where each instruction charges its cycles.
+#include "core/cpu/block_xfer.h"
 #include "core/cpu/interp/interp_internal.h"
 #include "core/cpu/cp15.h"
 
@@ -26,7 +27,8 @@ void data_processing(CpuContext& cpu, u32 instr, u32 op2, bool sc, u32 rn_val, u
   bool write = true;
   const bool c = carry(cpu);
 
-  if (s && rd != 15) {
+  // TST/TEQ/CMP/CMN write no register, so an rd of 15 there is not the CPSR restore: they set the flags as ever.
+  if (s && (rd != 15 || (opcode >= 0x8 && opcode <= 0xB))) {
     switch (opcode) {
     case 0x0:
       res = rn_val & op2;
@@ -187,16 +189,17 @@ void ldr_str_h(CpuContext& cpu, u32 instr, u32 offset) {
     charge_C(cpu);
     return;
   } // unpredictable on ARM7; ignore
-  if (sh == 2) { // LDRD rd, rd+1
+  const u32 r = rd & ~1u; // an odd rd (UNPREDICTABLE) transfers the pair below it, as melonDS has it
+  if (sh == 2) {          // LDRD r, r+1
     u32 lo = mem_read32(cpu, ea), hi = mem_read32(cpu, ea + 4, true);
     if (wb) R(cpu, rn) = wbv;
-    R(cpu, rd) = lo;
-    R(cpu, (rd + 1) & 0xF) = hi;
+    R(cpu, r) = lo;
+    R(cpu, r + 1) = hi;
     charge_CDI(cpu);
     return;
   }
-  mem_write32(cpu, ea, R(cpu, rd)); // STRD
-  mem_write32(cpu, ea + 4, R(cpu, (rd + 1) & 0xF), true);
+  mem_write32(cpu, ea, R(cpu, r)); // STRD
+  mem_write32(cpu, ea + 4, R(cpu, r + 1), true);
   if (wb) R(cpu, rn) = wbv;
   charge_CD(cpu);
 }
@@ -243,7 +246,8 @@ void ldm_stm(CpuContext& cpu, u32 instr, bool load) {
         pc_val = v;
       } else R(cpu, i) = v;
     }
-    if (w && !(list & (1u << rn))) R(cpu, rn) = wb; // Rn in list: loaded value wins
+    if (w && cpu::ldm_writeback_wins(is_arm9(cpu), false, list, rn))
+      R(cpu, rn) = wb; // Rn in list: the loaded value stays on the ARM7
     if (user_bank && saved_mode) cpu.switch_mode(saved_mode);
     if (pc_loaded) {
       if (s) cpu.restore_cpsr();
@@ -255,8 +259,8 @@ void ldm_stm(CpuContext& cpu, u32 instr, bool load) {
       if (!(list & (1u << i))) continue;
       u32 v = R(cpu, i);
       if (i == 15) v += 4;
-      // STM Rn-in-list: first reg stores original base, later ones the writeback value.
-      if (i == rn && !first && w) v = wb;
+      // STM Rn-in-list: the original base, or on the ARM7 the writeback value when it is not the first stored.
+      if (i == rn && w && cpu::stm_stores_new_base(is_arm9(cpu), first)) v = wb;
       mem_write32(cpu, addr, v, !first);
       addr += 4;
       first = false;
@@ -519,7 +523,10 @@ void exec_arm(CpuContext& cpu, u32 instr) {
     if ((cpu.nds->dsi_font_hle || cpu.nds->dsi_loader_watch) && cpu.nds->dsi_hle_swi(cpu, (instr >> 16) & 0xFF)) return;
     cpu.raise_exception(CpuContext::Exception::Swi);
     return;
-  case AOp::Bkpt: cpu.raise_exception(CpuContext::Exception::PrefetchAbort); return;
+  case AOp::Bkpt:
+    if (!is_arm9(cpu)) break; // ARMv4T has no BKPT: the undefined instruction trap, as in Thumb state
+    cpu.raise_exception(CpuContext::Exception::PrefetchAbort);
+    return;
 
   case AOp::Mcr:
   case AOp::Mrc: {

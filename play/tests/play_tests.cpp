@@ -751,6 +751,42 @@ void test_two_monitors() {
     }
 }
 
+void test_tall_screen() {
+    // A vertical game (224 x 288, Galaga's) over both panels: the upper half (blue) standing on the upper panel's
+    // lower edge, the lower half (green) hanging from the lower panel's top, both at one scale (640 / 224).
+    Profile p = tall_profile("arcade", "T");
+    Profile parsed = parse_ok("[game]\ntitle = T\ncodes = GALAGA\nsystem = arcade\n[screens]\ntall = yes\n");
+    CHECK(parsed.has_screens && parsed.screens.tall);
+    FakeCabinet cabinet(224, 288, true);
+    Companion companion(cabinet, &p, "T", "ARCADE");
+    CHECK(companion.tall_screen());
+    companion.set_shown(true);
+    companion.after_frame(cabinet);
+    const Picture top = companion.compose_game(cabinet.picture());
+    CHECK(top.w == 224 && top.h == 168); // the panel's 4:3, black above the half
+    CHECK(top.at(0, 0) == 0xFF000000u && top.at(0, 23) == 0xFF000000u);
+    CHECK(top.at(0, 24) == 0xFF0000FFu && top.at(223, 167) == 0xFF0000FFu);
+    Canvas lower(640, 480);
+    Look look;
+    Font font;
+    companion.render(lower, look, font, Words{});
+    CHECK(px_to_rgb(lower.at(320, 1)) == 0x00FF00 && px_to_rgb(lower.at(1, 400)) == 0x00FF00);
+    CHECK(px_to_rgb(lower.at(320, 420)) == 0x000000);                     // past the picture's last row
+    CHECK(companion.machine_buttons(Start | Select) == (Start | Select)); // the board's coin and start
+    // The dock wide open over the second screen: the whole game above, none of it hidden.
+    companion.dock().set_full(true);
+    CHECK(companion.compose_game(cabinet.picture()).h == 288);
+    companion.dock().set_full(false);
+    CHECK(companion.compose_game(cabinet.picture()).h == 168);
+    // A half too tall for the panel's width: wider boxes, black at the sides, still one scale.
+    const Rect narrow = ScreensSpec::tall_rect(144, 224, true), below = ScreensSpec::tall_rect(144, 224, false);
+    CHECK(narrow.h == 112 && narrow.w == 149 && narrow.x == -2 && narrow.y == 0);
+    CHECK(below.y == 112 && below.w == narrow.w && below.h == narrow.h);
+    // A sideways picture (a board's test screen): whole, above.
+    FakeCabinet wide(288, 224, true);
+    CHECK(companion.compose_game(wide.picture()).h == 224);
+}
+
 void test_mode7_extend() {
     // The race goes on under the game's own rows: the stale block above it and
     // the map below it are not taken for the race.
@@ -1582,6 +1618,116 @@ void test_zx_machine() {
     CHECK(!zx_tape_needs_128k("a.tzx", tzx({0x10, 0, 0, 0xFF, 0xFF})));   // a data block longer than the file
 }
 
+// Flash's touch pad: a slide moves the mouse, and the button is held by a second finger on the pad, by a finger kept
+// on Left while another slides, or by a tap and a slide.
+void test_touch_pad() {
+    struct Mouse final : Core {
+        int x = 0, y = 0;
+        bool left = false, right = false;
+        bool move_pad_mouse(int dx, int dy, bool l, bool r) override {
+            x += dx, y += dy, left = l, right = r;
+            return true;
+        }
+        const char* system() const override { return "flash"; }
+        std::string game_code() const override { return "X"; }
+        std::string header_title() const override { return "X"; }
+        double frame_rate() const override { return 60; }
+        void run_frame(uint32_t) override {}
+        Picture picture() const override { return {}; }
+        bool save_state(std::vector<uint8_t>&) override { return false; }
+        bool load_state(const std::vector<uint8_t>&) override { return false; }
+        uint32_t peek(uint32_t, int) override { return 0; }
+        size_t audio(int16_t*, size_t) override { return 0; }
+        unsigned audio_rate() const override { return 44100; }
+        std::vector<uint8_t> battery() const override { return {}; }
+        uint64_t battery_revision() const override { return 0; }
+        void set_layers(unsigned) override {}
+        std::unique_ptr<Core> shadow() const override { return nullptr; }
+    } mouse;
+    auto pad = make_keyboard("flash");
+    CHECK(pad && pad->wants_fingers());
+    uint64_t frame = 0;
+    using Fingers = std::vector<std::pair<int, int>>;
+    auto step = [&](const Fingers& down) {
+        pad->fingers(down);
+        pad->update(mouse, ++frame);
+    };
+    // One finger slides: the mouse moves, no button.
+    pad->touch({Touch::Down, 300, 200});
+    step({{300, 200}});
+    for (int x = 304; x <= 320; x += 4) {
+        pad->touch({Touch::Move, x, 200});
+        step({{x, 200}});
+    }
+    CHECK(mouse.x == 20 && mouse.y == 0 && !mouse.left && !mouse.right);
+    // Resting where the slide ended takes no button: only a press where the finger landed does.
+    for (int i = 0; i < 40; ++i) step({{320, 200}});
+    CHECK(!mouse.left);
+    // A second finger on the pad holds the left button while the first still moves the mouse.
+    step({{320, 200}, {150, 300}});
+    CHECK(mouse.left);
+    pad->touch({Touch::Move, 324, 200});
+    step({{324, 200}, {150, 300}});
+    CHECK(mouse.x == 24 && mouse.left);
+    step({{324, 200}});
+    CHECK(!mouse.left); // let go with the second finger
+    pad->touch({Touch::Up, 324, 200});
+    for (int i = 0; i < 40; ++i) step({});
+    CHECK(!mouse.left);
+    // A press: the finger kept where it landed takes the button (with a tick), keeps it through a slide, and lets
+    // go as it lifts.
+    pad->touch({Touch::Down, 400, 300});
+    for (int i = 0; i < 8; ++i) step({{400, 300}});
+    CHECK(!mouse.left && !pad->take_click());
+    pad->touch({Touch::Move, 402, 301}); // a finger is never quite still
+    for (int i = 0; i < 8; ++i) step({{402, 301}});
+    CHECK(mouse.left && pad->take_click() && !pad->take_click());
+    const int pressed_at = mouse.x;
+    for (int x = 406; x <= 430; x += 4) {
+        pad->touch({Touch::Move, x, 301});
+        step({{x, 301}});
+    }
+    CHECK(mouse.left && mouse.x == pressed_at + 28);
+    pad->touch({Touch::Up, 430, 301});
+    step({});
+    CHECK(!mouse.left);
+    for (int i = 0; i < 40; ++i) step({});
+    CHECK(!mouse.left); // and no click after it
+    // A tap is still a click.
+    pad->touch({Touch::Down, 400, 300});
+    step({{400, 300}});
+    pad->touch({Touch::Up, 400, 300});
+    step({});
+    CHECK(mouse.left);
+    for (int i = 0; i < 40; ++i) step({});
+    CHECK(!mouse.left);
+    // A finger kept on Left, then another sliding on the pad: touch() follows only the first, the pad's finger is
+    // followed from the whole set.
+    const int before = mouse.x;
+    pad->touch({Touch::Down, 40, 440});
+    step({{40, 440}});
+    CHECK(mouse.left);
+    step({{40, 440}, {200, 100}});
+    step({{40, 440}, {203, 102}});
+    CHECK(mouse.left && mouse.x == before + 3);
+    for (int i = 0; i < 30; ++i) step({{40, 440}, {203, 102}});
+    CHECK(mouse.left && mouse.x == before + 3); // held for as long as the finger stays
+    pad->touch({Touch::Up, 40, 440});
+    step({{203, 102}});
+    for (int i = 0; i < 12; ++i) step({{203, 102}});
+    CHECK(!mouse.left);
+    // A finger on Right beside the pad's: the right button.
+    step({{203, 102}, {130, 440}});
+    CHECK(mouse.right && !mouse.left);
+    step({});
+    CHECK(!mouse.right);
+    // No word of the fingers (the menu is up): nothing stays held.
+    step({{203, 102}, {150, 300}});
+    CHECK(mouse.left);
+    for (int i = 0; i < 5; ++i) pad->update(mouse, ++frame);
+    CHECK(!mouse.left);
+}
+
 // The sticks as buttons: the left stick is the D-pad by default, with a gap between press and release, diagonals,
 // directions bound elsewhere in controls.ini, and the systems that keep their stick.
 void test_stick_buttons() {
@@ -1745,6 +1891,7 @@ int main() {
     test_mode7_extend();
     test_screens();
     test_two_monitors();
+    test_tall_screen();
     test_course_view();
     test_gb_views();
     test_shipped_gb_profiles();
@@ -1755,6 +1902,7 @@ int main() {
     test_saves();
     test_canvas();
     test_keyboard();
+    test_touch_pad();
     std::printf("%d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }

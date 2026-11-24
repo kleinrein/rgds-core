@@ -296,9 +296,15 @@ class GameInfo:
 
     def crc_names(self, system):
         if system not in self.names:
+            if self.client.cache:
+                # Older versions kept a second copy of the same list under this name.
+                try:
+                    (Path(self.client.cache) / (system + "-nointro.dat")).unlink(missing_ok=True)
+                except OSError:
+                    pass
             try:
                 raw = self.client.catalog(
-                    system + "-nointro.dat", art.serials_url(system), lambda raw: parse_dat(raw, "")
+                    art.serials_file(system), art.serials_url(system), lambda raw: parse_dat(raw, "")
                 )
             except NotFound:
                 raw = {}

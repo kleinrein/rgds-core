@@ -174,7 +174,7 @@ def rom_identity(path):
     if path.suffix.lower() == ".7z": return {"romnom": path.name}  # its contents unreadable here: by name only
     if path.suffix.lower() == ".zip":
         archive = zipfile.ZipFile(path)
-        games = [i for i in archive.infolist() if Path(i.filename).suffix.lower() in (".nds", ".dsi")]
+        games = [i for i in archive.infolist() if Path(i.filename).suffix.lower() in (".nds", ".dsi", ".srl", ".cia")]
         if len(games) != 1 or games[0].file_size > 1024**3:
             archive.close()
             raise NotFound("ZIP must contain one DS game.")
@@ -338,10 +338,27 @@ def games(roots):
     return sorted(
         {
             p.resolve()
-            for root in roots if root.is_dir() for p in root.rglob("*")
-            if p.is_file() and not p.is_symlink() and p.suffix.lower() in (".nds", ".dsi", ".zip", ".7z")
+            for root in roots if root.is_dir() for p in root.rglob("*") if p.is_file() and not p.is_symlink()
+            and p.suffix.lower() in (".nds", ".dsi", ".srl", ".cia", ".zip", ".7z")
         }
     )
+
+
+# A cover every source said no to is asked again after this long, or at once when the source or the matching title
+# changes. The public catalogs are cached for a week, so asking sooner would mostly repeat the same answer.
+UNMATCHED_RETRY = 7 * 86400
+
+
+def known_unmatched(item, provider, override):
+    """The previous run's "no cover anywhere" for this game, while it still holds."""
+    previous = read_fields(item / "artwork-status.ini")
+    if previous.get("state") != "missing" or previous.get("unmatched_provider") != provider: return None
+    if previous.get("unmatched_title", "") != override: return None
+    try:
+        checked = float(previous.get("unmatched_at", ""))
+    except ValueError:
+        return None
+    return previous if 0 <= time.time() - checked < UNMATCHED_RETRY else None
 
 
 def scrape(data, client, roms, force=False, extras=None):
@@ -383,12 +400,25 @@ def scrape(data, client, roms, force=False, extras=None):
                 not force and hasattr(client, "artwork") and getattr(client, "provider", "auto") != "gametdb"
                 and low_resolution(item / "box.bmp") and read_fields(item / "info.ini").get("sharp_checked") != "1"
             )
-            if not force and not upgrade and (item / "box.bmp").exists():
+            override = read_fields(item / "artwork.ini").get("match_title", "")
+            provider = str(getattr(client, "provider", "auto"))
+            has_box = (item / "box.bmp").exists()
+            unmatched = None if force or upgrade or has_box else known_unmatched(item, provider, override)
+            if not force and not upgrade and has_box:
                 cached += 1
+            elif unmatched:
+                # Asked recently and no source had it: Review unmatched still lists it, a matching title asks again.
+                missing += 1
+                outcome.update(
+                    state="missing",
+                    message=unmatched.get("message") or "No matching cover found.",
+                    unmatched_provider=provider,
+                    unmatched_title=override,
+                    unmatched_at=unmatched["unmatched_at"]
+                )
             else:
                 try:
                     if hasattr(client, "artwork"):
-                        override = read_fields(item / "artwork.ini").get("match_title", "")
                         raw, fields = client.artwork(rom, name_override=override) if override else client.artwork(rom)
                     else:
                         game = client.game(rom)
@@ -428,18 +458,29 @@ def scrape(data, client, roms, force=False, extras=None):
                     else:
                         missing += 1
                         outcome.update(state="missing", message=str(error) or "No matching cover found.")
+                        # Remembered only when every source answered; a busy ScreenScraper means ask again.
+                        if not getattr(client, "unsure", False):
+                            outcome.update(
+                                unmatched_provider=provider, unmatched_title=override, unmatched_at=int(time.time())
+                            )
                 except ScraperError as error:
-                    failed += 1
-                    outcome.update(state="error", message=str(error))
+                    if upgrade:
+                        cached += 1  # the small cover stays; the sharper one is tried again next run
+                    else:
+                        failed += 1
+                        outcome.update(state="error", message=str(error))
                 except (
                     OSError, ValueError, zipfile.BadZipFile, RuntimeError, AttributeError, TypeError, KeyError
                 ) as error:
                     if isinstance(error, OSError) and error.errno in (errno.ENOSPC, errno.EROFS): raise
-                    failed += 1
-                    outcome.update(
-                        state="error",
-                        message="Could not read this game or save its artwork. Existing artwork is retained."
-                    )
+                    if upgrade:
+                        cached += 1
+                    else:
+                        failed += 1
+                        outcome.update(
+                            state="error",
+                            message="Could not read this game or save its artwork. Existing artwork is retained."
+                        )
             if extras:
                 publish("scraping", "Fetching game information", rom.stem)
                 outcome["extras"] = extras.process(rom, item, force)

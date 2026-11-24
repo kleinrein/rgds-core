@@ -101,13 +101,16 @@ uint32_t Timeline::take(Core& core, const Picture& picture, bool wait) {
     if (core.still_loading()) return 0;
     std::vector<uint8_t> raw;
     if (!core.save_state(raw) || raw.empty()) {
-        // A core that can't save at all has no rewind; one that refuses now and then (a tape loading) tries again.
-        if (!sized_) {
+        // A core that can't save at all has no rewind; one that refuses now and then (a tape loading) tries again,
+        // a quarter of a step later: not a whole serialize every frame while it refuses.
+        due_ = position_ + std::max<uint64_t>(1, base_step_ / 4);
+        if (!sized_ && ++refused_ >= 8) {
             available_ = false;
             why_ = "This game can't be rewound";
         }
         return 0;
     }
+    refused_ = 0;
     if (!sized_) {
         sized_ = true;
         if (raw.size() > options_.max_state) {

@@ -90,10 +90,10 @@ std::string App::music_count(size_t count, const char* one, const char* many) {
     return locale.text(std::to_string(count) + (count == 1 ? one : many));
 }
 
-void App::music_toast(const std::string& text) {
-    mu.toast = text;
-    mu.toast_until = s.GetTicks() + 1600;
-    mu.bottom_changed = dirty = true;
+// The player's words are already translated; they go on the launcher's toast stack like every other notice.
+void App::music_toast(const std::string& text, toast::Severity severity) {
+    toast(text, severity, false);
+    mu.bottom_changed = true;
 }
 
 // One of the player's symbols, centred on (cx, cy): smooth in the rounded icon style, on the 12 px grid in the
@@ -499,10 +499,10 @@ void App::music_row_options(int index) {
         } else if (chosen == "Play next") {
             // In order: the last goes in first, right behind what plays.
             for (auto track = tracks.rbegin(); track != tracks.rend(); ++track) music.add(*track, false, at);
-            music_toast(locale.text("Plays next"));
+            music_toast(locale.text("Plays next"), toast::Severity::Success);
         } else if (chosen == "Add to queue") {
             for (int track : tracks) music.add(track, true, at);
-            music_toast(locale.text("Added to the queue"));
+            music_toast(locale.text("Added to the queue"), toast::Severity::Success);
         } else music.toggle_favourite(row.path);
         mu.bottom_changed = dirty = true;
     });
@@ -668,7 +668,7 @@ bool App::music_tick(Uint32 now) {
         }
         if (music.alive && music.now.error_serial != mu.error_seen) {
             mu.error_seen = music.now.error_serial;
-            if (music_open && music.now.error[0]) music_toast(music.now.error);
+            if (music_open && music.now.error[0]) music_toast(music.now.error, toast::Severity::Error);
         }
     }
     if (!music_open) return false;
@@ -892,17 +892,11 @@ void App::music_top(SDL_Renderer* r, int y) {
             centered_wrapped(r, "Put your music in the music folder on the card: with file sharing, or as a USB drive.",
                              y + 258, 18, 500, 3, "muted");
         } else {
-            const std::array<std::string, 3> values = {std::to_string(library.tracks.size()),
-                                                       std::to_string(library.albums.size()),
-                                                       std::to_string(library.artists.size())};
-            const std::array<std::string, 3> captions = {"Songs", "Albums", "Artists"};
-            for (int i = 0; i < 3; i++) {
-                const int x = 52 + i * 182;
-                raw_label(r, values[size_t(i)], x + (172 - label_width(values[size_t(i)], 24, false)) / 2, y + 282, 24,
-                          "ink", 172);
-                label(r, captions[size_t(i)], x + (172 - label_width(captions[size_t(i)], 16)) / 2, y + 316, 16,
-                      "muted", 172);
-            }
+            stat_tiles(r, y + 300,
+                       {std::to_string(library.tracks.size()), std::to_string(library.albums.size()),
+                        std::to_string(library.artists.size())},
+                       {"Songs", "Albums", "Artists"},
+                       {int(MusicGlyph::Note), int(MusicGlyph::Disc), int(MusicGlyph::Person)}, true);
         }
         if (!library.tracks.empty()) key_hints(r, 320, y + 446, {{"A", "Play"}, {"X", "Options"}}, 0, 16, 300);
         return;
@@ -1359,12 +1353,6 @@ void App::music_bottom(SDL_Renderer* r, int y) {
         else music_browse(r, y);
         break;
     }
-    if (!mu.toast.empty()) {
-        const int width = std::min(560, label_width(mu.toast, 16, false) + 36), left = 320 - width / 2;
-        alpha_round(r, left, y + 372, width, 36, 18, Color{20, 24, 30}, 230);
-        raw_label_colour(r, mu.toast, left + 18, centred_label_y(mu.toast, 16, y + 390), 16, Color{255, 255, 255},
-                         width - 28);
-    }
     if (picker_open || picker_closing()) render_picker(r, y);
 }
 
@@ -1411,7 +1399,8 @@ void App::music_toggle_favourite() {
     const std::string path = music.now.path;
     music.toggle_favourite(path);
     emit_sound(music.loved(path) ? MenuCue::Favourite : MenuCue::Unfavourite);
-    music_toast(locale.text(music.loved(path) ? "Added to favourites" : "Removed from favourites"));
+    music_toast(locale.text(music.loved(path) ? "Added to favourites" : "Removed from favourites"),
+                toast::Severity::Success);
 }
 
 void App::music_action(int code) {

@@ -53,6 +53,14 @@ void App::action(int code) {
         profile_picker_action(code);
         return;
     }
+    if (settings.page == Page::KidHome) {
+        kid_home_action(code);
+        return;
+    }
+    if (settings.page == Page::KidMenu) {
+        kid_menu_action(code);
+        return;
+    }
     if (settings.page == Page::PinPad) {
         pin_action(code);
         return;
@@ -281,8 +289,7 @@ void App::action(int code) {
                         rewind_tile_shown() ? std::vector<int>{0, 13, 12} : std::vector<int>{0, 12};
                     const int at = int(std::find(row.begin(), row.end(), settings.focus) - row.begin());
                     settings.focus = row[size_t(std::clamp(at + (code == 0 ? -1 : 1), 0, int(row.size()) - 1))];
-                }
-                else if (settings.focus >= 10) settings.focus = code == 0 ? 10 : 11;
+                } else if (settings.focus >= 10) settings.focus = code == 0 ? 10 : 11;
                 else if (settings.focus != 0) {
                     int column = (settings.focus - 1) % 3;
                     if ((code == 0 && column > 0) || (code == 1 && column < 2)) settings.focus += code == 0 ? -1 : 1;
@@ -507,8 +514,6 @@ void App::action(int code) {
                 if (code == 2 && library_ready) rescan_games(true);
             } else if (row == 1 && code == 2) open_scraper();
             else if (row == 13 && code == 2) open_achievements();
-            else if (row == 14 && code == 2) open_album();
-            else if (row == 15 && code == 2) open_files();
             else if (row < 4 && row >= 2 && (code == 0 || code == 1 || code == 2)) {
                 bool& value = row == 2 ? preferences.auto_load : preferences.auto_save;
                 value = code == 2 ? !value : code == 1;
@@ -577,13 +582,11 @@ void App::action(int code) {
                     settings.focus = 0;
                     start_worker("device.scan");
                 } else if (settings.focus == 2) {
-                    if (device_status["bt_supported"] == "0")
-                        service_notice = "Bluetooth is not available on this handheld.";
+                    if (device_status["bt_supported"] == "0") notify("Bluetooth is not available on this handheld.");
                     else if (device_status["bt"] == "1") confirm("bt-off", Page::Network);
                     else start_worker("device.bt-on");
                 } else if (settings.focus == 3) {
-                    if (device_status["bt_supported"] == "0")
-                        service_notice = "Bluetooth is not available on this handheld.";
+                    if (device_status["bt_supported"] == "0") notify("Bluetooth is not available on this handheld.");
                     else {
                         settings.page = Page::Bluetooth;
                         settings.focus = 0;
@@ -611,7 +614,7 @@ void App::action(int code) {
                                                            "\nLogin changes each time sharing is turned on.");
                 } else if (settings.focus == 7) {
                     if (device_status["usb_supported"] == "0")
-                        service_notice = "USB data transfer is not available on this handheld.";
+                        notify("USB data transfer is not available on this handheld.");
                     else start_worker(device_status["usb"] == "1" ? "device.usb-off" : "device.usb-on");
                 } else if (settings.focus == 8 && device_status["usb"] == "1") start_worker("device.usb-drive");
             }
@@ -648,7 +651,7 @@ void App::action(int code) {
                     show_detail("Release notes", update_status["notes"].empty() ? locale.text("No release notes yet.")
                                                                                 : update_status["notes"]);
                 else if (settings.focus == 3) {
-                    if (device_status["previous"].empty()) service_notice = "No previous build available.";
+                    if (device_status["previous"].empty()) notify("No previous build available.");
                     else confirm("rollback", Page::Maintenance);
                 } else if (settings.focus == 6)
                     show_picker("Automatic updates", {"Off", "Check automatically", "Download automatically"},
@@ -674,6 +677,8 @@ void App::action(int code) {
             if (settings.page == Page::Settings && settings.section == 8) {
                 if (hardware.poweroff) confirm("poweroff", Page::Settings);
             } else if (settings.page == Page::Settings && settings.section == 11) open_profiles();
+            else if (settings.page == Page::Settings && settings.section == 12)
+                open_files(); // a Kid profile meets the owner's PIN there, like any locked page (enforce_lock)
             else if (settings.page == Page::Settings && settings.section == 6) open_controls(false);
             else if (settings.page == Page::Settings && settings.section == 9) open_updates(Page::Settings);
             else if (settings.page == Page::DeviceInfo) open_device_detail();
@@ -685,7 +690,7 @@ void App::action(int code) {
         dirty = true;
         return;
     }
-    if (zoom_action(code)) return; // a zoomed-out wall of games (library_zoom_screen.hpp)
+    if (zoom_action(code)) return;                          // a zoomed-out wall of games (library_zoom_screen.hpp)
     if (systems_menu && (code == 15 || code == 16)) return; // the systems carousel has nothing to jump to or search
     if (!home_menu && (code == 15 || code == 16)) {
         if (code == 15) jump_to_letter();
@@ -754,6 +759,14 @@ void App::touch(int x, int y) {
     }
     if (filter_sheet_active()) {
         filter_sheet_touch(x, y);
+        return;
+    }
+    if (settings.page == Page::KidHome) {
+        kid_home_tap(x, y);
+        return;
+    }
+    if (settings.page == Page::KidMenu) {
+        kid_menu_tap(x, y);
         return;
     }
     if (settings.page == Page::GameSwitcher && !home_switcher && y >= 424 && x >= 200 && x < 440) {
@@ -998,7 +1011,8 @@ void App::touch(int x, int y) {
             return x >= bounds.x && x < bounds.x + bounds.w && y >= bounds.y && y < bounds.y + bounds.h;
         };
         if (inside(header.back)) action(3);
-        else if (!systems_menu && inside(header.zoom)) zoom_go((zoom.target + 1) % (LibraryZoom::deepest + 1), s.GetTicks());
+        else if (!systems_menu && inside(header.zoom))
+            zoom_go((zoom.target + 1) % (LibraryZoom::deepest + 1), s.GetTicks());
         else if (inside(header.view)) action(12);
         else if (inside(header.options)) action(11);
         else if (discovery_active() && inside(header.clear)) clear_discovery();
@@ -1032,6 +1046,8 @@ int App::cover_hit(int x, int y) {
 
 void App::pointer_begin(int x, int y) {
     if (mu.lid_dark) return; // a closed lid can rest on the lower screen
+    toast_held = toast_touch(x, y);
+    if (toast_held) return;
     if (zoom_pointer(0, x, y)) return;
     if (settings.page == Page::Photo && !picker_open) {
         contact_x = down_x = x;
@@ -1047,6 +1063,15 @@ void App::pointer_begin(int x, int y) {
         pointer_down = true;
         pointer_at = s.GetTicks();
         rewind_pointer(x, y, 0);
+        return;
+    }
+    if (settings.page == Page::KidHome) {
+        contact_x = down_x = x;
+        contact_y = down_y = y;
+        pointer_down = true;
+        pointer_at = s.GetTicks();
+        last_activity = pointer_at;
+        dirty = true;
         return;
     }
     if (sn.open) {
@@ -1308,6 +1333,15 @@ void App::pointer_begin(int x, int y) {
 }
 
 void App::pointer_move(int x, int y) {
+    if (toast_held) return;
+    if (settings.page == Page::KidHome) {
+        if (pointer_down) {
+            contact_x = x;
+            contact_y = y;
+            dirty = true;
+        }
+        return;
+    }
     if (zoom_pointer(1, x, y)) return;
     if (settings.page == Page::Photo && !picker_open) {
         if (pointer_down) {
@@ -1501,6 +1535,15 @@ void App::pointer_move(int x, int y) {
 }
 
 void App::pointer_end(int x, int y) {
+    if (std::exchange(toast_held, false)) return;
+    if (settings.page == Page::KidHome) {
+        if (pointer_down) kid_home_release(x, y);
+        pointer_down = false;
+        pointer_source = PointerSource::None;
+        release_at = s.GetTicks();
+        dirty = true;
+        return;
+    }
     if (zoom_pointer(2, x, y)) return;
     if (settings.page == Page::Rewind && !picker_open) {
         if (pointer_down) rewind_pointer(x, y, 2);
@@ -1817,6 +1860,11 @@ void App::handle_input(const SDL_Event& e) {
     }
     // Menu + R (or Print Screen on a keyboard) takes a screenshot; a lone Menu opens the switcher on release.
     if (album_chord(e, anbernic_button)) return;
+    if (!o.game_menu && settings.page == Page::KidHome && (anbernic_key || anbernic_button)) {
+        // No switcher or search on a Little kid's screen: the Menu button is how a grown-up gets to Who's playing?.
+        if (anbernic_button || !e.key.repeat) open_profile_picker(false);
+        return;
+    }
     if (!o.game_menu && session_initialized && settings.page != Page::BootWarning &&
         (anbernic_key || anbernic_button)) {
         // The Anbernic button opens the game switcher; the Home key the game search.

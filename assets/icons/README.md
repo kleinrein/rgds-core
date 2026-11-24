@@ -22,6 +22,10 @@ clear front-facing silhouettes, no text, no enclosing tile and no neon/glow.
   notes. Drawn by `tools/build_music_icon.py` with the PictoChat icon's own shapes and painting. Its pixel
   counterpart is the `Music` glyph.
 
+- `media.bmp`, `album.bmp`, `files.bmp`: Home's Media and Album apps and the Settings > Files row, drawn by
+  `tools/build_app_icons.py` with the PictoChat icon's shapes and painting (a film-strip screen with a play mark,
+  two photo prints, a folder with a blue front). Their pixel counterparts are the `Play`, `Art` and `Folder` glyphs.
+
 `tools/prepare_icons.py` crops cell padding, preserves alpha and scales each image
 onto a 128×128 canvas with a 116px optical bound. The launcher preloads these BMPs
 outside drawing (21 icons total), with 64 KiB of pixel storage per icon per renderer. Directional

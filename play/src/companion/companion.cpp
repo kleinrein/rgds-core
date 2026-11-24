@@ -105,12 +105,14 @@ uint32_t Companion::machine_buttons(uint32_t pad) {
 
 bool Companion::picture_matches(int w, int h) const {
     const auto& s = profile_->screens;
+    if (s.tall) return !menu_over_game_ && h > w;
     return !menu_over_game_ && (!s.match_w || (s.match_w == w && s.match_h == h));
 }
 
 void Companion::touch_top(const Touch& t) {
     if (!finger_core_ || !top_is_touched()) return;
-    const Rect r = picture_matches(lower_w_, lower_h_) ? profile_->screens.top : Rect{0, 0, lower_w_, lower_h_};
+    const Rect r = picture_matches(lower_w_, lower_h_) ? profile_->screens.top_rect(lower_w_, lower_h_)
+                                                       : Rect{0, 0, lower_w_, lower_h_};
     if (r.w <= 0 || r.h <= 0) return;
     const double fit = std::min(640.0 / r.w, 480.0 / r.h);
     const int x0 = int(640 - r.w * fit) / 2, y0 = int(480 - r.h * fit) / 2;
@@ -122,7 +124,7 @@ void Companion::update_screens(Core& live) {
     const Picture& q = p;
     menu_over_game_ = live.menu_over_game();
     lower_w_ = q.w, lower_h_ = q.h;
-    const Rect r = picture_matches(q.w, q.h) ? profile_->screens.bottom : Rect{0, 0, q.w, q.h};
+    const Rect r = picture_matches(q.w, q.h) ? profile_->screens.bottom_rect(q.w, q.h) : Rect{0, 0, q.w, q.h};
     lower_rect_ = r;
     lower_.assign(static_cast<size_t>(r.w) * r.h, 0xFF000000u);
     uint64_t hash = 1469598103934665603ull;
@@ -428,7 +430,10 @@ bool extend_mode7(const Core::Mode7& m, const uint8_t* oam, const std::vector<st
 Picture Companion::compose_game(const Picture& game, bool whole) {
     if (screens_mode()) {
         if (!shown_ || !picture_matches(game.w, game.h)) return game; // the whole picture here
-        const Rect& r = profile_->screens.top;
+        // A tall game's lower half is hidden while the dock covers the second screen (wide open, or the screen
+        // turned off): the whole game here then, or half of it would be gone.
+        if (profile_->screens.tall && (dock_.full() || dock_.screen_off())) return game;
+        const Rect r = profile_->screens.top_rect(game.w, game.h);
         const int keep_from = profile_->screens.top_from, keep_to = profile_->screens.top_to;
         if (r.x >= keep_from && r.y >= 0 && r.x + r.w <= std::min(game.w, keep_to) && r.y + r.h <= game.h)
             return {game.px + static_cast<size_t>(r.y) * game.stride + r.x, r.w, r.h, game.stride};
@@ -633,6 +638,9 @@ void Companion::after_frame(Core& live) {
         party_shown_ = !party_->empty() && (profile_->party.on.empty() || profile_->party.on.match(live));
     }
     for (auto& v : views_) v->update(live, frame_);
+    view_click_ = std::max(0, view_click_ - 1);
+    for (auto& v : views_)
+        if (v->take_click()) view_click_ = 3;
     if (manual_) manual_->update(live, frame_);
     dock_.set_played(frame_ / 60);
     if (!capture_) return;
@@ -758,7 +766,9 @@ bool Companion::showing_manual() const { return manual_ && manual_on_ && !screen
 
 bool Companion::fingers(const std::vector<std::pair<int, int>>& down) {
     auto* pinch = showing_manual() && !dock_.open() ? dynamic_cast<Pinch*>(manual_.get()) : nullptr;
-    if (!pinch || !pinch->fingers(down)) return false;
+    // The touch pad's second finger (keyboard.cpp); a view not shown hears of no fingers and lets go.
+    View* pad = !pinch && showing_alternative() && !dock_.open() && !screens_mode() ? alternative_view() : nullptr;
+    if (!(pinch && pinch->fingers(down)) && !(pad && pad->fingers(down))) return false;
     ++touch_serial_;
     return true;
 }
@@ -783,7 +793,7 @@ bool Companion::touch(const Touch& t) {
     const uint64_t before = dock_.key();
     if (dock_.touch(t)) return dock_.key() != before;
     if (screens_mode()) {
-        const Rect& r = lower_rect_.w ? lower_rect_ : profile_->screens.bottom;
+        const Rect r = lower_rect_.w ? lower_rect_ : profile_->screens.bottom_rect(lower_w_, lower_h_);
         const double fit = std::min(640.0 / r.w, 480.0 / r.h);
         const double tall =
             std::min(480.0 / r.h, fit * (lower_w_ == r.w && lower_h_ == r.h ? 1 : profile_->screens.stretch));

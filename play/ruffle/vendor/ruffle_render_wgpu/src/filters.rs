@@ -23,6 +23,15 @@ use bytemuck::{Pod, Zeroable};
 use ruffle_render::filters::Filter;
 use wgpu::util::StagingBelt;
 use wgpu::vertex_attr_array;
+/// RG DS: a buffer of its own for one filter pass, filled as it is made. Every filter used to rewrite one uniform
+/// buffer and one vertex buffer of its own for each pass (a staging-belt copy); Panfrost copies buffers on the CPU, so
+/// each copy into a buffer an earlier pass still read flushed the batch and waited for the GPU: Swords and Sandals'
+/// title (a blur and a glow) took 70 ms a picture on the RG DS, 45 of them waiting.
+pub(crate) fn fresh_buffer(descriptors: &Descriptors, contents: &[u8], usage: wgpu::BufferUsages) -> wgpu::Buffer {
+    use wgpu::util::DeviceExt;
+    descriptors.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: None, contents, usage })
+}
+
 
 #[derive(Debug)]
 pub struct FilterSource<'a> {
@@ -215,6 +224,13 @@ impl Filters {
         source: FilterSource,
         filter: Filter,
     ) -> CommandTarget {
+        // RG DS: what a movie's filters are and how big, for the first of them (RGDS_FLASH_LOG=...,ruffle_render_wgpu=debug).
+        if tracing::enabled!(tracing::Level::DEBUG) {
+            static SEEN: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+            if SEEN.fetch_add(1, std::sync::atomic::Ordering::Relaxed) < 60 {
+                tracing::debug!("filter on {}x{}: {:?}", source.size.0, source.size.1, filter);
+            }
+        }
         let target = match filter {
             Filter::ColorMatrixFilter(filter) => Some(descriptors.filters.color_matrix.apply(
                 descriptors,

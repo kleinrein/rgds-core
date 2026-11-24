@@ -715,6 +715,29 @@ remotely. The controller line is the launcher's own mapping, and SDL reports the
 port above. Also not checked: the touch pad's pointer in a port with its own udev-less SDL, which sees only devices
 that exist when it starts, and ports that replace `LD_PRELOAD` entirely, which would not get the display.
 
+### mpv for ports (2026-11-23, built in the VM, not on the handheld yet)
+
+Some ports play video with "the firmware's mpv" instead of bundling a player. PocketTube (an unofficial YouTube
+client, MIT, github.com/ElmarYolchuyev23/pockettube) is the first we looked at: its PortMaster port is aarch64 on
+PortMaster's `python_3.11` runtime and starts `mpv --vo=sdl --input-ipc-server=...`, then drives it over the socket
+(no Lua). Without mpv its menus work and no video plays. RG DS OS had none, so the defconfig now sets
+`BR2_PACKAGE_MPV=y`: mpv 0.40.0 at `/usr/bin/mpv` with SDL2, DRM, EGL, ALSA, libass and FFmpeg's HTTPS (OpenSSL).
+No Lua, so no on-screen controller, and no GBM. It brings libplacebo, libdisplay-info and hwdata, about 8.5 MB in
+the slot (mpv 2.2 MB, libmpv 2.2 MB, libplacebo 1.1 MB, hwdata 2.3 MB).
+
+The display needs no extra work: PocketTube calls `pygame.display.quit()` before it starts mpv and opens its window
+again afterwards. So mpv, which inherits the port's `LD_PRELOAD`, asks the runner for a fresh top lease while
+nothing else holds one.
+
+Checked in the VM (a chroot into `output/rgds-os/target`): `--vo=help` lists `sdl`, `drm`, `gpu`, `gpu-next`;
+`--ao=help` lists `alsa`; the IPC socket and a lavfi test source play to `null`; an HTTPS URL gets past TLS and the
+certificate check. Not checked: anything on the handheld. That means a picture through the lease, sound, the pad
+through gptokeyb, 720p software decode speed (PocketTube asks for `--hwdec=no`), and the RG DS Plus at 1024x768.
+To try it before an image: `build/mpv-test/install.sh HOST` puts the build in `/data/rgds/mpv-test` with a wrapper.
+Put that folder first on `PATH` in a test copy of `PocketTube.sh`.
+
+We do not ship PocketTube, list it as ours, or mirror its releases. People install the author's PortMaster zip.
+
 ## 11. Compatibility tiers
 
 | Tier | Ports | Plan |

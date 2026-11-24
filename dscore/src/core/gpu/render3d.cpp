@@ -2736,10 +2736,15 @@ void Renderer3D::flush_batch(const Shade& sh) {
 // translucent blend rules, polygon-id stencil, and depth interactions);
 // Slope::step still advances one line at a time via the Edge's own cursors.
 void Renderer3D::render_chunk(s32 ya, s32 yb) {
+  // A line's stencil row starts empty: a shadow polygon on a line no mask
+  // was drawn on shadows nothing there, instead of reading what another line
+  // (whichever last used the ring's row) left behind (upstream 5712c0f4).
   for (s32 y = ya; y < yb; ++y) {
     clear_line(y);
     line_touched_[y] = false;
-    prev_shadow_mask_[static_cast<u32>((y + 1) & (RING - 1))] = false;
+    const u32 srow = static_cast<u32>((y + 1) & (RING - 1));
+    prev_shadow_mask_[srow] = false;
+    std::memset(&stencil_[256 * srow], 0, 256);
   }
   // order_ is bucketed by ytop then list index, so a whole chunk's slice spans
   // several buckets and is NOT in list order; sort it by index first (at most
@@ -3444,7 +3449,9 @@ void Renderer3D::render(const Gpu3D& gx) {
   // An unchanged polygon list + registers still needs every texture it uses
   // validated (a memcmp each) in case VRAM changed underneath; the previous
   // colour buffer is kept only if nothing needed re-decoding.
-  if (gx.render_identical() && rendered_once_ && aa_ == aa_rendered_) {
+  // Not with a rear-plane bitmap: its picture and depth are texture VRAM (and
+  // an offset register) that nothing here watches (upstream 5712c0f4).
+  if (gx.render_identical() && rendered_once_ && aa_ == aa_rendered_ && !(rs_->dispcnt & (1u << 14))) {
     for (u32 i = 0; i < gx.render_polygon_count(); ++i) {
       const Polygon& p = *polys[i];
       const u32 fmt = (p.texparam >> 26) & 7;

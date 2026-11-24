@@ -43,11 +43,11 @@ void App::reload_themes() {
     select_theme();
 }
 
-void App::remember_appearance() {
+void App::remember_appearance(bool announce) {
     select_theme();
     try {
         save_preferences(o.preferences, preferences);
-        status = "Settings saved";
+        if (announce) status = "Settings saved";
     } catch (const std::exception& e) {
         status = "Could not save all settings. Check storage.";
         std::cerr << e.what() << std::endl;

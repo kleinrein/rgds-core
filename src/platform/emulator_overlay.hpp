@@ -282,6 +282,16 @@ public:
         if (toasts.size() >= 6) toasts.pop_front();
         toasts.push_back(Toast{kind, points, std::move(title), std::move(detail), {}, 0, 0});
     }
+    // Leaving the game: a card on the lower panel ahead of any notice still waiting, up until the process goes, so
+    // the seconds a big checkpoint takes to write (a Dreamcast's is ~37 MB) read as saving rather than a freeze.
+    void busy(std::string header, std::string title, std::string detail) {
+        std::lock_guard<std::mutex> guard(mutex);
+        toasts.clear();
+        toast_now = Toast{3, 0, std::move(title), std::move(detail), std::move(header), 0, 0};
+        toast_on = true;
+        toast_until = ~0ull;
+        ++toast_serial;
+    }
     void fps(double value, bool game = false) {
         std::lock_guard<std::mutex> guard(mutex);
         if (fps_game != game) drawn_fps = -1;

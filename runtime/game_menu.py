@@ -369,11 +369,11 @@ class GameMenu:
                 continue
             path = Path(name).resolve()
             # Every system's games, ports among them (a script), but not PortMaster itself: it is a tool.
-            if path.suffix.lower() not in ('.nds', '.zip', '.gba', '.gbc', '.gb', '.sgb',
-                                           '.sh') or (path.name == 'PortMaster.sh'
-                                                      and path.parent.name == 'entry') or not path.is_file() or any(
-                                                          path == game[0] for game in self.switch_games
-                                                      ):
+            if path.suffix.lower() not in (
+                '.nds', '.dsi', '.srl', '.cia', '.zip', '.gba', '.gbc', '.gb', '.sgb', '.sh'
+            ) or (path.name == 'PortMaster.sh' and path.parent.name == 'entry') or not path.is_file() or any(
+                path == game[0] for game in self.switch_games
+            ):
                 continue
             self.switch_games.append((path, source.get(f'game_{index}_title', path.stem)))
             if len(self.switch_games) == 9:
@@ -689,6 +689,13 @@ class GameMenu:
     def close_menu(self):
         self.snapshot_deadline = None
         Path(str(self.control) + '.capture').unlink(missing_ok=True)
+        # Rewind's pictures (tens of MB, RAM on RG DS OS): the menu deletes them once read, these are ones it never read.
+        for base in (Path('/run/rgds/rewind'), Path(str(self.control) + '.rewind')):
+            for suffix in ('.thumbs', '.shown'):
+                try:
+                    Path(str(base) + suffix).unlink(missing_ok=True)
+                except OSError:
+                    pass
         closing = self.menu
         began = time.monotonic()
         was_paused = self.paused
@@ -923,8 +930,9 @@ class GameMenu:
             "busy", "Saving before switching games…" if self.switch_target else
             'Changing 3D threading…' if action.startswith('threaded:') else 'Applying graphics…' if action.startswith(
                 ('graphics:', 'play-graphics:', 'play-color:', 'filter2d:', 'adaptive:')
-            ) else 'Applying shader…' if action.startswith('shader:') else '' if action.
-            startswith('rewind-') else 'Applying cheat…' if action.startswith('cheat:') else
+            ) else 'Applying shader…' if action.startswith('shader:') else '' if action.startswith('rewind-') else
+            'Applying cheat…' if action.startswith('cheat:') else 'Turning online play off…' if action ==
+            'online:0' else 'Going online…' if action.startswith('online:') else
             ("Saving checkpoint before restarting…" if self.restart else "Saving before returning home…"
              ) if action == "save-quit" else 'Changing speed…' if action ==
             'fast-forward' else "Saving before returning home…" if action ==
@@ -1066,6 +1074,21 @@ class GameMenu:
                 pass
             elif action == 'screenshot' and not self.pending:
                 self.screenshot_paused()
+            elif action.startswith('online:') and not self.pending:
+                if self.core == 'rgds-experimental' and action in ('online:0', 'online:1', 'online:2'):
+                    self.send(action)
+                else:
+                    self.relaunch('Restarting the game to change online play…')
+            elif action.startswith('relaunch:') and not self.pending:
+                # A DS setting read when the game starts (local wireless, the microphone): checkpoint, relaunch
+                # with it, land on the same moment. relaunch:<what> names it for the message.
+                what = action.split(':', 1)[1]
+                self.relaunch(
+                    'Restarting the game to turn on local wireless…' if what ==
+                    'wireless-on' else 'Restarting the game to turn off local wireless…' if what ==
+                    'wireless-off' else 'Restarting the game to change the microphone…' if what ==
+                    'microphone' else 'Restarting the game to apply the change…'
+                )
             elif action in ('restart', 'reset-state') and not self.pending:
                 self.switch_target = None
                 self.reset_state = action == 'reset-state'
@@ -1105,6 +1128,21 @@ class GameMenu:
                         'This game has nothing to rewind to yet.' if state == 'rewind-unavailable' else
                         'Could not rewind. Your game is unchanged.' if state == 'rewind-failed' else '',
                         rewind=state
+                    )
+                    return
+                if state in ('online-applied', 'online-unavailable'):
+                    mode = self.pending['action'].split(':', 1)[1]
+                    self.pending = None
+                    if state == 'online-unavailable':
+                        # Local wireless holds the radio, or the stack would not start live: the setting is saved,
+                        # so a relaunch from a checkpoint brings it up.
+                        self.relaunch('Restarting the game to change online play…')
+                        return
+                    if not self.live: self.pause()
+                    self.publish(
+                        'paused', 'Online play is off.'
+                        if mode == '0' else f'Online play is on with {"WiiLink WFC" if mode == "2" else "Wiimmfi"}. '
+                        'Connect from the game\'s Nintendo WFC menu.'
                     )
                     return
                 if state in ('ds-applied', 'ds-unavailable'):
@@ -1319,6 +1357,16 @@ class GameMenu:
         self.last_toggle = time.monotonic()
         if self.menu is None: self.open()
         self.send('save-quit')
+
+    def relaunch(self, message):
+        """Checkpoint, quit and start the same engine again, which reads the game's settings afresh and resumes the
+        checkpoint (the 76 exit; emulators.py resumes it even with auto-load off)."""
+        self.switch_target = None
+        self.reset_state = False
+        self.restart = True
+        self.restart_same_core = True
+        self.send('save-quit')
+        if self.pending and self.pending['action'] == 'save-quit': self.publish('busy', message)
 
     def renderer_restart(self, action):
         """Native <-> 2x-5x needs the other binary: save the choice, checkpoint, relaunch."""

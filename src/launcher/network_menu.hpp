@@ -58,7 +58,7 @@ void App::wifi_choose() {
     if (device_status[prefix + "connected"] == "1") {
         if (welcome_detour) welcome_detour_end();
         else settings.page = Page::Network;
-        service_notice = "Already connected.";
+        notify("Already connected.");
         dirty = true;
         return;
     }
@@ -80,7 +80,7 @@ void App::wifi_choose() {
         return;
     }
     if (device_status[prefix + "security"].find("802.1X") != std::string::npos) {
-        service_notice = "This network requires an enterprise profile.";
+        notify("This network requires an enterprise profile.");
         dirty = true;
         return;
     }
@@ -154,12 +154,12 @@ void App::homebrew_choose() {
     const auto id = device_status[prefix + "id"];
     if (id.empty()) return;
     if (device_status[prefix + "installed"] == "1") {
-        service_notice = "Already in your library.";
+        notify("Already in your library.");
         dirty = true;
         return;
     }
     if (worker > 0 || homebrew_queued) {
-        service_notice = worker_action == "device.homebrew-get" ? "One download at a time." : "One moment.";
+        notify(worker_action == "device.homebrew-get" ? "One download at a time." : "One moment.");
         dirty = true;
         return;
     }
@@ -177,7 +177,7 @@ void App::bluetooth_choose() {
     bluetooth_address = device_status[prefix + "address"];
     if (bluetooth_address.empty()) return;
     if (device_status[prefix + "connected"] == "1") {
-        service_notice = "Already connected.";
+        notify("Already connected.");
         dirty = true;
         return;
     }
@@ -266,8 +266,11 @@ void App::menu_request(const std::string& action) {
                                  : (action.rfind("graphics:", 0) == 0 || action.rfind("filter2d:", 0) == 0 ||
                                     action.rfind("adaptive:", 0) == 0)
                                      ? "Applying graphics…"
-                                 : action.rfind("shader:", 0) == 0              ? "Applying shader…"
-                                 : action == "restart"                          ? "Saving before restarting…"
+                                 : action.rfind("shader:", 0) == 0 ? "Applying shader…"
+                                 : action == "restart" || action.rfind("relaunch:", 0) == 0
+                                     ? "Saving before restarting…"
+                                 : action == "online:0"                         ? "Turning online play off…"
+                                 : action.rfind("online:", 0) == 0              ? "Going online…"
                                  : action == "screenshot"                       ? "Saving the screenshot…"
                                  : action == "quit" || action == "quit-discard" ? "Returning home…"
                                                                                 : "Working…";

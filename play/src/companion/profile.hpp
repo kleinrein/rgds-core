@@ -5,6 +5,7 @@
 #pragma once
 #include "core/core.hpp"
 
+#include <algorithm>
 #include <map>
 #include <string>
 #include <vector>
@@ -111,6 +112,20 @@ struct ScreensSpec {
     // show it whole. `stretch = 2`: the second screen's picture this many times taller than wide scale, within the
     // panel: a verb band is 56 rows of big targets.
     int match_w = 0, match_h = 0, stretch = 1;
+    // `tall = yes`: both panels are one screen twice as tall (a vertical arcade game): the picture's upper half on the
+    // upper panel, standing on its lower edge, its lower half hanging from the lower panel's top, at one scale, so the
+    // halves meet at the hinge. The rectangles follow the picture's size (no top or bottom), and hold while it is
+    // taller than wide: a board's sideways test screen is shown whole above.
+    bool tall = false;
+    Rect top_rect(int w, int h) const { return tall ? tall_rect(w, h, true) : top; }
+    Rect bottom_rect(int w, int h) const { return tall ? tall_rect(w, h, false) : bottom; }
+    static Rect tall_rect(int w, int h, bool upper) {
+        // Each half in a 4:3 box, the panels' own shape: as wide as the picture, or wider (black at the sides) for a
+        // half too tall for a panel's width, so both panels show their half at the same scale.
+        const int top_h = h / 2, rest = h - top_h;
+        const int rh = std::max((w * 3 + 3) / 4, rest), rw = std::max(w, (rh * 4 + 1) / 3), x = -(rw - w) / 2;
+        return upper ? Rect{x, top_h - rh, rw, rh} : Rect{x, top_h, rw, rh};
+    }
 };
 
 struct HudSpec {
@@ -219,6 +234,8 @@ struct Profile {
 
 // Parses one profile. On failure returns false with "file:line: why".
 bool parse_profile(const std::string& text, const std::string& file, Profile& out, std::string& error);
+// The tall screen for a game no profile names (a vertical arcade game): [screens] tall = yes, the board's own pad.
+Profile tall_profile(const std::string& system, const std::string& title);
 bool parse_buttons(const std::string& text, uint32_t& out);
 bool parse_condition(const std::string& text, Condition& out, std::string& error);
 // An address in hex, or banked as BANK:ADDRESS (core.hpp's banked()).

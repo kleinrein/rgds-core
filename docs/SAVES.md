@@ -88,6 +88,7 @@ shared by every profile. **Back up all saves** includes every profile. See
 | Engine | Native in-game saves | Native states |
 | --- | --- | --- |
 | DSCore | `emulators/rgds-experimental/saves/<ROM basename>.sav` | `emulators/rgds-experimental/states/`, using the DS game code |
+| DSCore, DSiWare | `emulators/rgds-experimental/saves/<GAMECODE>.pub` and `.prv` (the title's NAND saves; photos in `saves/dsi-photos`), SD card in `emulators/rgds-experimental/dsi-sd/` | as above |
 
 DraStic, DSperate and melonDS are retired. Their folders (`emulators/drastic`,
 `emulators/dsperate`, `emulators/melonds`) are left as they are and still go

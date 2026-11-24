@@ -130,6 +130,7 @@ struct Rtc {
   u8 datetime[7] = {0, 1, 1, 0, 0, 0, 0}; // yy mm dd dow hh mm ss (BCD)
   u8 alarm1[3] = {}, alarm2[3] = {};
   u8 clock_adjust = 0, free_reg = 0;
+  u8 irq_flag = 0; // 0x10 / 0x20: the INT1 / INT2 lines; 0x01: a minute has carried
   // Off by default for determinism; see Io::start_rtc_clock.
   bool ticking = false;
   u64 next_tick = 0; // next one-second carry
@@ -266,6 +267,16 @@ public:
   DsiCamModule cam; // 0x04004200 (ARM9); sensors on I2C 0x78/0x7A
   void request_irq2(u32 bit);
   void bptwl_reset();
+  // The DSi's power button and volume keys, from the frontend (no-ops on a DS).
+  // They reach software as BPTWL interrupt flags (register 0x10, IRQ2 bit 6
+  // when register 0x12 enables it); with the interrupt off the controller
+  // resets or powers off itself. After melonDS DSi_BPTWL.
+  // Power: call with `down` every frame it is held, and once with false on release.
+  void dsi_power_button(bool down);
+  void dsi_volume_button(bool up); // one press (the frontend's key repeat is the hold)
+  void bptwl_irq(u8 flags);
+  bool bptwl_power_down_ = false, bptwl_power_shut_ = false; // this press: held, and its shutdown flag raised
+  u64 bptwl_power_since_ = 0;
   void reprice_clock9_store(u32 idx);
   void i2c_write_cnt(u8 value);
   u8 bptwl_read(bool last);
@@ -296,6 +307,9 @@ public:
   void set_buttons(u32 pressed);
   void set_touch(int x, int y, bool down);
   void set_lid(bool closed); // opening raises ARM7 IRQ 22, ending firmware sleep
+  bool sleeping = false;
+  u64 sleep_frame_cycles = 0;
+  bool run_sleep(u64 cycles);
   bool lid_closed() const { return extkeyin & 0x80; }
   // One frame of s16 mono mic samples, any rate, mapped across the frame by
   // time. Pointer must stay valid until the next call.
@@ -316,8 +330,18 @@ public:
   void dsi_mic_clock(s16 sample);
   // Game has sampled AUX at least once.
   bool mic_used() const { return mic_used_; }
+  // The DSi's DSP has started listening: it takes the microphone through I2S,
+  // past the registers that otherwise say a game wants it.
+  void note_mic_wanted() { mic_used_ = true; }
   void update_key_irq();
+  // EXMEMCNT. Bits 7-15 are the ARM9's and both CPUs read them; bits 0-6 (the
+  // GBA slot's waits) are one copy per CPU. `exmemcnt` is the ARM9's register.
   u16 exmemcnt = 0;
+  u8 exmemcnt7 = 0; // the ARM7's bits 0-6
+  // The slot's waits are those of the CPU that owns it (bit 7), as melonDS.
+  u16 exmemcnt_slot2() const {
+    return (exmemcnt & 0x80) ? static_cast<u16>((exmemcnt & 0xFF80) | exmemcnt7) : exmemcnt;
+  }
   u16 wifiwaitcnt = 0; // 0x04000206 (ARM7): live only while POWCNT2 bit 1
   u16 rcnt = 0;        // 0x04000134 (ARM7), readback only
   u16 spicnt = 0;
@@ -426,14 +450,20 @@ private:
   void rtc_cmd_read();
   void rtc_cmd_write(u8 value);
   void rtc_tick();
-  void rtc_seed();              // from host local time
-  bool rtc_host_clock_ = false; // survives reset()
+  void rtc_set_irq(u8 line);
+  void rtc_carry_minute();
+  void rtc_hour_written();
+  void rtc_process_irq(int type); // 0 = minute carry, 1 = second, 2 = status register written
+  void rtc_seed();                // from host local time
+  void rtc_seed_time();           // ... the date and time only
+  bool rtc_host_clock_ = false;   // survives reset()
   // status1 bit 7 (power lost) clears on guest read and stays clear across
   // reset(); otherwise every reboot re-enters the setup wizard.
   bool rtc_power_lost_seen_ = false;
 
 public:
-  void start_rtc_clock(); // host time; also clears power-lost; survives reset()
+  void rtc_step_second() { rtc_tick(); } // one second of the clock, with its interrupts (tests)
+  void start_rtc_clock();                // host time; also clears power-lost; survives reset()
   bool rtc_host_clock() const { return rtc_host_clock_; }
   // Re-read the host clock into a running RTC (after the host slept, which
   // emulated time does not see). No-op unless start_rtc_clock() was called.
@@ -445,6 +475,7 @@ public:
 private:
   void cart_write_romctrl(u32 value);
   u32 cart_read_data();
+  void cart_write_data(u32 value, u32 mask);
   void cart_end_transfer();
   void cart_receive_word(u64 at);
   void cart_schedule_receive(u64 from);

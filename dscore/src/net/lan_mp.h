@@ -65,6 +65,13 @@ public:
   Role start_auto(const std::string& player_name, int scan_ms = 2500, int max_players = 16, bool host_fallback = true);
   std::string peer_name() const { return peer_name_; } // the session joined by start_auto
   bool start_client(const std::string& player_name, const std::string& host);
+  // start_client without the wait: begin_join sends the connect, step_join
+  // services it for up to wait_ms and returns 1 joined, 0 still trying, -1
+  // failed (the attempt is torn down; begin_join again to retry).
+  bool begin_join(const std::string& player_name, const std::string& host);
+  int step_join(int wait_ms);
+  bool joining() const { return join_peer_ != nullptr; }
+  void cancel_join();
   void end_session();
   std::map<u32, Session> sessions(); // keyed by host IPv4 (host order)
   std::vector<Player> players();
@@ -82,6 +89,11 @@ public:
   double wait_total_ms() const { return wait_total_ms_; }
   double wait_max_ms() const { return wait_max_ms_; }
   unsigned wait_timeouts() const { return wait_timeouts_; } // waits that ran the whole recv timeout
+  // The bound on one reply/host-packet wait, in milliseconds (clamped to 5..250).
+  static constexpr int kDefaultRecvTimeoutMs = 25;
+  void set_recv_timeout_ms(int ms);
+  int recv_timeout_ms() const { return recv_timeout_ms_; }
+  u16 connected_mask() const { return connected_mask_; } // players whose radio is on, by id
 
   // MpTransport
   void begin() override;
@@ -99,6 +111,7 @@ private:
   void process_discovery();
   u32 first_with_room(std::string* name); // the first session heard with a free slot
   void poll_discovery(u32 tick);          // read every beacon waiting on the socket
+  int slot_of(const Player* p) const;
   void host_update_player_list();
   void process_host_event(_ENetEvent& ev);
   void process_client_event(_ENetEvent& ev);
@@ -120,13 +133,20 @@ private:
   Player me_;
   u32 host_address_ = 0;
   u16 connected_mask_ = 0;
-  static constexpr int RECV_TIMEOUT_MS = 25;
-  static constexpr u32 STALE_MS = 64; // stale-packet window; melonDS uses 16
+  // How long a reply/host-packet wait may block the emulation thread. 25 ms
+  // suits a wired LAN; a Wi-Fi access point's jitter can exceed it often, and
+  // every miss is a dropped MP exchange the game may give up on.
+  int recv_timeout_ms_ = kDefaultRecvTimeoutMs;
+  static constexpr u32 STALE_MS = 128; // stale-packet window; melonDS uses 16
   int last_host_id_ = -1;
   _ENetPeer* last_host_peer_ = nullptr;
   std::queue<_ENetPacket*> rx_;
   u32 frame_count_ = 0;
   std::string peer_name_;
+  _ENetPeer* join_peer_ = nullptr; // a begin_join in flight
+  std::string join_host_;
+  u32 join_addr_ = 0, join_start_ms_ = 0;
+  int join_state_ = 0; // 0 connecting, 1 connected, awaiting ClientInit
   unsigned wait_count_ = 0, wait_timeouts_ = 0;
   double wait_total_ms_ = 0, wait_max_ms_ = 0;
 };

@@ -65,6 +65,7 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Back") return SettingsIcon::Back;
     if (title == "High contrast") return SettingsIcon::Contrast;
     if (title == "Home layout") return SettingsIcon::Home;
+    if (title == "Files") return SettingsIcon::Folder;
     if (title == "Background") return SettingsIcon::Shader;
     if (title == "Touch gestures") return SettingsIcon::Touch;
     if (title == "Time of day") return SettingsIcon::Clock;
@@ -198,6 +199,7 @@ inline std::string settings_row_hint(const std::string& title) {
     if (title == "Favourite") return "Keep this game in Favourites";
     if (title == "Shader") return "A screen style for this cartridge";
     if (title == "Controls") return "Buttons and the game menu shortcut";
+    if (title == "Files") return "Games, saves and music on the card";
     if (title == "Home layout") return "A carousel, or the DSi's column with your last game on top";
     if (title == "Background") return "Plain, or the DSi's ruled grid behind every screen";
     if (title == "Touch gestures") return "Swipe up from the bottom for Home, in from a side for Back";

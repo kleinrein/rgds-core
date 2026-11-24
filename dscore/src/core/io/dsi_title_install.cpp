@@ -449,6 +449,26 @@ std::unique_ptr<cart::RomSource> zip_entry_of(const std::string& path, cart::Zip
 }
 } // namespace
 
+bool file_dsi_header(const std::string& path, u8& unit_code, u32& title_high) {
+  std::vector<u8> head(0x1000);
+  const size_t dot = path.find_last_of('.');
+  std::string ext = dot == std::string::npos ? std::string() : path.substr(dot + 1);
+  for (char& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  if (ext == "zip") {
+    cart::ZipEntry e;
+    std::unique_ptr<cart::RomSource> src = zip_entry_of(path, e);
+    if (!src || e.cia || cart::peek_entry(src->page(0), src->size(), e, head.data(), head.size()) != head.size())
+      return false;
+  } else {
+    if (ext != "nds" && ext != "dsi" && ext != "srl") return false;
+    std::ifstream f(path, std::ios::binary);
+    if (!f.read(reinterpret_cast<char*>(head.data()), static_cast<std::streamsize>(head.size()))) return false;
+  }
+  unit_code = head[0x12];
+  title_high = rd32le(&head[0x234]);
+  return true;
+}
+
 bool zip_is_dsiware(const std::string& path) {
   cart::ZipEntry e;
   std::unique_ptr<cart::RomSource> src = zip_entry_of(path, e);
@@ -490,7 +510,8 @@ bool nand_title_content_id(NandImage& nand, const u8* bios7i, u32 title_lo, u32&
   for (const FatVolume::Entry& e : fs.main().list(dir)) {
     if (e.dir() || e.name.size() != 12 || e.name.compare(8, 4, ".APP") != 0) continue;
     char* end = nullptr;
-    const unsigned long v = std::strtoul(e.name.substr(0, 8).c_str(), &end, 16);
+    const std::string stem = e.name.substr(0, 8); // kept: `end` points into it
+    const unsigned long v = std::strtoul(stem.c_str(), &end, 16);
     if (end && *end == 0) {
       content_id = static_cast<u32>(v);
       return true;

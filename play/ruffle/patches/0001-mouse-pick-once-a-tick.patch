@@ -1,0 +1,173 @@
+diff --git a/core/src/avm1/object/script_object.rs b/core/src/avm1/object/script_object.rs
+index 66a4e488..044b9af7 100644
+--- a/core/src/avm1/object/script_object.rs
++++ b/core/src/avm1/object/script_object.rs
+@@ -765,6 +765,48 @@ impl<'gc> Object<'gc> {
+         dobj.is_some_and(|o| stage_object::has_display_object_property(o, activation, name))
+     }
+ 
++    /// RG DS: `has_property` for several names at once, for an object whose display object has no child or
++    /// `_property` by any of them (the caller's promise: `MovieClip::is_button_mode`). The object and its
++    /// prototype chain are walked once, each plain object on it asked for every name; anything else on the chain
++    /// (`super`, another clip) is asked the long way.
++    pub fn has_any_script_property(
++        self,
++        activation: &mut Activation<'_, 'gc>,
++        names: &[AvmString<'gc>],
++    ) -> bool {
++        let case_sensitive = activation.is_case_sensitive();
++        let mut object = self;
++        for depth in 0..256 {
++            let native = object.native_no_super();
++            let display_object = native.as_display_object();
++            if matches!(native, NativeObject::Super(_)) || (depth > 0 && display_object.is_some()) {
++                return names
++                    .iter()
++                    .any(|&name| object.has_property(activation, name));
++            }
++            // A removed clip has only its display object's properties, of which the caller says there are none.
++            if display_object.is_some_and(|o| o.avm1_removed()) {
++                return false;
++            }
++            let own = {
++                let data = object.0.borrow();
++                names
++                    .iter()
++                    .any(|&name| data.properties.contains_key(name, case_sensitive))
++            };
++            if own {
++                return true;
++            }
++            match object.proto(activation) {
++                Value::Object(proto) => object = proto,
++                _ => return false,
++            }
++        }
++        names
++            .iter()
++            .any(|&name| self.has_property(activation, name))
++    }
++
+     /// Checks if the object has a given named property on itself (and not,
+     /// say, the object's prototype or superclass)
+     pub fn has_own_property(
+diff --git a/core/src/display_object/container.rs b/core/src/display_object/container.rs
+index 6e537637..eec90d47 100644
+--- a/core/src/display_object/container.rs
++++ b/core/src/display_object/container.rs
+@@ -840,6 +840,21 @@ impl<'gc> ChildContainer<'gc> {
+     ///
+     /// If multiple children with the same name exist, the one that occurs
+     /// first in the render list wins.
++    /// RG DS: whether a child's name could be a button handler's ("onPress", "onRollOver", ...), in any case. Almost
++    /// never: `MovieClip::is_button_mode` then leaves the children out of its property tests.
++    pub fn may_have_child_named_on(&self) -> bool {
++        // "on", or anything a case-insensitive comparison might take for it.
++        let o_or_n = |c: u16, lower: u8| c == lower as u16 || c == (lower - 32) as u16 || c > 0x7F;
++        let on = |child: &DisplayObject<'gc>| {
++            child
++                .name()
++                .is_some_and(|n| n.len() >= 7 && o_or_n(n.at(0), b'o') && o_or_n(n.at(1), b'n'))
++        };
++        self.has_pending_removals
++            || self.render_list.iter().any(on)
++            || self.depth_list.values().any(on)
++    }
++
+     fn get_name(&self, name: &WStr, case_sensitive: bool) -> Option<DisplayObject<'gc>> {
+         if self.has_pending_removals {
+             // Find matching children by searching the depth list
+diff --git a/core/src/display_object/movie_clip.rs b/core/src/display_object/movie_clip.rs
+index efde9c2d..abade26e 100644
+--- a/core/src/display_object/movie_clip.rs
++++ b/core/src/display_object/movie_clip.rs
+@@ -2329,13 +2329,31 @@ impl<'gc> MovieClip<'gc> {
+                 self.avm1_root(),
+             );
+ 
+-            ClipEvent::BUTTON_EVENT_METHODS
+-                .iter()
+-                .copied()
+-                .any(|handler| {
+-                    let handler = AvmString::new_utf8(activation.gc(), handler);
+-                    object.has_property(&mut activation, handler)
+-                })
++            // RG DS: this runs for every clip of every mouse pick. The seven names are interned (no string made
++            // for each), the object and its prototypes are asked once for all of them, and the clip's children are
++            // searched by name only when one could match.
++            let handlers = [
++                istr!("onDragOver"),
++                istr!("onDragOut"),
++                istr!("onPress"),
++                istr!("onRelease"),
++                istr!("onReleaseOutside"),
++                istr!("onRollOut"),
++                istr!("onRollOver"),
++            ];
++            debug_assert!(
++                handlers
++                    .iter()
++                    .zip(ClipEvent::BUTTON_EVENT_METHODS)
++                    .all(|(a, b)| a.to_utf8_lossy() == b)
++            );
++            if self.raw_container().may_have_child_named_on() {
++                handlers
++                    .iter()
++                    .any(|&handler| object.has_property(&mut activation, handler))
++            } else {
++                object.has_any_script_property(&mut activation, &handlers)
++            }
+         } else {
+             false
+         }
+diff --git a/core/src/player.rs b/core/src/player.rs
+index 5566a440..bcfa2e0b 100644
+--- a/core/src/player.rs
++++ b/core/src/player.rs
+@@ -373,6 +373,8 @@ pub struct Player {
+     input: InputManager,
+ 
+     mouse_in_stage: bool,
++    /// RG DS: the idle mouse pick of this frame or tick is done (see `update`).
++    idle_mouse_picked: bool,
+     mouse_position: Point<Twips>,
+ 
+     /// The current mouse cursor icon.
+@@ -558,6 +560,7 @@ impl Player {
+ 
+         self.frame_accumulator += dt;
+         let frame_duration = self.frame_duration();
++        self.idle_mouse_picked = false;
+ 
+         let max_frames_per_tick = self.max_frames_per_tick();
+         let mut frame = 0;
+@@ -2012,6 +2015,7 @@ impl Player {
+             return;
+         }
+ 
++        self.idle_mouse_picked = false;
+         self.update(|context| {
+             // TODO: Is this order correct?
+             run_all_phases_avm2(context);
+@@ -2382,7 +2386,12 @@ impl Player {
+         self.mutate_with_update_context(|context| {
+             Self::update_drag(context);
+         });
+-        self.update_mouse_state(EnumSet::empty(), false, &mut false);
++        // RG DS: with the mouse still, what is under it is looked for once after each frame and once in a tick
++        // without one, not after every update (three or more a tick: frames, workers, streams). Each look walks
++        // every clip on the stage; in a level of Bloons that was three quarters of the tick.
++        if !std::mem::replace(&mut self.idle_mouse_picked, true) {
++            self.update_mouse_state(EnumSet::empty(), false, &mut false);
++        }
+ 
+         // GC
+         self.gc_arena.borrow_mut().collect_debt();
+@@ -3060,6 +3069,7 @@ impl PlayerBuilder {
+                 // Input
+                 input: InputManager::new(self.gamepad_button_mapping),
+                 mouse_in_stage: true,
++                idle_mouse_picked: false,
+                 mouse_position: Point::ZERO,
+                 mouse_cursor: MouseCursor::Arrow,
+                 mouse_cursor_needs_check: false,

@@ -71,16 +71,17 @@ class VoiceToyUITests(unittest.TestCase):
         return result
 
     def open_toy(self):
-        # Carousel: Settings, Games, Favourites, Recents, PictoChat, Sound toy (Music is off by default), so 5.
-        (self.root / 'state').write_text('1 0 0 ""\nhome 5\n')
+        # Carousel: Settings, Games, Favourites, Recents, PictoChat, Album, Sound toy (Music is off by default). The
+        # state file writes the toy as 7 whatever its place.
+        (self.root / 'state').write_text('1 0 0 ""\nhome 7\n')
 
     def test_the_tile_is_on_home_and_its_setting_hides_it(self):
         self.open_toy()
         self.run_ui(keys(400, 'a', 'b'))
-        self.assertIn('home 5', (self.root / 'state').read_text())
+        self.assertIn('home 7', (self.root / 'state').read_text())
         self.ui.write_text(self.ui.read_text() + 'sound_toy=0\n')
         self.run_ui()
-        self.assertIn('home 4', (self.root / 'state').read_text())  # the tile is gone: back to the last one
+        self.assertIn('home 5', (self.root / 'state').read_text())  # the tile is gone: back to the last one (Album)
 
     def test_recording_saves_a_sound_and_the_startup_sound_follows_it(self):
         self.open_toy()
@@ -100,7 +101,7 @@ class VoiceToyUITests(unittest.TestCase):
         startup = (folder / 'startup.wav').read_bytes()
         self.assertEqual(startup[:4], b'RIFF')
         self.assertGreater(len(startup), 44 + 16000)
-        self.assertIn('home 5', (self.root / 'state').read_text())  # back on Home, on the tile
+        self.assertIn('home 7', (self.root / 'state').read_text())  # back on Home, on the tile
 
     def test_clear_takes_the_drawing_then_twice_erases_the_sound(self):
         self.open_toy()
@@ -114,7 +115,7 @@ class VoiceToyUITests(unittest.TestCase):
         bend = (folder / 'slot-1.ini').read_text().split('bend=')[1]
         self.assertEqual({float(v) for v in bend.split(',')}, {0.0})
         # Nothing drawn now: Y once only asks, Y again erases the sound.
-        (self.root / 'state').write_text('1 0 0 ""\nhome 5\n')
+        (self.root / 'state').write_text('1 0 0 ""\nhome 7\n')
         self.run_ui(keys(400, 'a') + keys(800, 'y'), seconds=2)
         self.assertTrue((folder / 'slot-1.wav').exists())
         self.run_ui(keys(400, 'a') + keys(800, 'y', 'y'), seconds=2)
@@ -126,14 +127,17 @@ class VoiceToyUITests(unittest.TestCase):
         self.run_ui(script, seconds=5)
         self.assertIn('voice=13', (self.data / 'sound-toy/slot-1.ini').read_text())  # Megaphone, page three
 
-    def test_the_column_has_three_apps_in_its_last_row_and_walks_them(self):
+    def test_the_column_has_its_apps_in_one_dock_row_and_walks_them(self):
+        # The dock: PictoChat, Music, Album, Sound toy. Settings sits beside Recents above it.
         self.ui.write_text('schema=1\nhome_layout=vertical\nbackground=plain\nmusic_player=1\n')
         (self.root / 'state').write_text('1 0 0 ""\nhome 0\n')
-        # From Settings (last row, left), Right twice reaches the Sound toy beside Music; Up goes to PictoChat's row.
-        self.run_ui(keys(400, 'right', 'right'))
+        self.run_ui(keys(400, 'down'))  # Settings is on the right: down lands on the dock's last app
         self.assertIn('home 7', (self.root / 'state').read_text())
-        self.run_ui(keys(400, 'up'))
-        self.assertIn('home 4', (self.root / 'state').read_text())
+        self.run_ui(keys(400, 'left'))  # the Album, written as 10 (tile 6)
+        self.assertIn('home 10', (self.root / 'state').read_text())
+        (self.root / 'state').write_text('1 0 0 ""\nhome 4\n')
+        self.run_ui(keys(400, 'up'))  # PictoChat, the first app, leads up to Recents
+        self.assertIn('home 3', (self.root / 'state').read_text())
 
 
 if __name__ == '__main__':

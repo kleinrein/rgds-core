@@ -90,6 +90,9 @@ inline std::function<bool(int, bool, int)> graphics_handler;
 inline std::function<bool(int)> filter2d_handler;
 // Heavy 3D scenes: 1 adaptive (native during heavy stretches), 0 always sharp. Live.
 inline std::function<bool(int)> adaptive_handler;
+// Online play: 0 off, 1 Wiimmfi, 2 WiiLink WFC. Live: the emulated access point always beacons, and this
+// swaps the host network behind it. False when local wireless holds the radio or the stack cannot start.
+inline std::function<bool(int)> online_handler;
 // Cheats: the Action Replay codes loaded for the cart, listed and toggled from
 // the RG DS game menu. Text pointers are the engine's own strings; they stay
 // valid until the cart changes (the loader cart's reset), and the bridge copies
@@ -181,6 +184,18 @@ extern "C" __attribute__((used, visibility("default"))) inline int rgds_set_adap
   }
 }
 
+// Called by RGDS on the SDL/emulation thread between emulated frames: 0 off, 1 Wiimmfi, 2 WiiLink WFC.
+// 0 when it could not apply; RGDS then relaunches the game from a checkpoint with the new setting.
+extern "C" __attribute__((used, visibility("default"))) inline int rgds_set_online(int mode) {
+  if (mode < 0 || mode > 2 || !rgds::online_handler) return 0;
+  try {
+    return rgds::online_handler(mode) ? 1 : 0;
+  } catch (const std::exception& e) {
+    std::fprintf(stderr, "RG DS online play: %s\n", e.what());
+    return 0;
+  }
+}
+
 // Cheats, called by RGDS on the SDL/emulation thread between emulated frames.
 // Counts are 0 without a cart or a database entry for it.
 extern "C" __attribute__((used, visibility("default"))) inline int rgds_cheat_count() {
@@ -219,9 +234,22 @@ extern "C" __attribute__((used, visibility("default"))) inline int rgds_set_chea
   }
 }
 
-// Rewind, called by RGDS on the SDL/emulation thread between emulated frames (the RewindMoment notes above).
+// Rewind, called by RGDS on the SDL/emulation thread between emulated frames (the RewindMoment notes above). Nothing
+// thrown gets past these (a moment is ~6 MB: out of memory is the likely one): the menu hears "no", the game goes on.
+namespace rgds {
+template <class F, class R> inline R rewind_safely(F&& f, R failed) {
+  try {
+    return f();
+  } catch (const std::exception& e) {
+    std::fprintf(stderr, "RG DS rewind: %s\n", e.what());
+  } catch (...) {
+    std::fprintf(stderr, "RG DS rewind: failed\n");
+  }
+  return failed;
+}
+} // namespace rgds
 extern "C" __attribute__((used, visibility("default"))) inline unsigned rgds_rewind_open() {
-  return rgds::rewind_open_handler ? rgds::rewind_open_handler() : 0;
+  return rgds::rewind_safely([] { return rgds::rewind_open_handler ? rgds::rewind_open_handler() : 0u; }, 0u);
 }
 extern "C" __attribute__((used, visibility("default"))) inline int rgds_rewind_count() {
   return rgds::rewind_count_handler ? rgds::rewind_count_handler() : 0;
@@ -230,7 +258,9 @@ extern "C" __attribute__((used, visibility("default"))) inline int
 rgds_rewind_moment(int index, unsigned* id, unsigned* parent, unsigned long long* position, int* w, int* h,
                    const uint32_t** px) {
   rgds::RewindMoment m;
-  if (!rgds::rewind_moment_handler || !rgds::rewind_moment_handler(index, m)) return 0;
+  if (!rgds::rewind_moment_handler ||
+      !rgds::rewind_safely([&] { return rgds::rewind_moment_handler(index, m); }, false))
+    return 0;
   if (id) *id = m.id;
   if (parent) *parent = m.parent;
   if (position) *position = m.position;
@@ -246,7 +276,9 @@ extern "C" __attribute__((used, visibility("default"))) inline int rgds_rewind_s
                                                                                     int* h, const uint32_t** px) {
   int s = 0, pw = 0, ph = 0;
   const uint32_t* p = nullptr;
-  if (!rgds::rewind_show_handler || !rgds::rewind_show_handler(id, s, pw, ph, p)) return 0;
+  if (!rgds::rewind_show_handler ||
+      !rgds::rewind_safely([&] { return rgds::rewind_show_handler(id, s, pw, ph, p); }, false))
+    return 0;
   if (screens) *screens = s;
   if (w) *w = pw;
   if (h) *h = ph;
@@ -254,5 +286,8 @@ extern "C" __attribute__((used, visibility("default"))) inline int rgds_rewind_s
   return 1;
 }
 extern "C" __attribute__((used, visibility("default"))) inline int rgds_rewind_jump(unsigned id, int play) {
-  return rgds::rewind_jump_handler && rgds::rewind_jump_handler(id, play != 0) ? 1 : 0;
+  return rgds::rewind_jump_handler &&
+                 rgds::rewind_safely([&] { return rgds::rewind_jump_handler(id, play != 0); }, false)
+             ? 1
+             : 0;
 }

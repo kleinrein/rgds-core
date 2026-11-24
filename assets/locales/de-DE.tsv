@@ -63,6 +63,7 @@ Antarctica	Antarktis
 Any	Alle
 Applies immediately. Higher clocks use more battery.	Gilt sofort. Höhere Taktraten verbrauchen mehr Akku.
 Applies immediately. Your game keeps its progress.	Gilt sofort. Spielfortschritt bleibt erhalten.
+Applies when the game starts without resuming.	Gilt, wenn das Spiel ohne Fortsetzen startet.
 Apply	Anwenden
 APPLY	ANWENDEN
 Applying shader…	Filter wird angewendet…
@@ -447,6 +448,7 @@ Default controls saved.	Globale Steuerung gespeichert.
 Glossy tiles	Glänzende Kacheln
 Go back	Zurück
 Goes into	Landet in
+Going online…	Online gehen…
 Golden leaves	Goldene Blätter
 Green	Grün
 Grey	Grau
@@ -457,12 +459,26 @@ Left stick down	Linker Stick unten
 Left stick left	Linker Stick links
 Left stick right	Linker Stick rechts
 Left stick up	Linker Stick oben
+Online play is off.	Online-Spiel ist aus.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Online-Spiel ist an mit WiiLink WFC. Verbinde dich im Nintendo-WFC-Menü des Spiels.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Online-Spiel ist an mit Wiimmfi. Verbinde dich im Nintendo-WFC-Menü des Spiels.
+Online play is on. Local wireless applies when it is off.	Online-Spiel ist an. Lokaler Funk gilt, wenn es aus ist.
 Page	Seite
+Restart later	Später neu starten
+Restart now, unsaved progress is lost	Jetzt neu starten, Ungespeichertes geht verloren
+Restarting the game to apply the change…	Spiel startet neu, um die Änderung zu übernehmen…
+Restarting the game to change online play…	Spiel startet neu, um das Online-Spiel zu ändern…
+Restarting the game to change the microphone…	Spiel startet neu, um das Mikrofon zu ändern…
+Restarting the game to turn off local wireless…	Spiel startet neu, um lokalen Funk auszuschalten…
+Restarting the game to turn on local wireless…	Spiel startet neu, um lokalen Funk einzuschalten…
 Right stick down	Rechter Stick unten
 Right stick left	Rechter Stick links
 Right stick right	Rechter Stick rechts
 Right stick up	Rechter Stick oben
 Storyware	Bilderbuch
+The game reads its language when it starts	Das Spiel liest seine Sprache beim Start
+The game reads your nickname when it starts	Das Spiel liest deinen Spitznamen beim Start
+Turning online play off…	Online-Spiel wird ausgeschaltet…
 h	Std.
 Haptic strength	Haptikstärke
 Health	Gesundheit
@@ -2017,3 +2033,14 @@ Could not open it	Konnte nicht geöffnet werden
 This folder is empty	Dieser Ordner ist leer
 The trash is empty	Der Papierkorb ist leer
 No network places yet	Noch keine Netzwerkorte
+Files	Dateien
+Theme, sound and Wi-Fi	Design, Ton und WLAN
+Your screenshots and photos, by game and date	Deine Screenshots und Fotos nach Spiel und Datum
+Games, saves and music on the card	Spiele, Spielstände und Musik auf der Karte
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare braucht die DS- und DSi-BIOS-Dateien im BIOS-Ordner
+This .cia is encrypted: copy the decrypted DSiWare file instead	Diese .cia ist verschlüsselt: kopiere stattdessen die entschlüsselte DSiWare-Datei
+This .cia is not a DSiWare file	Diese .cia ist keine DSiWare-Datei
+Little kid	Kleines Kind
+Big pictures, one tap to play. No menus.	Große Bilder, ein Tippen zum Spielen. Keine Menüs.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	Für die Kleinsten: nur ihre Spiele, als große Bilder. Ein Tippen startet, und es gibt keine Menüs oder Einstellungen, in denen man sich verirrt.
+No games yet	Noch keine Spiele

@@ -37,7 +37,7 @@ A panel that never presents within 0.5 s is left out, for example a one-window e
 - Saving needs only the standard library: a BMP reader, PNG output through zlib, and nearest-neighbour scaling.
 - The launcher runs the script for every change: `save`, `index`, `delete`, `view`, `cover` and `screens`. One copy of the code owns the format.
 
-## Album page (Settings > Library > Album)
+## Album page (Home > Album; Settings > Library until 2026-11-24)
 
 - Pictures are grouped by game, newest game first. A gap separates the days within a game. The upper screen previews the selected picture.
 - **A** opens the picture full size, with its upper and lower screens on their own panels. L/R or the D-pad moves between pictures, and B goes back.

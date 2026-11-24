@@ -29,7 +29,7 @@ bool App::save_artwork_match(const std::string& title) {
         artwork_match = clean;
         return true;
     } catch (const std::exception&) {
-        service_notice = "Could not save matching title.";
+        notify("Could not save matching title.");
         return false;
     }
 }
@@ -46,8 +46,7 @@ void App::review_artwork() {
         }
     }
     if (names.empty()) {
-        service_notice =
-            model.games.empty() ? "No games in this collection." : "Every game in this collection has artwork.";
+        notify(model.games.empty() ? "No games in this collection." : "Every game in this collection has artwork.");
         dirty = true;
         return;
     }
@@ -61,8 +60,8 @@ void App::game_artwork_action() {
     if (worker > 0 && worker_action == "scrape") {
         if (settings.focus == 1) {
             std::ofstream(o.data / "scraper/cancel").put('\n');
-            service_notice = "Stopping after this request.";
-        } else service_notice = "Stop fetching before editing the match.";
+            notify("Stopping after this request.");
+        } else notify("Stop fetching before editing the match.");
         dirty = true;
         return;
     }
@@ -71,14 +70,14 @@ void App::game_artwork_action() {
         return;
     }
     if (settings.focus == 2) {
-        if (save_artwork_match("")) service_notice = "Using the ROM's game code and filename.";
+        if (save_artwork_match("")) notify("Using the ROM's game code and filename.");
         dirty = true;
         return;
     }
     if (worker > 0 && (worker_action == "index" || worker_action == "device.info" || worker_action == "status"))
         stop_worker();
     if (model.games[model.selected].demo) {
-        service_notice = "Add your DS games to fetch their artwork.";
+        notify("Add your DS games to fetch their artwork.");
         dirty = true;
         return;
     }

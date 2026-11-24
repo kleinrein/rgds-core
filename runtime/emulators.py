@@ -28,6 +28,7 @@ from game_menu import GameMenu, MenuInput, SwitchGame
 from shaders import supported, SHADERS
 from integration import select_hooks, engine_libraries
 from engine_log import EngineLog
+import dsiware
 from profiles import check_plan, device_root, is_owner, player_root
 from hud_theme import hud_theme, hud_words
 from controls import paths as control_paths, load_profile as control_profile
@@ -166,9 +167,12 @@ def dsperate_resume_state(data, rom, identity=None, core="dsperate"):
     candidates = [data / 'library' / game_key(identity or rom) / ('auto-' + core + '.dss')]
     if not rom.is_file():
         return None
-    with rom.open('rb') as stream:
+    # DSiWare in a .cia: the engine names and hashes the game (the SRL) inside it, not the wrapper.
+    with dsiware.open_srl(rom) as found:
+        if found is None: raise ValueError('DSperate game header has no valid game code')
+        stream, offset, rom_size = found
+        stream.seek(offset)
         header = stream.read(0x160)
-        rom_size = os.fstat(stream.fileno()).st_size
     code = header[12:16].decode('ascii', errors='replace')
     if len(code) != 4 or not all(32 < ord(c) < 127 and c not in '/\\' for c in code):
         raise ValueError('DSperate game header has no valid game code')
@@ -206,8 +210,9 @@ def dsperate_resume_state(data, rom, identity=None, core="dsperate"):
         return None
     # Canonical wins ties; a newer native autosave may include later game progress.
     state = max(candidates, key=lambda path: path.stat().st_mtime_ns)
-    battery = root / 'saves' / (rom.stem + '.sav')
-    if battery.is_file() and battery.stat().st_mtime_ns > state.stat().st_mtime_ns:
+    batteries = [root / 'saves' / (rom.stem + '.sav')]
+    if dsiware.kind(rom): batteries = dsiware.save_files(root / 'saves', code)  # DSiWare saves by game code
+    if any(b.is_file() and b.stat().st_mtime_ns > state.stat().st_mtime_ns for b in batteries):
         return None
     return state
 
@@ -267,8 +272,8 @@ def unpacked_7z(rom, data):
     env["LD_LIBRARY_PATH"] = os.pathsep.join(filter(None, (str(player.parent / "lib"), env.get("LD_LIBRARY_PATH"))))
     try:
         result = subprocess.run(
-            [str(player), "--unpack", str(rom),
-             str(data / "cache/roms-7z"), ".nds,.dsi"],
+            [str(player), "--unpack",
+             str(rom), str(data / "cache/roms-7z"), ",".join(dsiware.SUFFIXES)],
             capture_output=True,
             text=True,
             timeout=300,
@@ -283,6 +288,39 @@ def unpacked_7z(rom, data):
     return game
 
 
+def dsiware_arguments(rom, root, env, prepare):
+    """What DSiWare that needs a DSi adds to DSCore's command: the four BIOS dumps from the owner's BIOS folder (later
+    flags win, so they replace the empty DS pair above) and an SD card folder of the player's own. DSiWare that also
+    runs on a DS (BlocksDS homebrew) is left a DS game, as it always played; a DS game gets nothing."""
+    if dsiware.kind(rom) != 'dsi': return []
+    with dsiware.open_srl(rom):  # an encrypted or broken .cia says so before anything else
+        pass
+    files = dsiware.console_files(dsiware.bios_folder(env))
+    if any(key not in files for key in dsiware.BIOS_FILES):
+        print(
+            'DSiWare: missing ' + ', '.join(dsiware.missing_files(dsiware.bios_folder(env))) + ' in ' +
+            str(dsiware.bios_folder(env)),
+            file=sys.stderr
+        )
+        raise dsiware.Unreadable(dsiware.NEEDS_BIOS)
+    sd = root / "dsi-sd"
+    if prepare: sd.mkdir(parents=True, exist_ok=True)
+    arguments = []
+    for key in dsiware.BIOS_FILES:
+        arguments += ['--' + key, str(files[key])]
+    return arguments + ['--dsi-sd', str(sd)]
+
+
+def launch_message(data, message):
+    """The words the launcher shows instead of "LAUNCH ERROR 1" (src/launcher/game_launch.hpp reads this file)."""
+    try:
+        target = player_root(Path(data).resolve()) / "emulators/rgds-play/launch-message.txt"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(message[:90] + "\n", encoding="utf-8")
+    except (OSError, ValueError):
+        pass
+
+
 def resolve_rom(rom, data, core=None):
     rom = rom.resolve(strict=True)
     from play_options import PLAY_CORE, PORT_CORE, system_of, unpacked_disks
@@ -293,12 +331,12 @@ def resolve_rom(rom, data, core=None):
         # it opens other .zip archives itself; a C64 game writes high scores to its unpacked disks, so they are the player's
         return unpacked_disks(rom, player_root(data))
     if system_of(rom) != "nds": raise ValueError("This game is played with RG DS Play, not a DS engine.")
-    if rom.suffix.lower() in (".nds", ".dsi"):
+    if rom.suffix.lower() in dsiware.SUFFIXES:
         return rom
     if rom.suffix.lower() == ".7z":
         return unpacked_7z(rom, data)
     if rom.suffix.lower() != ".zip":
-        raise ValueError("Choose an .nds, .dsi, .zip or .7z game.")
+        raise ValueError("Choose an .nds, .dsi, .srl, .cia, .zip or .7z game.")
     digest = hashlib.sha256()
     # Hash, validate and extract the same open file. Renaming/replacing the ZIP
     # cannot make the cache identity come from one file and its ROM from another.
@@ -321,7 +359,7 @@ def resolve_rom(rom, data, core=None):
                 mode = info.external_attr >> 16
                 if name.is_absolute() or ".." in name.parts or "\\" in info.filename or stat.S_ISLNK(mode):
                     raise ValueError("Archive contains an unsafe path or symlink.")
-                if not info.is_dir() and name.suffix.lower() in (".nds", ".dsi"):
+                if not info.is_dir() and name.suffix.lower() in dsiware.SUFFIXES:
                     games.append(info)
             if len(games) != 1:
                 raise ValueError("A ZIP must contain exactly one DS game.")
@@ -779,6 +817,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # Explicit empty CLI values also override stale native configuration
         # paths left by earlier releases that searched the stock installation.
         command += ["--bios7", "", "--bios9", "", "--firmware", ""]
+        command += dsiware_arguments(rom, root, env, prepare)
         # RetroAchievements (dscore/src/cheevos): the launcher's token, rcheevos's requests through achievements.py.
         signed_in = achievements_signed_in(data, player)
         if signed_in:
@@ -827,7 +866,7 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
             env.setdefault("RGDS_PLAY_CPU", "3")
         if system not in MGBA_SYSTEMS:
             # Another system: a libretro core, installed by RG DS OS (its BIOS files under /data/rgds/bios).
-            library = libretro_core(system)
+            library = libretro_core(system, identity or rom)
             if library is None:
                 raise ValueError(f"No emulator for {system} games is installed on this handheld.")
             command += ["--core", str(library), "--system", system]
@@ -1254,6 +1293,8 @@ def _run_games(core, app, data, rom, display_handoff, display):
             continue
         if result not in (75, 76, 77): return result
         fresh_start = result == 77
+        # 75/76 saved a checkpoint to come back to: resume it whatever Auto load says.
+        switching = result in (75, 76)
         # 76: the same engine with another renderer (3D resolution change).
         if fresh_start or result == 76: continue
         options = game_options(player_root(data), rom)
@@ -1289,6 +1330,7 @@ def main():
         return run(args.core, args.app.resolve(), args.data.resolve(), args.rom)
     except (OSError, ValueError, zipfile.BadZipFile, subprocess.SubprocessError) as error:
         print("RGDS emulator: " + str(error), file=sys.stderr)
+        if isinstance(error, dsiware.Unreadable) and args.action == "launch": launch_message(args.data, str(error))
         return 78 if isinstance(error, OSError) and error.errno == errno.EROFS else 1
 
 

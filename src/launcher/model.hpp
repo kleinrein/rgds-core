@@ -45,7 +45,7 @@ struct SystemInfo {
 };
 inline const std::array<SystemInfo, 37>& systems() {
     static const std::array<SystemInfo, 37> list = {{
-        {"nds", "Nintendo DS", "DS", {".nds", ".dsi"}},
+        {"nds", "Nintendo DS", "DS", {".nds", ".dsi", ".srl", ".cia"}}, // .srl and .cia: DSiWare (runtime/dsiware.py)
         {"gba", "Game Boy Advance", "GBA", {".gba"}},
         {"gbc", "Game Boy Color", "GBC", {".gbc"}},
         {"gb", "Game Boy", "GB", {".gb", ".sgb"}},
@@ -95,8 +95,8 @@ inline const std::array<SystemInfo, 37>& systems() {
         {"pico8", "PICO-8", "P8", {".p8"}, {".png"}}, // fake-08: .p8 carts, and .p8.png picture carts in its folder
         {"gw", "Game & Watch", "G&W", {".mgw"}},      // and other LCD games: MADrigal's simulators (gw-libretro)
         // Nintendo's two-monitor cabinets (mame2003-plus, built with only those): a set is a .zip, the system's only in
-        // an arcade folder, and only the sets of arcade_sets() are listed
-        {"arcade", "Arcade", "ARC", {}, {".zip"}},
+        // an arcade folder, and only the sets of arcade_catalog() are listed
+        {"arcade", "Arcade", "ARC", {}, {".zip", ".7z"}},
         {"scummvm", "ScummVM", "SCUMM", {}}, // a game is a folder of files: scan_system
         // Ruffle: a movie anywhere, a Flashpoint game pack (a .zip) only in a Flash folder
         {"flash", "Flash", "FLASH", {".swf"}, {".zip", ".spl"}},
@@ -227,6 +227,13 @@ inline const GamesFolder* games_folder(const std::string& name) {
         {"mame2003", "arcade", ""},
         {"mame2003-plus", "arcade", ""},
         {"mame2003plus", "arcade", ""},
+        {"fbneo", "arcade", ""},
+        {"fba", "arcade", ""},
+        {"finalburn", "arcade", ""},
+        {"neogeo", "arcade", ""},
+        {"cps1", "arcade", ""},
+        {"cps2", "arcade", ""},
+        {"cps3", "arcade", ""},
         {"flash", "flash", ""},
         {"adobe flash", "flash", ""},
         {"flashpoint", "flash", ""},
@@ -358,7 +365,7 @@ inline std::vector<Game> scan(const std::vector<fs::path>& roots) {
             } else if (entry.is_regular_file(ec)) {
                 const auto ext = lower(entry.path().extension().string());
                 // not the AppleDouble files macOS writes beside each game on a card it mounts
-                if ((ext == ".nds" || ext == ".dsi" || is_archive(entry.path())) &&
+                if ((ext == ".nds" || ext == ".dsi" || ext == ".srl" || ext == ".cia" || is_archive(entry.path())) &&
                     entry.path().filename().string().rfind("._", 0) != 0) {
                     auto canonical = fs::weakly_canonical(entry.path(), ec);
                     if (!ec) unique[canonical.string()] = {entry.path().stem().string(), canonical, false};
@@ -377,24 +384,38 @@ inline std::vector<Game> scan(const std::vector<fs::path>& roots) {
     });
     return games;
 }
-// The arcade sets the player's core runs (os/buildroot/package/libretro-mame2003-plus/two_monitors.py builds it with
-// only these boards), by their MAME names, and the games' own names. Any other set in an arcade folder is not listed:
-// the core could not start it.
-inline const std::map<std::string, std::string>& arcade_sets() {
-    static const std::map<std::string, std::string> sets = {
-        {"punchout", "Punch-Out!!"},
-        {"spnchout", "Super Punch-Out!!"},
-        {"spnchotj", "Super Punch-Out!! (Japan)"},
-        {"armwrest", "Arm Wrestling"},
-        {"vstennis", "Vs. Tennis"},
-        {"wrecking", "Vs. Wrecking Crew"},
-        {"balonfgt", "Vs. Balloon Fight"},
-        {"vsmahjng", "Vs. Mahjong (Japan)"},
-        {"vsbball", "Vs. Baseball"},
-        {"vsbballj", "Vs. Baseball (Japan, set 1)"},
-        {"vsbbalja", "Vs. Baseball (Japan, set 2)"},
-        {"iceclmrj", "Vs. Ice Climber Dual (Japan)"},
-    };
+// An arcade set a core here can start (assets/arcade/sets.tsv, written by tools/arcade_sets.py from FBNeo's list):
+// its title, a clone's parent and flags (b a board's BIOS, v vertical, x not working, m one of Nintendo's two-monitor
+// cabinets, played through mame2003-plus). A set not in it is not listed: no core here could start it.
+struct ArcadeSet {
+    std::string title, parent, flags;
+    bool bios() const { return flags.find('b') != std::string::npos; }
+    bool vertical() const { return flags.find('v') != std::string::npos; }
+};
+// Where the list is: the release's assets (main sets it from --app before anything scans).
+inline fs::path& arcade_catalog_file() {
+    static fs::path file = "assets/arcade/sets.tsv";
+    return file;
+}
+inline const std::map<std::string, ArcadeSet>& arcade_catalog() {
+    static const std::map<std::string, ArcadeSet> sets = [] {
+        std::map<std::string, ArcadeSet> read;
+        std::ifstream in(arcade_catalog_file());
+        std::string line;
+        while (std::getline(in, line)) {
+            if (line.empty() || line[0] == '#') continue;
+            std::string field[4];
+            size_t at = 0;
+            for (int i = 0; i < 4; ++i) {
+                const size_t tab = i < 3 ? line.find('\t', at) : std::string::npos;
+                field[i] = line.substr(at, tab == std::string::npos ? std::string::npos : tab - at);
+                if (tab == std::string::npos) break;
+                at = tab + 1;
+            }
+            read[field[0]] = {field[1], field[2], field[3]};
+        }
+        return read;
+    }();
     return sets;
 }
 // Games of one other system (RG DS Play): its extensions, and .zip and .7z archives
@@ -467,16 +488,19 @@ inline std::vector<Game> scan_system(const std::vector<fs::path>& roots, const s
                 if (wanted && !is_archive(entry.path()) && system_for_path(entry.path()) != info.id) wanted = false;
                 // A Mega-CD folder's games are its discs: a track no sheet lists is not a Mega Drive cartridge.
                 if (wanted && play_subsystem(entry.path(), info.id) == "segacd" && ext == ".bin") wanted = false;
-                // An arcade set is a known one, a .zip by its MAME name.
-                const auto arcade_set = arcade_sets().find(lower(entry.path().stem().string()));
-                if (wanted && std::string(info.id) == "arcade" && (ext != ".zip" || arcade_set == arcade_sets().end()))
+                // An arcade set is a known one, a .zip by its short name, and a game: a board's BIOS (neogeo.zip)
+                // stays beside the games that need it, unlisted.
+                const auto arcade_set = arcade_catalog().find(lower(entry.path().stem().string()));
+                if (wanted && std::string(info.id) == "arcade" &&
+                    ((ext != ".zip" && ext != ".7z") || arcade_set == arcade_catalog().end() ||
+                     arcade_set->second.bios()))
                     wanted = false;
                 // not the AppleDouble files macOS writes beside each game on a drive it mounts
                 if (wanted && entry.path().filename().string().rfind("._", 0) != 0) {
                     auto canonical = fs::weakly_canonical(entry.path(), ec);
                     // A PICO-8 picture cart is name.p8.png: its title is the name.
                     std::string title =
-                        std::string(info.id) == "arcade" ? arcade_set->second : entry.path().stem().string();
+                        std::string(info.id) == "arcade" ? arcade_set->second.title : entry.path().stem().string();
                     if (title.size() > 3 && lower(title.substr(title.size() - 3)) == ".p8")
                         title.resize(title.size() - 3);
                     if (!ec) unique[canonical.string()] = {title, canonical, false, info.id};

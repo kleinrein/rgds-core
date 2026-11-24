@@ -4,9 +4,11 @@
 #include "display.h"
 #include "pad_faces.h"
 #include "core/nds.h"
+#include "i18n_shim.h"
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <cctype>
 #include <cstring>
 #include <cmath>
@@ -64,9 +66,16 @@ const char* const kModDefaultKey = "none";  // hotkeys.modifier
 const char* const kModDefaultPad = "guide"; // padhotkeys.modifier: the pad's mode/home button
 const char* const kStylusButtonDefault = "rightstick";
 const char* const kStylusAxisDefault = "right";
-const char* const kStylusDpadDefault = "none";
+const char* const kStylusHoldDefault = "none";
 const char* const kStickFaceDefault = "none";
 const char* const kStickDpadDefault = "left";
+// The Guitar Grip's frets, top to bottom: the shoulders and triggers on a pad.
+const char* const kFretNames[4] = {"grip_green", "grip_red", "grip_yellow", "grip_blue"};
+const char* const kFretKeyDefaults[4] = {"1", "2", "3", "4"};
+const char* const kFretPadDefaults[4] = {"leftshoulder", "+lefttrigger", "+righttrigger", "rightshoulder"};
+// Strum: the d-pad's vertical pair, as a guitar controller's strum bar.
+const char* const kStrumKeyDefault = "Space";
+const char* const kStrumPadDefaults[2] = {"dpdown", "dpup"};
 
 // Held actions: an edge on both press and release.
 bool is_hold(Action a) { return a == Action::FastForward || a == Action::Mic; }
@@ -112,6 +121,30 @@ const char* pad_token_label(const std::string& s) {
 } // namespace
 
 const char* action_name(Action a) { return kActionNames[static_cast<int>(a)]; }
+
+// What the Controls page calls each hotkey, in English (translated where drawn).
+const char* const kActionLabels[static_cast<int>(Action::Count)] = {
+    N_("QUIT"),
+    N_("PAUSE"),
+    N_("FAST FORWARD"),
+    N_("FF TOGGLE"), // "FAST FORWARD TOGGLE" doesn't fit the row at the menu's size
+    N_("SAVE STATE"),
+    N_("LOAD STATE"),
+    N_("SLOT NEXT"),
+    N_("SLOT PREV"),
+    N_("VOLUME UP"),
+    N_("VOLUME DOWN"),
+    N_("MUTE"),
+    N_("LAYOUT NEXT"),
+    N_("LAYOUT PREV"),
+    N_("SCREEN SWAP"),
+    N_("PIP CORNER NEXT"),
+    N_("FULLSCREEN"),
+    N_("SCREENSHOT"),
+    N_("LID"),
+    N_("MIC"),
+    N_("FPS")};
+const char* action_label(Action a) { return kActionLabels[static_cast<int>(a)]; }
 
 Input::Bind Input::parse_key(const std::string& s0) {
   Bind b;
@@ -187,6 +220,60 @@ std::string Input::axis_remap_key(int i) {
 }
 std::string Input::axis_remap_default(int i) {
   return SDL_GameControllerGetStringForAxis(static_cast<SDL_GameControllerAxis>(i));
+}
+
+Input::AnalogMode Input::analog_mode_of(const std::string& s) {
+  return s == "auto"    ? AnalogMode::Auto
+         : s == "left"  ? AnalogMode::Left
+         : s == "right" ? AnalogMode::Right
+         : s == "dual"  ? AnalogMode::Dual
+                        : AnalogMode::Off;
+}
+
+bool Input::analog_wanted(const Config& cfg) {
+  return analog_mode_of(cfg.str("pad.analog", "auto")) != AnalogMode::Off;
+}
+
+// A pad with no right stick (or none open yet) still has a left one.
+Input::AnalogMode Input::analog_mode() const {
+  if (analog_mode_ != AnalogMode::Auto) return analog_mode_;
+  return pad_ && !SDL_GameControllerHasAxis(pad_, SDL_CONTROLLER_AXIS_RIGHTX) ? AnalogMode::Left : AnalogMode::Dual;
+}
+
+bool Input::analog_claims(StylusAxis s) const {
+  if (s != StylusAxis::None && s == motion_stick_) return true;
+  if (!analog_patch_ || s == StylusAxis::None) return false;
+  const AnalogMode m = analog_mode();
+  if (m == AnalogMode::Dual) return true;
+  return s == (m == AnalogMode::Left    ? StylusAxis::Left
+               : m == AnalogMode::Right ? StylusAxis::Right
+                                        : StylusAxis::None);
+}
+
+void Input::set_motion_stick(const std::string& which) {
+  const StylusAxis s = which == "left" ? StylusAxis::Left : which == "right" ? StylusAxis::Right : StylusAxis::None;
+  if (s == motion_stick_) return;
+  motion_stick_ = s;
+  // As set_analog_patch: directions the claimed stick was holding would otherwise stay held.
+  if (analog_claims(stick_dpad_)) {
+    stick_ = 0;
+    stick_prev_ = 0;
+    dstick_x_ = dstick_y_ = 0;
+  }
+  if (analog_claims(stick_face_)) face_stick_ = 0;
+}
+
+void Input::set_analog_patch(bool on) {
+  if (on == analog_patch_) return;
+  analog_patch_ = on;
+  // Directions the claimed sticks were holding would otherwise stay held:
+  // SDL reports only changes. Released sticks come back on their next event.
+  if (analog_claims(stick_dpad_)) {
+    stick_ = 0;
+    stick_prev_ = 0;
+    dstick_x_ = dstick_y_ = 0;
+  }
+  if (analog_claims(stick_face_)) face_stick_ = 0;
 }
 
 void Input::configure(const Config& cfg) {
@@ -280,7 +367,15 @@ void Input::configure(const Config& cfg) {
       stylus_axis_ = StylusAxis::Right;
     }
   }
-  stylus_chord_ = parse_pad(cfg.str("pad.stylus_dpad", kStylusDpadDefault));
+  // stylus_hold; pad.stylus_dpad is its old name, from when it only took the d-pad.
+  stylus_chord_ = parse_pad(cfg.str("pad.stylus_hold", cfg.str("pad.stylus_dpad", kStylusHoldDefault)));
+  for (int i = 0; i < FRETS; ++i) {
+    key_fret_[i] = parse_key(cfg.str(std::string("keys.") + kFretNames[i], kFretKeyDefaults[i]));
+    pad_fret_[i] = parse_pad(cfg.str(std::string("pad.") + kFretNames[i], kFretPadDefaults[i]));
+  }
+  key_strum_ = parse_key(cfg.str("keys.strum", kStrumKeyDefault));
+  for (int sl = 0; sl < HOT_SLOTS; ++sl)
+    pad_strum_[sl] = parse_pad(cfg.str(std::string("pad.strum") + hot_suffix(sl), kStrumPadDefaults[sl]));
   {
     // stick_dpad: left (default)|right|none, also works d-pad. stick_face:
     // none (default)|left|right, directions X(up)/B(down)/Y(left)/A(right).
@@ -307,6 +402,24 @@ void Input::configure(const Config& cfg) {
           sf.c_str());
   }
   deadzone_ = cfg.num("pad.stick_deadzone", 12000);
+  {
+    // analog: auto (default) | off | left | right | dual -- sticks for a CPAD
+    // patch. A stick it shares with the pen or stick_dpad/stick_face is the
+    // patch's while one runs (set_analog_patch), so no warning is needed.
+    const std::string an = cfg.str("pad.analog", "auto");
+    analog_mode_ = analog_mode_of(an);
+    if (analog_mode_ == AnalogMode::Off && an != "off")
+      std::fprintf(stderr, "config: pad.analog \"%s\" is not auto | off | left | right | dual\n", an.c_str());
+    const std::string layout = cfg.str("pad.analog_layout", "auto");
+    if (layout != "auto" && layout != "packed" && layout != "extended")
+      std::fprintf(stderr, "config: pad.analog_layout \"%s\" is not auto | packed | extended\n", layout.c_str());
+  }
+  analog_deadzone_ = cfg.num("pad.analog_deadzone", 6000);
+  if (analog_deadzone_ < 0) analog_deadzone_ = 0;
+  if (analog_deadzone_ > 30000) analog_deadzone_ = 30000;
+  analog_invert_y_ = cfg.flag("pad.analog_invert_y", false);
+  analog_sens_left_ = std::clamp(cfg.num("pad.analog_sensitivity_left", 100), 10, 300);
+  analog_sens_right_ = std::clamp(cfg.num("pad.analog_sensitivity_right", 100), 10, 300);
   {
     const std::string ff = cfg.str("pad.face_fix", "auto");
     if (ff != "auto" && ff != "off")
@@ -386,7 +499,7 @@ void Input::warn_collisions() const {
         std::fprintf(stderr, "config: pad.stylus_button%s = %s shadows pad.%s; the game will never see it\n",
                      hot_suffix(sl), pad_name(stylus_button_[sl]).c_str(), kButtonNames[i]);
     if (same(stylus_chord_, pad_map_[i]))
-      std::fprintf(stderr, "config: pad.stylus_dpad = %s shadows pad.%s; the game will never see it\n",
+      std::fprintf(stderr, "config: pad.stylus_hold = %s shadows pad.%s; the game will never see it\n",
                    pad_name(stylus_chord_).c_str(), kButtonNames[i]);
   }
   for (int k = 0; k < na * HOT_SLOTS; ++k) {
@@ -406,7 +519,7 @@ void Input::warn_collisions() const {
                        kActionNames[a], hot_suffix(sl), pad_name(h).c_str(), hot_suffix(tb), pad_name(h).c_str());
       if (same(h, stylus_chord_))
         std::fprintf(stderr,
-                     "config: padhotkeys.%s%s = %s is pad.stylus_dpad; bind it as mod+%s or it will never fire\n",
+                     "config: padhotkeys.%s%s = %s is pad.stylus_hold; bind it as mod+%s or it will never fire\n",
                      kActionNames[a], hot_suffix(sl), pad_name(h).c_str(), pad_name(h).c_str());
     }
     if (same(h, pad_mod_) && h.with < 0)
@@ -415,7 +528,7 @@ void Input::warn_collisions() const {
   }
   for (int sl = 0; sl < HOT_SLOTS; ++sl)
     if (stylus_visible_binding() && same(stylus_button_[sl], stylus_chord_))
-      std::fprintf(stderr, "config: pad.stylus_button%s and pad.stylus_dpad are both %s; the chord will never engage\n",
+      std::fprintf(stderr, "config: pad.stylus_button%s and pad.stylus_hold are both %s; the hold will never engage\n",
                    hot_suffix(sl), pad_name(stylus_button_[sl]).c_str());
   if (stylus_visible_binding() && exact(stylus_button_[0], stylus_button_[1]))
     std::fprintf(stderr, "config: pad.stylus_button.alt = %s is already pad.stylus_button\n",
@@ -442,6 +555,55 @@ void Input::detect_faces() {
       phys[0] != 0 && phys[2] != 2 ? "a/b and x/y"
       : phys[0] != 0               ? "a/b"
                                    : "x/y");
+}
+
+// SDL's sensors arrived in 2.0.14; an older library has none to offer.
+bool Input::pad_has_motion() const {
+#if SDL_VERSION_ATLEAST(2, 0, 14)
+  return pad_ && SDL_GameControllerHasSensor(pad_, SDL_SENSOR_ACCEL) == SDL_TRUE;
+#else
+  return false;
+#endif
+}
+
+bool Input::pad_motion(slot2::Motion& m, const float* r) {
+#if SDL_VERSION_ATLEAST(2, 0, 14)
+  if (!pad_has_motion()) return false;
+  if (!SDL_GameControllerIsSensorEnabled(pad_, SDL_SENSOR_ACCEL)) {
+    SDL_GameControllerSetSensorEnabled(pad_, SDL_SENSOR_ACCEL, SDL_TRUE);
+    if (SDL_GameControllerHasSensor(pad_, SDL_SENSOR_GYRO))
+      SDL_GameControllerSetSensorEnabled(pad_, SDL_SENSOR_GYRO, SDL_TRUE);
+  }
+  float a[3];
+  if (SDL_GameControllerGetSensorData(pad_, SDL_SENSOR_ACCEL, a, 3) != 0) return false;
+  // SDL's frame as is: right for a handheld. Other ways of holding a
+  // controller are slot2.motion_matrix's to correct.
+  m.ax = r[0] * a[0] + r[1] * a[1] + r[2] * a[2];
+  m.ay = r[3] * a[0] + r[4] * a[1] + r[5] * a[2];
+  m.az = r[6] * a[0] + r[7] * a[1] + r[8] * a[2];
+  float g[3];
+  m.gz = SDL_GameControllerIsSensorEnabled(pad_, SDL_SENSOR_GYRO) &&
+                 SDL_GameControllerGetSensorData(pad_, SDL_SENSOR_GYRO, g, 3) == 0
+             ? r[6] * g[0] + r[7] * g[1] + r[8] * g[2]
+             : 0;
+  return true;
+#else
+  (void)m;
+  (void)r;
+  return false;
+#endif
+}
+
+bool Input::has_rumble() const { return pad_ && SDL_GameControllerHasRumble(pad_); }
+
+void Input::rumble(int strength, u32 ms) {
+  if (!pad_) return;
+  const Uint16 level = static_cast<Uint16>(0xFFFF * std::clamp(strength, 0, 100) / 100);
+  static bool warned = false;
+  if (SDL_GameControllerRumble(pad_, level, level, ms) != 0 && !warned) {
+    warned = true;
+    std::fprintf(stderr, "rumble: %s\n", SDL_GetError());
+  }
 }
 
 void Input::close() {
@@ -543,6 +705,12 @@ Input::Panel Input::touch_panel(SDL_TouchID id) {
   return p;
 }
 
+// DS_TOUCH_DEBUG: each finger down/up through the mapping, for panels we can't test on.
+static bool touch_debug() {
+  static const bool on = std::getenv("DS_TOUCH_DEBUG") != nullptr;
+  return on;
+}
+
 // Dual-window: the window a finger belongs to. SDL's evdev backend (KMSDRM)
 // attaches no window to touches, and neither does the RG DS bridge's own
 // reader of the panel, so an unmapped one goes to whichever window shows the
@@ -603,6 +771,20 @@ bool Input::key_down(SDL_Keycode k, bool down) {
     else fire(a, down);
     return true;
   }
+  if (grip_on_ && !menu_open_) { // the menu navigates with these controls
+    for (int i = 0; i < FRETS; ++i)
+      if (key_fret_[i].kind == Bind::Key && key_fret_[i].code == k) {
+        set_fret(i, down);
+        return true;
+      }
+    if (key_strum_.kind == Bind::Key && key_strum_.code == k && (down ? frets_ != 0 : (strum_held_ & 1) != 0)) {
+      if (down) {
+        strum_held_ |= 1;
+        strum_press();
+      } else strum_held_ &= static_cast<u8>(~1u);
+      return true;
+    }
+  }
   for (int i = 0; i < static_cast<int>(B::BTN_COUNT); ++i)
     if (key_map_[i].kind == Bind::Key && key_map_[i].code == k) {
       set(static_cast<B>(i), down);
@@ -652,6 +834,26 @@ bool Input::pad_down(const Bind& b, bool down) {
   if (b.kind == Bind::PadButton) {
     if (down) held_ |= 1u << b.code;
     else held_ &= ~(1u << b.code);
+  }
+  // With the Guitar Grip in, a fret beats the pen's tap and hold on the same
+  // control (an L2 stylus hold would otherwise eat the red fret); under the
+  // modifier a press is left for the hotkeys. A release always lets go.
+  if (grip_on_ && !menu_open_) { // the menu navigates with these controls
+    for (int i = 0; i < FRETS; ++i)
+      if (same(pad_fret_[i]) && (!down || !pad_mod_down_ || ((frets_ >> i) & 1))) {
+        set_fret(i, down);
+        return true;
+      }
+    for (int sl = 0; sl < HOT_SLOTS; ++sl) {
+      const u8 bit = static_cast<u8>(2u << sl);
+      if (same(pad_strum_[sl]) && (down ? frets_ != 0 && !pad_mod_down_ : (strum_held_ & bit) != 0)) {
+        if (down) {
+          strum_held_ |= bit;
+          strum_press();
+        } else strum_held_ &= static_cast<u8>(~bit);
+        return true;
+      }
+    }
   }
   // Tap button and d-pad chord yield to the pad modifier: mod+<tap button>
   // can be a hotkey. A release always ends an in-progress tap or chord.
@@ -741,12 +943,67 @@ bool Input::pad_down(const Bind& b, bool down) {
   return false;
 }
 
+// Radial deadzone and clamp for one stick: inside the deadzone the stick is
+// centred; outside it the remaining travel is rescaled to full range and the
+// magnitude is capped at 1, so a diagonal is full speed, not sqrt(2) times it.
+// Sensitivity, a percentage, applies before that cap: under 100 lowers the top
+// speed, and over 100 reaches it with less travel without raising it.
+static void scale_stick(Sint16 x, Sint16 y, int deadzone, int sensitivity, bool invert_y, s16& ox, s16& oy) {
+  const double dx = x, dy = y;
+  const double mag = std::sqrt(dx * dx + dy * dy);
+  if (mag <= deadzone || mag == 0.0) {
+    ox = 0;
+    oy = 0;
+    return;
+  }
+  double scaled = (mag - deadzone) / (32767.0 - deadzone) * sensitivity / 100.0;
+  if (scaled > 1.0) scaled = 1.0;
+  const double k = scaled * 32767.0 / mag;
+  ox = static_cast<s16>(dx * k);
+  oy = static_cast<s16>(dy * k);
+  // SDL's up is negative; the patches take the 3DS's, where up is positive.
+  if (!invert_y) oy = static_cast<s16>(-oy);
+}
+
+void Input::fill_analog(input::Frame& f) const {
+  const AnalogMode mode = analog_mode();
+  if (mode == AnalogMode::Off) return;
+  // Under stylus_hold the pen has its stick back (update_stylus), and the
+  // patch sees that stick centred rather than both following it.
+  const auto pen_on = [&](StylusAxis s) { return analog_patch_ && pen_borrows_stick() && stylus_axis_ == s; };
+  if ((mode == AnalogMode::Left || mode == AnalogMode::Dual) && !pen_on(StylusAxis::Left))
+    scale_stick(raw_lx_, raw_ly_, analog_deadzone_, analog_sens_left_, analog_invert_y_, f.cpad_x, f.cpad_y);
+  if (mode == AnalogMode::Right && !pen_on(StylusAxis::Right))
+    scale_stick(raw_rx_, raw_ry_, analog_deadzone_, analog_sens_right_, analog_invert_y_, f.cpad_x, f.cpad_y);
+  if (mode == AnalogMode::Dual && !pen_on(StylusAxis::Right))
+    scale_stick(raw_rx_, raw_ry_, analog_deadzone_, analog_sens_right_, analog_invert_y_, f.cstick_x, f.cstick_y);
+  // Triggers: the same past-3/4-travel rule axis() uses for trigger bindings.
+  // A button-mapped trigger (H700) synthesises 0/32767, so this covers both.
+  // Two sticks only, as the setting says, and never under a hotkey chord. A
+  // trigger that is stylus_hold is the pen's, not ZL/ZR.
+  if (mode != AnalogMode::Dual || pad_mod_down_) return;
+  const auto pen_hold = [&](int axis) {
+    return stylus_chord_.kind == Bind::PadAxis && stylus_chord_.code == axis && !stylus_chord_.neg;
+  };
+  f.zl = raw_lt_ > trigger_threshold() && !pen_hold(SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+  f.zr = raw_rt_ > trigger_threshold() && !pen_hold(SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+}
+
 void Input::axis(Uint8 which, Sint16 value) {
+  switch (which) {
+  case SDL_CONTROLLER_AXIS_LEFTX: raw_lx_ = value; break;
+  case SDL_CONTROLLER_AXIS_LEFTY: raw_ly_ = value; break;
+  case SDL_CONTROLLER_AXIS_RIGHTX: raw_rx_ = value; break;
+  case SDL_CONTROLLER_AXIS_RIGHTY: raw_ry_ = value; break;
+  case SDL_CONTROLLER_AXIS_TRIGGERLEFT: raw_lt_ = value; break;
+  case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: raw_rt_ = value; break;
+  default: break;
+  }
   // Axis directions bound as buttons: edge detection with a threshold. Some
   // pads map triggers to a centred axis (SDL rescales rest to 16384), so a
   // stick deadzone would see release as still pressed; triggers need 3/4 travel.
   const bool trigger = which == SDL_CONTROLLER_AXIS_TRIGGERLEFT || which == SDL_CONTROLLER_AXIS_TRIGGERRIGHT;
-  const int threshold = trigger ? std::max(deadzone_, 24576) : deadzone_;
+  const int threshold = trigger ? trigger_threshold() : deadzone_;
   for (int dir = 0; dir < 2; ++dir) {
     const bool past = dir ? value > threshold : value < -threshold;
     if (past != axis_state_[which][dir]) {
@@ -762,11 +1019,13 @@ void Input::axis(Uint8 which, Sint16 value) {
   const bool left_x = which == SDL_CONTROLLER_AXIS_LEFTX, left_y = which == SDL_CONTROLLER_AXIS_LEFTY;
   const bool right_x = which == SDL_CONTROLLER_AXIS_RIGHTX, right_y = which == SDL_CONTROLLER_AXIS_RIGHTY;
   const bool x_axis = left_x || right_x;
-  // Is this axis on the named stick, and is that stick not the pen's?
+  // Is this axis on the named stick, and is that stick neither the pen's nor
+  // an analog patch's?
   const auto on_stick = [&](StylusAxis s) {
-    return s != stylus_axis_ && (s == StylusAxis::Left    ? (left_x || left_y)
-                                 : s == StylusAxis::Right ? (right_x || right_y)
-                                                          : false);
+    return s != stylus_axis_ && !analog_claims(s) &&
+           (s == StylusAxis::Left    ? (left_x || left_y)
+            : s == StylusAxis::Right ? (right_x || right_y)
+                                     : false);
   };
   if (on_stick(stick_dpad_)) {
     if (x_axis) dstick_x_ = value;
@@ -811,6 +1070,9 @@ void Input::stick_as_buttons(u32& held, Sint16 value, B neg, B pos) {
   stick_prev_ = stick_;
 }
 
+// stylus_hold, or the modifier where stylus_hold is unbound.
+bool Input::pen_borrows_stick() const { return stylus_chord_.kind != Bind::None ? stylus_chord_down_ : pad_mod_down_; }
+
 bool Input::stylus_visible_binding() const {
   return stylus_axis_ != StylusAxis::None || stylus_chord_.kind != Bind::None;
 }
@@ -821,7 +1083,10 @@ void Input::update_stylus() {
   const double ddx = ((stylus_dpad_ >> B::BTN_RIGHT) & 1) - static_cast<double>((stylus_dpad_ >> B::BTN_LEFT) & 1);
   const double ddy = ((stylus_dpad_ >> B::BTN_DOWN) & 1) - static_cast<double>((stylus_dpad_ >> B::BTN_UP) & 1);
   const double sdx = stylus_chord_down_ ? axis(dstick_x_) : 0.0, sdy = stylus_chord_down_ ? axis(dstick_y_) : 0.0;
-  const double dx = (axis(stylus_x_) + ddx + sdx) * stylus_speed_, dy = (axis(stylus_y_) + ddy + sdy) * stylus_speed_;
+  // An analog patch has the pen's stick unless stylus_hold is held.
+  const bool pen_stick = !analog_claims(stylus_axis_) || pen_borrows_stick();
+  const double px = pen_stick ? axis(stylus_x_) : 0.0, py = pen_stick ? axis(stylus_y_) : 0.0;
+  const double dx = (px + ddx + sdx) * stylus_speed_, dy = (py + ddy + sdy) * stylus_speed_;
   if (dx != 0 || dy != 0 || stylus_down_) stylus_idle_ = 0;
   else if (stylus_idle_ < (1 << 30)) ++stylus_idle_;
   stylus_fx_ += dx;
@@ -842,7 +1107,7 @@ std::string Input::pad_label(const std::string& s0) {
     out = "MOD+";
     s = s.substr(4);
   }
-  if (s.empty() || s == "none" || s == "null") return out.empty() ? std::string("NONE") : out + "NONE";
+  if (s.empty() || s == "none" || s == "null") return out + i18n::tr("NONE");
   std::string head = s, with;
   if (const size_t plus = s.find('+', 1); plus != std::string::npos && s[0] != '+' && s[0] != '-') {
     head = s.substr(0, plus);
@@ -862,7 +1127,34 @@ std::string Input::pad_label(const std::string& s0) {
 
 const char* Input::mod_default(bool pad) { return pad ? kModDefaultPad : kModDefaultKey; }
 const char* Input::stylus_button_default() { return kStylusButtonDefault; }
-const char* Input::stylus_dpad_default() { return kStylusDpadDefault; }
+const char* Input::stylus_hold_default() { return kStylusHoldDefault; }
+const char* Input::fret_name(int i) { return kFretNames[i]; }
+const char* Input::strum_key_default() { return kStrumKeyDefault; }
+const char* Input::strum_pad_default(int slot) { return kStrumPadDefaults[slot]; }
+
+// A stroke across the strings Guitar Hero: On Tour draws on the touch screen:
+// four frames down (or up) a line through the middle of the guitar body,
+// crossing all six strings, then a frame lifted before a queued one starts.
+// Measured headless: strokes like this score; a touch that doesn't move doesn't.
+void Input::strum_frame(input::Frame& f) {
+  if (!grip_on_ || !strum_step_) return;
+  static constexpr u8 kX = 150, kY[4] = {50, 85, 120, 155};
+  if (strum_step_ <= 4) {
+    const int i = strum_step_ - 1;
+    f.x = kX;
+    f.y = kY[strum_up_ ? 3 - i : i];
+    f.down = true;
+    ++strum_step_;
+    return;
+  }
+  // Fifth frame: lifted, so a queued stroke starts as a new touch.
+  f.down = false;
+  strum_up_ = !strum_up_;
+  strum_step_ = strum_queued_ ? 1 : 0;
+  strum_queued_ = false;
+}
+const char* Input::fret_key_default(int i) { return kFretKeyDefaults[i]; }
+const char* Input::fret_pad_default(int i) { return kFretPadDefaults[i]; }
 const char* Input::stick_face_default() { return kStickFaceDefault; }
 const char* Input::stick_dpad_default() { return kStickDpadDefault; }
 bool Input::parse_stick(const std::string& s, StylusAxis& out) {
@@ -1083,8 +1375,8 @@ std::vector<std::string> Input::collisions() const {
   // First: this one cannot be recovered from without a text editor.
   for (const int i : {static_cast<int>(B::BTN_A), static_cast<int>(B::BTN_B)})
     if (!reachable(i))
-      out.push_back(std::string(kButtonNames[i]) +
-                    (pad_ ? " IS UNREACHABLE; \x04 TWICE RESETS" : " IS UNREACHABLE; X TWICE RESETS"));
+      // TRANSLATORS: {1} is a DS button (A or B), {2} the button that resets the bindings.
+      out.push_back(i18n::trf("{1} IS UNREACHABLE; {2} TWICE RESETS", {kButtonNames[i], pad_ ? "\x04" : "X"}));
   const auto same = [](const Bind& a, const Bind& b) {
     return a.kind != Bind::None && a.kind == b.kind && a.code == b.code && a.neg == b.neg && a.mod == b.mod &&
            a.with == b.with;
@@ -1092,21 +1384,24 @@ std::vector<std::string> Input::collisions() const {
   // Two DS buttons on one control: the second never fires.
   for (int i = 0; i < static_cast<int>(B::BTN_COUNT); ++i)
     for (int j = i + 1; j < static_cast<int>(B::BTN_COUNT); ++j) {
+      // TRANSLATORS: {1} and {2} are DS buttons (A, B, SELECT...).
       if (same(key_map_[i], key_map_[j]))
-        out.push_back(std::string(kButtonNames[i]) + " AND " + kButtonNames[j] + " SHARE A KEY");
+        out.push_back(i18n::trf("{1} AND {2} SHARE A KEY", {kButtonNames[i], kButtonNames[j]}));
       if (same(pad_map_[i], pad_map_[j]))
-        out.push_back(std::string(kButtonNames[i]) + " AND " + kButtonNames[j] + " SHARE A BUTTON");
+        out.push_back(i18n::trf("{1} AND {2} SHARE A BUTTON", {kButtonNames[i], kButtonNames[j]}));
     }
   if (pad_mod_alone_ >= 0 && pad_mod_button_ >= 0)
-    out.push_back(std::string(kActionNames[pad_mod_alone_]) + " HIDES PAD " + kButtonNames[pad_mod_button_]);
+    out.push_back(
+        i18n::trf("{1} HIDES PAD {2}", {i18n::tr(kActionLabels[pad_mod_alone_]), kButtonNames[pad_mod_button_]}));
   // A hotkey on the same control as a DS button: hotkey tried first, button dead.
   for (int a = 0; a < static_cast<int>(Action::Count); ++a)
     for (int i = 0; i < static_cast<int>(B::BTN_COUNT); ++i) {
       for (int sl = 0; sl < HOT_SLOTS; ++sl) {
+        // TRANSLATORS: {1} is a hotkey (SAVE STATE...), {2} a DS button (A, B, SELECT...).
         if (same(key_hot_[a][sl], key_map_[i]))
-          out.push_back(std::string(kActionNames[a]) + " HIDES KEY " + kButtonNames[i]);
+          out.push_back(i18n::trf("{1} HIDES KEY {2}", {i18n::tr(kActionLabels[a]), kButtonNames[i]}));
         if (same(pad_hot_[a][sl], pad_map_[i]))
-          out.push_back(std::string(kActionNames[a]) + " HIDES PAD " + kButtonNames[i]);
+          out.push_back(i18n::trf("{1} HIDES PAD {2}", {i18n::tr(kActionLabels[a]), kButtonNames[i]}));
       }
     }
   return out;
@@ -1152,6 +1447,7 @@ void Input::handle(const SDL_Event& e0, Display& display, Display* second) {
       SDL_GameControllerClose(pad_);
       pad_ = nullptr;
       detect_faces();
+      raw_lx_ = raw_ly_ = raw_rx_ = raw_ry_ = raw_lt_ = raw_rt_ = 0; // no release will come
     }
     break;
 

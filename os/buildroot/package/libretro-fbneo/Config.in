@@ -1,0 +1,6 @@
+config BR2_PACKAGE_LIBRETRO_FBNEO
+	bool "libretro-fbneo"
+	help
+	  FinalBurn Neo, the arcade core RG DS Play loads for every set in /data/roms/arcade but the two-monitor
+	  cabinets' (libretro-mame2003-plus): /usr/lib/libretro/fbneo_libretro.so. Sets and board BIOS sets
+	  (neogeo.zip) are the owner's own, named as FBNeo's DAT names them.

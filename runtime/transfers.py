@@ -24,7 +24,7 @@ from net_sources import Cancelled, SourceError, clean_path, open_source
 from play_options import _system_of_games_folder, system_of
 from profiles import device_root
 
-DS_EXTENSIONS = ('.nds', '.dsi')
+DS_EXTENSIONS = ('.nds', '.dsi', '.srl', '.cia')  # dsiware.SUFFIXES
 # The disc sheets that name a game made of several files; a folder's system is read from these first.
 SHEETS = ('.m3u', '.cue', '.gdi', '.ccd', '.toc', '.chd', '.cdi')
 # Systems that share another's games folder (src/launcher/model.hpp shelf_of; the Mega-CD and PC Engine CD keep

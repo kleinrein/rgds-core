@@ -163,11 +163,64 @@ esac
             RGDS_LID_CMD=str(d / 'bin/lid'),
             RGDS_INTERRUPTS=str(self.interrupts),
             RGDS_SLEEP_CHECK='3600',
-            RGDS_SLEEP_LIMIT='10800'
+            RGDS_SLEEP_LIMIT='10800',
+            RGDS_DATA=str(d / 'data'),
+            RGDS_LOGS=str(d / 'logs'),
+            RGDS_MEM_SLEEP=str(d / 'mem_sleep'),
+            RGDS_PMIC_DUMP='echo f0: c0 8c a0 40 20'
         )
+        for folder in ('data', 'logs'):
+            (d / folder).mkdir()
+        (d / 'mem_sleep').write_text('s2idle [deep]\n')
 
     def tearDown(self):
         self.temp.cleanup()
+
+    def boot_check(self):
+        return subprocess.run(
+            ['sh', str(LIBEXEC / 'power'), 'boot-check'], env=self.env, capture_output=True, text=True, timeout=10
+        ).returncode
+
+    def test_a_sleep_saves_the_pmic_and_leaves_no_marker(self):
+        code, state = self.sleep('user 30')
+        self.assertEqual(code, 0)
+        self.assertEqual((self.dir / 'mem_sleep').read_text().strip(), 'deep')
+        self.assertIn('f0: c0 8c a0 40 20', (self.dir / 'logs/pmic-before-sleep.txt').read_text())
+        self.assertFalse((self.dir / 'data/sleep-pending').exists())
+
+    def test_a_handheld_marked_shallow_sleeps_shallow(self):
+        (self.dir / 'data/sleep-shallow').touch()
+        self.sleep('user 30')
+        self.assertEqual((self.dir / 'mem_sleep').read_text().strip(), 's2idle')
+
+    def test_a_deep_sleep_that_ended_in_a_cold_boot_turns_sleep_shallow(self):
+        # went to sleep at 80 % at t=1000; this boot is ten minutes later
+        (self.dir / 'data/sleep-pending').write_text('1000 80 deep\n')
+        (self.dir / 'rtc/since_epoch').write_text('1600\n')
+        self.assertEqual(self.boot_check(), 0)
+        self.assertTrue((self.dir / 'data/sleep-shallow').exists())
+        self.assertFalse((self.dir / 'data/sleep-pending').exists())
+        self.assertIn('shallow from now on', (self.dir / 'sleep.log').read_text())
+        self.assertIn('f0:', (self.dir / 'logs/pmic-boot.txt').read_text())
+
+    def test_a_battery_run_flat_in_a_long_sleep_keeps_deep_sleep(self):
+        (self.dir / 'data/sleep-pending').write_text('1000 20 deep\n')
+        (self.dir / 'rtc/since_epoch').write_text(str(1000 + 4 * 86400) + '\n')
+        self.boot_check()
+        self.assertFalse((self.dir / 'data/sleep-shallow').exists())
+        self.assertIn('ended in a cold boot', (self.dir / 'sleep.log').read_text())
+
+    def test_a_shallow_sleep_that_ended_in_a_cold_boot_is_only_logged(self):
+        (self.dir / 'data/sleep-pending').write_text('1000 80 s2idle\n')
+        (self.dir / 'rtc/since_epoch').write_text('1600\n')
+        self.boot_check()
+        self.assertFalse((self.dir / 'data/sleep-shallow').exists())
+        self.assertIn('s2idle sleep ended in a cold boot', (self.dir / 'sleep.log').read_text())
+
+    def test_an_ordinary_boot_changes_nothing(self):
+        self.boot_check()
+        self.assertFalse((self.dir / 'data/sleep-shallow').exists())
+        self.assertFalse((self.dir / 'sleep.log').exists())
 
     def sleep(self, *wakes):
         self.wakes.write_text(''.join(w + '\n' for w in wakes))

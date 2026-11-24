@@ -131,6 +131,15 @@ bool Session::open(const SessionOptions& o, std::string& error) {
     if (!profile_)
         for (const auto& code : core_->other_codes())
             if ((profile_ = profiles_.find(core_->system(), code))) break;
+    // A vertical arcade game no profile names stands over both panels, one screen twice as tall (FBNeo's are turned
+    // upright as they come: libretro_core.cpp rotated).
+    if (!profile_ && std::string(core_->system()) == "arcade") {
+        const Picture shown = core_->picture();
+        if (shown.h > shown.w) {
+            tall_profile_ = tall_profile("arcade", clean_title(file_stem(o.rom)));
+            profile_ = &tall_profile_;
+        }
+    }
     if (profile_ && profile_->lightgun && !core_->set_lightgun(true))
         std::fprintf(stderr, "play: this core has no light gun for %s\n", profile_->title.c_str());
     if (profile_ && profile_->mouse) {
@@ -245,7 +254,13 @@ void Session::frame(uint32_t buttons) {
     ++frames_;
     achievements_.frame();
     if (companion_) companion_->after_frame(*core_);
-    if (rewind_on_) timeline_.after_frame(*core_, core_->picture());
+    if (rewind_on_) {
+        try {
+            timeline_.after_frame(*core_, core_->picture());
+        } catch (const std::exception& e) { // out of memory, say: the game goes on without this moment
+            std::fprintf(stderr, "play: rewind: no moment taken: %s\n", e.what());
+        }
+    }
     if (frames_ % 1800 == 0) save_view(); // every half minute, when it has changed
     uint64_t revision = core_->battery_revision();
     if (revision != saved_revision_) {
@@ -310,6 +325,9 @@ void Session::show_moment(uint32_t id) {
 
 void Session::close_rewind(uint32_t id) {
     std::string error;
+    // Playing on from an earlier moment rolls the battery back (most cores keep it in their states): keep it first.
+    // The core may be on a preview now, so the card's copy is the one kept. Not kept: Back to now instead.
+    if (id != rewind_.now() && !keep_before_rewind(false)) id = rewind_.now();
     // Exactly as the moment was taken: the preview's frame is not kept.
     if (!timeline_.jump(*core_, id, error)) {
         std::fprintf(stderr, "play: rewind: %s, back to now\n", error.c_str());
@@ -375,6 +393,15 @@ bool Session::menu_rewind_show(uint32_t id, Picture& shown) {
 
 bool Session::menu_rewind_jump(uint32_t id, bool play) {
     if (!menu_now_) return false;
+    if (id == menu_now_ && !menu_previewed_) {
+        // Back (or Play from the moment the menu opened at) with no look in effect: the game is still there, so
+        // nothing is loaded (a load would also reset the achievements' progress).
+        timeline_.protect(0);
+        std::fprintf(stderr, "play: menu rewind: %s now, nothing to load\n", play ? "playing on from" : "back to");
+        menu_now_ = 0;
+        return true;
+    }
+    if (play && id != menu_now_ && !keep_before_rewind(!menu_previewed_)) return false;
     std::string error;
     if (!timeline_.jump(*core_, id, error)) {
         std::fprintf(stderr, "play: menu rewind: %s\n", error.c_str());
@@ -385,6 +412,28 @@ bool Session::menu_rewind_jump(uint32_t id, bool play) {
     std::fprintf(stderr, "play: menu rewind: %s moment %u\n", play ? "playing from" : "back to", id);
     menu_now_ = 0;
     menu_previewed_ = false;
+    return true;
+}
+
+bool Session::keep_before_rewind(bool fresh) {
+    if (!writer_ || save_.path.empty()) return true;
+    if (fresh) {
+        // The battery as the game has it this frame, on the card before it is copied.
+        saved_revision_ = core_->battery_revision();
+        auto bytes = core_->battery();
+        if (!bytes.empty()) writer_->submit(std::move(bytes));
+    }
+    writer_->finish();
+    std::vector<uint8_t> bytes;
+    if (!read_file(save_.path, bytes) || bytes.empty()) return true; // no save yet: nothing to lose
+    const std::string kept = save_.path + (rewind_backed_up_ ? ".before-rewind.last" : ".before-rewind");
+    std::string error;
+    if (!write_file_atomic(kept, bytes, error)) {
+        std::fprintf(stderr, "play: rewind: the save could not be kept (%s), not playing on from an older moment\n",
+                     error.c_str());
+        return false;
+    }
+    rewind_backed_up_ = true;
     return true;
 }
 

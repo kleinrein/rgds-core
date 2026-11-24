@@ -11,8 +11,9 @@
 	<key>CFBundleShortVersionString</key><string>@VERSION@</string>
 	<key>CFBundleVersion</key><string>@VERSION@</string>
 	<key>LSMinimumSystemVersion</key><string>11.0</string>
-	<!-- The binary only serves the UI to a browser window; no Dock icon of its own. -->
-	<key>LSUIElement</key><true/>
 	<key>NSHighResolutionCapable</key><true/>
+	<key>NSSupportsAutomaticGraphicsSwitching</key><true/>
+	<!-- The window shows the flasher's own page from 127.0.0.1 (window_darwin.m). -->
+	<key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
 </dict>
 </plist>

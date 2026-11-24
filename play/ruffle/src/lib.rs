@@ -206,6 +206,13 @@ fn button_choice(
     }
 }
 
+/// Who can hold a mouse button down (Game::button): a finger on the picture, a tap's click, the second screen's
+/// touch pad, and from HELD_PAD_BUTTON up a bit for each of the pad's buttons.
+const HELD_FINGER: u32 = 1;
+const HELD_TAP: u32 = 2;
+const HELD_TOUCH_PAD: u32 = 4;
+const HELD_PAD_BUTTON: u32 = 8;
+
 #[derive(Clone, Copy, PartialEq)]
 enum Touch {
     Direct,
@@ -218,9 +225,10 @@ const BUTTONS: [(c_uint, &str, &str); 14] = [
     (lr::JOY_B, "ruffle_btn_b", "z"),
     (lr::JOY_X, "ruffle_btn_x", "x"),
     (lr::JOY_Y, "ruffle_btn_y", "c"),
-    (lr::JOY_L, "ruffle_btn_l", "shift"),
+    // Either shoulder is the mouse's button: whichever hand is not on the touch pad or the stick holds it.
+    (lr::JOY_L, "ruffle_btn_l", "mouse"),
     (lr::JOY_R, "ruffle_btn_r", "mouse"),
-    (lr::JOY_L2, "ruffle_btn_l2", "ctrl"),
+    (lr::JOY_L2, "ruffle_btn_l2", "shift"),
     (lr::JOY_R2, "ruffle_btn_r2", "right click"),
     (lr::JOY_START, "ruffle_btn_start", "enter"),
     (lr::JOY_SELECT, "ruffle_btn_select", "p"),
@@ -249,8 +257,10 @@ struct Game {
     last_call: Option<Instant>,
     behind: f64,
     skipped: u32,
-    /// The stage's quality last seen: when a game sets its own, the renderer is put back to no MSAA.
-    seen_quality: Option<StageQuality>,
+    /// What a call's movie and a picture's drawing have cost lately (ms, smoothed): how many pictures being late
+    /// may leave out (`skips_allowed`).
+    movie_ms: f64,
+    draw_ms: f64,
     /// The last picture read from the GPU; `frame` is it with the stick's pointer drawn over.
     clean: Vec<u32>,
     frame: Vec<u32>,
@@ -268,10 +278,12 @@ struct Game {
     /// Frames left that the drawn pointer stays up after the stick last moved it.
     cursor_shown: u32,
     cursor_speed: f64,
-    left_down: bool,
-    right_down: bool,
-    pad_left: bool,
-    pad_right: bool,
+    /// What holds each mouse button down, a bit a holder (`HELD_*`, a pad button's own bit): the button is down
+    /// while any does, so a shoulder button held through a tap on the touch pad stays held.
+    left_held: u32,
+    right_held: u32,
+    /// Frames left of a tap's click (Hover): the button stays down long enough for a game that reads it each frame.
+    tap_frames: u32,
     /// The player's framebuffer, when Ruffle draws on its GLES context: the picture is blitted there, never read.
     out: Option<gl::Output>,
     frames: u32,
@@ -327,8 +339,27 @@ fn gpu() -> Result<Arc<Descriptors>, String> {
     Err(format!("no GPU for Flash ({last})"))
 }
 
-/// Pictures frame skip may leave out in a row: at least every fourth is drawn.
-const MAX_SKIPPED: u32 = 3;
+/// Pictures a late game may leave out in a row, from what its movie costs a call and its drawing a picture (ms).
+/// Leaving a picture out only helps by the drawing it saves: a game whose drawing fits beside its movie skips
+/// nothing, one that is a little short draws every second picture, and at most three in four are given up, when
+/// the drawing is the heavy part. (A fixed three in four showed Bloons, 19 ms of movie and 5 of drawing, at 12
+/// pictures a second to win back a fifth of its speed.)
+fn skips_allowed(movie_ms: f64, draw_ms: f64) -> u32 {
+    let spare = 1000.0 / FPS - movie_ms;
+    let every = if spare > 0.0 {
+        (draw_ms / spare).ceil().clamp(1.0, 4.0)
+    } else if draw_ms < movie_ms / 2.0 {
+        2.0
+    } else {
+        3.0
+    };
+    every as u32 - 1
+}
+
+/// A cost smoothed over about ten samples, a stall (loading) counted as no more than 50 ms.
+fn smoothed(mean: f64, sample: Duration) -> f64 {
+    mean + (sample.as_secs_f64().min(0.05) * 1e3 - mean) * 0.1
+}
 
 /// Frame skip is on unless RGDS_FLASH_FRAMESKIP=0.
 fn frame_skip() -> bool {
@@ -390,7 +421,11 @@ impl Game {
         let res = std::env::var("RGDS_FLASH_RES").ok().and_then(|s| s.parse::<u32>().ok()).unwrap_or(100).clamp(25, 100);
         let drawn = if out.is_some() { ((width * res / 100).max(1), (height * res / 100).max(1)) } else { (width, height) };
         let target = FlashTarget::new(&descriptors.device, drawn, copy_back);
-        let renderer = WgpuRenderBackend::new(descriptors, target).map_err(|e| e.to_string())?;
+        let mut renderer = WgpuRenderBackend::new(descriptors, target).map_err(|e| e.to_string())?;
+        if smooth {
+            // The renderer never multisamples here, whatever quality the movie sets, now or later.
+            renderer.pin_quality(StageQuality::Low);
+        }
 
         let executor = NullExecutor::new();
         let navigator = navigator::PackNavigator::new(content.clone(), executor.spawner());
@@ -440,7 +475,8 @@ impl Game {
             last_call: None,
             behind: 0.0,
             skipped: 0,
-            seen_quality: None,
+            movie_ms: 0.0,
+            draw_ms: 0.0,
             clean: vec![0; (width * height) as usize],
             frame: vec![0; (width * height) as usize],
             drawn_pointer: None,
@@ -455,10 +491,9 @@ impl Game {
             cursor: (width as f64 / 2.0, height as f64 / 2.0),
             cursor_shown: 0,
             cursor_speed,
-            left_down: false,
-            right_down: false,
-            pad_left: false,
-            pad_right: false,
+            left_held: 0,
+            right_held: 0,
+            tap_frames: 0,
             frames: 0,
             spent: Default::default(),
             audio: Vec::new(),
@@ -482,16 +517,18 @@ impl Game {
         self.send(PlayerEvent::MouseMove { x, y });
     }
 
-    fn button(&mut self, button: MouseButton, down: bool) {
+    /// `holder` presses or lets go of a mouse button; the game sees it go down with the first and up with the last.
+    fn button(&mut self, button: MouseButton, holder: u32, down: bool) {
         let (x, y) = self.on_drawn(self.cursor);
         let held = match button {
-            MouseButton::Right => &mut self.right_down,
-            _ => &mut self.left_down,
+            MouseButton::Right => &mut self.right_held,
+            _ => &mut self.left_held,
         };
-        if *held == down {
+        let before = *held;
+        *held = if down { before | holder } else { before & !holder };
+        if (before != 0) == (*held != 0) {
             return;
         }
-        *held = down;
         self.send(if down {
             PlayerEvent::MouseDown { x, y, button, index: None }
         } else {
@@ -503,6 +540,12 @@ impl Game {
         let raw_x = input(0, lr::DEVICE_POINTER, 0, lr::POINTER_X);
         let raw_y = input(0, lr::DEVICE_POINTER, 0, lr::POINTER_Y);
         let pressed = input(0, lr::DEVICE_POINTER, 0, lr::POINTER_PRESSED) != 0;
+        if self.tap_frames > 0 {
+            self.tap_frames -= 1;
+            if self.tap_frames == 0 {
+                self.button(MouseButton::Left, HELD_TAP, false);
+            }
+        }
         let on_picture = raw_x != -0x8000 && raw_y != -0x8000;
         let at = on_picture.then(|| {
             (
@@ -518,7 +561,7 @@ impl Game {
                 self.finger_start = Some((x, y, self.frames));
                 self.finger_moved = false;
                 if self.touch == Touch::Direct {
-                    self.button(MouseButton::Left, true);
+                    self.button(MouseButton::Left, HELD_FINGER, true);
                 }
             }
             (true, Some((x, y)), Some(_)) => {
@@ -532,12 +575,12 @@ impl Game {
             }
             (false, _, Some(_)) | (true, None, Some(_)) => {
                 if self.touch == Touch::Direct {
-                    self.button(MouseButton::Left, false);
+                    self.button(MouseButton::Left, HELD_FINGER, false);
                 } else if let Some((_, _, since)) = self.finger_start {
                     // Hover: a short touch that stayed put is a click where the pointer rests.
                     if !self.finger_moved && self.frames.wrapping_sub(since) < 20 {
-                        self.button(MouseButton::Left, true);
-                        self.button(MouseButton::Left, false);
+                        self.button(MouseButton::Left, HELD_TAP, true);
+                        self.tap_frames = 3;
                     }
                 }
                 self.finger = None;
@@ -556,8 +599,8 @@ impl Game {
             self.held[i] = down;
             match self.binds[i] {
                 Bind::Key(key) => self.key(key, down, None),
-                Bind::MouseLeft => self.button(MouseButton::Left, down),
-                Bind::MouseRight => self.button(MouseButton::Right, down),
+                Bind::MouseLeft => self.button(MouseButton::Left, HELD_PAD_BUTTON << i, down),
+                Bind::MouseRight => self.button(MouseButton::Right, HELD_PAD_BUTTON << i, down),
                 Bind::Nothing => {}
             }
         }
@@ -597,14 +640,12 @@ impl Game {
             self.mouse_to(x + dx, y + dy);
             self.cursor_shown = 180;
         }
-        if left != self.pad_left {
-            self.pad_left = left;
-            self.button(MouseButton::Left, left);
+        if left != (self.left_held & HELD_TOUCH_PAD != 0) {
+            self.button(MouseButton::Left, HELD_TOUCH_PAD, left);
             self.cursor_shown = self.cursor_shown.max(60);
         }
-        if right != self.pad_right {
-            self.pad_right = right;
-            self.button(MouseButton::Right, right);
+        if right != (self.right_held & HELD_TOUCH_PAD != 0) {
+            self.button(MouseButton::Right, HELD_TOUCH_PAD, right);
         }
     }
 
@@ -666,23 +707,17 @@ impl Game {
             let at = Instant::now();
             p.tick(FloatDuration::from_secs(1.0 / FPS));
             self.spent.add(0, at);
-            // A game that sets its own quality keeps it on the stage (text, its own checks); the renderer stays
-            // without MSAA.
-            if self.smooth {
-                let q = p.quality();
-                if self.seen_quality != Some(q) {
-                    self.seen_quality = Some(q);
-                    p.renderer_mut().set_quality(StageQuality::Low);
-                }
-            }
+            self.movie_ms = smoothed(self.movie_ms, at.elapsed());
             drop(p);
             let at = Instant::now();
             self.executor.run();
             self.spent.add(1, at);
             let mut p = self.player.lock().unwrap();
-            // Behind by more than a frame: this picture is left out (the next one is drawn), at most MAX_SKIPPED in a
-            // row. needs_render stays set, so the skipped change shows in the next picture.
-            let late = frame_skip() && self.behind > 1.0 / FPS && self.skipped < MAX_SKIPPED;
+            // Behind by more than a frame: this picture is left out (the next one is drawn), as many in a row as
+            // skips_allowed says. needs_render stays set, so the skipped change shows in the next picture.
+            let late = frame_skip()
+                && self.behind > 1.0 / FPS
+                && self.skipped < skips_allowed(self.movie_ms, self.draw_ms);
             if p.needs_render() && late && self.frames >= 3 {
                 self.skipped += 1;
                 self.spent.skipped += 1;
@@ -696,6 +731,7 @@ impl Game {
                 }
                 self.spent.add(2, at);
                 self.spent.draw_cpu += thread_cpu().saturating_sub(cpu);
+                self.draw_ms = smoothed(self.draw_ms, at.elapsed());
                 drew = true;
             }
         }
@@ -949,7 +985,9 @@ pub extern "C" fn retro_set_input_state(f: lr::InputStateFn) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn retro_init() {
-    let filter = std::env::var("RGDS_FLASH_LOG").unwrap_or_else(|_| "warn,ruffle_libretro=info".into());
+    // Ruffle's warnings stay out of the log unless asked for: a movie with a tag it does not know says so for every
+    // clip on every frame (Swords and Sandals: 800 lines a second, each formatted and written to the player's pipe).
+    let filter = std::env::var("RGDS_FLASH_LOG").unwrap_or_else(|_| "error,ruffle_libretro=info".into());
     let _ = tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::new(filter))
         .with_writer(std::io::stderr)
@@ -1224,6 +1262,13 @@ mod tests {
     #[test]
     fn stick_by_tags_and_line() {
         let mut d = std::collections::HashMap::new();
+        // Frame skip: nothing while the picture fits beside the movie, every second when the movie alone is late,
+        // more only when the drawing is the heavy part.
+        assert_eq!(skips_allowed(5.0, 5.0), 0);
+        assert_eq!(skips_allowed(12.0, 8.0), 1);
+        assert_eq!(skips_allowed(15.0, 20.0), 3);
+        assert_eq!(skips_allowed(19.4, 5.4), 1);
+        assert_eq!(skips_allowed(20.0, 30.0), 2);
         assert!(matches!(stick_of("auto", &d), Stick::Pointer));
         d.insert("tags".into(), "Arcade, Racing, Cars".into());
         assert!(matches!(stick_of("auto", &d), Stick::Keys(_)));

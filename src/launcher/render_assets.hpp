@@ -106,7 +106,7 @@ void App::prepare_render_assets() {
             for (const char* name :
                  {"settings", "games",      "favorites", "recent",   "pictochat", "display", "power", "library",
                   "sound",    "wifi",       "system",    "controls", "shutdown",  "play",    "save",  "load",
-                  "shaders",  "brightness", "restart",   "home",     "artwork",   "music"}) {
+                  "shaders",  "brightness", "restart",   "home",     "artwork",   "music",   "files"}) {
                 if (std::string(name) == "music" && !music_available()) continue;
                 if (settings.page == Page::GameSwitcher && std::string(name) != "settings" &&
                     std::string(name) != "games" && std::string(name) != "recent")
@@ -119,6 +119,12 @@ void App::prepare_render_assets() {
                     continue;
                 media.warm(panel.renderer, asset_path(std::string("icons/") + name + ".bmp"));
             }
+    // Home's app icons without a SettingsIcon (category_icon), whichever layout shows them.
+    if (preferences.rich_icons && home_menu && settings.page == Page::Library)
+        for (auto& panel : surfaces)
+            for (const char* name : {"media", "album"})
+                if (std::string(name) != "media" || media_available())
+                    media.warm(panel.renderer, asset_path(std::string("icons/") + name + ".bmp"));
     // The Systems page draws each system's own artwork, so it is prepared
     // with the other icons instead of during the first frame.
     if (preferences.rich_icons)

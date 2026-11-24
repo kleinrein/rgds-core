@@ -63,6 +63,7 @@ Antarctica	Антарктида
 Any	Любой
 Applies immediately. Higher clocks use more battery.	Применяется сразу. Высокие частоты расходуют больше заряда.
 Applies immediately. Your game keeps its progress.	Применяется сразу. Прогресс игры сохраняется.
+Applies when the game starts without resuming.	Применится, когда игра запустится без продолжения.
 Apply	Применить
 APPLY	ПРИМЕНИТЬ
 Applying shader…	Применение фильтра…
@@ -447,6 +448,7 @@ Default controls saved.	Общее управление сохранено.
 Glossy tiles	Глянцевые плитки
 Go back	Назад
 Goes into	Папка
+Going online…	Подключение к сети…
 Golden leaves	Золотые листья
 Green	Зелёный
 Grey	Серый
@@ -457,12 +459,26 @@ Left stick down	Левый стик вниз
 Left stick left	Левый стик влево
 Left stick right	Левый стик вправо
 Left stick up	Левый стик вверх
+Online play is off.	Онлайн-игра выключена.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Онлайн-игра включена через WiiLink WFC. Подключитесь в меню Nintendo WFC в игре.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Онлайн-игра включена через Wiimmfi. Подключитесь в меню Nintendo WFC в игре.
+Online play is on. Local wireless applies when it is off.	Онлайн-игра включена. Локальная связь заработает, когда она выключена.
 Page	Страница
+Restart later	Перезапустить позже
+Restart now, unsaved progress is lost	Перезапустить сейчас, несохранённое пропадёт
+Restarting the game to apply the change…	Перезапуск игры, чтобы применить изменение…
+Restarting the game to change online play…	Перезапуск игры, чтобы изменить онлайн-игру…
+Restarting the game to change the microphone…	Перезапуск игры, чтобы изменить микрофон…
+Restarting the game to turn off local wireless…	Перезапуск игры, чтобы выключить локальную связь…
+Restarting the game to turn on local wireless…	Перезапуск игры, чтобы включить локальную связь…
 Right stick down	Правый стик вниз
 Right stick left	Правый стик влево
 Right stick right	Правый стик вправо
 Right stick up	Правый стик вверх
 Storyware	Книжка
+The game reads its language when it starts	Игра читает свой язык при запуске
+The game reads your nickname when it starts	Игра читает ваше имя при запуске
+Turning online play off…	Выключение онлайн-игры…
 h	ч
 Haptic strength	Сила отклика
 Health	Здоровье
@@ -2017,3 +2033,14 @@ Could not open it	Не удалось открыть
 This folder is empty	Эта папка пуста
 The trash is empty	Корзина пуста
 No network places yet	Сетевых мест пока нет
+Files	Файлы
+Theme, sound and Wi-Fi	Тема, звук и Wi-Fi
+Your screenshots and photos, by game and date	Ваши скриншоты и фото по играм и датам
+Games, saves and music on the card	Игры, сохранения и музыка на карте
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	Для DSiWare нужны файлы BIOS DS и DSi в папке BIOS
+This .cia is encrypted: copy the decrypted DSiWare file instead	Этот .cia зашифрован: скопируйте расшифрованный файл DSiWare
+This .cia is not a DSiWare file	Этот .cia не является файлом DSiWare
+Little kid	Малыш
+Big pictures, one tap to play. No menus.	Большие картинки, одно касание — и игра. Без меню.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	Для самых маленьких: только их игры, большими картинками. Одно касание запускает игру, и нет меню или настроек, в которых можно запутаться.
+No games yet	Пока нет игр

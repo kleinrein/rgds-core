@@ -2,6 +2,7 @@
 // DSperate - Nintendo DS emulator. Copyright (C) 2026 DSperate contributors.
 #pragma once
 #include "rgds_stylus.hpp"
+#include "core/slot2/slot2.h"
 #include "core/io/io.h"
 #include "core/input/input_log.h"
 
@@ -42,6 +43,8 @@ enum class Action : u8 {
   Count
 };
 const char* action_name(Action a);
+// The Controls page's English name for it ("FAST FORWARD"), marked for translation.
+const char* action_label(Action a);
 
 // Keyboard, game controller and touch folded into the DS's button mask and
 // pen position, handed to the core once a frame. Bindings come from the
@@ -49,6 +52,17 @@ const char* action_name(Action a);
 class Input {
 public:
   void configure(const Config& cfg);
+  static bool analog_wanted(const Config& cfg); // pad.analog names a stick mode
+  // Whether a CPAD patch is reading the sticks (NDS::analog_patch). While it
+  // is, the sticks pad.analog feeds belong to the patch: the pen, stick_dpad
+  // and stick_face let go of them, and the pen takes its stick back while the
+  // pad.stylus_hold button is held (the pad modifier, while that is unbound).
+  void set_analog_patch(bool on);
+  // The stick that tilts a slot-2 motion accessory while one is in the slot
+  // ("left", "right"; anything else: none). It is the accessory's then, as a
+  // patch's sticks are the patch's: the pen, stick_dpad and stick_face let go
+  // of it, and the pen takes it back while stylus_hold is held.
+  void set_motion_stick(const std::string& which);
 
   // DS_DUAL_SCREENS: "upper=<display>[:<touch>...],lower=...,none=<touch>..."
   // gives each physical panel its SDL display and touch devices (a touch is a
@@ -75,8 +89,15 @@ public:
   // State for the coming frame. A press+release both arrived since the last
   // frame still counts as held this frame; the release lands on the next one.
   input::Frame frame() {
-    const input::Frame f{static_cast<u16>(buttons_ | pressed_ | stick_ | face_stick_), static_cast<u8>(touch_x_),
-                         static_cast<u8>(touch_y_), touching_ || touched_ || stylus_down_ != 0};
+    held_back_ &= buttons_ | stick_ | face_stick_;
+    touch_held_back_ = touch_held_back_ && (touching_ || stylus_down_ != 0);
+    input::Frame f{static_cast<u16>((buttons_ | pressed_ | stick_ | face_stick_) & ~held_back_),
+                   static_cast<u8>(touch_x_), static_cast<u8>(touch_y_),
+                   !touch_held_back_ && (touching_ || touched_ || stylus_down_ != 0)};
+    fill_analog(f);
+    f.frets = grip_on_ ? static_cast<u8>(frets_ | frets_pressed_) : 0;
+    frets_pressed_ = 0;
+    strum_frame(f);
     pressed_ = 0;
     stick_pressed_ = 0;
     touched_ = false;
@@ -104,9 +125,22 @@ public:
   u32 menu_held() const { return buttons_ | stick_ | menu_fb_held_; }
   // While the menu is open only Pause and Quit hotkeys fire, so a hotkey that
   // shares a control with a DS button can't hide that button from the menu.
+  // Closing it, what is still held -- the button that chose Resume, the
+  // finger on it -- stays from the game until let go: a B held on into Golden
+  // Sun's name entry deleted the name and backed out of the screen.
   void set_menu_open(bool on) {
+    if (menu_open_ && !on) {
+      held_back_ = buttons_ | stick_ | face_stick_;
+      touch_held_back_ = touching_ || stylus_down_ != 0;
+    }
     menu_open_ = on;
     if (!on) menu_faces_ = 0;
+    if (on) {
+      frets_ = frets_pressed_ = 0;
+      strum_step_ = 0;
+      strum_queued_ = false;
+      strum_held_ = 0;
+    } // the menu has the controls now
   }
   // Pad face buttons pressed while the menu is open, by SDL position and
   // regardless of bindings: bit n = SDL_CONTROLLER_BUTTON n (south, east,
@@ -127,7 +161,7 @@ public:
   void fake_mic_frame(std::vector<s16>& out);
 
   // Pad-driven pen: moved by a stick's deflection (pad.stylus_axis) and by
-  // the d-pad while the pad.stylus_dpad chord is held.
+  // the d-pad while pad.stylus_hold is held.
   void update_stylus();
   bool stylus_visible_binding() const; // some pad control drives the pen
   bool stylus_visible() const {
@@ -143,6 +177,37 @@ public:
 
   // Rebinding, for the Controls page.
   bool has_pad() const { return pad_ != nullptr; }
+  // The open controller's rumble motor, for the slot-2 Rumble Pak. On
+  // ROCKNIX the handheld's own motor counts: InputPlumber's virtual pad
+  // forwards its rumble to the pwm-vibrator. rumble() runs both motors at
+  // `strength` percent for `ms`, replacing whatever pulse was running.
+  bool has_rumble() const;
+  // The controller's own accelerometer (and gyroscope, where it has one), as a
+  // slot-2 motion accessory feels it, through `r` (MotionSource::matrix()).
+  // False when the pad has none: `m` is left. Turns the sensors on at the first call.
+  bool pad_has_motion() const;
+  bool pad_motion(slot2::Motion& m, const float* r);
+  void rumble(int strength, u32 ms);
+  // While the Guitar Grip is in slot 2, its four fret bindings (keys/pad
+  // grip_green, grip_red, grip_yellow, grip_blue) work the frets instead of
+  // whatever DS button shares the control.
+  // The strum bindings (keys.strum, pad.strum and pad.strum.alt) play a
+  // stroke across the touch screen's strings in their place, for a handheld
+  // without one, alternating down and up like a pick -- while a fret is held
+  // (the games have no open notes); otherwise the control is the game's, and
+  // the stylus hold's, as usual.
+  void set_guitar_grip(bool on) {
+    grip_on_ = on;
+    frets_ = frets_pressed_ = 0;
+    strum_step_ = 0;
+    strum_queued_ = false;
+    strum_held_ = 0;
+  }
+  static const char* fret_name(int i); // "grip_green".. for the config keys
+  static const char* strum_key_default();
+  static const char* strum_pad_default(int slot);
+  static const char* fret_key_default(int i);
+  static const char* fret_pad_default(int i);
   // While capturing, the next physical key or pad control is taken as a name
   // instead of fed to the game or matched against a hotkey. `pad` picks
   // which device is listened to.
@@ -165,7 +230,7 @@ public:
   // modifier, and the pen's tap button and stick.
   static const char* mod_default(bool pad);
   static const char* stylus_button_default();
-  static const char* stylus_dpad_default();
+  static const char* stylus_hold_default();
   static const char* stick_face_default();
   static const char* stick_dpad_default();
   static const char* stylus_axis_default(const Config& cfg);
@@ -182,6 +247,12 @@ public:
   // Last axis a capture took, as the physical control pushed ("-righty"),
   // before the remap. Empty if the capture was not an axis.
   const std::string& captured_raw_axis() const { return captured_raw_axis_; }
+  // A stick as it stands, -1..1, right and up positive (after the axis remap,
+  // before any dead zone): what tilts a slot-2 motion accessory.
+  void stick_position(bool right, float& x, float& y) const {
+    x = (right ? raw_rx_ : raw_lx_) / 32767.f;
+    y = -(right ? raw_ry_ : raw_ly_) / 32767.f;
+  }
   static int action_count();
   static const char* key_hot_default(int i);
   static const char* pad_hot_default(int i);
@@ -213,7 +284,10 @@ private:
     if (down) {
       buttons_ |= 1u << b;
       pressed_ |= 1u << b;
-    } else buttons_ &= ~(1u << b);
+    } else {
+      buttons_ &= ~(1u << b);
+      held_back_ &= ~(1u << b);
+    }
   }
   void touch_at(int wx, int wy, Display& display);
   Panel touch_panel(SDL_TouchID id); // DS_DUAL_SCREENS route for a device, cached on first sight
@@ -272,13 +346,51 @@ private:
   Bind key_hot_[static_cast<int>(Action::Count)][HOT_SLOTS];
   Bind pad_hot_[static_cast<int>(Action::Count)][HOT_SLOTS];
   Bind key_mod_, pad_mod_;
+  static constexpr int FRETS = 4; // green, red, yellow, blue: slot2::GuitarGrip::Fret bit order
+  Bind key_fret_[FRETS], pad_fret_[FRETS];
+  bool grip_on_ = false;
+  u8 frets_ = 0, frets_pressed_ = 0; // held now; pressed since the last frame
+  Bind key_strum_, pad_strum_[HOT_SLOTS];
+  int strum_step_ = 0; // frames of the stroke played so far, 0 idle
+  bool strum_up_ = false, strum_queued_ = false;
+  u8 strum_held_ = 0; // strum controls whose press was a strum (bit 0 key, 1-2 pad slots): their release is too
+  void strum_press() {
+    if (strum_step_) strum_queued_ = true;
+    else strum_step_ = 1;
+  }
+  void strum_frame(input::Frame& f);
+  void set_fret(int i, bool down) {
+    if (down) {
+      frets_ |= static_cast<u8>(1u << i);
+      frets_pressed_ |= static_cast<u8>(1u << i);
+    } else frets_ &= static_cast<u8>(~(1u << i));
+  }
   bool key_mod_down_ = false, key_mod_used_ = false, pad_mod_down_ = false, pad_mod_used_ = false;
   int key_mod_alone_ = -1, pad_mod_alone_ = -1;                // the action bound to "mod" alone, or -1
   int pad_mod_button_ = -1;                                    // the DS button the pad modifier would otherwise be
   bool axis_state_[SDL_CONTROLLER_AXIS_MAX][2] = {};           // per axis: - and + past the threshold
   int axis_src_[SDL_CONTROLLER_AXIS_MAX] = {0, 1, 2, 3, 4, 5}; // pad.axis_<name>: the physical axis feeding it, -1 none
   bool axis_inv_[SDL_CONTROLLER_AXIS_MAX] = {};
+  // Analog patch channel (pad.analog): which stick(s) feed the CPAD patch.
+  // Dual: left stick is the Circle Pad, right stick is the C-Stick/nub.
+  // Auto: Dual on a pad with a right stick, else Left.
+  enum class AnalogMode : u8 { Off, Left, Right, Dual, Auto };
+  static AnalogMode analog_mode_of(const std::string& s); // anything else is Off
+  AnalogMode analog_mode() const;                         // Auto resolved against the open pad
+  int trigger_threshold() const { return std::max(deadzone_, 24576); }
+  AnalogMode analog_mode_ = AnalogMode::Auto;
+  bool analog_patch_ = false;  // set_analog_patch
+  int analog_deadzone_ = 6000; // radial, in SDL units; below stick_deadzone on purpose
+  bool analog_invert_y_ = false;
+  int analog_sens_left_ = 100, analog_sens_right_ = 100;     // percent
+  Sint16 raw_lx_ = 0, raw_ly_ = 0, raw_rx_ = 0, raw_ry_ = 0; // post-remap stick values
+  Sint16 raw_lt_ = 0, raw_rt_ = 0;                           // post-remap trigger values
+  void fill_analog(input::Frame& f) const;
+
   enum class StylusAxis : u8 { None, Right, Left };
+  StylusAxis motion_stick_ = StylusAxis::None; // set_motion_stick
+  // The patch has this stick (set_analog_patch); the modifier does not change it.
+  bool analog_claims(StylusAxis s) const;
   // Config spelling: none | left | right. Old stick_dpad = true/false still
   // parse as left/none.
   static bool parse_stick(const std::string& s, StylusAxis& out);
@@ -287,7 +399,9 @@ private:
   StylusAxis stick_face_ = StylusAxis::None; // pad.stick_face: a stick that also works X/B/Y/A (up/down/left/right)
   Bind stylus_button_[HOT_SLOTS];            // pressing either touches at the pen's position (pad.stylus_button, .alt)
   u8 stylus_down_ = 0;                       // which of them is held, a bit per slot
-  Bind stylus_chord_;                        // while held, the d-pad moves the pen instead of the game
+  Bind
+      stylus_chord_; // pad.stylus_hold: while held, the d-pad (and a patch's pen stick) move the pen instead of the game
+  bool pen_borrows_stick() const; // stylus_hold held, or the modifier when it is unbound
   bool stylus_chord_down_ = false;
   u32 stylus_dpad_ = 0; // d-pad directions held under the chord (bit per DS button)
   u32 held_ = 0;        // SDL pad buttons currently down (bit per button)
@@ -301,6 +415,8 @@ private:
   std::vector<Action> actions_;
   bool capturing_ = false, capture_pad_ = false;
   bool menu_open_ = false;
+  u32 held_back_ = 0;            // held as the menu closed: kept from the game until released
+  bool touch_held_back_ = false; // the same for a touch
   u32 menu_faces_ = 0;
   // pad.face_fix: SDL face button -> the positional one the kernel says it is
   // (identity unless the mapping has a/b or x/y swapped); see pad_faces.h.

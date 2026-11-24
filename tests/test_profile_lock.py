@@ -313,7 +313,7 @@ class LockTests(Base):
         for name, index, locked in (
             ('Profiles', -1, False), ('Theme', 0, False), ('Display', 1, False), ('Sound', 2, False),
             ('Library', 3, True), ('Controls', 4, True), ('Connectivity', 5, True), ('Power', 6, True),
-            ('System', 7, True), ('Updates', 8, True)
+            ('System', 7, True), ('Files', 8, True), ('Updates', 9, True)
         ):
             with self.subTest(row=name):
                 report = self.run_ui(self.row(index), seconds=3)
@@ -446,8 +446,8 @@ class LockTests(Base):
 
     def test_pictochat_needs_a_permission(self):
         folder = self.profiles()
-        # Home: from Games, down to Recents, across to PictoChat
-        to_chat = ['Down', 'Right', 'a']
+        # Home: from Games, down to Recents, down again to the app dock's first app, PictoChat
+        to_chat = ['Down', 'Down', 'a']
         self.assertEqual(self.run_ui(to_chat, flags=('--home',))['chat_open'], 0)
         (folder / 'profile.ini').write_text('schema=1\nname=Ola\nrestricted=1\nage=7\npictochat=1\n')
         self.assertEqual(self.run_ui(to_chat, flags=('--home',))['chat_open'], 1)

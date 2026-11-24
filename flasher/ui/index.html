@@ -165,6 +165,24 @@ h1 { font-size: 22px; font-weight: 800; margin: 0 0 4px; letter-spacing: -.2px; 
 .dialog .hints { padding: 18px 0 0; }
 .dialog h1 { display: flex; align-items: center; gap: 10px; }
 .dialog h1 svg { width: 28px; height: 28px; color: var(--danger); }
+.form { display: grid; gap: 12px; }
+.field { display: grid; gap: 5px; }
+.field > span { font-size: 13px; font-weight: 800; color: var(--muted); }
+.field small { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.input {
+  font: inherit; font-weight: 700; color: var(--ink); background: var(--panel); border: 2px solid var(--line); border-radius: 10px;
+  padding: 8px 10px; width: 100%; -webkit-user-select: text; user-select: text; min-width: 0;
+}
+.input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus); }
+select.input { appearance: none; -webkit-appearance: none; padding-right: 30px; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: right 15px top 55%, right 10px top 55%; background-size: 5px 5px; background-repeat: no-repeat; }
+.pw { position: relative; }
+.pw .input { padding-right: 64px; }
+.pw button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font: inherit; font-size: 12px; font-weight: 800;
+  border: 0; background: var(--slot); color: var(--muted); border-radius: 7px; padding: 4px 8px; cursor: pointer; }
+.section { font-size: 12px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); margin: 18px 0 8px; }
 .err { color: var(--danger); }
 .muted { color: var(--muted); }
 a { color: var(--accent); }
@@ -184,7 +202,7 @@ a { color: var(--accent); }
 <div id="modal"></div>
 <script>
 "use strict";
-const STEPS = ["Download", "Pick card", "Flash", "Verify", "Done"];
+const STEPS = ["Download", "Pick card", "Set up", "Flash", "Verify", "Done"];
 const ICON = {
   ds: `<svg viewBox="0 0 80 80"><rect x="14" y="6" width="52" height="34" rx="7" fill="var(--slot)" stroke="var(--line)" stroke-width="2"/><rect x="21" y="11" width="38" height="24" rx="3" fill="url(#scr)"/><rect x="14" y="42" width="52" height="34" rx="7" fill="var(--slot)" stroke="var(--line)" stroke-width="2"/><rect x="27" y="47" width="26" height="20" rx="3" fill="url(#scr)"/><circle cx="20" cy="55" r="3" fill="var(--muted)"/><circle cx="61" cy="52" r="2.2" fill="var(--muted)"/><circle cx="57" cy="57" r="2.2" fill="var(--muted)"/><defs><linearGradient id="scr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4FA6EF"/><stop offset="1" stop-color="#2580D2"/></linearGradient></defs></svg>`,
   plus: `<svg viewBox="0 0 80 80"><rect x="10" y="4" width="60" height="36" rx="7" fill="var(--slot)" stroke="var(--line)" stroke-width="2"/><rect x="16" y="9" width="48" height="26" rx="3" fill="url(#scr2)"/><rect x="10" y="42" width="60" height="36" rx="7" fill="var(--slot)" stroke="var(--line)" stroke-width="2"/><rect x="24" y="47" width="32" height="22" rx="3" fill="url(#scr2)"/><circle cx="17" cy="56" r="3" fill="var(--muted)"/><circle cx="63" cy="53" r="2.2" fill="var(--muted)"/><circle cx="59" cy="58" r="2.2" fill="var(--muted)"/><defs><linearGradient id="scr2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4FA6EF"/><stop offset="1" stop-color="#2580D2"/></linearGradient></defs></svg>`,
@@ -195,15 +213,24 @@ const ICON = {
   cross: `<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>`,
   alert: `<svg viewBox="0 0 24 24"><path d="M12 3l10 18H2z" fill="currentColor" opacity=".18"/><path d="M12 3l10 18H2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v5M12 18v.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`,
   info: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v6M12 7.5v.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`,
+  box: `<svg viewBox="0 0 40 40"><rect x="6" y="12" width="28" height="22" rx="3" fill="currentColor" opacity=".18"/><rect x="6" y="12" width="28" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M4 8h32v5H4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M16 19h8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`,
 };
 
 const base = location.pathname.replace(/[^/]*$/, "");
 let st = null;            // server state
 let step = 0;             // the step the user is on while nothing runs
 let model = "rgds";
+let handheld = "rgds";    // "rgds" or "plus": what the card is for (the image is the same; the Plus card goes in TF1)
 let lastPhase = "";
 let disks = null, pick = null, diskTimer = null, confirming = false;
 let keep = true, keepGames = false; // the old system's saves come along; its games to this computer only if asked
+let copyCard = false;                // a whole-card backup first (backup.go)
+// Set up (preset.go): what the handheld's own setup would ask first. Language and time zone start from this
+// computer's; nothing is sent unless "useSetup" stays on.
+let useSetup = true, showPw = false;
+const setup = { language: "", timezone: "", name: "", ssid: "", password: "" };
+let LANGUAGES = [], ZONES = [];
+const isBackup = m => String(m).startsWith("backup:");
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -241,26 +268,28 @@ function gone() {
 function current() {
   switch (st.phase) {
     case "download": case "check": return 0;
-    case "prepare": case "backup": case "carry": case "write": return 2;
-    case "verify": case "reopen": case "eject": return 3;
-    case "done": return 4;
-    case "error": return st.errorStep === "download" ? 0 : 2;
-    case "ready": return step === 0 ? 0 : 1;
+    case "plan": return st.busy && step < 3 ? 0 : 3;
+    case "prepare": case "backup": case "backup-card": case "probe": case "carry": case "write": return 3;
+    case "verify": case "reopen": case "eject": return 4;
+    case "done": return 5;
+    case "error": return st.errorStep === "download" ? 0 : 3;
+    case "ready": return Math.min(step, 2);
   }
   return 0;
 }
 
 function render() {
   if (!st) return;
-  if (st.phase === "ready" && (lastPhase === "download" || lastPhase === "check")) step = 1; // downloaded: on to the card
+  if (st.phase === "ready" && ["download", "check", "plan"].includes(lastPhase) && step === 0) step = 1; // downloaded: on to the card
   lastPhase = st.phase;
   const now = current();
-  $("tag").textContent = st.image && st.image.version ? `RG DS OS ${st.image.version}` : st.release && st.release.version ? `RG DS OS ${st.release.version}` : "Card flasher";
+  $("tag").textContent = st.image && isBackup(st.image.model) ? "Putting back a backup" : st.image && st.image.version ? `RG DS OS ${st.image.version}${st.image.signed ? " · signed ✓" : ""}` : st.release && st.release.version ? `RG DS OS ${st.release.version}` : "Card flasher";
+  const last = STEPS.length - 1;
   const steps = STEPS.map((name, i) =>
-    `<li class="${i < now || (i === 4 && now === 4) ? "past" : i === now ? "now" : ""}"><div class="dot">${i < now || (i === 4 && now === 4) ? ICON.tick.replace("<svg", '<svg width="16" height="16"') : i + 1}</div>${name}</li>`).join("");
+    `<li class="${i < now || (i === last && now === last) ? "past" : i === now ? "now" : ""}"><div class="dot">${i < now || (i === last && now === last) ? ICON.tick.replace("<svg", '<svg width="16" height="16"') : i + 1}</div>${name}</li>`).join("");
   if ($("steps").dataset.html !== steps) { $("steps").dataset.html = steps; $("steps").innerHTML = steps; }
-  const views = [viewDownload, viewCard, viewFlash, viewFlash, viewDone];
-  const [html, hints, live] = st.phase === "error" && st.errorStep === "flash" ? viewError() : views[now]();
+  const views = [viewDownload, viewCard, viewSetup, viewFlash, viewFlash, viewDone];
+  const [html, hints, live, after] = st.phase === "error" && st.errorStep === "flash" ? viewError() : views[now]();
   const view = $("view");
   if (view.dataset.html !== html) {
     const fresh = view.dataset.step !== String(now) + st.phase.slice(0, 3);
@@ -268,13 +297,14 @@ function render() {
     view.dataset.step = String(now) + st.phase.slice(0, 3);
     if (fresh) { view.style.animation = "none"; view.offsetHeight; view.style.animation = ""; }
     view.innerHTML = html;
+    if (after) after(view);
   }
   if (live) {
     setGoal(live.pct);
     for (const k of ["amount", "left"]) { const el = view.querySelector(`[data-k="${k}"]`); if (el) el.textContent = live[k]; }
   }
   if ($("hints").dataset.html !== hints) { $("hints").dataset.html = hints; $("hints").innerHTML = hints; }
-  diskPolling(now === 1 && st.phase === "ready");
+  diskPolling((now === 1 || now === 2) && st.phase === "ready");
 }
 
 const btn = (key, label, act, cls = "", disabled = false) =>
@@ -317,24 +347,42 @@ function viewDownload() {
     if (st.releaseError && !st.loading) return [`<div class="empty"><div class="check bad">${ICON.cross}</div><h1>Can't find RG DS OS</h1><p class="sub">${esc(st.releaseError)}.<br>Check your internet connection.</p></div>`, btn("A", "Try again", "release", "primary")];
     return [`<div class="empty"><div class="spin"></div><p>Looking for the latest RG DS OS…</p></div>`, ""];
   }
-  const images = rel.images;
-  if (!images.some(i => i.model === model)) model = images[0].model;
-  const img = images.find(i => i.model === model);
-  const working = st.phase === "download" || st.phase === "check";
-  const tiles = images.map(i => {
-    const [title, note] = i.model === "plus" ? ["RG DS Plus", 'Fixed to the Plus <span class="pill">experimental</span>']
-      : i.model === "rgds" ? ["RG DS", 'Recommended · also starts on the Plus'] : [esc(i.name), "This image file"];
-    return `<button class="tile ${i.model === model ? "on" : ""}" data-act="model" data-model="${i.model}" ${working ? "disabled" : ""}>${ICON[i.model === "plus" ? "plus" : i.model === "rgds" ? "ds" : "file"]}<b>${title}</b><small>${note}</small></button>`;
-  }).join("");
-  let body = `<h1>Which handheld is it for?</h1><p class="sub">${rel.version ? `RG DS OS ${esc(rel.version)}, the latest release.` : "The image you gave the flasher."}${rel.offline ? " Offline: using the saved copy." : ""}</p><div class="tiles" style="${images.length === 1 ? "grid-template-columns:1fr" : ""}">${tiles}</div>`;
+  const images = rel.images || [], backups = rel.backups || [];
+  const all = [...images, ...backups];
+  if (!all.some(i => i.model === model)) model = (all[0] || {}).model;
+  const img = all.find(i => i.model === model) || {};
+  const working = st.phase === "download" || st.phase === "check" || st.phase === "plan";
+  // The tiles pick the handheld, not the image: one card starts both (U-Boot reads the board's ID voltage), so the
+  // Plus gets the same image as the RG DS. The image fixed to the Plus is only a fallback for a Plus whose screens
+  // stayed black, and an image file given to the flasher is flashed whichever handheld is picked.
+  const universal = images.find(i => i.model === "rgds"), plusOnly = images.find(i => i.model === "plus");
+  const file = images.find(i => i.model === "file");
+  if (!isBackup(model)) {
+    if (plusOnly && model === "plus") handheld = "plus";
+    if (!(handheld === "plus" && model === "plus" && plusOnly)) model = file ? "file" : universal ? "rgds" : model;
+  }
+  const hand = (id, title, note) => `<button class="tile ${!isBackup(model) && handheld === id ? "on" : ""}" data-act="handheld" data-handheld="${id}" ${working ? "disabled" : ""}>${ICON[id === "plus" ? "plus" : "ds"]}<b>${title}</b><small>${note}</small></button>`;
+  const tiles = universal || file ? hand("rgds", "RG DS", "640 × 480 screens") + hand("plus", "RG DS Plus", "1024 × 768 screens · TF1 slot") : "";
+  let body = tiles ? `<h1>Which handheld is it for?</h1><p class="sub">${rel.version ? `RG DS OS ${esc(rel.version)}, the latest release.` : `The image you gave the flasher: <b>${esc(file ? file.name : "")}</b>.`}${rel.offline ? " Offline: using the saved copy." : ""} The same card starts on both.</p><div class="tiles">${tiles}</div>`
+    : images.length ? `<h1>Flash this image?</h1><p class="sub">${esc(images.map(i => i.name).join(", "))}</p>`
+    : `<h1>Put a card back as it was</h1><p class="sub">GitHub can't be reached, but this computer has backups of whole cards.</p>`;
+  if (handheld === "plus" && plusOnly && !isBackup(model) && !file)
+    body += `<div class="carry"><label><input type="checkbox" data-act="plusonly" ${model === "plus" ? "checked" : ""} ${working ? "disabled" : ""}> <span>Use the image made only for the Plus <span class="pill">fallback</span><br><small>Only if the screens stayed black with the normal card. It always loads the Plus's settings instead of telling the two apart.</small></span></label></div>`;
+  if (backups.length) {
+    body += `<div class="section">${images.length ? "Or put a card back as it was" : "Backups"}</div><div class="list">` + backups.map(b =>
+      `<button class="row ${b.model === model ? "on" : ""}" data-act="model" data-model="${esc(b.model)}" ${working ? "disabled" : ""}>${ICON.box}<span class="txt"><div class="name">${esc(b.card || b.name)}</div><small>${esc(b.made ? new Date(b.made).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : b.name)} · ${gb(b.size)} saved</small></span><span class="size">${gb(b.unpacked)}</span></button>`).join("") + `</div>`;
+  }
   if (working) {
-    const checking = st.phase === "check";
-    body += `<div class="grow"></div><div class="progress"><p><b>${checking ? "Checking the image" : "Downloading"}</b> <span class="muted">${checking ? "against its checksum" : esc(img.name)}</span></p>${bar()}${stats()}</div>`;
+    const label = st.phase === "check" ? ["Checking the image", isBackup(model) ? "against its checksum" : "against its signature"]
+      : st.phase === "plan" ? ["Looking through the image", "for the parts worth writing"] : ["Downloading", esc(img.name)];
+    body += `<div class="grow"></div><div class="progress"><p><b>${label[0]}</b> <span class="muted">${label[1]}</span></p>${bar()}${stats()}</div>`;
     return [body, btn("B", "Stop", "cancel"), progress()];
   }
-  body += `<div class="facts">${img.cached ? `<span class="fact good">✓ Already downloaded</span>` : `<span class="fact">${img.size ? gb(img.size) + " download" : "Download"}</span>`}<span class="fact">Saved for the next card</span></div>`;
+  body += isBackup(model) ? `<div class="facts"><span class="fact good">✓ On this computer</span><span class="fact">Goes back byte for byte</span></div>`
+    : `<div class="facts">${img.cached ? `<span class="fact good">✓ Already downloaded</span>` : `<span class="fact">${img.size ? gb(img.size) + " download" : "Download"}</span>`}<span class="fact">${img.signed ? "Signed by RG DS" : "Checked against its checksum"}</span>${img.model === "file" ? "" : `<span class="fact">Removed after flashing</span>`}</div>`;
   if (st.phase === "error" && st.errorStep === "download") body += `<div class="warn">${esc(st.error)}</div>`;
-  body += `<div class="grow"></div><div class="note">${ICON.info}<span>You need a microSD card of 8 GB or more. Your handheld's built-in storage is never touched; your old card brings stock back.</span></div>`;
+  const slotNote = handheld === "plus" && !isBackup(model) ? " The Plus only starts from the <b>TF1</b> slot; a games card can stay in TF2." : "";
+  body += `<div class="grow"></div><div class="note">${ICON.info}<span>You need a microSD card of 8 GB or more. Your handheld's built-in storage is never touched; your old card brings stock back.${slotNote}</span></div>`;
   return [body, btn("A", img.cached ? "Next" : "Download", "prepare", "primary")];
 }
 
@@ -347,13 +395,65 @@ function viewCard() {
     body += `<div class="list">` + disks.map(d => `<button class="row ${d.id === pick ? "on" : ""}" data-act="disk" data-id="${esc(d.id)}" ${d.problem ? "disabled" : ""}>${ICON.sd}<span class="txt"><div class="name">${esc(d.name)}</div><small>${d.problem ? `<span class="why">${esc(d.problem)}</span>` : esc([d.path, ...(d.volumes || [])].join(" · "))}</small>${d.id === pick && d.warnings ? d.warnings.map(w => `<div class="rowwarn">${esc(w)}</div>`).join("") : ""}${d.carry ? `<div class="rowok">${esc(cap(d.carry.source))}: ${carryLine(d.carry)}. They can come along.</div>` : ""}</span><span class="size">${gb(d.size)}</span></button>`).join("") + `</div>`;
   }
   const ok = disks && disks.some(d => d.id === pick && !d.problem);
-  return [body, btn("B", "Back", "back") + btn("A", "Flash", "confirm", "primary", !ok)];
+  // a backup goes back as it was: nothing to set up
+  return [body, btn("B", "Back", "back") + (st.image && isBackup(st.image.model) ? btn("A", "Flash", "confirm", "primary", !ok) : btn("A", "Next", "tosetup", "primary", !ok))];
+}
+
+// Set up: the handheld's first questions, answered here (preset.go). The markup never changes while it shows, so
+// typing is never interrupted; the fields are filled from `setup` once, after it goes in.
+function viewSetup() {
+  const opt = (value, label) => `<option value="${esc(value)}">${esc(label)}</option>`;
+  const body = `<h1>Set up the handheld now?</h1><p class="sub">It starts in your language, on your time and already on Wi-Fi. Setup skips the questions you answer here.</p>
+    <label class="carry" style="margin:0 0 14px"><span style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-act="usesetup" id="usesetup"> <b>Put these answers on the card</b></span></label>
+    <div class="form" id="setupform">
+      <div class="pair">
+        <label class="field"><span>Language</span><select class="input" data-f="language">${LANGUAGES.map(([c, n]) => opt(c, n)).join("")}</select></label>
+        <label class="field"><span>Time zone</span><select class="input" data-f="timezone">${ZONES.map(z => opt(z, z.replace(/_/g, " "))).join("")}</select></label>
+      </div>
+      <label class="field"><span>Your name</span><input class="input" data-f="name" maxlength="10" placeholder="For DS games and PictoChat" autocomplete="off" spellcheck="false"><small>Up to 10 letters, like on a DS.</small></label>
+      <div class="pair">
+        <label class="field"><span>Wi-Fi network</span><input class="input" data-f="ssid" maxlength="32" placeholder="Optional" autocomplete="off" spellcheck="false"></label>
+        <label class="field"><span>Wi-Fi password</span><span class="pw"><input class="input" data-f="password" type="password" maxlength="63" autocomplete="off" spellcheck="false"><button type="button" data-act="showpw">Show</button></span></label>
+      </div>
+      <small class="muted" style="font-size:12.5px">The password goes on the card as the network key, not as typed, and the handheld keeps it like any network it joins.</small>
+    </div>`;
+  const after = view => {
+    $("usesetup").checked = useSetup;
+    for (const el of view.querySelectorAll("[data-f]")) {
+      el.value = setup[el.dataset.f];
+      el.addEventListener("input", () => { setup[el.dataset.f] = el.value; renderHints(); });
+    }
+    setupEnabled();
+  };
+  return [body, setupHints(), null, after];
+}
+function setupProblem() {
+  if (!useSetup) return "";
+  if ([...setup.name.trim()].length > 10) return "The name can have 10 letters at most.";
+  if (setup.ssid && setup.password && (setup.password.length < 8 || setup.password.length > 63)) return "A Wi-Fi password has 8 to 63 characters.";
+  if (!setup.ssid && setup.password) return "Enter the Wi-Fi network's name too.";
+  return "";
+}
+function setupHints() {
+  const problem = setupProblem();
+  return (problem ? `<span class="err" style="align-self:center;font-size:13px">${esc(problem)}</span>` : "") + btn("B", "Back", "tocard") + btn("A", "Flash", "confirm", "primary", !!problem);
+}
+function renderHints() { if (current() === 2) { const h = setupHints(); $("hints").dataset.html = h; $("hints").innerHTML = h; } }
+function setupEnabled() {
+  const form = $("setupform");
+  if (!form) return;
+  form.style.opacity = useSetup ? "" : ".45";
+  for (const el of form.querySelectorAll("input, select, button")) el.disabled = !useSetup;
+}
+function presetBody() {
+  if (!useSetup || (st.image && isBackup(st.image.model))) return {};
+  return { language: setup.language, timezone: setup.timezone, name: setup.name.trim(), ssid: setup.ssid, password: setup.ssid ? setup.password : "" };
 }
 
 function viewFlash() {
   const ph = st.phase, d = st.disk || {};
   const name = esc(d.name || "the card");
-  if (ph === "prepare") {
+  if (ph === "prepare" || ph === "plan") {
     const ask = mac() ? "Enter your password when your Mac asks for it." : win() ? "Choose Yes when Windows asks for permission." : "Enter your password if asked.";
     return [`<div class="empty"><div class="spin"></div><h1 style="color:var(--ink)">Getting ${name} ready</h1><p>${ask}</p></div>`, ""];
   }
@@ -367,26 +467,48 @@ function viewFlash() {
     <div class="note">${ICON.info}<span>Nothing has been written to the card yet.</span></div>`;
     return [body, "", progress()];
   }
+  if (ph === "backup-card") {
+    const body = `<h1>Copying the whole card</h1><p class="sub">Every byte of ${name} goes to <b>RG DS backup</b> in your home folder, so it can go back exactly as it was.</p>
+    <div class="grow"></div><div class="big" data-k="pct">0%</div>${bar()}${stats()}<div class="grow"></div>
+    <div class="note">${ICON.info}<span>Nothing has been written to the card yet.</span></div>`;
+    return [body, "", progress()];
+  }
+  if (ph === "probe") {
+    const body = `<h1>Checking the card is genuine</h1><p class="sub">Fake cards claim more space than they have and break once games fill them. A few hundred places across ${name} are written and read back.</p>
+    <div class="grow"></div><div class="big" data-k="pct">0%</div>${bar()}<div class="grow"></div>
+    <div class="note">${ICON.info}<span>A card that fails gets back what was on it.</span></div>`;
+    return [body, "", { pct: st.total ? st.done / st.total * 100 : 0, amount: "", left: "" }];
+  }
   if (ph === "carry") return [`<div class="empty"><div class="spin"></div><h1 style="color:var(--ink)">Putting your saves on the card</h1></div>`, ""];
   if (ph === "eject") return [`<div class="empty"><div class="spin"></div><h1 style="color:var(--ink)">Ejecting the card</h1></div>`, ""];
   const verify = ph === "verify";
-  let body = `<h1>${verify ? "Final check" : "Writing the card"}</h1><p class="sub">${verify ? "Reading the whole card back once more and comparing it with the image." : `RG DS OS goes onto ${name} byte for byte, and each part is read back as it goes.`}</p>
+  const img = st.image || {}, part = img.writes && img.size && img.writes < img.size * 0.95;
+  const what = isBackup(img.model) ? "The backup goes back" : "RG DS OS goes";
+  let body = `<h1>${verify ? "Final check" : "Writing the card"}</h1><p class="sub">${verify ? "Reading everything back once more and comparing it with the image." : part ? `${what} onto ${name}. Only the ${mb(img.writes)} MB that hold something are written (the image is ${mb(img.size)} MB), each read back as it goes.` : `${what} onto ${name} byte for byte, and each part is read back as it goes.`}</p>
     <div class="grow"></div><div class="big" data-k="pct">0%</div>${bar()}${stats()}<div class="grow"></div>
     <div class="note">${ICON.info}<span>Leave the card in until it's done.${win() ? " If Windows asks to <b>format</b> the disk, choose <b>Cancel</b>: never format it." : ""}</span></div>`;
   return [body, "", progress()];
 }
 
+const putIn = () => handheld === "plus" ? "RG DS Plus's <b>TF1</b> slot" : "RG DS";
+// a stock Plus keeps its games on a second card: setup finds it in TF2 and offers to bring its saves over (migrate.py)
+const plusGamesNote = () => handheld === "plus" ? `<p class="muted">Had games on a card in TF2? Leave it there: setup offers to bring its saves over and never changes it.</p>` : "";
 function viewDone() {
   const c = st.carried;
+  const copyNote = st.cardCopy ? `<p class="muted" style="font-size:12.5px">The old card is kept whole on this computer: <a href="#" data-act="backup">${esc(st.cardCopy)}</a>. Open the flasher with that card in to put it back.</p>` : "";
+  const setupNote = sentSetup ? `<p class="muted">Setup already has your ${sentSetup}.</p>` : "";
   if (c) {
     const gamesNote = c.games ? `<p class="muted">Your games are in the backup's <b>roms</b> folder. After the first start, copy that folder onto the card (on the handheld: <b>Use as USB drive</b>) and their play time and saves find them.</p>`
       : c.gamesLeft ? `<p class="muted">Your ${games(c.gamesLeft)} ${c.gamesLeft === 1 ? "was" : "were"} not kept. If you have them somewhere else, put them in the card's <b>roms</b> folder after the first start: their saves and play time find them there.</p>` : "";
-    return [`<div class="empty"><div class="check">${ICON.tick}</div><h1 style="color:var(--ink)">Your card is ready, saves and all</h1><p>Put it in your RG DS and power on. Setup asks to <b>Bring over</b> your saves and play time: press A.</p>${c.dsSaves ? `<p class="muted">With ${c.dsSaves} DS save${c.dsSaves === 1 ? "" : "s"} from the old system's DraStic.</p>` : ""}${gamesNote}<p class="muted" style="font-size:12.5px">A copy is kept on this computer: <a href="#" data-act="backup">${esc(c.folder)}</a></p></div>`,
+    return [`<div class="empty"><div class="check">${ICON.tick}</div><h1 style="color:var(--ink)">Your card is ready, saves and all</h1><p>Put it in your ${putIn()} and power on. Setup asks to <b>Bring over</b> your saves and play time: press A.</p>${plusGamesNote()}${c.dsSaves ? `<p class="muted">With ${c.dsSaves} DS save${c.dsSaves === 1 ? "" : "s"} from the old system's DraStic.</p>` : ""}${gamesNote}${setupNote}<p class="muted" style="font-size:12.5px">A copy is kept on this computer: <a href="#" data-act="backup">${esc(c.folder)}</a></p>${copyNote}</div>`,
       btn("B", "Close", "quit") + btn("X", "Show backup", "backup") + btn("A", "Flash another card", "again", "primary")];
   }
   const winNote = win() ? `<div class="note" style="text-align:left">${ICON.info}<span>Windows may ask to <b>format</b> the card when you put it back in: always choose <b>Cancel</b>. It only shows the RGDS-BOOT part; that's normal.</span></div>` : "";
-  return [`<div class="empty"><div class="check">${ICON.tick}</div><h1 style="color:var(--ink)">Your card is ready</h1><p>Written, checked and ejected. Take it out, put it in your RG DS<br>and power on. The first boot sets up the rest of the card.</p>${winNote}</div>`,
-    btn("B", "Close", "quit") + btn("A", "Flash another card", "again", "primary")];
+  if (st.image && isBackup(st.image.model))
+    return [`<div class="empty"><div class="check">${ICON.tick}</div><h1 style="color:var(--ink)">The card is back as it was</h1><p>Written, checked and ejected.</p>${copyNote}</div>`,
+      btn("B", "Close", "quit") + btn("A", "Flash another card", "again", "primary")];
+  return [`<div class="empty"><div class="check">${ICON.tick}</div><h1 style="color:var(--ink)">Your card is ready</h1><p>Written, checked and ejected. Take it out, put it in your ${putIn()}<br>and power on. The first boot sets up the rest of the card.</p>${plusGamesNote()}${setupNote}${copyNote}${winNote}</div>`,
+    btn("B", "Close", "quit") + (st.cardCopy ? btn("X", "Show backup", "backup") : "") + btn("A", "Flash another card", "again", "primary")];
 }
 
 function viewError() {
@@ -403,6 +525,7 @@ function confirmDialog() {
     <p>Everything on <b>${esc(d.name)}</b> (${gb(d.size)}${d.volumes && d.volumes.length ? ", " + esc(d.volumes.join(", ")) : ""}) will be erased.</p>
     ${(d.warnings || []).map(w => `<div class="warn">${esc(w)}</div>`).join("")}
     ${d.carry ? carryChoice(d.carry) : ""}
+    ${st.image && isBackup(st.image.model) ? "" : copyChoice(d)}
     ${ask ? `<p class="muted">${ask}</p>` : ""}
     <div class="hints">${btn("B", "Cancel", "close")}${btn("A", "Erase and flash", "flash", "primary danger")}</div></div></div>`;
 }
@@ -424,12 +547,19 @@ function carryChoice(c) {
     <small>A copy goes to <b>RG DS backup</b> in your home folder first. Games are not put on the new card: you copy them back after its first start.</small>
     ${c.games && !(keep && keepGames) ? `<div class="warn" style="margin-top:4px">Your ${games(c.games)} (${gb(c.gameBytes)}) ${c.games === 1 ? "is" : "are"} erased with the card. Tick the box above to keep a copy, or make sure you have ${c.games === 1 ? "it" : "them"} somewhere else.</div>` : ""}</div>`;
 }
+// A whole-card backup (backup.go): slow on a big card, so off unless asked; the time is a cautious guess.
+function copyChoice(d) {
+  const min = Math.max(1, Math.round(d.size / 40e6 / 60));
+  return `<div class="carry"><label><input type="checkbox" data-act="copycard" ${copyCard ? "checked" : ""}> <span>Keep a copy of the whole card on this computer first<br><small>Every byte, so the flasher can put it back exactly as it was. About ${min} min for ${gb(d.size)}; empty space takes no room.</small></span></label></div>`;
+}
 function closeDialog() { confirming = false; $("modal").innerHTML = ""; }
 
 async function act(name, el) {
   try {
     switch (name) {
       case "model": model = el.dataset.model; render(); break;
+      case "handheld": handheld = el.dataset.handheld; if (isBackup(model) || model === "plus") model = "rgds"; render(); break;
+      case "plusonly": model = el.checked ? "plus" : "rgds"; render(); break;
       case "release": await post("release"); break;
       case "prepare": await post("prepare", { model }); break;
       case "cancel": await post("cancel"); break;
@@ -437,17 +567,29 @@ async function act(name, el) {
       case "back": step = 0; render(); break;
       case "confirm": confirmDialog(); break;
       case "close": closeDialog(); break;
-      case "flash": { const id = pick, d = disks.find(x => x.id === id) || {}; closeDialog(); step = 2; await post("flash", { disk: id, confirm: id, keep: !!d.carry && keep, games: !!d.carry && keep && keepGames }); break; }
+      case "flash": {
+        const id = pick, d = disks.find(x => x.id === id) || {}, preset = presetBody();
+        closeDialog(); step = 3;
+        await post("flash", { disk: id, confirm: id, keep: !!d.carry && keep, games: !!d.carry && keep && keepGames, backup: copyCard, preset });
+        sentSetup = describeSetup(preset);
+        break;
+      }
+      case "copycard": copyCard = el.checked; confirmDialog(); break;
+      case "tosetup": step = 2; render(); break;
+      case "tocard": step = 1; render(); break;
+      case "usesetup": useSetup = el.checked; setupEnabled(); renderHints(); break;
+      case "showpw": { showPw = !showPw; const f = document.querySelector('[data-f="password"]'); f.type = showPw ? "text" : "password"; el.textContent = showPw ? "Hide" : "Show"; break; }
       case "keep": keep = el.checked; if (!keep) keepGames = false; confirmDialog(); break;
       case "keepgames": keepGames = el.checked; confirmDialog(); break;
       case "backup": await post("backup"); break;
-      case "again": step = 1; disks = null; await post("again"); break;
+      case "again": step = 1; disks = null; sentSetup = ""; copyCard = false; await post("again"); break;
       case "log": await post("log"); break;
       case "quit": await post("quit"); gone(); break;
     }
   } catch (e) {
     alert(e.message);
-    step = st && st.image ? 1 : 0;
+    if (name === "flash" && /name|password|language|time zone|Wi-Fi/.test(e.message)) step = 2; // back to the answer that was wrong
+    else step = st && st.image ? 1 : 0;
     render();
   }
 }
@@ -457,6 +599,8 @@ document.addEventListener("click", e => {
   if (el && !el.disabled) act(el.dataset.act, el);
 });
 document.addEventListener("keydown", e => {
+  const typing = e.target.closest && e.target.closest("input, select, textarea");
+  if (typing && !(e.key === "Enter" && e.target.tagName === "INPUT" && e.target.type !== "checkbox")) return;
   const scope = confirming ? $("modal") : document;
   if (e.key === "Enter" || e.key === "a") { const b = scope.querySelector(".btn.primary:not(:disabled)"); if (b) { e.preventDefault(); b.click(); } }
   if (e.key === "x") { const b = scope.querySelector('[data-act="log"].btn'); if (b) b.click(); }
@@ -479,6 +623,39 @@ function diskPolling(on) {
   } else if (!on && diskTimer) { clearInterval(diskTimer); diskTimer = null; }
 }
 
+// What went on the card, for the done screen.
+let sentSetup = "";
+function describeSetup(p) {
+  const parts = [];
+  if (p.language) parts.push("language");
+  if (p.timezone) parts.push("time zone");
+  if (p.name) parts.push("name");
+  if (p.ssid) parts.push("Wi-Fi");
+  return parts.length > 1 ? parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] : parts[0] || "";
+}
+
+// The handheld's languages and time zones (copied from the launcher by build.sh), and this computer's for a start.
+async function loadLists() {
+  try {
+    const [langs, zones] = await Promise.all([fetch(base + "languages.tsv").then(r => r.text()), fetch(base + "timezones.txt").then(r => r.text())]);
+    LANGUAGES = langs.trim().split("\n").map(l => l.split("\t")).filter(l => l.length === 2);
+    ZONES = zones.trim().split("\n").map(z => z.trim()).filter(Boolean);
+  } catch {}
+  const codes = LANGUAGES.map(l => l[0]);
+  for (const want of navigator.languages || [navigator.language]) {
+    const exact = codes.find(c => c.toLowerCase() === String(want).toLowerCase());
+    const base2 = String(want).split("-")[0].toLowerCase().replace(/^no$/, "nb");
+    const near = codes.find(c => c.toLowerCase().startsWith(base2 + "-"));
+    if (exact || near) { setup.language = exact || near; break; }
+  }
+  if (!setup.language) setup.language = codes[0] || "";
+  let zone = "";
+  try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch {}
+  setup.timezone = ZONES.includes(zone) ? zone : ZONES.includes("UTC") ? "UTC" : (ZONES[0] || "");
+  render();
+}
+
+loadLists();
 connect();
 </script>
 </body>

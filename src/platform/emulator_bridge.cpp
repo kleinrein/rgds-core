@@ -15,6 +15,7 @@
 #include <fstream>
 #include <map>
 #include <set>
+#include <exception>
 #include <string>
 #include <sys/stat.h>
 #include <time.h>
@@ -61,6 +62,10 @@ std::string core, control, autostate, state_dir, state_slot, token, last_token;
 bool initialized = false, autosave = true, saving = false, quitting = false, failed = false, autoload = false;
 bool atomic_state_replace = false, play_state_replace = false;
 unsigned long long opened = 0, save_at = 0, pulse_at = 0, candidate_at = 0, quit_at = 0;
+// A save on the way home waits this long after its "Saving" card goes up, so the card is on the panels before the
+// engine's main thread is busy writing (0: none waiting).
+unsigned long long save_inject_at = 0;
+constexpr unsigned long long busy_card_ms = 150;
 int pulse = 0;
 std::map<std::string, Stamp> before;
 std::string candidate;
@@ -999,7 +1004,13 @@ void start_save(bool exit_after) {
     quitting = exit_after;
     failed = false;
     save_at = now();
-    inject(1);
+    if (exit_after) {
+        const auto title = env("RGDS_GAME_TITLE");
+        overlay_renderer.busy(rgds::hud::word("RGDS_HUD_SAVING", "Saving your progress\u2026"),
+                              title.empty() ? rgds::hud::word("RGDS_HUD_RETURNING", "Returning home\u2026") : title,
+                              rgds::hud::word("RGDS_HUD_KEEP_ON", "Please keep your handheld on"));
+        save_inject_at = save_at + busy_card_ms;
+    } else inject(1);
     answer("saving");
 }
 void request_quit() {
@@ -1145,7 +1156,18 @@ bool write_rewind(unsigned now_id) {
     const std::string files = rewind_files();
     list << "now=" << now_id << "\nrate=" << (rate_fn ? rate_fn() : 60.0) << "\nfiles=" << files << "\ncount=" << count
          << '\n';
-    std::string thumbs = "RGRW";
+    // Sized once (tens of MB for a Play game): no doubling string copying the pictures again in the game's process.
+    size_t total = 8;
+    for (int i = 0; i < count; i++) {
+        int w = 0, h = 0;
+        const uint32_t* px = nullptr;
+        if (moment_fn(i, nullptr, nullptr, nullptr, &w, &h, &px) && px && w > 0 && h > 0 && w <= 1024 && h <= 1024)
+            total += size_t(w) * size_t(h) * 4;
+        total += 12;
+    }
+    std::string thumbs;
+    thumbs.reserve(total);
+    thumbs = "RGRW";
     put32(thumbs, uint32_t(count));
     for (int i = 0; i < count; i++) {
         unsigned id = 0, parent = 0;
@@ -1251,7 +1273,16 @@ void tick(bool graphics_safe = false) {
                 last_token = token = id;
                 if (command == "ds:blow" || command == "ds:lid")
                     answer(ds_control(command == "ds:blow") ? "ds-applied" : "ds-unavailable");
-                else if (command == "save") start_save(false);
+                else if (command.rfind("online:", 0) == 0) {
+                    // online:<0|1|2> (off, Wiimmfi, WiiLink WFC): DSCore swaps the network behind its access
+                    // point at once, between frames on this thread. Unavailable: the supervisor relaunches.
+                    int mode = -1;
+                    char extra = 0;
+                    auto apply = reinterpret_cast<int (*)(int)>(dlsym(RTLD_DEFAULT, "rgds_set_online"));
+                    bool valid =
+                        std::sscanf(command.c_str(), "online:%d%c", &mode, &extra) == 1 && mode >= 0 && mode <= 2;
+                    answer(valid && apply && apply(mode) ? "online-applied" : "online-unavailable");
+                } else if (command == "save") start_save(false);
                 else if (command == "load") start_load();
                 else if (command == "save-quit") start_save(true);
                 else if (command == "quit") {
@@ -1350,7 +1381,14 @@ void tick(bool graphics_safe = false) {
                     // The menu's Rewind screen: a moment now, then every moment kept, listed beside the control file.
                     auto open_fn = reinterpret_cast<unsigned (*)()>(dlsym(RTLD_DEFAULT, "rgds_rewind_open"));
                     const unsigned now_id = open_fn ? open_fn() : 0;
-                    answer(now_id && write_rewind(now_id) ? "rewind-ready" : "rewind-unavailable");
+                    bool listed = false;
+                    try {
+                        listed = now_id && write_rewind(now_id);
+                    } catch (const std::exception& e) { // out of memory, say: no Rewind this time, the game goes on
+                        std::fprintf(stderr, "RG DS rewind: cannot list the moments: %s\n", e.what());
+                    }
+                    // Not listed after a moment was marked: the engine lets "now" go by itself at its next frame.
+                    answer(listed ? "rewind-ready" : "rewind-unavailable");
                 } else if (command.rfind("rewind-show:", 0) == 0 || command.rfind("rewind-play:", 0) == 0 ||
                            command.rfind("rewind-back:", 0) == 0) {
                     // rewind-show:<id> loads a moment for a look (its screens to <control>.rewind.shown);
@@ -1413,6 +1451,11 @@ void tick(bool graphics_safe = false) {
         saving = false;
         if (quitting) quit_events();
         else answer("save-failed");
+    }
+    if (saving && save_inject_at && time >= save_inject_at) {
+        save_inject_at = 0;
+        save_at = time; // the engine's own write starts now: the settle and timeout clocks with it
+        inject(1);
     }
     if (saving && (time - stamp_poll_at >= 50 || !stamp_poll_at)) {
         stamp_poll_at = time;

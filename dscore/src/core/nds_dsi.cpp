@@ -376,6 +376,10 @@ bool NDS::prepare_dsi_hle(const bios::UserSettings& user, std::string* err, std:
   }
   static const char* kRegionNames[6] = {"Japan", "USA", "Europe", "Australia", "China", "Korea"};
 
+  // A dump of another size passed load_bios's check as a DS image; its
+  // settings block is the DS layout, which the launcher would misread.
+  if (!firmware_synthetic && firmware.size() != 0x20000)
+    return fail("firmware: " + std::to_string(firmware.size()) + " bytes is not a DSi firmware image (128 KB)");
   if (firmware_synthetic && firmware.size() != 0x20000) {
     firmware = bios::generate_firmware_dsi(user, region.language, region.language_mask);
     firmware_ap_slot = bios::stamp_access_point(firmware);
@@ -566,12 +570,14 @@ void NDS::setup_direct_boot_dsi() {
     for (u32 i = 0; i < 0x800; i += 4) w32(h.arm9_ram_address + i, rd32(secure + i));
     arm9_start = 0x800;
   }
-  for (u32 i = arm9_start; i < h.arm9_size; i += 4) w32(h.arm9_ram_address + i, rom32(h.arm9_rom_offset + i));
-  for (u32 i = 0; i < h.arm7_size; i += 4)
+  for (u32 i = arm9_start; i < cart->boot_size(h.arm9_size); i += 4)
+    w32(h.arm9_ram_address + i, rom32(h.arm9_rom_offset + i));
+  for (u32 i = 0; i < cart->boot_size(h.arm7_size); i += 4)
     bus.dma_write32(Cpu::ARM7, h.arm7_ram_address + i, rom32(h.arm7_rom_offset + i));
   if (h.reserved2 & 1) { // DSi crypto flags bit 0: the ARM9i/ARM7i binaries exist
-    for (u32 i = 0; i < t.arm9i_size; i += 4) w32(t.arm9i_ram_address + i, rom32(t.arm9i_rom_offset + i));
-    for (u32 i = 0; i < t.arm7i_size; i += 4)
+    for (u32 i = 0; i < cart->boot_size(t.arm9i_size); i += 4)
+      w32(t.arm9i_ram_address + i, rom32(t.arm9i_rom_offset + i));
+    for (u32 i = 0; i < cart->boot_size(t.arm7i_size); i += 4)
       bus.dma_write32(Cpu::ARM7, t.arm7i_ram_address + i, rom32(t.arm7i_rom_offset + i));
     if (h.reserved2 & 2) { // bit 1: modcrypted
       decrypt_modcrypt_area(*this, t.modcrypt1_offset, t.modcrypt1_size, t.arm9_hash, hle);
@@ -731,6 +737,7 @@ void NDS::setup_direct_boot_dsi() {
   arm7->boot_stall = 15;
 
   io.exmemcnt = hle ? 0xE88C : 0xE880;
+  io.exmemcnt7 = hle ? 0x0C : 0;
   bus.update_gba_slot_timings();
   io.cpu_io[0].postflg = 1;
   io.cpu_io[1].postflg = 1;

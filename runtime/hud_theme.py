@@ -72,7 +72,11 @@ HUD_WORDS = {
     # The bridge's "Where you left off" and "Welcome back" cards (the play journal, on resume and on opening the lid)
     "Where you left off": "RGDS_HUD_LEFT_OFF",
     "Welcome back": "RGDS_HUD_WELCOME_BACK",
-    "Away for {0}": "RGDS_HUD_AWAY"
+    "Away for {0}": "RGDS_HUD_AWAY",
+    # The bridge's card while a game saves on its way home
+    "Saving your progress\u2026": "RGDS_HUD_SAVING",
+    "Returning home\u2026": "RGDS_HUD_RETURNING",
+    "Please keep your handheld on": "RGDS_HUD_KEEP_ON"
 }
 CJK_FAMILIES = {"ja": "ja", "zh": "zh", "ko": "ko"}
 

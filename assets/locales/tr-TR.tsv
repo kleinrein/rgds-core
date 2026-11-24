@@ -63,6 +63,7 @@ Antarctica	Antarktika
 Any	Hepsi
 Applies immediately. Higher clocks use more battery.	Hemen uygulanır. Yüksek hızlar daha çok pil harcar.
 Applies immediately. Your game keeps its progress.	Hemen uygulanır. Oyununuzun ilerlemesi korunur.
+Applies when the game starts without resuming.	Oyun devam etmeden başladığında geçerli olur.
 Apply	Uygula
 APPLY	UYGULA
 Applying shader…	Filtre uygulanıyor…
@@ -447,6 +448,7 @@ Default controls saved.	Genel kontroller kaydedildi.
 Glossy tiles	Parlak karolar
 Go back	Geri dön
 Goes into	Hedef
+Going online…	Çevrimiçi olunuyor…
 Golden leaves	Altın yapraklar
 Green	Yeşil
 Grey	Gri
@@ -457,12 +459,26 @@ Left stick down	Sol çubuk aşağı
 Left stick left	Sol çubuk sol
 Left stick right	Sol çubuk sağ
 Left stick up	Sol çubuk yukarı
+Online play is off.	Çevrimiçi oyun kapalı.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Çevrimiçi oyun WiiLink WFC ile açık. Oyunun Nintendo WFC menüsünden bağlan.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Çevrimiçi oyun Wiimmfi ile açık. Oyunun Nintendo WFC menüsünden bağlan.
+Online play is on. Local wireless applies when it is off.	Çevrimiçi oyun açık. Yerel kablosuz, kapalıyken geçerli olur.
 Page	Sayfa
+Restart later	Sonra yeniden başlat
+Restart now, unsaved progress is lost	Şimdi yeniden başlat, kaydedilmemiş ilerleme kaybolur
+Restarting the game to apply the change…	Değişikliği uygulamak için oyun yeniden başlatılıyor…
+Restarting the game to change online play…	Çevrimiçi oyunu değiştirmek için oyun yeniden başlatılıyor…
+Restarting the game to change the microphone…	Mikrofonu değiştirmek için oyun yeniden başlatılıyor…
+Restarting the game to turn off local wireless…	Yerel kablosuzu kapatmak için oyun yeniden başlatılıyor…
+Restarting the game to turn on local wireless…	Yerel kablosuzu açmak için oyun yeniden başlatılıyor…
 Right stick down	Sağ çubuk aşağı
 Right stick left	Sağ çubuk sol
 Right stick right	Sağ çubuk sağ
 Right stick up	Sağ çubuk yukarı
 Storyware	Hikâye kitabı
+The game reads its language when it starts	Oyun dilini başlarken okur
+The game reads your nickname when it starts	Oyun takma adını başlarken okur
+Turning online play off…	Çevrimiçi oyun kapatılıyor…
 h	sa
 Haptic strength	Dokunsal güç
 Health	Sağlık
@@ -1501,7 +1517,7 @@ Language & region	Dil ve bölge
 Just you	Yalnızca sen
 {0} profiles	{0} profil
 Buttons, shortcut and fast-forward	Düğmeler, kısayol ve hızlı ileri
-DS nickname	DS-kallenamn
+DS nickname	DS takma adı
 Join or host	Bli med eller vert
 Host	Vert
 Sharing details	Delingsdetaljar
@@ -2017,3 +2033,14 @@ Could not open it	Açılamadı
 This folder is empty	Bu klasör boş
 The trash is empty	Çöp kutusu boş
 No network places yet	Henüz ağ konumu yok
+Files	Dosyalar
+Theme, sound and Wi-Fi	Tema, ses ve Wi-Fi
+Your screenshots and photos, by game and date	Oyuna ve tarihe göre ekran görüntülerin ve fotoğrafların
+Games, saves and music on the card	Karttaki oyunlar, kayıtlar ve müzik
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare için BIOS klasöründe DS ve DSi BIOS dosyaları gerekir
+This .cia is encrypted: copy the decrypted DSiWare file instead	Bu .cia şifreli: bunun yerine şifresi çözülmüş DSiWare dosyasını kopyalayın
+This .cia is not a DSiWare file	Bu .cia bir DSiWare dosyası değil
+Little kid	Küçük çocuk
+Big pictures, one tap to play. No menus.	Büyük resimler, oynamak için tek dokunuş. Menü yok.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	En küçük oyuncular için: yalnızca kendi oyunları, büyük resimler olarak. Tek dokunuş oyunu başlatır; kaybolacak menü ya da ayar yoktur.
+No games yet	Henüz oyun yok

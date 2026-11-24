@@ -168,18 +168,23 @@ class MigrateTests(unittest.TestCase):
         self.assertEqual(playtime(self.data, self.card / "roms/snes/Zelda.sfc"), (5400, 4))
         self.assertFalse((self.card / "roms/snes/images").exists())
 
-    def test_only_the_arcade_sets_the_core_runs_come_over(self):
+    def test_only_the_arcade_sets_a_core_runs_come_over(self):
         old = self.root / "storage"
         write(old / ".config/emulationstation/es_settings.cfg", "")
         write(old / "roms/mame/punchout.zip", b"P" * 8)
         write(old / "roms/mame/VSTENNIS.ZIP", b"V" * 8)
-        write(old / "roms/mame/sf2.zip", b"S" * 8)  # a set this core is not built with
+        write(old / "roms/mame/sf2.zip", b"S" * 8)  # FBNeo's
+        write(old / "roms/mame/neogeo.zip", b"N" * 8)  # a board's BIOS, which its games need beside them
+        write(old / "roms/mame/notaset.zip", b"X" * 8)  # no core here knows it
         write(old / "roms/mame/punchout.txt", b"notes")
         source = migrate.Source(old, "usb", migrate.layout(old))
-        self.assertEqual(sorted(str(g.rel) for g in source.games), ["VSTENNIS.ZIP", "punchout.zip"])
+        self.assertEqual(
+            sorted(str(g.rel) for g in source.games), ["VSTENNIS.ZIP", "neogeo.zip", "punchout.zip", "sf2.zip"]
+        )
         migrate.Plan(source, self.paths).apply(games=True)
         self.assertTrue((self.card / "roms/arcade/punchout.zip").is_file())
-        self.assertFalse((self.card / "roms/arcade/sf2.zip").exists())
+        self.assertTrue((self.card / "roms/arcade/sf2.zip").is_file())
+        self.assertFalse((self.card / "roms/arcade/notaset.zip").exists())
 
     def test_import_folder_moves_games_on_this_card(self):
         old = self.banana(self.paths["folder"] / "BANANA")

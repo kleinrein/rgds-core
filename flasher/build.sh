@@ -7,8 +7,10 @@
 #
 #   flasher/build.sh [--test]     --test runs the Go tests first
 #
-# Needs Go (go.mod fetches the pinned toolchain). The macOS app is universal when lipo is there (macOS); elsewhere
-# it ships two zips, one per architecture. CODESIGN_IDENTITY="Developer ID Application: ..." signs the app with the
+# Needs Go (go.mod fetches the pinned toolchain). The macOS app has its own window (WKWebView, window_darwin.m), so
+# it is built with cgo, on a Mac with Xcode's command line tools; it is universal (lipo). Built anywhere else, the
+# macOS app falls back to the browser window and ships two zips, one per architecture. Windows and Linux are pure
+# Go and show a browser window (window.go). CODESIGN_IDENTITY="Developer ID Application: ..." signs the app with the
 # hardened runtime for notarization; without it the app is signed ad hoc.
 set -eu
 cd "$(dirname "$0")"
@@ -19,8 +21,15 @@ NAME="RG DS Flasher"
 # The UI embeds the launcher's brand and font: keep the copies in sync with assets/.
 cp ../assets/brand/mark.svg ../assets/brand/lockup-light.svg ../assets/brand/lockup-dark.svg ui/brand/
 cp ../assets/fonts/source/Nunito.ttf ../assets/fonts/source/OFL.txt ui/fonts/
+# The Set up step offers what the handheld's setup takes (preset.go): its languages and its time zones.
+cp ../assets/locales/languages.tsv ui/languages.tsv
+awk '/timezones = \{/{on=1} on{while(match($0,/"[^"]+"/)){print substr($0,RSTART+1,RLENGTH-2); $0=substr($0,RSTART+RLENGTH)}} on&&/\};/{exit}' \
+	../src/launcher/settings.hpp >ui/timezones.txt
+[ "$(wc -l <ui/timezones.txt)" -gt 400 ] || { echo "no time zones found in src/launcher/settings.hpp" >&2; exit 1; }
+# The key card images are signed with (sign.go): the same one the handheld's updates trust.
+cp ../packaging/update-trust.json trust.json
 
-[ "${1:-}" = "--test" ] && go test ./...
+[ "${1:-}" = "--test" ] && MACOSX_DEPLOYMENT_TARGET=11.0 go test ./...
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
@@ -29,10 +38,22 @@ build() { # GOOS GOARCH output [extra ldflags]
 	CGO_ENABLED=0 GOOS=$1 GOARCH=$2 go build -trimpath -ldflags "-s -w -X main.version=$VERSION ${4:-}" -o "$3" .
 }
 
+# macOS with its own window: cgo, one clang per architecture
+build_mac() { # GOARCH clang-arch output
+	echo "  darwin/$1 (native window) -> $3"
+	CGO_ENABLED=1 GOOS=darwin GOARCH=$1 CC="clang -arch $2" MACOSX_DEPLOYMENT_TARGET=11.0 \
+		go build -trimpath -ldflags "-s -w -X main.version=$VERSION" -o "$3" .
+}
+
 build windows amd64 "$OUT/RG-DS-Flasher-Windows.exe" "-H windowsgui"
 build linux amd64 "$OUT/RG-DS-Flasher-Linux-x64"
-build darwin arm64 "$OUT/flasher-darwin-arm64"
-build darwin amd64 "$OUT/flasher-darwin-amd64"
+if [ "$(uname)" = Darwin ] && command -v clang >/dev/null; then
+	build_mac arm64 arm64 "$OUT/flasher-darwin-arm64"
+	build_mac amd64 x86_64 "$OUT/flasher-darwin-amd64"
+else
+	build darwin arm64 "$OUT/flasher-darwin-arm64"
+	build darwin amd64 "$OUT/flasher-darwin-amd64"
+fi
 
 app() { # bundle-dir binary...
 	mkdir -p "$1/Contents/MacOS" "$1/Contents/Resources"

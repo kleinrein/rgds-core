@@ -63,6 +63,7 @@ Antarctica	Châu Nam Cực
 Any	Tất cả
 Applies immediately. Higher clocks use more battery.	Áp dụng ngay. Xung nhịp cao hơn tiêu thụ nhiều pin hơn.
 Applies immediately. Your game keeps its progress.	Áp dụng ngay. Tiến trình trò chơi được giữ lại.
+Applies when the game starts without resuming.	Áp dụng khi trò chơi bắt đầu mà không tiếp tục.
 Apply	Áp dụng
 APPLY	ÁP DỤNG
 Applying shader…	Đang áp dụng bộ lọc…
@@ -447,6 +448,7 @@ Default controls saved.	Đã lưu điều khiển chung.
 Glossy tiles	Ô gạch bóng
 Go back	Quay lại
 Goes into	Lưu vào
+Going online…	Đang kết nối trực tuyến…
 Golden leaves	Lá vàng
 Green	Xanh lá
 Grey	Xám
@@ -457,12 +459,26 @@ Left stick down	Cần trái xuống
 Left stick left	Cần trái trái
 Left stick right	Cần trái phải
 Left stick up	Cần trái lên
+Online play is off.	Chơi trực tuyến đang tắt.
+Online play is on with WiiLink WFC. Connect from the game's Nintendo WFC menu.	Chơi trực tuyến đang bật với WiiLink WFC. Kết nối từ menu Nintendo WFC của trò chơi.
+Online play is on with Wiimmfi. Connect from the game's Nintendo WFC menu.	Chơi trực tuyến đang bật với Wiimmfi. Kết nối từ menu Nintendo WFC của trò chơi.
+Online play is on. Local wireless applies when it is off.	Chơi trực tuyến đang bật. Không dây cục bộ áp dụng khi nó tắt.
 Page	Trang
+Restart later	Khởi động lại sau
+Restart now, unsaved progress is lost	Khởi động lại ngay, mất tiến trình chưa lưu
+Restarting the game to apply the change…	Đang khởi động lại trò chơi để áp dụng thay đổi…
+Restarting the game to change online play…	Đang khởi động lại trò chơi để đổi chơi trực tuyến…
+Restarting the game to change the microphone…	Đang khởi động lại trò chơi để đổi micrô…
+Restarting the game to turn off local wireless…	Đang khởi động lại trò chơi để tắt không dây cục bộ…
+Restarting the game to turn on local wireless…	Đang khởi động lại trò chơi để bật không dây cục bộ…
 Right stick down	Cần phải xuống
 Right stick left	Cần phải trái
 Right stick right	Cần phải phải
 Right stick up	Cần phải lên
 Storyware	Sách truyện
+The game reads its language when it starts	Trò chơi đọc ngôn ngữ khi khởi động
+The game reads your nickname when it starts	Trò chơi đọc biệt danh của bạn khi khởi động
+Turning online play off…	Đang tắt chơi trực tuyến…
 h	giờ
 Haptic strength	Độ mạnh xúc giác
 Health	Máu
@@ -2017,3 +2033,14 @@ Could not open it	Không mở được
 This folder is empty	Thư mục này trống
 The trash is empty	Thùng rác trống
 No network places yet	Chưa có vị trí mạng nào
+Files	Tệp
+Theme, sound and Wi-Fi	Chủ đề, âm thanh và Wi-Fi
+Your screenshots and photos, by game and date	Ảnh chụp màn hình và ảnh của bạn theo trò chơi và ngày
+Games, saves and music on the card	Trò chơi, bản lưu và nhạc trên thẻ
+DSiWare needs the DS and DSi BIOS files in the BIOS folder	DSiWare cần các tệp BIOS của DS và DSi trong thư mục BIOS
+This .cia is encrypted: copy the decrypted DSiWare file instead	Tệp .cia này đã được mã hóa: hãy sao chép tệp DSiWare đã giải mã
+This .cia is not a DSiWare file	Tệp .cia này không phải là tệp DSiWare
+Little kid	Bé nhỏ
+Big pictures, one tap to play. No menus.	Hình to, chạm một lần để chơi. Không có menu.
+For the smallest players: just their games, as big pictures. One tap plays, and there are no menus or settings to get lost in.	Dành cho người chơi nhỏ nhất: chỉ các trò của bé, dưới dạng hình to. Chạm một lần là chơi, không có menu hay cài đặt nào để bị lạc.
+No games yet	Chưa có trò chơi nào

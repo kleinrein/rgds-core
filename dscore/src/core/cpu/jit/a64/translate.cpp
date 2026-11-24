@@ -11,6 +11,7 @@
 //   w1    effective address (preserved across cost arithmetic and slow path)
 //   x2,x3 page-table entry / host base
 //   w4-w7 temporaries; w7 = writeback value (preserved by the slow path)
+#include "core/cpu/block_xfer.h"
 #include "core/cpu/jit/jit_internal.h"
 #include "core/cpu/wait_loop.h"
 #include "core/cpu/jit/a64/convention.h"
@@ -202,6 +203,9 @@ FlagUse arm_flag_use(u32 instr, bool a9) {
   case AOp::Smlal:
     if (s) u.writes = F_N | F_Z;
     break;
+  case AOp::LdrStrReg:
+    if (((instr >> 4) & 0xFF) == 0x06) u.reads |= F_C; // an RRX offset shifts the carry in
+    break;
   case AOp::B:
   case AOp::Bl:
   case AOp::Bx:
@@ -209,7 +213,6 @@ FlagUse arm_flag_use(u32 instr, bool a9) {
   case AOp::Clz:
   case AOp::Pld:
   case AOp::LdrStrImm:
-  case AOp::LdrStrReg:
   case AOp::LdrStrHImm:
   case AOp::LdrStrHReg:
   case AOp::Ldm:
@@ -708,7 +711,7 @@ private:
     constexpr u32 SCAN = 8;
     u32 undecided = F_ALL, live = 0, nlo = std::min(lo, a), nhi = hi;
     for (u32 k = 0; k < SCAN && undecided; ++k, a += step()) {
-      if (!cpu_.page_table.read_ptr(a)) return F_ALL;
+      if (!cpu_.page_table.read_ptr(a) && !cpu_.nds->bus.bios7_code(cpu_.which, a)) return F_ALL;
       nlo = std::min(nlo, a);
       nhi = std::max(nhi, a + step() - 1);
       if (nhi - nlo >= mem::PAGE_SIZE) return F_ALL;
@@ -1270,6 +1273,15 @@ private:
     e().bind(done);
     e().sub_reg(R_BUDGET, R_BUDGET, SCRATCH5);
   }
+  // The ARM7's BIOS answers a read by where it comes from (Bus::io_read), and
+  // translated code keeps no r15: a slow-path load on the ARM7 leaves the
+  // interpreter's value there first. Cold code only; w0 is the result register.
+  void emit_read_pc() {
+    if (a9_) return;
+    e().mov_imm(SCRATCH0, pc_ + (thumb_ ? 4 : 8));
+    e().str_w(SCRATCH0, R_CTX, off_reg(15));
+  }
+
   // One access at w1. const_nd >= 0: translate-time data cost, charged before
   // the access (nothing observes the budget in between).
   // `cold_poll`: the slow path polls and may leave at the next instruction; a
@@ -1405,6 +1417,7 @@ private:
     }
     cold_begin(fail);
     if (!is_load(m) && wdata != SCRATCH2) e().mov(SCRATCH2, wdata);
+    if (is_load(m)) emit_read_pc();
     call_stub(is_load(m) ? rt().slow_load[size_index(m)] : rt().slow_store[size_index(m)]);
     if (is_load(m)) emit_load_post(m, dst);
     cost();
@@ -1428,6 +1441,7 @@ private:
   // (both preserved by the stubs). LDM with r15 never reaches here.
   void emit_block_slow(u32 list, bool load, bool writeback, u32 rn, u32 n, bool user_bank, u32 pc_store_value) {
     e().and_imm(SCRATCH1, SCRATCH1, ~3u);
+    if (load) emit_read_pc();
     bool first = true;
     for (u32 i = 0; i < 16; ++i) {
       if (!(list & (1u << i))) continue;
@@ -1440,7 +1454,7 @@ private:
         // STM of its own base: old base if first in list, else new.
         if (i == 15) e().mov_imm(SCRATCH2, pc_store_value);
         else if (ub) e().ldr_w(SCRATCH2, R_CTX, ub);
-        else e().mov(SCRATCH2, (i == rn && !first && writeback) ? SCRATCH7 : host_reg(i));
+        else e().mov(SCRATCH2, (i == rn && writeback && cpu::stm_stores_new_base(a9_, first)) ? SCRATCH7 : host_reg(i));
         call_stub(rt().slow_store[2]);
       }
       e().add_imm(SCRATCH1, SCRATCH1, 4, true);
@@ -1448,7 +1462,7 @@ private:
     }
     // LDM loading its own base keeps the loaded value.
     if (load) {
-      if (writeback && !(list & (1u << rn))) e().mov(host_reg(rn), SCRATCH7);
+      if (writeback && cpu::ldm_writeback_wins(a9_, thumb_, list, rn)) e().mov(host_reg(rn), SCRATCH7);
     } else if (writeback) e().mov(host_reg(rn), SCRATCH7);
     // Cost after the transfers, as the interpreter and the single-access slow path
     // charge it: an I/O access sees the time before this instruction's data cycles
@@ -1518,7 +1532,7 @@ private:
         if (ub) e().str_w(SCRATCH2, R_CTX, ub);
         ++k;
       }
-      if (writeback && !(list & (1u << rn))) e().mov(host_reg(rn), SCRATCH7);
+      if (writeback && cpu::ldm_writeback_wins(a9_, thumb_, list, rn)) e().mov(host_reg(rn), SCRATCH7);
     } else {
       for (u32 i = 0; i < 16; ++i) {
         if (!(list & (1u << i))) continue;
@@ -1530,7 +1544,7 @@ private:
         } else if (i == 15) {
           e().mov_imm(SCRATCH0, pc_store_value);
           src = SCRATCH0;
-        } else if (i == rn && !first && writeback) src = SCRATCH7;
+        } else if (i == rn && writeback && cpu::stm_stores_new_base(a9_, first)) src = SCRATCH7;
         else src = host_reg(i);
         if (k == 0 && fast) fm_fault_here();
         e().str_w(src, SCRATCH3, 4 * k);
@@ -1581,6 +1595,12 @@ private:
     cold_begin(fail);
     const size_t fb = cold_.size();
     emit_block_slow(list, load, writeback, rn, n, user_bank, pc_store_value);
+    // As the single-access slow path: these words went through the bus, so a
+    // store may have started a DMA, raised or unmasked an IRQ, or landed on
+    // code (this block's own tail included). The poll acts on it now, and
+    // leaves at the next instruction when the block must not go on.
+    call_stub(rt().poll);
+    e().word(make_key(pc_ + step(), thumb_));
     cold_end_jump(join);
     fm_walk(fb);
     if (!mode_fail.empty()) {
@@ -2660,7 +2680,7 @@ bool Translator::run() {
     const bool ends = thumb_ ? shape::thumb_ends_block(static_cast<u16>(raw)) : shape::arm_ends_block(raw, a9_);
     addr += step();
     if (ends) break;
-    if (!cpu_.page_table.read_ptr(addr)) break;
+    if (!cpu_.page_table.read_ptr(addr) && !cpu_.nds->bus.bios7_code(cpu_.which, addr)) break;
   }
 
   phase(prof::JIT_TX_DECODE);
@@ -2668,7 +2688,8 @@ bool Translator::run() {
   u32 span_lo = start, span_hi = addr - 1;
   u32 live = exit_flag_live(addr, span_lo, span_hi);
   for (size_t i = instrs_.size(); i-- > 0;) {
-    instrs_[i].live_out = live;
+    instrs_[i].live_out =
+        rt().trace ? F_ALL : live; // a traced run prints the CPSR at every instruction: no flag is dead to it
     const FlagUse u =
         thumb_ ? thumb_flag_use(static_cast<u16>(instrs_[i].raw), a9_) : arm_flag_use(instrs_[i].raw, a9_);
     live = u.reads | (live & ~u.writes);

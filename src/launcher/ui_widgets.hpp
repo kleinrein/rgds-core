@@ -67,20 +67,33 @@ void App::start_frame(SDL_Renderer* r, int x, int row, int tile, const std::stri
 }
 
 std::string App::category_title(size_t index) {
-    static const std::array<std::string, home_count> titles = {"Settings",  "Games", "Favourites", "Recents",
-                                                               "PictoChat", "Music", "Sound toy",  "Last played"};
-    return toy_at(index) ? "Sound toy" : media_at(index) ? "Media" : music_at(index) ? "Music" : titles.at(index);
+    static const std::array<std::string, home_count> titles = {
+        "Settings", "Games", "Favourites", "Recents", "PictoChat", "Music", "Album", "Sound toy", "", "Last played"};
+    if (index == last_played_tile) return titles.back();
+    return toy_at(index)     ? "Sound toy"
+           : album_at(index) ? "Album"
+           : media_at(index) ? "Media"
+           : music_at(index) ? "Music"
+                             : titles.at(index);
 }
 
 void App::category_icon(SDL_Renderer* r, size_t index, int x, int y, int size) {
     static const std::array<SettingsIcon, home_count> symbols = {
-        SettingsIcon::Sliders, SettingsIcon::Cartridge, SettingsIcon::Heart,  SettingsIcon::Clock,
-        SettingsIcon::Chat,    SettingsIcon::Music,     SettingsIcon::Volume, SettingsIcon::Play};
+        SettingsIcon::Sliders, SettingsIcon::Cartridge, SettingsIcon::Heart,  SettingsIcon::Clock, SettingsIcon::Chat,
+        SettingsIcon::Music,   SettingsIcon::Art,       SettingsIcon::Volume, SettingsIcon::Play,  SettingsIcon::Play};
+    if (index == last_played_tile) return ui_icon(r, SettingsIcon::Play, x + size / 2, y + size / 2, size, "accent");
     if (toy_at(index)) return voice_face(r, 0, x + size / 2, y + size / 2, size * 6 / 5, 0);
+    // Media and Album have rich icons of their own (tools/build_app_icons.py) but no SettingsIcon: their simple-pixel
+    // look is the nearest glyph (Play, Art).
+    const char* art = media_at(index) ? "media" : album_at(index) ? "album" : nullptr;
+    if (art && preferences.rich_icons &&
+        media.draw(r, asset_path(std::string("icons/") + art + ".bmp"), {x, y, size, size}, false))
+        return;
     ui_icon(r,
             media_at(index)   ? SettingsIcon::Play
             : music_at(index) ? SettingsIcon::Music
-                              : symbols.at(index),
+            : album_at(index) ? SettingsIcon::Art
+                              : symbols.at(std::min(index, home_count - 1)),
             x + size / 2, y + size / 2, size, "accent");
 }
 
@@ -219,16 +232,21 @@ void App::list_row(SDL_Renderer* r, int y, int index, const std::string& title, 
     dx -= 24;
     settings_card(r, 24 + dx, row, 566, 66, focused);
     round_rect(r, 38 + dx, row + 11, 44, 44, well_radius, focused && enabled ? "accent" : "slot");
-    ui_icon(r,
-            settings.page == Page::SaveGallery        ? gallery_icon()
-            : settings.page == Page::ShaderPicker     ? SettingsIcon::Shader
-            : settings.page == Page::Cheats           ? SettingsIcon::Spark
-            : settings.page == Page::Timezone         ? SettingsIcon::Clock
-            : settings.page == Page::ProfileGames     ? SettingsIcon::Cartridge
-            : settings.page == Page::ProfileGameRules ? SettingsIcon::Heart
-            : settings.page == Page::Files            ? files_row_icon(index)
-                                                      : settings_icon_for(title),
-            60 + dx, row + 33, 25, enabled ? (focused ? "on_accent" : "accent") : "muted");
+    // The Settings root's Files row has a rich icon of its own (tools/build_app_icons.py); the Folder glyph inside
+    // Files stays the plain one.
+    const bool files_art = settings.page == Page::Settings && title == "Files" && preferences.rich_icons &&
+                           media.draw(r, asset_path("icons/files.bmp"), {60 + dx - 13, row + 20, 26, 26}, false);
+    if (!files_art)
+        ui_icon(r,
+                settings.page == Page::SaveGallery        ? gallery_icon()
+                : settings.page == Page::ShaderPicker     ? SettingsIcon::Shader
+                : settings.page == Page::Cheats           ? SettingsIcon::Spark
+                : settings.page == Page::Timezone         ? SettingsIcon::Clock
+                : settings.page == Page::ProfileGames     ? SettingsIcon::Cartridge
+                : settings.page == Page::ProfileGameRules ? SettingsIcon::Heart
+                : settings.page == Page::Files            ? files_row_icon(index)
+                                                          : settings_icon_for(title),
+                60 + dx, row + 33, 25, enabled ? (focused ? "on_accent" : "accent") : "muted");
     const bool toggle = switches && (value == "On" || value == "Off");
     const int dot = swatch ? 22 : 0;
     const int value_width = value.empty() ? 0
@@ -351,6 +369,35 @@ void App::check_mark(SDL_Renderer* r, int cx, int cy, Color ink) {
         s.RenderDrawLine(r, cx - 5, cy + w, cx - 1, cy + 4 + w);
         s.RenderDrawLine(r, cx - 1, cy + 4 + w, cx + 6, cy - 4 + w);
     }
+}
+
+void App::stat_tiles(SDL_Renderer* r, int y, const std::array<std::string, 3>& values,
+                     const std::array<std::string, 3>& captions, const std::array<int, 3>& icons, bool music) {
+    const Color accent = theme.at("accent");
+    constexpr int w = 176, h = 76, gap = 12, left = 44, text_x = 62, text_w = w - text_x - 10;
+    for (int i = 0; i < 3; i++) {
+        const int tx = left + i * (w + gap), bx = tx + 32, by = y + h / 2;
+        round_rect(r, tx, y, w, h, 14, "slot");
+        round_rect(r, tx + 1, y + 1, w - 2, h - 2, 13, "background");
+        // The badge: a soft accent disc with the glyph in accent, one style for every tile.
+        smooth_arc(r, bx, by, 9, 18, 0, 1, accent, preferences.dark ? 60 : 40);
+        if (music) music_glyph(r, MusicGlyph(icons[size_t(i)]), bx, by, 20, accent);
+        else ui_icon(r, SettingsIcon(icons[size_t(i)]), bx, by, 18, "accent");
+        const auto& value = values[size_t(i)];
+        const int value_size = label_width(value, 24, false) <= text_w ? 24 : 20;
+        raw_label(r, value, tx + text_x, y + (value_size == 24 ? 10 : 13), value_size, "ink", text_w);
+        // Long captions step down a size before they would be cut.
+        const auto& caption = captions[size_t(i)];
+        const int size = label_width(caption, 14) <= text_w ? 14 : 12;
+        label(r, caption, tx + text_x, y + (size == 14 ? 44 : 46), size, "muted", text_w);
+    }
+}
+
+std::string App::hours_minutes(uint64_t seconds) {
+    const uint64_t hours = seconds / 3600, minutes = (seconds / 60) % 60;
+    if (hours >= 100) return std::to_string(hours) + "h";
+    if (hours) return std::to_string(hours) + "h" + (minutes ? " " + std::to_string(minutes) + "m" : "");
+    return std::to_string(minutes) + "m";
 }
 
 void App::ring(SDL_Renderer* r, int x, int y, int radius, const std::string& key) {

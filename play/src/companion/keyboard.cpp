@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cmath>
 #include <deque>
+#include <utility>
 
 namespace play {
 namespace {
@@ -638,11 +639,58 @@ public:
 
     uint64_t key(uint64_t) const override {
         uint64_t h = 1469598103934665603ull ^ uint64_t(page_) ^ (uint64_t(disks_) << 8) ^ (uint64_t(disk_) << 16) ^
-                     (uint64_t(button_ + 1) << 24) ^ (uint64_t(dragging_) << 28) ^ (uint64_t(pad_used_) << 29);
+                     (uint64_t(button_ + 1) << 24) ^ (uint64_t(dragging_) << 28) ^ (uint64_t(pad_used_) << 29) ^
+                     (uint64_t(finger_left_) << 30) ^ (uint64_t(finger_right_) << 31);
         h = (h ^ uint64_t(finger_ + 1)) * 1099511628211ull;
         for (unsigned code : held_) h = (h ^ code) * 1099511628211ull;
         return h;
     }
+
+    bool wants_fingers() const override { return pc_; }
+
+    // Every finger on the panel, beside the one touch() follows: a second finger holds the mouse's button down while
+    // the first slides, as a thumb clicks a laptop's pad under the finger that aims. A finger on Left or Right holds
+    // that button for as long as it stays; a second finger on the pad, the left one. And when the first finger down is
+    // the one on the button, the pad's finger (which touch() never hears of) is followed here.
+    bool fingers(const std::vector<std::pair<int, int>>& down) override {
+        fingers_at_ = clock_;
+        const bool was_left = finger_left_, was_right = finger_right_;
+        finger_left_ = finger_right_ = false;
+        if (!on_mouse_page()) {
+            sliding_ = false;
+            return was_left || was_right;
+        }
+        const Box pad = pad_box();
+        const std::pair<int, int>* slide = nullptr;
+        int nearest = 0, on_pad = 0;
+        bool on_left = false, on_right = false;
+        for (const auto& f : down) {
+            if (pad.contains(f.first, f.second)) {
+                ++on_pad;
+                const int far = std::abs(f.first - slide_x_) + std::abs(f.second - slide_y_);
+                if (!slide || (sliding_ && far < nearest)) slide = &f, nearest = far;
+                continue;
+            }
+            int column = 0;
+            for (const Key& k : rows().back()) {
+                if (k.kind == Mouse && mouse_key_box(column, k.span).contains(f.first, f.second))
+                    (k.code == 1 ? on_left : on_right) = true;
+                column += k.span;
+            }
+        }
+        finger_right_ = on_right;
+        finger_left_ = on_left || (!on_right && on_pad >= 2);
+        if (finger_left_ || finger_right_) pad_used_ = true;
+        // The pad's finger when touch() follows another (the one that went down first, on a button).
+        if (slide && !pad_finger_) {
+            // A jump is another finger, not a slide.
+            if (sliding_ && nearest < 120) slide_by(slide->first - slide_x_, slide->second - slide_y_);
+            sliding_ = true, slide_x_ = slide->first, slide_y_ = slide->second;
+        } else sliding_ = false;
+        return was_left != finger_left_ || was_right != finger_right_;
+    }
+
+    bool take_click() override { return std::exchange(click_, false); }
 
     bool touch(const Touch& t) override {
         if (pad_finger_ || (t.kind == Touch::Down && on_mouse_page() && pad_box().contains(t.x, t.y)))
@@ -860,7 +908,9 @@ private:
             const Box b = mouse_key_box(column, k.span);
             touch_target(b);
             const bool lit =
-                k.kind == Mouse ? button_ == int(k.code) || (dragging_ && k.code == 1) : k.code == RETROK_RETURN;
+                k.kind == Mouse ? button_ == int(k.code) || ((dragging_ || finger_left_) && k.code == 1) ||
+                                      (finger_right_ && k.code == 2)
+                                : k.code == RETROK_RETURN;
             const bool down = finger_ == encode(row, column);
             const int sink = down ? 2 : 0;
             key_face(out, look, b, lit ? look.accent : look.focus, sink);
@@ -870,13 +920,15 @@ private:
         }
     }
 
-    // A laptop's touch pad: a finger's slide moves the mouse (a quick one further), a tap clicks the left button,
-    // a tap and then a slide holds it (dragging), as Pure's own touchpad mode does.
+    // A laptop's touch pad: a finger's slide moves the mouse (a quick one further), a tap clicks the left button.
+    // The button is held as a pad that clicks holds it: a finger pressed and kept where it landed takes the button
+    // (update_mouse, with a tick from the motor) and keeps it, sliding or not, until it lifts. A tap and then a slide
+    // holds it too, as Pure's own touchpad mode does.
     bool pad_touch(const Touch& t) {
         const int frame = clock_;
         if (t.kind == Touch::Down) {
-            pad_finger_ = true, pad_moved_ = false;
-            pad_x_ = t.x, pad_y_ = t.y, pad_travel_ = 0, pad_down_at_ = frame;
+            pad_finger_ = true, pad_moved_ = pad_slid_ = false;
+            pad_x_ = pad_x0_ = t.x, pad_y_ = pad_y0_ = t.y, pad_travel_ = 0, pad_down_at_ = frame;
             const bool first = !pad_used_;
             pad_used_ = true;                                   // the pad's mouse drawing has said what it is
             dragging_ = frame - tapped_at_ <= tap_again_frames; // the second touch of a tap and drag
@@ -888,9 +940,9 @@ private:
         pad_x_ = t.x, pad_y_ = t.y;
         pad_travel_ += std::abs(dx) + std::abs(dy);
         if (pad_travel_ > tap_travel) pad_moved_ = true;
-        // Slow slides land on a pixel, quick ones cross the screen.
-        const double speed = std::hypot(dx, dy), gain = speed > 12 ? 1.8 : speed > 5 ? 1.3 : 1.0;
-        pad_dx_ += dx * gain, pad_dy_ += dy * gain;
+        // Away from where it landed: a slide, which never takes the button (a finger resting on its aim must not).
+        if (std::abs(t.x - pad_x0_) + std::abs(t.y - pad_y0_) > press_travel) pad_slid_ = true;
+        slide_by(dx, dy);
         if (t.kind != Touch::Up) return false;
         pad_finger_ = false;
         const bool was_dragging = dragging_;
@@ -902,12 +954,24 @@ private:
         return was_dragging;
     }
 
+    // Slow slides land on a pixel, quick ones cross the screen.
+    void slide_by(int dx, int dy) {
+        const double speed = std::hypot(dx, dy), gain = speed > 12 ? 1.8 : speed > 5 ? 1.3 : 1.0;
+        pad_dx_ += dx * gain, pad_dy_ += dy * gain;
+    }
+
     void update_mouse(Core& live) {
         ++clock_;
+        // No word of the fingers for a moment (another screen is shown, the menu is up): none holds a button.
+        if (clock_ - fingers_at_ > 3) finger_left_ = finger_right_ = sliding_ = false;
+        // Pressed and kept in place: the button is this finger's until it lifts.
+        if (pad_finger_ && !pad_slid_ && !dragging_ && clock_ - pad_down_at_ >= press_frames)
+            dragging_ = true, click_ = true;
         const int dx = int(pad_dx_), dy = int(pad_dy_); // the whole pixels; the rest waits for the next frame
         pad_dx_ -= dx, pad_dy_ -= dy;
         if (button_ >= 0 && ++button_frames_ >= hold_frames && button_up_) button_ = -1, finger_ = -1;
-        const bool left = dragging_ || click_frames_ > 0 || button_ == 1, right = button_ == 2;
+        const bool left = dragging_ || click_frames_ > 0 || button_ == 1 || finger_left_,
+                   right = button_ == 2 || finger_right_;
         if (click_frames_ > 0) --click_frames_;
         live.move_pad_mouse(dx, dy, left, right);
     }
@@ -916,7 +980,7 @@ private:
         const Box b = pad_box();
         touch_target(b);
         out.rounded_rect(b.x, b.y + 2, b.w, b.h, 12, look.line);
-        out.rounded_rect(b.x, b.y, b.w, b.h, 12, dragging_ ? look.focus : look.panel);
+        out.rounded_rect(b.x, b.y, b.w, b.h, 12, dragging_ || finger_left_ ? look.focus : look.panel);
         // A laptop pad's faint dot grid, and a mouse in the middle until the pad is first touched.
         for (int y = b.y + 20; y < b.y + b.h - 12; y += 24)
             for (int x = b.x + 20; x < b.x + b.w - 12; x += 24) out.fill_rect(x, y, 2, 2, look.line);
@@ -1059,12 +1123,18 @@ private:
     const std::vector<Rows>& pages_;
     const bool spectrum_, commodore_, amiga_, cpc_, pc_;
     static constexpr int tap_frames = 15, tap_again_frames = 15, tap_travel = 8;
+    static constexpr int press_frames = 13, press_travel = 10; // a press: this long within this far of its landing
     int clock_ = 0;                       // frames, for the pad's taps
     int button_ = -1, button_frames_ = 0; // a mouse button key down (1 left, 2 right)
     bool button_up_ = false;
     bool pad_finger_ = false, pad_moved_ = false, dragging_ = false, pad_used_ = false;
     int pad_x_ = 0, pad_y_ = 0, pad_travel_ = 0, pad_down_at_ = 0, tapped_at_ = -1000, click_frames_ = 0;
     double pad_dx_ = 0, pad_dy_ = 0;
+    // From fingers(): a second finger holding a button, and the pad's finger followed when touch() has another.
+    bool finger_left_ = false, finger_right_ = false, sliding_ = false;
+    bool pad_slid_ = false, click_ = false;
+    int pad_x0_ = 0, pad_y0_ = 0;
+    int slide_x_ = 0, slide_y_ = 0, fingers_at_ = -1000;
     int page_ = 0, disks_ = 0, disk_ = 0;
     bool next_disk_ = false;
     int finger_ = -1; // the key under the finger, for drawing

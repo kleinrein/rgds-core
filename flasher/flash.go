@@ -150,7 +150,8 @@ func openImage(path string) (io.ReadCloser, error) {
 
 type reporter func(phase string, done, total int64)
 
-// writeImage unpacks the image on the fly and writes every byte of it, zero blocks included. Card readers can
+// writeImage unpacks the image on the fly and writes what plan says (plan.go: everything but the empty space no one
+// reads; nil writes every byte, zero blocks included). Card readers can
 // drop the card for a moment (a USB reset), and the OS then reads the partition table again and mounts what it
 // finds, writing to it. So the first chunk (partition tables, U-Boot) is zeroed first and the card looks blank
 // until the very end:
@@ -161,7 +162,11 @@ type reporter func(phase string, done, total int64)
 //  4. write the first chunk, check it, and check the start of the card again if the reader dropped it meanwhile.
 //
 // It returns the number of bytes written.
-func writeImage(path string, t target, total int64, report reporter) (int64, error) {
+func writeImage(path string, t target, plan *Plan, report reporter) (int64, error) {
+	total := plan.Total // plan is never nil: &Plan{Total: n} writes every byte
+	if plan.write != nil {
+		total = plan.Written
+	}
 	src, err := openImage(path)
 	if err != nil {
 		return 0, err
@@ -173,7 +178,12 @@ func writeImage(path string, t target, total int64, report reporter) (int64, err
 		n   int
 		off int64
 	}
-	const lag = 2 // chunks between writing one and reading it back
+	type span struct {
+		off int64
+		n   int
+	}
+	var spans []span // the chunks written, in order: what the checks read back
+	const lag = 2    // chunks between writing one and reading it back
 	free := make(chan []byte, 5+lag)
 	for i := 0; i < cap(free); i++ {
 		free <- alignedBuffer(chunk)
@@ -260,7 +270,12 @@ func writeImage(path string, t target, total int64, report reporter) (int64, err
 	var written int64
 	report("write", 0, total)
 	for b := range full {
+		if !plan.writes(b.off / chunk) {
+			free <- b.buf
+			continue
+		}
 		written += int64(b.n)
+		spans = append(spans, span{b.off, b.n})
 		if b.off == 0 {
 			head = &b
 			continue
@@ -293,11 +308,15 @@ func writeImage(path string, t target, total int64, report reporter) (int64, err
 
 	// The final pass, after the reader's cache has long moved on.
 	report("verify", 0, written)
-	for off := int64(chunk); off < written; off += chunk {
-		if err := check(off, int(min(int64(chunk), written-off))); err != nil {
-			return 0, err
+	var checked int64
+	for _, sp := range spans {
+		if sp.off != 0 {
+			if err := check(sp.off, sp.n); err != nil {
+				return 0, err
+			}
 		}
-		report("verify", off+chunk, written)
+		checked += int64(sp.n)
+		report("verify", checked, written)
 	}
 
 	// The partition table last: from here the OS may mount the card if the reader drops it.
@@ -314,8 +333,11 @@ func writeImage(path string, t target, total int64, report reporter) (int64, err
 		}
 		if resets > before { // the OS may have mounted RGDS-BOOT and written to it: check the start of the card again
 			logf("reader reset after the partition table went on; checking the boot partition again")
-			for off := int64(0); off < min(written, bootArea); off += chunk {
-				if err := check(off, int(min(int64(chunk), written-off))); err != nil {
+			for _, sp := range spans {
+				if sp.off >= bootArea {
+					break
+				}
+				if err := check(sp.off, sp.n); err != nil {
 					return 0, err
 				}
 			}
@@ -399,22 +421,50 @@ var errWriteProtected = errors.New("the card is write-protected: slide the lock 
 
 func roundUp(n int64) int64 { return (n + align - 1) &^ (align - 1) }
 
-// flash is the whole job for one card; it runs in the UI process (macOS, Linux as root) or in the worker.
-func flash(imagePath, diskID, carry string, report reporter) error {
+// Job is one card to write; the UI process hands it to flash, or to the worker as flags.
+type Job struct {
+	Image  string // .img or .img.gz
+	Disk   string // Disk.ID
+	Carry  string // the bundle for the card's end (carry.go, preset.go); "-": the person declined their saves
+	Backup string // where the whole old card goes first (backup.go); "" for none
+	Preset string // setup answers for the first start (preset.go); "" for none
+}
+
+// planFor is what flash writes from an image: the plan (plan.go) for an RG DS OS image, every byte of anything
+// big (a whole-card backup goes back exactly as it was, and planning one would mean unpacking it twice).
+func planFor(path string, report reporter) (*Plan, error) {
+	total, err := unpackedSize(path)
+	if err != nil {
+		return nil, err
+	}
+	if _, backup := readInfo(path); backup || total > 8<<30 {
+		return &Plan{Total: total}, nil // a backup goes back byte for byte, empty space included
+	}
+	return planImage(path, func(done, total int64) { report("plan", done, total) })
+}
+
+// flash is the whole job for one card; it runs in the UI process (macOS, Linux as root) or in the worker:
+//
+//  1. plan what to write, find the card, and open it;
+//  2. read what must survive off it: the stock system's DS saves, and with Backup the whole card;
+//  3. check it holds what it says (probe.go): a fake card stops here, before anything of the old card is lost;
+//  4. put the bundle near its end, then the image, then check the bundle again; eject.
+func flash(job Job, report reporter) error {
 	defer keepAwake()()
-	total, err := unpackedSize(imagePath)
+	report("prepare", 0, 0)
+	plan, err := planFor(job.Image, report)
 	if err != nil {
 		return err
 	}
-	report("prepare", 0, total)
-	logf("flash %s (%d bytes unpacked) to %s", imagePath, total, diskID)
-	d, err := findDisk(diskID)
+	report("prepare", 0, plan.Total)
+	logf("flash %s (%d bytes unpacked, %d to write) to %s", job.Image, plan.Total, plan.Written, job.Disk)
+	d, err := findDisk(job.Disk)
 	if err != nil {
-		logf("disk %s: %v", diskID, err)
+		logf("disk %s: %v", job.Disk, err)
 		return err
 	}
 	logf("disk %+v", d)
-	if total > d.Size {
+	if plan.Total > d.Size {
 		return fmt.Errorf("%s is too small for the image", d.Name)
 	}
 	t, err := openTarget(d)
@@ -422,9 +472,15 @@ func flash(imagePath, diskID, carry string, report reporter) error {
 		logf("open: %v", describeErr(err))
 		return err
 	}
+	fail := func(what string, err error) error {
+		logf("%s: %v", what, err)
+		t.Close()
+		return err
+	}
 	// the stock system's DS saves: read off the old card's ext4 partitions now, before anything is written. A card
 	// nobody chose to keep anything from still gets them looked for: a Plus's slot 1 system card holds DraStic's
 	// saves while its games (and so what the card list recognises) are on the slot 2 card.
+	carry := job.Carry
 	if carry == "-" { // the person unticked Bring my saves along: nothing comes
 		carry = ""
 	} else if carry == "" {
@@ -436,25 +492,43 @@ func flash(imagePath, diskID, carry string, report reporter) error {
 		}
 		carry = withDS
 	}
+	if job.Preset != "" {
+		withSetup, err := withPreset(carry, job.Preset)
+		if err != nil {
+			return fail("preset", err)
+		}
+		carry = withSetup
+	}
+	if job.Backup != "" {
+		if err := backupCard(t, d.Size, d.Name, job.Backup, report); err != nil {
+			return fail("backup", err)
+		}
+	}
+	pr, err := probeCard(t, d.Size, report)
+	if err != nil {
+		return fail("probe", err)
+	}
 	// the saves kept from an old card first, past the image; checked again once the image is on (carry.go)
 	if carry != "" {
-		if err := writeCarry(t, d.Size, total, carry, report); err != nil {
-			logf("carry: %v", err)
-			t.Close()
-			return err
+		if err := writeCarry(t, d.Size, plan.Total, carry, report); err != nil {
+			return fail("carry", err)
 		}
 	}
-	if _, err := writeImage(imagePath, t, total, report); err != nil {
-		logf("failed: %v", err)
-		t.Close()
-		return err
+	if _, err := writeImage(job.Image, t, plan, report); err != nil {
+		return fail("failed", err)
 	}
+	var carryArea [2]int64 // what the bundle and its header cover: the markers there are gone
 	if carry != "" {
 		if err := checkCarry(t, d.Size, carry, report); err != nil {
-			logf("carry after the image: %v", err)
-			t.Close()
-			return err
+			return fail("carry after the image", err)
 		}
+		if info, err := os.Stat(carry); err == nil {
+			blob, _ := carryPlace(d.Size, info.Size())
+			carryArea = [2]int64{blob, d.Size}
+		}
+	}
+	if err := pr.recheck(t, roundUp(plan.Total), carryArea, report); err != nil {
+		return fail("probe after the image", err)
 	}
 	report("eject", 0, 0)
 	if err := t.Finish(); err != nil {

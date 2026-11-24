@@ -96,9 +96,9 @@ class UiConsistencyTests(unittest.TestCase):
 
     def test_stepping_onto_and_along_the_bar_plays_the_browse_cue(self):
         prefs = 'menu_sounds=1\nmenu_music=0\n'
-        (self.root / 'state').write_text('1 0 0 ""\nhome 0\n')  # on Settings, the last row
+        (self.root / 'state').write_text('1 0 0 ""\nhome 5\n')  # on the Album, in the app dock (the last row)
         self.assertEqual(self.run_ui('300 key Down\n', prefs)['sound_counts'][0], 1)
-        (self.root / 'state').write_text('1 0 0 ""\nhome 0\n')
+        (self.root / 'state').write_text('1 0 0 ""\nhome 5\n')
         # The first cue opens the sink and can hold the loop up; later keys come well after it.
         r = self.run_ui('300 key Down\n1000 key Right\n', prefs, seconds=3)
         self.assertEqual((r['home_bar_focus'], r['sound_counts'][0]), (2, 2))

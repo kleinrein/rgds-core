@@ -28,6 +28,8 @@ func main() {
 	image := flag.String("image", "", "flash this .img or .img.gz instead of the latest release")
 	logTo := flag.String("log", "", "internal: the UI's log file, so the worker writes to it too")
 	carry := flag.String("carry", "", "internal: the saves bundle the worker puts on the card too")
+	backup := flag.String("backup", "", "internal: where the worker keeps a copy of the whole card first")
+	preset := flag.String("preset", "", "internal: setup answers the worker puts on the card")
 	list := flag.Bool("list", false, "print the cards the flasher would offer, then exit")
 	noWindow := flag.Bool("no-window", false, "print the address instead of opening a window")
 	showVersion := flag.Bool("version", false, "print the version")
@@ -42,7 +44,7 @@ func main() {
 	case *showVersion:
 		fmt.Println(version)
 	case *worker:
-		os.Exit(runWorker(*report, *disk, *image, *carry))
+		os.Exit(runWorker(*report, Job{Image: *image, Disk: *disk, Carry: *carry, Backup: *backup, Preset: *preset}))
 	case *list:
 		disks, err := listDisks()
 		if err != nil {

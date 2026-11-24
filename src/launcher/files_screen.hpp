@@ -1,5 +1,5 @@
 #pragma once
-// Files (Settings > Library > Files, docs/NETWORK_PLAN.md section 3): the card's folders on the lower screen, what the
+// Files (Settings > Files, docs/NETWORK_PLAN.md section 3): the card's folders on the lower screen, what the
 // selected thing is on the upper one. The launcher lists folders itself; every change to the card goes through
 // runtime/files.py, one command at a time, which also owns the "are you sure" rules for saves and the system folder
 // (it stops with state=confirm and the page asks, then runs the same command again with --confirmed).
@@ -75,10 +75,7 @@ void App::files_open_root(int index) {
 }
 
 void App::open_files() {
-    settings.section = 2;
-    settings.library_rows = library_row_count();
-    settings.remember(Page::LibraryOptions, library_row_count() - 1);
-    settings.page = Page::Files;
+    settings.page = Page::Files; // a Settings root row since 2026-11-24: Back returns there
     settings.focus = 0;
     files_setup_roots();
     files_open_root(files_root);
@@ -1385,8 +1382,7 @@ void App::files_go_up(bool leave) {
     } else if (!files_remote_root() && !files_at_root())
         files_enter(files_dir.parent_path(), files_dir.filename().string());
     else if (leave) {
-        back_to(Page::LibraryOptions);
-        settings.focus = library_row_count() - 1;
+        settings.back();
         if (files_library_changed) rescan_games(true);
         files_library_changed = false;
     }

@@ -4,6 +4,7 @@
 // Slot-1 retail cartridge. Protocol per GBATEK ("DS Cartridge Protocol",
 // "DS Cartridge Secure Area", "DS Cartridge Backup").
 #include "core/cart/cart.h"
+#include <algorithm>
 #include "core/state/state.h"
 #include "core/nds.h"
 
@@ -43,7 +44,8 @@ bool known_game_code(u32 code) { return lookup_save_type(code) >= 0; }
 
 SaveType save_type_for(u32 code, u32& size) {
   // Numbering: 1 = 512 B EEPROM, 2 = 8 KB, 3 = 64 KB, 4 = 128 KB EEPROM,
-  // 5 = 256 KB, 6 = 512 KB, 7 = 1 MB, 8..10 = 8/16/64 MB FLASH.
+  // 5 = 256 KB, 6 = 512 KB, 7 = 1 MB FLASH, 8..10 = 8/16/64 MB. The last three
+  // are FLASH here; the cart makes one a NAND save when its header says so.
   const int found = lookup_save_type(code);
   u32 t = 3; // unknown title: 64 KB EEPROM, the most common chip
   if (found >= 1 && found <= 10) t = static_cast<u32>(found);
@@ -70,13 +72,31 @@ Cart::Cart(NDS& nds, std::unique_ptr<RomSource> rom) : nds_(nds), rom_(std::move
   if (size >= 1024 * 1024 && size <= 128 * 1024 * 1024) chip_id_ |= ((size >> 20) - 1) << 8;
   else chip_id_ |= (0x100 - (size >> 28)) << 8;
   // DSi-capable (unit code bit 1) with a nonzero DSi region: bit 30.
-  if ((header_.unit_code & 2) && twl_.region_flags != 0) chip_id_ |= 0x40000000;
+  if ((header_.unit_code & 2) && twl_.region_flags != 0) {
+    chip_id_ |= 0x40000000;
+    u16 start = 0;
+    std::memcpy(&start, &header_.reserved3[0x92 - 0x88], 2);
+    dsi_base_ = static_cast<u32>(start) << 19;
+    dsi_cart_ = dsi_base_ != 0;
+  }
   u32 sram_size = 0;
   save_type_ = save_type_for(header_.game_code_u32(), sram_size);
   ir_cart_ = (header_.game_code_u32() & 0xFF) == 'I';
   listed_ = known_game_code(header_.game_code_u32());
   if (listed_) sram_.assign(sram_size, 0xFF);
   else save_type_ = SaveType::Detect; // load_save or the first save access names the chip
+  // A NAND cart: one of the three large sizes, and a header that says where in
+  // the card the save sits (0x96, in 128 KB units). The list alone is not
+  // taken as proof: it gives well over a hundred games the 8 MB size.
+  u16 nand_start = 0;
+  std::memcpy(&nand_start, &header_.reserved3[0x96 - 0x88], 2);
+  if (listed_ && save_type_ == SaveType::Flash && sram_size >= 8388608 && nand_start != 0 &&
+      (static_cast<u64>(nand_start) << 17) + sram_size <= static_cast<u64>(rom_mask_) + 1) {
+    save_type_ = SaveType::Nand;
+    nand_base_ = static_cast<u32>(nand_start) << 17;
+    chip_id_ |= 0x08000000;
+    nand_build_id();
+  }
 
   // Dumps often carry a decrypted secure area; re-encrypt if the "decrypted"
   // marker is present, rewriting the source's overlay rather than the file.
@@ -84,12 +104,21 @@ Cart::Cart(NDS& nds, std::unique_ptr<RomSource> rom) : nds_(nds), rom_(std::move
   if (a9 >= 0x4000 && a9 < 0x8000) {
     const u32 w0 = rom_->read32(a9), w4 = rom_->read32(a9 + 0x10);
     if (w0 == 0xE7FFDEFF && w4 != 0xE7FFDEFF) {
-      u8* sec = rom_->patch(a9) + (a9 & (RomSource::PAGE - 1));
+      // In a buffer of its own, then into the overlay page by page: the header
+      // says where the area starts, and it need not sit inside one page.
+      alignas(4) u8 sec[0x800];
+      rom_->read(a9, sec, sizeof sec);
       std::memcpy(sec, "encryObj", 8);
       key1_init(header_.game_code_u32(), 3, 2);
       for (u32 i = 0; i < 0x800; i += 8) key1_encrypt(reinterpret_cast<u32*>(sec + i));
       key1_init(header_.game_code_u32(), 2, 2);
       key1_encrypt(reinterpret_cast<u32*>(sec));
+      for (u32 i = 0; i < sizeof sec;) {
+        const u32 off = (a9 + i) & (RomSource::PAGE - 1);
+        const u32 take = std::min<u32>(sizeof sec - i, RomSource::PAGE - off);
+        std::memcpy(rom_->patch(a9 + i) + off, sec + i, take);
+        i += take;
+      }
     }
   }
   reset();
@@ -101,10 +130,16 @@ void Cart::reset() {
   rom_addr_ = 0;
   std::memset(rom_cmd_, 0, 8);
   launch_read_ = false;
+  dsi_mode_ = false;
   spi_pos_ = 0;
   spi_cmd_ = 0;
   spi_addr_ = 0;
   spi_status_ = 0;
+  nand_window_ = 0;
+  nand_addr_ = 0;
+  nand_status_ = 0x20;
+  nand_wpos_ = nand_wlen_ = 0;
+  nand_wbuf_.fill(0);
 }
 
 void Cart::set_reset(bool reset) {
@@ -113,12 +148,14 @@ void Cart::set_reset(bool reset) {
   cmd_mode_ = data_mode_ = 0;
   rom_addr_ = 0;
   std::memset(rom_cmd_, 0, 8);
+  dsi_mode_ = false;
 }
 
 void Cart::setup_direct_boot() {
   cmd_mode_ = 2;
   data_mode_ = 2;
   in_reset_ = false;
+  dsi_mode_ = dsi_cart_ && nds_.dsi;
 }
 
 // ---- KEY1 -----------------------------------------------------------------
@@ -161,9 +198,10 @@ void Cart::key1_apply_keycode(u32* keycode, u32 mod) {
     key1_[i + 1] = temp[0];
   }
 }
-void Cart::key1_init(u32 idcode, u32 level, u32 mod) {
-  // Key table lives at ARM7 BIOS 0x30 (0x1048 bytes).
-  std::memcpy(key1_.data(), nds_.bus.bios7.get() + 0x30, key1_.size() * 4);
+void Cart::key1_init(u32 idcode, u32 level, u32 mod, bool dsi_key) {
+  // Key table lives at ARM7 BIOS 0x30 (0x1048 bytes); the DSi's own at ARM7i BIOS 0xC6D0.
+  if (dsi_key) std::memcpy(key1_.data(), nds_.bus.bios7i.get() + 0xC6D0, key1_.size() * 4);
+  else std::memcpy(key1_.data(), nds_.bus.bios7.get() + 0x30, key1_.size() * 4);
   u32 keycode[3] = {idcode, idcode >> 1, idcode << 1};
   if (level >= 1) key1_apply_keycode(keycode, mod);
   if (level >= 2) key1_apply_keycode(keycode, mod);
@@ -225,7 +263,15 @@ void Cart::command_start(const u8 cmd[8]) {
       return;
     case 0x3C:
       cmd_mode_ = 1;
+      dsi_mode_ = false;
       key1_init(header_.game_code_u32(), 2, 2);
+      return;
+    case 0x3D: // a DSi's wake-up for a DSi card; anything else does not know it
+      if (dsi_cart_ && nds_.dsi) {
+        cmd_mode_ = 1;
+        dsi_mode_ = true;
+        key1_init(header_.game_code_u32(), 1, 2, true);
+      }
       return;
     default: return;
     }
@@ -253,19 +299,24 @@ void Cart::command_start(const u8 cmd[8]) {
       std::fprintf(stderr, "[cart]   key1 decrypted %02x %02x %02x %02x %02x %02x %02x %02x\n", dec[0], dec[1], dec[2],
                    dec[3], dec[4], dec[5], dec[6], dec[7]);
     switch (rom_cmd_[0] & 0xF0) {
-    case 0x40: data_mode_ = 2; return;                        // enable KEY2 data
-    case 0x20: rom_addr_ = (rom_cmd_[2] & 0xF0) << 8; return; // secure area block
-    case 0xA0: cmd_mode_ = 2; return;                         // leave KEY1 mode
+    case 0x40: data_mode_ = 2; return; // enable KEY2 data
+    case 0x20:                         // secure area block
+      rom_addr_ = (rom_cmd_[2] & 0xF0) << 8;
+      if (dsi_mode_) rom_addr_ = rom_addr_ - 0x1000 + dsi_base_; // the DSi area's own, in its first 0x3000 bytes
+      return;
+    case 0xA0: cmd_mode_ = 2; return; // leave KEY1 mode
     default: return;
     }
   }
   std::memcpy(rom_cmd_, cmd, 8);
+  if (save_type_ == SaveType::Nand && nand_command(cmd)) return;
   if (rom_cmd_[0] == 0xB7) {
     rom_addr_ = ((rom_cmd_[1] << 24) | (rom_cmd_[2] << 16) | (rom_cmd_[3] << 8) | rom_cmd_[4]) & rom_mask_;
     // Must read before the clamp below folds sub-0x8000 addresses onto 0x8000,
     // which would otherwise forge the launch signal from an unrelated read.
     if (rom_addr_ == header_.arm9_rom_offset) launch_read_ = true;
     if (rom_addr_ < 0x8000) rom_addr_ = 0x8000 + (rom_addr_ & 0x1FF); // secure area is not readable here
+    if (dsi_area_blocked(rom_addr_)) rom_addr_ = 0x8000 + (rom_addr_ & 0x1FF);
   }
 }
 
@@ -283,12 +334,114 @@ u32 Cart::command_receive() {
     case 0x20: return rom_read32();
     }
   } else {
+    if (save_type_ == SaveType::Nand) {
+      switch (rom_cmd_[0]) {
+      case 0x94: { // the NAND's ID block
+        if (rom_addr_ >= nand_id_.size()) return 0;
+        u32 v;
+        std::memcpy(&v, &nand_id_[rom_addr_], 4);
+        rom_addr_ += 4;
+        return v;
+      }
+      case 0xB7:
+        if (nand_window_) return nand_addr_ ? nand_read32() : 0xFFFFFFFFu;
+        if (rom_addr_ >= nand_base_ && rom_addr_ - nand_base_ < sram_.size())
+          return 0xFFFFFFFFu; // the save does not read as ROM
+        break;
+      case 0xD6: return nand_status_ * 0x01010101u; // status: bit 5 ready, bit 4 write enabled
+      default: break;
+      }
+    }
     switch (rom_cmd_[0]) {
     case 0xB7: return rom_read32();
     case 0xB8: return chip_id_;
     }
   }
   return 0;
+}
+
+// ---- NAND save ---------------------------------------------------------------
+// The last 128 KB of the save is read-only and all 0xFF but for an ID at the
+// start of its last 2 KB; the same ID is in command 94's reply, and Jam with
+// the Band compares them. The bytes are from a Jam with the Band cart (melonDS).
+void Cart::nand_build_id() {
+  if (sram_.size() <= 0x20000) return;
+  static const u8 id[0x10] = {0xEC, 0x00, 0x9E, 0xA1, 0x51, 0x65, 0x34, 0x35,
+                              0x30, 0x35, 0x30, 0x31, 0x19, 0x19, 0x02, 0x0A};
+  std::memset(sram_.data() + sram_.size() - 0x20000, 0xFF, 0x20000);
+  std::memcpy(sram_.data() + sram_.size() - 0x800, id, sizeof id);
+  nand_id_.fill(0);
+  static const u8 head[5] = {0xEC, 0xF1, 0x00, 0x95, 0x40};
+  std::memcpy(nand_id_.data(), head, sizeof head);
+  std::memcpy(nand_id_.data() + 0x18, id, sizeof id);
+}
+
+u32 Cart::nand_read32() { // as the ROM: a read wraps within its 4 KB page
+  const u32 off = (nand_addr_ - nand_base_) & static_cast<u32>(sram_.size() - 1);
+  const u32 hi = off & ~0xFFFu;
+  u32 lo = off & 0xFFF, v = 0;
+  for (int i = 0; i < 4; ++i) {
+    v |= static_cast<u32>(sram_[hi | lo]) << (8 * i);
+    lo = (lo + 1) & 0xFFF;
+  }
+  nand_addr_ = nand_base_ + (hi | lo);
+  return v;
+}
+
+bool Cart::nand_command(const u8 cmd[8]) {
+  const u32 addr = (static_cast<u32>(cmd[1]) << 24) | (cmd[2] << 16) | (cmd[3] << 8) | cmd[4];
+  const bool in_window = nand_window_ok() && addr >= nand_window_ && addr - nand_window_ < 0x20000;
+  switch (cmd[0]) {
+  case 0x81: // a page's data follows. Sent four times with one address; the first one's counts
+    if ((nand_status_ & 0x10) && nand_window_ok()) {
+      if (in_window && !nand_addr_) nand_addr_ = addr;
+    } else nand_addr_ = 0;
+    return true;
+  case 0x82: // commit the page
+    // Not into the read-only tail (the ID block).
+    if (nand_addr_ && nand_wlen_ && sram_.size() > 0x20000 && nand_addr_ - nand_base_ < sram_.size() - 0x20000) {
+      const u32 off = nand_addr_ - nand_base_, size = static_cast<u32>(sram_.size());
+      const u32 first = std::min<u32>(0x800, size - off);
+      std::memcpy(sram_.data() + off, nand_wbuf_.data(), first);
+      if (first < 0x800) std::memcpy(sram_.data(), nand_wbuf_.data() + first, 0x800 - first);
+      mark_dirty();
+    }
+    if (nand_addr_ && nand_wlen_) {
+      nand_addr_ = 0;
+      nand_wpos_ = 0;
+      nand_wlen_ = 0;
+    }
+    nand_status_ &= ~0x10;
+    return true;
+  case 0x84:
+    nand_addr_ = 0;
+    nand_wpos_ = 0;
+    return true; // discard the page buffer
+  case 0x85:
+    if (nand_window_) {
+      nand_status_ |= 0x10;
+      nand_wpos_ = 0;
+    }
+    return true;                            // write enable
+  case 0x8B: nand_window_ = 0; return true; // back to reading the ROM
+  case 0x94: rom_addr_ = 0; return true;    // ID block
+  case 0xB2:                                // open the 128 KB window at this address
+    nand_window_ = (static_cast<u32>(cmd[1]) << 24) | ((cmd[2] & 0xFE) << 16);
+    return true;
+  case 0xB7:
+    if (!nand_window_) return false; // ROM mode: the ordinary read
+    nand_addr_ = in_window ? addr : 0;
+    return true;
+  default: return false;
+  }
+}
+
+void Cart::command_transmit(u32 word) {
+  if (in_reset_ || cmd_mode_ != 2 || save_type_ != SaveType::Nand) return;
+  if (rom_cmd_[0] != 0x81 || !nand_addr_) return;
+  std::memcpy(&nand_wbuf_[nand_wpos_], &word, 4);
+  nand_wpos_ = (nand_wpos_ + 4) & 0x7FF;
+  if (nand_wlen_ < 0x800) nand_wlen_ += 4;
 }
 
 // ---- save chip --------------------------------------------------------------
@@ -299,6 +452,13 @@ void Cart::spi_release() {
     std::fprintf(stderr, "[auxspi] cmd %02x addr %06x len %u status %02x%s\n", spi_cmd_, spi_addr_, spi_pos_,
                  spi_status_, ir_cart_ ? " (ir)" : "");
   if (save_type_ == SaveType::Detect && spi_pos_ > 0) detect_release();
+  // The write-enable latch drops when a write, program or erase ends: each
+  // needs its own WREN, as on the chips (melonDS does the same).
+  if (spi_pos_ > 1) {
+    const bool flash = save_type_ == SaveType::Flash;
+    if (spi_cmd_ == 0x02 || spi_cmd_ == 0x0A || spi_cmd_ == 0x01 || (flash && (spi_cmd_ == 0xDB || spi_cmd_ == 0xD8)))
+      spi_status_ &= ~2;
+  }
   spi_pos_ = 0;
   ir_pos_ = 0;
 }
@@ -319,6 +479,7 @@ Cart::SaveLoad Cart::load_save(const u8* data, size_t n) {
   }
   if (save_type_ == SaveType::None) return {true, 0}; // no save chip: nothing will overwrite the file
   std::memcpy(sram_.data(), data, n < sram_.size() ? n : sram_.size());
+  if (save_type_ == SaveType::Nand) nand_build_id(); // the read-only tail is the cart's, whatever the file holds
   return {n == sram_.size(), static_cast<u32>(sram_.size())};
 }
 
@@ -414,15 +575,18 @@ u8 Cart::spi_transfer(u8 v) {
     if (ir_cmd_ != 0x00) return 0;
   }
   if (save_type_ == SaveType::None) return 0;
+  if (save_type_ == SaveType::Nand) return 0xFF; // nothing on the AUXSPI bus
   u8 ret = 0xFF;
   if (spi_pos_ == 0) {
     switch (v) {
     case 0x04:
       spi_status_ &= ~2;
+      spi_cmd_ = v;
       spi_pos_++;
       return 0; // write disable
     case 0x06:
       spi_status_ |= 2;
+      spi_cmd_ = v;
       spi_pos_++;
       return 0; // write enable
     default:
@@ -574,11 +738,35 @@ template <class S> void Cart::sync_state(S& s) {
       detect_buf_.clear();
     }
   }
-  s.blob(sram_.data(), sram_.size());
+  if constexpr (S::reading) {
+    // The state's save memory is what the game goes on with, but loading it is
+    // not the game saving: the file is left alone until the game writes to the
+    // chip, and the frontend then keeps the file it replaces (sram_from_state).
+    const std::vector<u8> before = sram_;
+    s.blob(sram_.data(), sram_.size());
+    if (sram_ != before) sram_from_state_ = true;
+  } else {
+    s.blob(sram_.data(), sram_.size());
+  }
+  if (save_type_ == SaveType::Nand) { // appended: a state from before has the cart in ROM mode
+    s.fields(nand_window_, nand_addr_, nand_status_, nand_wbuf_, nand_wpos_, nand_wlen_);
+    if constexpr (S::reading) {
+      nand_wpos_ &= 0x7FC;
+      if (nand_wlen_ > 0x800) nand_wlen_ = 0x800;
+      nand_build_id();
+    }
+  }
+  if (dsi_cart_) { // appended: a state from before has the card in its DS mode
+    if constexpr (S::reading) dsi_mode_ = false;
+    s.fields(dsi_mode_);
+    if constexpr (S::reading) dsi_mode_ = dsi_mode_ && nds_.dsi;
+  }
   s.end();
   if constexpr (S::reading) {
-    mark_dirty();
-    if (cmd_mode_ == 1) key1_init(header_.game_code_u32(), 2, 2);
+    if (cmd_mode_ == 1) {
+      if (dsi_mode_) key1_init(header_.game_code_u32(), 1, 2, true);
+      else key1_init(header_.game_code_u32(), 2, 2);
+    }
   }
 }
 template void Cart::sync_state<state::Writer>(state::Writer&);

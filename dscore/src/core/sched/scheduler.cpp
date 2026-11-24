@@ -78,6 +78,8 @@ void Scheduler::reset() {
   now_ = 0;
   arm7_debt_ = 0;
   arm9_carry_ = 0;
+  std::memset(idle_pc_ring_, 0, sizeof idle_pc_ring_);
+  idle_pc_pos_[0] = idle_pc_pos_[1] = 0; // a reset machine starts as a new one does
   armed_ = 0;
   at_.fill(0);
   fn_.fill(nullptr);
@@ -499,7 +501,7 @@ void Scheduler::count_slice(bool skipped, s64 slice) const {
 // than a slice), which one pass would leave armed in the past.
 void Scheduler::fire_due() {
   if (nds_.io.ipc9_pending_n) nds_.io.ipc_deliver(); // the ARM9's held IPC FIFO words, the ARM7 having caught up
-  while (!nds_.sleeping && now_ >= next_) {
+  while (now_ >= next_) {
     next_ = std::numeric_limits<u64>::max();
     next_id_ = EVENT_COUNT;
     // Ascending id order; `armed_` re-read after every handler so an event
@@ -651,7 +653,7 @@ SliceNext Scheduler::slice_next() {
 begin:
   {
     prof::Scope sched_scope(prof::SCHED);
-    if (done(sl_.until, sl_.until_frame)) {
+    if (nds_.io.sleeping || (sl_.until_frame && nds_.frame_ready) || now_ >= sl_.until) {
       sl_.phase = SL_BEGIN;
       return {nullptr, nullptr};
     }
@@ -857,40 +859,7 @@ u64 Scheduler::run_until_native(u64 until, bool until_frame) {
 // at a slice end, so testing it at the next slice start stops at exactly the
 // point `while (!frame_ready) run_until(next_deadline())` stopped at.
 bool Scheduler::done(u64 until, bool until_frame) const {
-  return nds_.sleeping || (until_frame && nds_.frame_ready) || now_ >= until;
-}
-
-// Keep the stopped system's timestamps unchanged, including scanline/DMA
-// phase and lazily sampled timers. Run only the independently clocked RTC
-// on a temporary timeline, then rebase its deadlines back onto system time.
-void Scheduler::run_sleep(u64 cycles) {
-  const u64 frozen = now_, limit = now_ + cycles;
-  constexpr u32 rtc_mask = (1u << static_cast<u32>(EventId::Rtc)) | (1u << static_cast<u32>(EventId::RtcClock));
-  while (nds_.sleeping && now_ < limit) {
-    u32 id = EVENT_COUNT;
-    u64 next = limit;
-    for (u32 m = armed_ & rtc_mask; m; m &= m - 1) {
-      const u32 i = static_cast<u32>(__builtin_ctz(m));
-      if (at_[i] <= next) {
-        next = at_[i];
-        id = i;
-      }
-    }
-    now_ = std::max(now_, next);
-    if (id == EVENT_COUNT) break;
-    armed_ &= ~(1u << id);
-    firing_at_ = at_[id];
-    fn_[id](nds_, param_[id]);
-  }
-  const u64 elapsed = now_ - frozen;
-  for (u32 m = armed_ & rtc_mask; m; m &= m - 1) {
-    const u32 i = static_cast<u32>(__builtin_ctz(m));
-    at_[i] -= elapsed;
-  }
-  if (nds_.io.rtc.ticking) nds_.io.rtc.next_tick -= elapsed;
-  now_ = frozen;
-  rescan();
-  nds_.spu.sleep_output(elapsed);
+  return nds_.io.sleeping || (until_frame && nds_.frame_ready) || now_ >= until;
 }
 
 u64 Scheduler::run_until(u64 until) { return run_until_impl(until, false); }
@@ -1009,13 +978,45 @@ u64 Scheduler::run_until_impl(u64 until, bool until_frame) {
 
 template <class S> void Scheduler::sync_state(S& s) {
   s.begin("SCHD");
-  static_assert(EVENT_COUNT == 29, "EVENT_COUNT changed: add a save-state version");
+  // The first 29 events are the chunk's original layout; one added since is
+  // appended after everything else, so a state from before it still loads
+  // (and leaves it unarmed).
+  constexpr u32 kFirstEvents = 29;
+  static_assert(EVENT_COUNT == 30,
+                "EVENT_COUNT changed: the new event's time and parameter are appended below, nothing else");
   s.fields(now_, arm7_debt_, armed_);
-  s.fields(at_, param_);
+  for (u32 i = 0; i < kFirstEvents; ++i) s.put(at_[i]);
+  for (u32 i = 0; i < kFirstEvents; ++i) s.put(param_[i]);
   s.fields(idle_pc_ring_, idle_pc_pos_); // idle-skip pre-filter is part of the timing
   s.fields(arm9_carry_);                 // appended: DS states leave it 0
+  for (u32 i = kFirstEvents; i < EVENT_COUNT; ++i) {
+    s.put(at_[i]);
+    s.put(param_[i]);
+  } // appended: DsiDsp
   s.end();
   if constexpr (S::reading) {
+    armed_ &= (1u << EVENT_COUNT) - 1; // a bit past the last event would index the tables
+    // Handlers decode their parameter into an array index, a shift or an offset: put back the ones each event schedules.
+    for (u32 i = 0; i < EVENT_COUNT; ++i) {
+      if (!(armed_ & (1u << i))) continue; // an idle event's parameter is never read, and stays as the file had it
+      u32& p = param_[i];
+      switch (static_cast<EventId>(i)) {
+      case EventId::Timer0:
+      case EventId::Timer1:
+      case EventId::Timer2:
+      case EventId::Timer3: p = i - static_cast<u32>(EventId::Timer0); break;
+      case EventId::Timer7_0:
+      case EventId::Timer7_1:
+      case EventId::Timer7_2:
+      case EventId::Timer7_3: p = 4 + i - static_cast<u32>(EventId::Timer7_0); break;
+      case EventId::DisplayFifo:
+        if (p > 256 || (p & 7)) p = 0;
+        break; // pixel step of the line, a multiple of 8
+      case EventId::CartPower1: p = 0; break;
+      case EventId::CartPower2: p = 1; break;
+      default: break;
+      }
+    }
     fn_.fill(nullptr);
     in_dma_ = false;
     running_ = nullptr;

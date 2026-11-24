@@ -123,7 +123,7 @@ void App::check_fonts(bool first_frame) {
 }
 
 void App::gesture_intro() {
-    remember_appearance();
+    remember_appearance(false);
     show_detail(
         "Touch gestures",
         locale.text("Swipe up from the bottom edge to go Home from anywhere.") + "\n" +
@@ -181,7 +181,8 @@ void App::gesture_cues(SDL_Renderer* r, int y) {
 bool App::gestures_available() const {
     return preferences.gestures && !probe && !(chat_open && chat.view == pictochat::View::Room) && !launching &&
            settings.page != Page::BootWarning && settings.page != Page::Welcome &&
-           settings.page != Page::ProfilePicker && settings.page != Page::Controls && !o.game_menu;
+           settings.page != Page::ProfilePicker && settings.page != Page::Controls && settings.page != Page::KidHome &&
+           !o.game_menu;
 }
 
 bool App::edge_gesture_move(int x, int y) {

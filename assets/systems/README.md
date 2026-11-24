@@ -37,6 +37,8 @@ Atari 5200 and the Atari Lynx were rendered on 2026-11-20 from that brief as
 well: the Virtual Boy, the Sega Pico, the Amstrad CPC and the three Ataris
 had no rich icon at all before, and the DOS PC's first render stacked the CRT
 on the tower, so its brief now says the monitor stands beside it.
+Flash's (a turn-of-the-century desktop PC, a lightning bolt on its screen) is `artwork/systems/flash.png`, cut out on
+2026-11-24 (`tools/prepare_system_icons.py --only flash`); until then the Systems page had only its pixel glyph.
 
 - `<id>.bmp`: the launcher's own asset, a 128×128 32-bit BGRA bitmap with a
   116 px optical bound, written by `tools/prepare_system_icons.py`.

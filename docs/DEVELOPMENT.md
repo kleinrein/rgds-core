@@ -135,6 +135,27 @@ must feed `animated` or `feedback_active`. `RGDS_FRAME_LOG=FILE` writes one line
 On the wall, B goes back as anywhere (the level is kept: `ui.ini` `library_zoom=N`, restored at start), a quiet grid
 button at the end of the title row steps through the levels, and the edge gestures pass through.
 
+### Toasts (2026-11-23)
+
+Every notice, warning and error is a toast on the lower screen: a card that drops in from the top edge on a damped
+spring (ζ .52, ω 21 rad/s, a few pixels of overshoot), holds 2.8-6.5 s by length (errors 1.5 s more, warnings 0.7 s),
+and drifts up as it fades. Up to three stack, newest on top, the others gliding down; the same words again nudge the
+card that is up and restart its clock instead of stacking a copy. A tap sends a card away. Four looks: info (the
+theme's accent), success (green), warning (amber), error (red), each with its own badge mark.
+
+- The model is `src/launcher/toast.hpp` (no SDL; `tests/toast_test.cpp`), the drawing and feeds are
+  `toast_screen.hpp`. `notify(text)` is a page's own notice and still sets `service_notice`; `toast(text)` is
+  anything else. Without a severity the English source words pick one (`toast::infer`: "Could not…" error,
+  "…first" warning, "…saved" success).
+- Fed without call sites: a worker that ends in an error (`worker_finished_toast`, from the device helper,
+  RetroAchievements or the artwork service, tied to the finish so a retry shows again), and changes to `status`, the
+  updater's error, the in-game menu bridge's error and Controls' capture notices (`watch_notices`, run-loop).
+- The inline copies are gone: the DSi note, the Updates card, setup's Add your games step, the Profiles line, the
+  shader note and the cover line no longer repeat errors. The music player's and Sound toy's own pills are toasts now.
+- Motion only while entering, leaving, nudging or gliding; a held card costs no frames (the loop wakes when it is due).
+  The cache report lists the cards (`toasts`). `tests/test_toast.py` drives setup's Use as USB drive with a stand-in
+  helper that fails as it does with no cable.
+
 ### The 2026-11-06 consistency pass
 
 - **One set of corner radii.** `App::card_radius` (14) for every card and tile (settings rows, the game switcher,

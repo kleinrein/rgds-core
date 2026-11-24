@@ -319,16 +319,31 @@ class PlayRuntimeTests(unittest.TestCase):
         for folder in ("arcade", "MAME", "mame2003-plus"):
             self.assertEqual(play_options.system_of(roms / folder / "punchout.zip"), "arcade", folder)
         self.assertEqual(play_options.system_of(roms / "punchout.zip"), "nds")  # a zip elsewhere is a DS game's
-        self.assertEqual(play_options.LIBRETRO_CORES["arcade"], "mame2003_plus")
+        self.assertEqual(play_options.LIBRETRO_CORES["arcade"], "fbneo")
+        for folder in ("fbneo", "FBA", "neogeo", "cps2"):
+            self.assertEqual(play_options.system_of(roms / folder / "mslug.zip"), "arcade", folder)
+        # FBNeo runs every set but the two-monitor cabinets', which are mame2003-plus's.
+        with tempfile.TemporaryDirectory() as tmp:
+            for core in ("fbneo", "mame2003_plus"):
+                (Path(tmp) / f"{core}_libretro.so").write_bytes(b"")
+            with patch.object(play_options, "LIBRETRO_DIR", Path(tmp)):
+                self.assertEqual(
+                    play_options.libretro_core("arcade", roms / "arcade/galaga.zip").name, "fbneo_libretro.so"
+                )
+                self.assertEqual(
+                    play_options.libretro_core("arcade", roms / "arcade/PunchOut.zip").name, "mame2003_plus_libretro.so"
+                )
+        catalog = play_options.arcade_catalog()
+        self.assertIn("v", catalog["galaga"][2])
+        self.assertIn("b", catalog["neogeo"][2])
+        self.assertEqual(catalog["mslug"][0], "Metal Slug - Super Vehicle-001")
         self.assertEqual(play_options.FRAMES["arcade"], "arcade")
         # The sets the core is built with are the ones the launcher lists and the profiles name.
         import re
         script = (ROOT / "os/buildroot/package/libretro-mame2003-plus/two_monitors.py").read_text()
         start = script.index("GAMES = [")
         games = set(re.findall(r'"([a-z0-9]+)"', script[start:script.index("]", start)]))
-        model = (ROOT / "src/launcher/model.hpp").read_text()
-        listed = model[model.index("arcade_sets() {"):model.index("return sets;")]
-        self.assertEqual(set(re.findall(r'\{"([a-z0-9]+)", "', listed)), games)
+        self.assertEqual({name for name, row in catalog.items() if "m" in row[2]}, games)
         self.assertEqual(set(play_options.ARCADE_SETS), games)
         codes = set()
         for profile in (ROOT / "play/profiles/arcade").glob("*.ini"):
