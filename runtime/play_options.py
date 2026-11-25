@@ -183,7 +183,29 @@ FOLDER_SYSTEMS = {
     "flash": "flash",
     "adobe flash": "flash",
     "flashpoint": "flash",
-    "swf": "flash"
+    "swf": "flash",
+    # Anbernic's stock firmware's Roms folders (migrate.STOCK_FOLDERS), on a second card played in place
+    # (src/launcher/games_card.hpp); its PICO is PICO-8 (_folder_system)
+    "fc": "nes",
+    "sfc": "snes",
+    "ps": "psx",
+    "mdcd": "segacd",
+    "sega32x": "md",
+    "gg": "gg",
+    "a2600": "atari",
+    "a5200": "atari5200",
+    "a7800": "atari7800",
+    # and the other systems' names Bring over knows (migrate.FOLDERS)
+    "famicom": "nes",
+    "superfamicom": "snes",
+    "mastersystem": "sms",
+    "gamegear": "gg",
+    "ps1": "psx",
+    "playstation": "psx",
+    "zxspectrum": "zx",
+    "pcenginecd": "pcecd",
+    "wswanc": "wonderswan",
+    "gameandwatch": "gw"
 }
 # The C64's tapes are .tap like the Spectrum's, and a C64 game on several disks is listed by an .m3u like a
 # PlayStation disc set: in a C64 folder both are the C64's.
@@ -441,11 +463,18 @@ def _system_of_name(name):
     return next((system for system, suffixes in SYSTEMS.items() if suffix in suffixes), None)
 
 
+def _folder_system(folder):
+    """The system a games folder's name stands for: the stock firmware's Roms/PICO holds PICO-8 carts, ours (roms/pico)
+    the Sega Pico. FAT keeps the spelling, and the stock layout is told apart by it, as migrate.layout does."""
+    if folder.name.lower() == "pico" and folder.parent.name == "Roms": return "pico8"
+    return FOLDER_SYSTEMS.get(folder.name.lower())
+
+
 def _system_of_folder(rom, name):
     """The system whose games folder holds rom, when name's extension is one that folder claims (a plain .bin)."""
     suffix = Path(name).suffix.lower()
     for folder in rom.parents:
-        system = FOLDER_SYSTEMS.get(folder.name.lower())
+        system = _folder_system(folder)
         if system in FOLDER_DISCS and suffix in FOLDER_DISCS[system][1]:
             return FOLDER_DISCS[system][0]
         if system and (FOLDER_EXTENSIONS.get(system) == ANY_FILE or suffix in FOLDER_EXTENSIONS.get(system, ())):
@@ -463,6 +492,7 @@ def _system_of_games_folder(rom):
     for folder in Path(rom).parents:
         name = folder.name.lower()
         if name == "nds": return "nds"
+        if _folder_system(folder) == "pico8": return "pico8"
         if name in SYSTEMS: return name
         if name in FOLDER_SYSTEMS: return FOLDER_SYSTEMS[name]
     return None

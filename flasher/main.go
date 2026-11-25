@@ -33,8 +33,17 @@ func main() {
 	list := flag.Bool("list", false, "print the cards the flasher would offer, then exit")
 	noWindow := flag.Bool("no-window", false, "print the address instead of opening a window")
 	showVersion := flag.Bool("version", false, "print the version")
+	sshKey := flag.String("ssh-key", "", "developers: put this public key (~/.ssh/id_ed25519.pub) on the card, so SSH works from the first boot")
 	flag.Parse()
 
+	if *sshKey != "" {
+		key, err := readSSHKey(*sshKey)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(2)
+		}
+		devSSHKey = key
+	}
 	if *worker {
 		openLog("worker", *logTo)
 	} else if !*showVersion && !*list {

@@ -56,6 +56,9 @@ void App::smooth_arc(SDL_Renderer* r, int cx, int cy, int radius, int thickness,
     auto found = arc_textures.find(key);
     SDL_Texture* texture = found == arc_textures.end() ? nullptr : found->second;
     const int side = 2 * (radius + thickness / 2 + 2);
+    // Baked at the panel's pixels (1.6 per layout pixel on the RG DS Plus), its edge one panel pixel wide.
+    const double k = std::max(1.0, double(panel_scale(s, r)));
+    const int texels = int(std::lround(side * k));
     if (found == arc_textures.end()) {
         if (arc_textures.size() >= 48) {
             for (auto& entry : arc_textures)
@@ -68,10 +71,10 @@ void App::smooth_arc(SDL_Renderer* r, int cx, int cy, int radius, int thickness,
         // The two cap centres on the middle of the band.
         const double c0x = std::sin(a0) * mid, c0y = -std::cos(a0) * mid, c1x = std::sin(a0 + length) * mid,
                      c1y = -std::cos(a0 + length) * mid;
-        std::vector<uint32_t> pixels(size_t(side) * size_t(side), 0);
-        for (int py = 0; py < side; py++)
-            for (int px = 0; px < side; px++) {
-                const double x = px + .5 - side / 2.0, y = py + .5 - side / 2.0, d = std::hypot(x, y);
+        std::vector<uint32_t> pixels(size_t(texels) * size_t(texels), 0);
+        for (int py = 0; py < texels; py++)
+            for (int px = 0; px < texels; px++) {
+                const double x = (px + .5) / k - side / 2.0, y = (py + .5) / k - side / 2.0, d = std::hypot(x, y);
                 const double band = half - std::abs(d - mid);
                 if (band < -1) continue;
                 double sd = band;
@@ -89,12 +92,12 @@ void App::smooth_arc(SDL_Renderer* r, int cx, int cy, int radius, int thickness,
                         sd = std::min(band, d * std::sin(std::clamp(edge, -pi / 2, pi / 2)));
                     }
                 }
-                const double coverage = std::clamp(sd + .5, 0.0, 1.0);
+                const double coverage = std::clamp(sd * k + .5, 0.0, 1.0);
                 if (coverage > 0)
-                    pixels[size_t(py) * size_t(side) + size_t(px)] = uint32_t(coverage * 255 + .5) << 24 | 0xffffff;
+                    pixels[size_t(py) * size_t(texels) + size_t(px)] = uint32_t(coverage * 255 + .5) << 24 | 0xffffff;
             }
-        texture = s.CreateTexture(r, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, side, side);
-        if (texture && s.UpdateTexture(texture, nullptr, pixels.data(), side * 4) != 0) {
+        texture = s.CreateTexture(r, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, texels, texels);
+        if (texture && s.UpdateTexture(texture, nullptr, pixels.data(), texels * 4) != 0) {
             s.DestroyTexture(texture);
             texture = nullptr;
         }

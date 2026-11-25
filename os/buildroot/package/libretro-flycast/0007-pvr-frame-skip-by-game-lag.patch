@@ -1,0 +1,98 @@
+From: RG DS <rgds@localhost>
+Subject: [PATCH] pvr: drop a drawn frame by how far the game is behind
+
+Auto frame skip "some" waited for the renderer whenever the SH4 had averaged
+85% of full speed. In a scene the GPU can't draw in one refresh, the whole
+game then runs at the GPU's pace (Crazy Taxi's drive on the RG DS: 58.3 game
+frames a second where 60 were due), and once the average falls below 85% the
+frames go in bursts. "more" never waits, and since nothing else paces the
+emulation thread in the libretro build, the game ran at 66-72 frames a second.
+
+The emulation thread now keeps an account of how far the game is behind the
+wall clock (guest cycles against CLOCK_MONOTONIC). Under the limit (8 ms) it
+waits for the renderer as before; over it, this frame is not drawn and the
+game catches up. The account forgets 2% a frame, so a small rate difference
+with the frontend never drops frames, and holds at most two frames of debt, so
+a stall is not followed by fast forward.
+
+Crazy Taxi drive, RG DS, 2026-11-24, with 0006: the game holds 59.7-60.2
+frames a second through the stretch the GPU limits (58.3-58.5 before), same
+frames drawn (53-58). RGDS_FLYCAST_PACE=0 gives the old rule back,
+RGDS_FLYCAST_PACE_MS sets the limit.
+
+--- a/core/hw/pvr/ta_ctx.cpp
++++ b/core/hw/pvr/ta_ctx.cpp
+@@ -1,4 +1,8 @@
+ #include "ta_ctx.h"
++#include "hw/sh4/sh4_sched.h"
++#include <algorithm>
++#include <cstdlib>
++#include <ctime>
+ #include "spg.h"
+ #include "cfg/option.h"
+ #include "Renderer_if.h"
+@@ -46,6 +50,54 @@
+ static TA_context* rqueue;
+ static cResetEvent frame_finished;
+ 
++// RG DS: when to drop a drawn frame. Upstream's "some" waits for the renderer whenever the SH4 has averaged 85% of
++// full speed, so a scene the GPU can't draw in one refresh runs the whole game at the GPU's pace (slow motion, sound
++// starved), and drops frames in bursts once the average falls. Here the emulation thread keeps its own account: how
++// far the game is behind the wall clock right now. Under the limit it waits for the renderer as before; over it,
++// this frame is not drawn and the game catches up. The account forgets slowly (a steady 0.1 ms a frame is forgiven,
++// so small rate differences with the frontend never drop frames) and is capped at two frames of debt, so a long
++// stall is not followed by a burst of fast forward. RGDS_FLYCAST_PACE=0 gives upstream's rule back,
++// RGDS_FLYCAST_PACE_MS sets the limit (default 8 ms).
++static int rgdsPaceLimit()
++{
++	static int limit = -1;
++	if (limit < 0)
++	{
++		const char *off = getenv("RGDS_FLYCAST_PACE");
++		const char *ms = getenv("RGDS_FLYCAST_PACE_MS");
++		limit = off != nullptr && atoi(off) == 0 ? 0 : ms != nullptr && atoi(ms) > 0 ? atoi(ms) : 8;
++	}
++	return limit;
++}
++
++static bool rgdsGameBehind()
++{
++	static bool started;
++	static u64 guestBase;
++	static double realBase;
++	timespec ts;
++	clock_gettime(CLOCK_MONOTONIC, &ts);
++	const double now = ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
++	const u64 guest = sh4_sched_now64();
++	if (!started || guest < guestBase)
++	{
++		started = true;
++		guestBase = guest;
++		realBase = now;
++		return false;
++	}
++	const double lag = (now - realBase) - (double)(guest - guestBase) / (SH4_MAIN_CLOCK / 1000);
++	const double kept = std::min(std::max(lag, -17.0), 33.0) * 0.98;
++	realBase += lag - kept;
++	if (guest - guestBase > (u64)SH4_MAIN_CLOCK * 60)
++	{
++		// keep the numbers small: move both bases forward together
++		realBase += (double)(guest - guestBase) / (SH4_MAIN_CLOCK / 1000);
++		guestBase = guest;
++	}
++	return kept >= rgdsPaceLimit();
++}
++
+ bool QueueRender(TA_context* ctx)
+ {
+ 	verify(ctx != 0);
+@@ -57,7 +109,8 @@
+ 		if (RenderCount % (config::SkipFrame + 1) != 0)
+ 			skipFrame = true;
+ 		else if (config::ThreadedRendering && rqueue != nullptr
+-				&& (config::AutoSkipFrame == 0 || (config::AutoSkipFrame == 1 && SH4FastEnough)))
++				&& (config::AutoSkipFrame == 0
++					|| (config::AutoSkipFrame == 1 && (rgdsPaceLimit() != 0 ? !rgdsGameBehind() : SH4FastEnough))))
+ 			// The previous render hasn't completed yet so we wait.
+ 			// If autoskipframe is enabled (normal level), we only do so if the CPU is running
+ 			// fast enough over the last frames

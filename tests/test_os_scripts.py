@@ -373,6 +373,89 @@ class BatteryWatchTest(unittest.TestCase):
             self.assertEqual((d / 'at-poweroff').read_text(), 'off\n')
             self.assertIn('powered off', (d / 'battery.log').read_text())
 
+    def test_history_rows_around_a_sleep_and_the_charge_put_in(self):
+        """Battery health's history: a row at boot, the reading before a sleep and after it, one when the charger
+        comes, and what the charger put in carried over a restart."""
+        with tempfile.TemporaryDirectory() as folder:
+            d = Path(folder)
+            for name in ('battery', 'charger', 'run', 'bin'):
+                (d / name).mkdir()
+            battery = d / 'battery'
+
+            def gauge(now, charge, status='Discharging', online='0'):
+                (battery / 'charge_now').write_text(f'{charge}\n')
+                (battery / 'status').write_text(status + '\n')
+                (d / 'charger/online').write_text(online + '\n')
+                (d / 'now').write_text(f'{now}\n')
+
+            for name, value in (
+                ('capacity', 60), ('current_avg', -480000), ('voltage_avg', 3800000), ('charge_full', 4000000)
+            ):
+                (battery / name).write_text(f'{value}\n')
+            gauge(1000, 2400000)
+            tool(d / 'bin', 'date', f'[ "$1" = +%s ] && exec cat {d}/now; exec /bin/date "$@"\n')
+            history = d / 'logs/battery-history.tsv'
+            env = dict(
+                os.environ,
+                PATH=f"{d / 'bin'}:{os.environ.get('PATH', '')}",
+                RGDS_BATTERY_DIR=str(battery),
+                RGDS_CHARGER_DIR=str(d / 'charger'),
+                RGDS_RUN=str(d / 'run'),
+                RGDS_BATTERY_LOG=str(d / 'battery.log'),
+                RGDS_BATTERY_HISTORY=str(history),
+                RGDS_BATTERY_INTERVAL='0.05'
+            )
+
+            def rows():
+                return [line.split('\t') for line in history.read_text().splitlines()] if history.exists() else []
+
+            def until(count):
+                deadline = time.monotonic() + 5
+                while len(rows()) < count and time.monotonic() < deadline:
+                    time.sleep(.02)
+                self.assertEqual(len(rows()), count)
+
+            def settle():
+                time.sleep(.4)  # several readings
+
+            process = subprocess.Popen(['sh', str(LIBEXEC / 'battery-watch')], env=env, stderr=subprocess.DEVNULL)
+            try:
+                until(1)
+                gauge(1010, 2390000)
+                settle()
+                self.assertEqual(len(rows()), 1)  # held: under five minutes since the last row
+                gauge(5000, 2380000)  # a wall-clock jump: the handheld slept
+                until(3)
+                gauge(5010, 2380000, 'Charging', '1')
+                until(4)
+                # five minutes on the charger, read every minute: one row at the end, 30 mA a minute put in
+                for step in range(1, 6):
+                    gauge(5010 + 60 * step, 2380000 + 30000 * step, 'Charging', '1')
+                    settle()
+                until(5)
+            finally:
+                process.kill()
+                process.wait()
+            got = rows()
+            self.assertEqual(
+                [(r[0], r[2], r[5], r[6], r[7]) for r in got], [
+                    ('1000', '2400000', 'D', '0', 'b'), ('1010', '2390000', 'D', '0', 'a'),
+                    ('5000', '2380000', 'D', '0', 's'), ('5010', '2380000', 'C', '1', 'a'),
+                    ('5310', '2530000', 'C', '1', 'a')
+                ]
+            )
+            self.assertEqual(got[0][1:5] + got[0][9:], ['60', '2400000', '-480000', '3800000', '4000000'])
+            self.assertEqual(got[-1][8], '150000')
+            # a restart carries the count on
+            gauge(9000, 2530000, 'Charging', '1')
+            process = subprocess.Popen(['sh', str(LIBEXEC / 'battery-watch')], env=env, stderr=subprocess.DEVNULL)
+            try:
+                until(6)
+            finally:
+                process.kill()
+                process.wait()
+            self.assertEqual((rows()[-1][7], rows()[-1][8]), ('b', '150000'))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -6,6 +6,7 @@
     python3 tools/build_ruffle.py --headless  also build/ruffle/flash-headless (examples/headless.rs): a game run with
                                             no screen, to time it or catch a crash on the handheld
 
+    python3 tools/build_ruffle.py --no-pgo  without the profile of play/ruffle/pgo (README.md there: 7% in HappyWheels)
     python3 tools/build_ruffle.py --source  only the patched Ruffle source (for a plain `cargo build` in play/ruffle)
 
 Ruffle itself is built from .cache/ruffle-src: its release tag cloned once, with play/ruffle/patches/*.patch applied
@@ -38,6 +39,7 @@ RUFFLE_URL = "https://github.com/ruffle-rs/ruffle"
 RUFFLE_TAG = "v0.8.0"
 SOURCE = ROOT / ".cache/ruffle-src"
 PATCHES = CRATE / "patches"
+PROFILE = CRATE / "pgo/flash.profdata"
 
 
 def ruffle_source():
@@ -117,7 +119,11 @@ def main():
     parser.add_argument("--pgo-generate", metavar="DIR",
                         help="instrumented build: a run on the handheld writes its profile into DIR there")
     parser.add_argument("--pgo-use", metavar="PROFDATA", help="build optimised with a merged profile (.profdata)")
+    parser.add_argument("--no-pgo", action="store_true", help="build without the profile in play/ruffle/pgo")
     args = parser.parse_args()
+    # The profile kept with the crate (play/ruffle/pgo/README.md) unless told otherwise.
+    if not (args.pgo_use or args.pgo_generate or args.no_pgo or args.host) and PROFILE.is_file():
+        args.pgo_use = str(PROFILE)
     ruffle_source()
     if args.source:
         return 0

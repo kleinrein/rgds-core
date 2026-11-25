@@ -488,9 +488,11 @@ void App::voice_face(SDL_Renderer* r, int voice, int cx, int cy, int size, float
                 } else ++at;
             }
         }
-        const auto pixels = voice_faces::paint(voice_toy::Voice(voice), size, float(level) / 4).argb();
-        SDL_Texture* texture = s.CreateTexture(r, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, size, size);
-        if (texture && s.UpdateTexture(texture, nullptr, pixels.data(), size * 4) != 0) {
+        // painted at the panel pixels it covers (1.6 times on the RG DS Plus), shown at its layout size
+        const int px = std::clamp(int(std::lround(size * panel_scale(s, r))), size, 512);
+        const auto pixels = voice_faces::paint(voice_toy::Voice(voice), px, float(level) / 4).argb();
+        SDL_Texture* texture = s.CreateTexture(r, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, px, px);
+        if (texture && s.UpdateTexture(texture, nullptr, pixels.data(), px * 4) != 0) {
             s.DestroyTexture(texture);
             texture = nullptr;
         }

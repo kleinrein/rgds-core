@@ -762,6 +762,7 @@ public:
                 gpu_failed_ = true; // stays black instead of retrying every frame
                 return;
             }
+            aim_framebuffer();
             const auto run_start = profile_clock::now();
             profile_.start(run_start);
             retro_run_();
@@ -829,6 +830,7 @@ public:
         target_ = texture;
         target_w_ = w;
         target_h_ = h;
+        retarget_ = true; // a new texture can carry the old one's name
     }
     bool drew_gl_target() const override { return drew_target_; }
 
@@ -1146,7 +1148,7 @@ public:
             if (colour_) gl_.DeleteRenderbuffers(1, &colour_);
             g_gl->end();
         }
-        fbo_ = depth_ = colour_ = target_fbo_ = attached_ = 0;
+        fbo_ = depth_ = colour_ = target_fbo_ = attached_ = direct_ = refused_ = 0;
     }
 
 private:
@@ -1331,6 +1333,33 @@ private:
         std::fprintf(stderr, "play: GPU core framebuffer %d x %d\n", w, h);
         if (hw_.context_reset) hw_.context_reset();
         return true;
+    }
+    // A core that draws top row first can draw straight into the panel's texture: the texture becomes the
+    // framebuffer's colour and the frame is never copied (Flycast with package patch 0008: two full-screen copies and
+    // four GPU job submits a frame less). Before each run, the core's context current. Only when the last frame was
+    // the texture's size; the renderbuffer comes back when the texture goes or the size changes.
+    void aim_framebuffer() {
+        static const bool allowed = [this] {
+            const char* e = std::getenv("RGDS_PLAY_FBO_TEXTURE");
+            return e ? std::atoi(e) != 0 : system_ == "dc";
+        }();
+        gl::uint want = allowed && target_ && !hw_.bottom_left_origin && target_ != refused_ && hw_w_ == target_w_ &&
+                                hw_h_ == target_h_
+                            ? target_
+                            : 0;
+        if (want == direct_ && !retarget_) return;
+        retarget_ = false;
+        attached_ = 0; // the copy's framebuffer takes its texture again too
+        gl_.BindFramebuffer(gl::FRAMEBUFFER, fbo_);
+        if (want) {
+            gl_.FramebufferTexture2D(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D, want, 0);
+            if (gl_.CheckFramebufferStatus(gl::FRAMEBUFFER) != gl::FRAMEBUFFER_COMPLETE) refused_ = want, want = 0;
+        }
+        if (!want) gl_.FramebufferRenderbuffer(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::RENDERBUFFER, colour_);
+        if (want != direct_)
+            std::fprintf(stderr, "play: the core draws %s\n",
+                         want ? "into the panel's texture" : "into its own buffer");
+        direct_ = want;
     }
     // The frame the core just drew, into the panel's texture by the GPU, the right way up: no wait for the drawing to
     // finish and no copy through uncached memory (OutRun 2006's races lost 17-20 ms a frame to glReadPixels).
@@ -1655,7 +1684,13 @@ private:
     void video(const void* data, unsigned w, unsigned h, size_t pitch) {
         if (!data) return; // a duplicated frame: the last picture stands
         if (data == RETRO_HW_FRAME_BUFFER_VALID) {
-            drew_target_ = blit_to_target(w, h);
+            hw_w_ = int(w), hw_h_ = int(h);
+            if (direct_ && direct_ == target_ && hw_w_ == target_w_ && hw_h_ == target_h_) {
+                drew_target_ = true; // already there
+                resize(hw_w_, hw_h_);
+                return;
+            }
+            drew_target_ = !direct_ && blit_to_target(w, h);
             if (!drew_target_) read_back(w, h);
             return;
         }
@@ -1854,6 +1889,9 @@ private:
     gl::uint fbo_ = 0, colour_ = 0, depth_ = 0;
     gl::uint target_ = 0, target_fbo_ = 0, attached_ = 0; // the panel's texture (set_gl_target) and its framebuffer
     int target_w_ = 0, target_h_ = 0;
+    gl::uint direct_ = 0, refused_ = 0; // the panel's texture as the core's own framebuffer colour (aim_framebuffer)
+    int hw_w_ = 0, hw_h_ = 0;           // the size of the last frame a GPU core drew
+    bool retarget_ = false;
     bool drew_target_ = false;
     std::vector<uint32_t> readback_;
     std::vector<uint8_t> pending_state_;

@@ -138,7 +138,7 @@ void App::gesture_cues(SDL_Renderer* r, int y) {
     const bool bottom = pointer_down && edge_gesture == EdgeGesture::Bottom,
                left = pointer_down && edge_gesture == EdgeGesture::Left,
                right = pointer_down && edge_gesture == EdgeGesture::Right;
-    const double pb = bottom ? std::clamp((down_y - contact_y) / 72.0, 0.0, 1.0) : 0,
+    const double pb = bottom ? std::clamp((down_y - contact_y) / PageDrag::home_reach, 0.0, 1.0) : 0,
                  pl = left ? std::clamp((contact_x - down_x) / 72.0, 0.0, 1.0) : 0,
                  pr = right ? std::clamp((down_x - contact_x) / 72.0, 0.0, 1.0) : 0;
     {
@@ -187,12 +187,37 @@ bool App::gestures_available() const {
 
 bool App::edge_gesture_move(int x, int y) {
     if (edge_gesture == EdgeGesture::None) return false;
-    const bool home = edge_gesture == EdgeGesture::Bottom && down_y - y >= 72 && std::abs(x - down_x) < 120,
-               back = ((edge_gesture == EdgeGesture::Left && x - down_x >= 72) ||
+    if (edge_gesture == EdgeGesture::Bottom) {
+        // Home waits for the finger to lift (home_gesture_release). The page rides along meanwhile; a tick when the
+        // pull reaches far enough to go Home on its own, and again if it is pulled back under.
+        home_finger.add(s.GetTicks(), double(down_y - y));
+        const bool armed = down_y - y >= PageDrag::home_reach;
+        if (armed != home_armed) {
+            home_armed = armed;
+            haptics.play(Haptic::Tick);
+        }
+        return false;
+    }
+    const bool back = ((edge_gesture == EdgeGesture::Left && x - down_x >= 72) ||
                        (edge_gesture == EdgeGesture::Right && down_x - x >= 72)) &&
                       std::abs(y - down_y) < 120;
-    const bool from_right = edge_gesture == EdgeGesture::Right;
-    if (!home && !back) return false;
+    if (!back) return false;
+    return edge_gesture_commit(false, edge_gesture == EdgeGesture::Right);
+}
+
+bool App::home_gesture_release(int y) {
+    if (!pointer_down || edge_gesture != EdgeGesture::Bottom) return false;
+    const Uint32 now = s.GetTicks();
+    const double pull = down_y - y, speed = home_finger.estimate(now);
+    home_finger.reset();
+    home_armed = false;
+    if (!PageDrag::home_commits(pull, speed)) return false;
+    home_fling = std::max(0.0, speed);
+    tap_pending = false;
+    return edge_gesture_commit(true, false);
+}
+
+bool App::edge_gesture_commit(bool home, bool from_right) {
     edge_gesture = EdgeGesture::None;
     const auto before =
         std::make_tuple(settings.page, home_menu, systems_menu, chat_open, picker_open, filter_sheet_open,
@@ -220,7 +245,7 @@ bool App::edge_gesture_move(int x, int y) {
     const auto after =
         std::make_tuple(settings.page, home_menu, systems_menu, chat_open, picker_open, filter_sheet_open,
                         chat_open ? int(chat.view) : -1, music_open, int(mu.view), mu.levels.size());
-    if (before != after) page_drag.depart(gesture_flash_at);
+    if (before != after) page_drag.depart(gesture_flash_at, home ? std::exchange(home_fling, 0.0) : 0.0);
     else page_drag.settle(gesture_flash_at);
     dirty = true;
     return true;

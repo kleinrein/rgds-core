@@ -74,9 +74,11 @@ class MediaLevelTests(unittest.TestCase):
         return json.loads((self.root / 'report.json').read_text())
 
     def test_the_tile_opens_the_shelves_and_the_section_is_remembered(self):
-        # Without the music player: Videos and Books only. The index lists both shelves and makes posters.
+        # Music, Videos and Books: a new Media opens on Music. The index lists both shelves and makes posters.
         report = self.run_ui(keys(100, 'A'))
-        self.assertEqual((report['music_open'], report['media_section']), (1, 1))
+        self.assertEqual((report['music_open'], report['media_section']), (1, 0))
+        report = self.run_ui(keys(100, 'A') + keys(900, 'e'))  # R2: Videos
+        self.assertEqual(report['media_section'], 1)
         index = (self.state / 'index.tsv').read_text()
         self.assertIn('Film', index)
         self.assertIn('Manual', index)
@@ -109,6 +111,15 @@ class MediaLevelTests(unittest.TestCase):
         report = self.run_ui(keys(100, 'A'), media=old)
         self.assertEqual(report['music_open'], 0)
         self.assertFalse((self.state / 'index.tsv').exists())
+
+    def test_music_is_always_a_section(self):
+        # 2026-11-25: Music had vanished from Media on a new card (the music player switch, off by default); the
+        # switch is gone. Even an old music_player=0 keeps all three sections: Books, R2, round to Music.
+        (self.root / 'ui.ini').write_text((self.root / 'ui.ini').read_text() + 'music_player=0\n')
+        (self.state).mkdir(parents=True, exist_ok=True)
+        (self.state / 'launcher.ini').write_text('section=2\n')
+        report = self.run_ui(keys(100, 'A') + keys(900, 'e'), seconds=4)
+        self.assertEqual(report['media_section'], 0)
 
     def test_sections_change_in_place(self):
         (self.root / 'ui.ini').write_text((self.root / 'ui.ini').read_text() + 'music_player=1\n')

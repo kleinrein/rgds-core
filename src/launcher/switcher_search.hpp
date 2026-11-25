@@ -80,7 +80,7 @@ void App::play_game(Game game) {
         std::find(listed_systems.begin(), listed_systems.end(), game.system) != listed_systems.end())
         shown_system = game.system;
     library_view(0);
-    remember_appearance();
+    remember_appearance(false); // only remembered: no "Settings saved" each time a game starts
     // The game starts over Home itself. Games opens instead only while a
     // very large card is still being listed, or if the game has left it.
     if (!collection_loading)

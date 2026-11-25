@@ -497,8 +497,38 @@ void App::chat_bottom(SDL_Renderer* r, int y) {
     chat_room_bottom(r, y);
 }
 
+// Settings pages whose upper panel is the plain note (settings_top's title card and tip): what it shows follows from
+// the page, the focused row and the few states below, and nothing on it moves by itself. Their upper panel was
+// redrawn and presented on every frame of a list glide, which on the RG DS Plus cost the lower panel its frames
+// (Settings scrolling at ~20 fps, RGDS_FRAME_LOG 2026-11-25).
+static bool quiet_settings_top(Page page) {
+    switch (page) {
+    case Page::Settings:
+    case Page::Appearance:
+    case Page::DisplayOptions:
+    case Page::Display:
+    case Page::Motion:
+    case Page::Sound:
+    case Page::MenuSounds:
+    case Page::Haptics:
+    case Page::Power:
+    case Page::LibraryOptions:
+    case Page::System:
+    case Page::Controls:
+    case Page::GameOptions:
+    case Page::SystemDefaults:
+    case Page::Graphics:
+    case Page::PlayGraphics:
+    case Page::EmulatorOptions:
+    case Page::Timezone:
+    case Page::DSControls: return true;
+    default: return false;
+    }
+}
+
 std::string App::top_signature(Uint32 now) {
-    if (settings.page != Page::Library || chat_open || music_open || vt.open || sn.open || o.game_menu || probe ||
+    const bool quiet_settings = quiet_settings_top(settings.page);
+    if ((settings.page != Page::Library && !quiet_settings) || chat_open || music_open || vt.open || sn.open || o.game_menu || probe ||
         launching || embedded_menu || (o.boot_startup && !library_ready) || now - top_drawn_at >= 2000 ||
         view_motion.running)
         return {};
@@ -533,6 +563,15 @@ std::string App::top_signature(Uint32 now) {
           << '|';
         const auto& stats = library_cache.stats(game);
         k << stats.seconds << ',' << stats.sessions;
+    }
+    if (quiet_settings) {
+        // What settings_top reads for these pages; a minute's tick for the time zones' local times.
+        k << "|settings|" << int(settings.page) << '|' << settings.focus << '|' << list_count() << '|'
+          << picker_closing() << edit_field << control_capture << capture_logical << '|' << worker << '|'
+          << worker_action << backup_requested << '|' << device_status["state"] << device_status["message"] << '|'
+          << menu_status["state"] << menu_status["message"] << '|' << sounds.error << preferences.menu_music
+          << preferences.menu_sounds << preferences.menu_haptics << preferences.game_rumble << '|'
+          << (settings.page == Page::Timezone ? std::time(nullptr) / 60 : 0) << '|' << timezones.size();
     }
     if (home_menu && !surfaces.empty()) {
         const auto& last = summary.groups[0].last_game;

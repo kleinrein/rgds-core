@@ -1,4 +1,5 @@
 """Bounded, one-shot paused-game backdrop preparation; no imaging dependencies."""
+from math import gcd
 from pathlib import Path
 import struct
 
@@ -32,6 +33,9 @@ def top_panel(source, destination):
     out_w, out_h = min(640, crop_w), min(480, crop_h)
     out_stride = (out_w * 3 + 3) & ~3
     pixels = bytearray(out_stride * out_h)
+    depth, common = bits // 8, gcd(crop_w, out_w)
+    period, source_period = out_w // common, crop_w // common
+    columns = [x * crop_w // out_w for x in range(period)] if crop_w != out_w and period <= 32 else None
     for y in range(out_h):
         sy = y * crop_h // out_h
         row = offset + (sy if height < 0 else h - 1 - sy) * stride
@@ -44,6 +48,16 @@ def top_panel(source, destination):
                 # avoiding hundreds of thousands of Python pixel iterations.
                 for channel in range(3):
                     pixels[target + channel:target + out_w * 3:3] = data[row + channel:row + out_w * 4:4]
+            continue
+        if columns:
+            # Nearest sampling repeats every `period` output pixels (1024 -> 640 on the RG DS Plus: 5 pixels from
+            # every 8), so each phase and channel is one strided slice, not a Python step per pixel (1.2 s a menu
+            # opening on the Plus's 1024x768 captures).
+            target = y * out_stride
+            for phase, sx in enumerate(columns):
+                for channel in range(3):
+                    pixels[target + phase * 3 + channel:target + out_w * 3:period * 3] = \
+                        data[row + sx * depth + channel:row + crop_w * depth:source_period * depth]
             continue
         for x in range(out_w):
             start = row + x * crop_w // out_w * (bits // 8)

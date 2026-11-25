@@ -7,6 +7,7 @@ and streams both panels back; the stitched PNG is composed here with numpy only 
 
     make shot                         # DEVICE defaults to rgds.local
     tools/device_shot.py --style device --layout side --open
+    make shot SHOT_ARGS="--style plus --shell pink"      # an open RG DS Plus around the panels
     tools/device_shot.py --from top.bmp bottom.bmp -o out.png    # restyle saved panels, no device needed
 """
 import argparse
@@ -454,6 +455,111 @@ def draw_rg_ds(canvas, margin, m, shell):
     over(canvas, *mid(86, 80, mic), np.zeros(3, np.float32), mic)
 
 
+PLUS_SHELLS = {
+    # Anbernic's three colourways (matte plastic, one colour for lid, face and base). Glass is the screen window.
+    'black': dict(body=((0.155, 0.157, 0.168), (0.090, 0.092, 0.100)), glass=(0.016, 0.017, 0.021), dots=0.03),
+    'pink': dict(body=((0.95, 0.80, 0.78), (0.82, 0.64, 0.62)), glass=(0.60, 0.60, 0.62), dots=0.42),
+    'blue': dict(body=((0.34, 0.31, 0.86), (0.17, 0.15, 0.58)), glass=(0.62, 0.63, 0.67), dots=0.06),
+}
+PLUS_W, PLUS_LID, PLUS_BASE_Y, PLUS_H = 167, 86, 90, 177
+
+
+def plus_parts(m):
+    """The open RG DS Plus in group pixels: lid, hinge knuckles (the base's two pillars) and base."""
+    P = lambda mm: int(round(mm * m))
+    return [
+        (0, 0, rounded4(P(PLUS_LID), P(PLUS_W), P(7), P(7), P(2), P(2))),
+        (P(80), 0, rounded4(P(14), P(15), P(3), P(3), 0, 0)),
+        (P(80), P(PLUS_W - 15), rounded4(P(14), P(15), P(3), P(3), 0, 0)),
+        (P(85), 0, rounded4(P(PLUS_H - 85), P(PLUS_W), P(2), P(2), P(7), P(7))),  # top edge hides under the hinge
+    ]
+
+
+def plus_spots(m):
+    P = lambda mm: int(round(mm * m))
+    return [(P(11), P(39.5)), (P(PLUS_BASE_Y + 11), P(39.5))]  # 88 x 66 mm panels (4.3", 4:3), centred
+
+
+def draw_plus(canvas, margin, m, shell):
+    """The open RG DS Plus, 167 mm wide, after the launch photos: DSi XL-like flat
+    halves in one colour, a glass window round each screen, five-dot speakers, a hinge bar between two knuckles,
+    D-pad over one stick on the left, ABXY over Start/Select on the right. Panels go on top."""
+    P = lambda mm: int(round(mm * m))
+    at = lambda y, x: (margin + P(y), margin + P(x))
+    mid = lambda y, x, mask: (margin + P(y) - mask.shape[0] // 2, margin + P(x) - mask.shape[1] // 2)
+    colour = PLUS_SHELLS[shell]
+    body = colour['body']
+    key = tuple(tuple(c * 0.93 for c in tone) for tone in body)
+    glass = np.array(colour['glass'], np.float32)
+    lid, left_knuckle, right_knuckle, base = (part[2] for part in plus_parts(m))
+    by = PLUS_BASE_Y
+
+    def window(y):  # glass window, a hairline step round it, panel goes inside
+        over(canvas, *at(y - 0.4, 35.1), np.zeros(3, np.float32), rounded(P(72.8), P(96.8), P(2.6)) * 0.35)
+        pane = rounded(P(72), P(96), P(2.4))
+        over(canvas, *at(y, 35.5), vertical(pane.shape[0], pane.shape[1], glass * 1.08, glass * 0.92), pane)
+        lit, _ = lit_edges(pane, max(1, P(0.25)), False)
+        over(canvas, *at(y, 35.5), np.ones(3, np.float32), lit * 0.12)
+
+    # Base first: its top edge hides under the hinge bar.
+    raised(canvas, *at(85, 0), base, *body, m, depth=1.4, shadow=0, light=0.3)
+    window(by + 8)
+    # Lid, its face and corner pads, speakers.
+    raised(canvas, *at(0, 0), lid, *body, m, depth=1.4, shadow=0, light=0.32)
+    sheen = 0.06 * np.clip(
+        1 -
+        (np.arange(lid.shape[1])[None, :] / lid.shape[1] * 0.7 + np.arange(lid.shape[0])[:, None] / lid.shape[0]) / 0.9,
+        0, 1
+    )**2
+    over(canvas, *at(0, 0), np.ones(3, np.float32), sheen.astype(np.float32) * lid)
+    window(8)
+    for cx, cy in ((20, 9), (147, 9), (20, 77), (147, 77)):  # rubber stops
+        pad = rounded(P(3), P(3), P(0.7))
+        sunken(canvas, *mid(cy, cx, pad), pad, *(tuple(c * 0.8 for c in tone) for tone in body), m, 0.3)
+    for cx in (20, 147):
+        for dy, dx in ((-2.2, -2.2), (-2.2, 2.2), (0, 0), (2.2, -2.2), (2.2, 2.2)):
+            dot = disc(max(2, P(1.3)))
+            over(canvas, *mid(44 + dy, cx + dx, dot), np.full(3, colour['dots'], np.float32), dot * 0.85)
+    # Hinge: the base's knuckles at both ends, a barrel between them, the microphone in its middle.
+    for x, knuckle in ((0, left_knuckle), (PLUS_W - 15, right_knuckle)):
+        raised(canvas, *at(80, x), knuckle, *body, m, depth=1.2, shadow=0.35, light=0.4)
+    bar = rounded(P(8), P(PLUS_W - 29), P(4))
+    profile = (barrel(bar.shape[0], bar.shape[1]) - 0.045) / 0.2  # 0 in shadow .. ~1 in the band of light
+    tint = np.array(body[0], np.float32) * (0.62 + 0.45 * profile)
+    raised(canvas, *at(83, 14.5), bar, *body, m, depth=1.0, shadow=0.4, light=0.2)
+    over(canvas, *at(83, 14.5), np.clip(tint, 0, 1), bar * 0.92)
+    mic = disc(max(2, P(0.9)))
+    over(canvas, *mid(87, PLUS_W / 2, mic), np.zeros(3, np.float32), mic * 0.8)
+    # D-pad, and the one stick under it.
+    arm, span = P(5.6), P(17)
+    cross = np.maximum(
+        np.pad(rounded(arm, span, P(1.2)), (((span - arm) // 2, span - arm - (span - arm) // 2), (0, 0))),
+        np.pad(rounded(span, arm, P(1.2)), ((0, 0), ((span - arm) // 2, span - arm - (span - arm) // 2)))
+    )
+    raised(canvas, *mid(by + 18, 18.5, cross), cross, *key, m, depth=0.9, shadow=0.4, light=0.4)
+    cy, cx = by + 40, 20.5
+    well = disc(P(17.5))
+    sunken(canvas, *mid(cy, cx, well), well, (0.02, 0.02, 0.025), (0.05, 0.05, 0.06), m, 0.7)
+    ring = disc(P(14.5))
+    raised(canvas, *mid(cy, cx, ring), ring, (0.30, 0.30, 0.32), (0.13, 0.13, 0.14), m, depth=0.7, shadow=0, light=0.45)
+    stick = disc(P(11.5))
+    over(canvas, *mid(cy, cx, stick), dome(stick.shape[0]), stick)
+    for x in (10.5, 21.5):  # two small keys (Anbernic key, function) low in the left corner
+        small = disc(P(5.4))
+        raised(canvas, *mid(by + 74, x, small), small, *key, m, depth=0.5, shadow=0.3, light=0.3)
+    # ABXY with faint print, Start and Select under them.
+    face_button = disc(P(6.6))
+    for char, dx, dy in (('X', 0, -6.7), ('B', 0, 6.7), ('Y', -6.7, 0), ('A', 6.7, 0)):
+        raised(
+            canvas, *mid(by + 22 + dy, 147 + dx, face_button), face_button, *key, m, depth=0.6, shadow=0.4, light=0.38
+        )
+        g = glyph(char, m, 2.4)
+        over(canvas, *mid(by + 22 + dy, 147 + dx, g), INK, g * 0.4)
+    for y in (by + 70, by + 78.5):  # Start over Select, low in the right corner beside the screen's lower edge
+        small = disc(P(4.4))
+        raised(canvas, *mid(y, 140, small), small, *key, m, depth=0.45, shadow=0.3, light=0.3)
+
+
 def compose(top, bottom, style='float', layout='stack', bg='auto', scale=2, shell='red'):
     u = scale
     big = lambda a: np.repeat(np.repeat(a, u, 0), u, 1) if u > 1 else a
@@ -461,13 +567,16 @@ def compose(top, bottom, style='float', layout='stack', bg='auto', scale=2, shel
     if style == 'plain':
         return np.concatenate([top, bottom], axis=0 if layout == 'stack' else 1)
     th, tw, bh, bw = top.shape[0], top.shape[1], bottom.shape[0], bottom.shape[1]
-    device = style == 'device'
+    device = style in ('device', 'plus')
     gap = 40 * u
-    if device:  # a clamshell only opens one way: top over bottom, 88 mm wide panels in a 160 mm body
+    if device:  # a clamshell only opens one way: top over bottom, 88 mm wide panels
         m = tw / 88
-        parts = rg_ds_parts(m)
-        gw, gh = int(round(160 * m)), int(round(172 * m))
-        spots = rg_ds_spots(m)
+        if style == 'plus':
+            parts, spots = plus_parts(m), plus_spots(m)
+            gw, gh = int(round(PLUS_W * m)), int(round(PLUS_H * m))
+        else:
+            parts, spots = rg_ds_parts(m), rg_ds_spots(m)
+            gw, gh = int(round(160 * m)), int(round(172 * m))
     elif layout == 'stack':
         gw, gh = max(tw, bw), th + gap + bh
         spots = [(0, (gw - tw) // 2), (th + gap, (gw - bw) // 2)]
@@ -510,7 +619,9 @@ def compose(top, bottom, style='float', layout='stack', bg='auto', scale=2, shel
     shadow = soften(np.roll(shape, 26 * u, axis=0), 30 * u) * 0.7
     canvas[..., :3] *= (1 - shadow)[..., None]
     canvas[..., 3] = shadow + canvas[..., 3] * (1 - shadow)
-    if device:
+    if style == 'plus':
+        draw_plus(canvas, margin, m, shell)
+    elif device:
         draw_rg_ds(canvas, margin, m, shell)
     for (y, x), s, mk in zip(spots, screens, masks):
         over(canvas, margin + y, margin + x, s, mk)
@@ -545,10 +656,10 @@ def main():
     )
     parser.add_argument(
         '--style',
-        choices=('float', 'device', 'plain'),
+        choices=('float', 'device', 'plus', 'plain'),
         default='float',
-        help=
-        'float: rounded panels, shadow and bias lighting; device: an open RG DS (top over bottom only); plain: bare pixels'
+        help='float: rounded panels, shadow and bias lighting; device: an open RG DS; plus: an open RG DS Plus\n'
+        '(both top over bottom only); plain: bare pixels'
     )
     parser.add_argument('--layout', choices=('stack', 'side'), default='stack', help='top over bottom, or side by side')
     parser.add_argument('--bg', default='auto', help="auto, transparent, or a #RRGGBB colour")
@@ -556,13 +667,14 @@ def main():
         '--scale',
         type=int,
         choices=(1, 2, 3, 4),
-        help='integer pixel multiplier (default 2, or 1 for the device style: its shell is 160 mm of 8 px)'
+        help=
+        'integer pixel multiplier (default 2, or 1 for the device and plus styles: they draw the shell around the panels)'
     )
     parser.add_argument(
         '--shell',
-        choices=tuple(SHELLS),
-        default='red',
-        help='device style lid colour: red, black, white or turquoise (the base is always dark)'
+        choices=tuple(dict.fromkeys((*SHELLS, *PLUS_SHELLS))),
+        help='device: lid colour red (default), black, white or turquoise, the base is always dark;\n'
+        'plus: black (default), pink or blue'
     )
     parser.add_argument('--raw', action='store_true', help='also keep each panel as its own PNG')
     parser.add_argument('--open', action='store_true', help='open the result (macOS)')
@@ -578,6 +690,10 @@ def main():
         help='compose two saved BMP panels instead of asking the device'
     )
     args = parser.parse_args()
+    shells = PLUS_SHELLS if args.style == 'plus' else SHELLS
+    args.shell = args.shell or next(iter(shells))
+    if args.shell not in shells:
+        parser.error('--shell %s is not a %s colour (%s)' % (args.shell, args.style, ', '.join(shells)))
     if args.local:
         top_bytes, bottom_bytes = (Path(p).read_bytes() for p in args.local)
         source = 'saved'
@@ -592,7 +708,7 @@ def main():
     write_png(
         out,
         compose(
-            top, bottom, args.style, args.layout, args.bg, args.scale or (1 if args.style == 'device' else 2),
+            top, bottom, args.style, args.layout, args.bg, args.scale or (1 if args.style in ('device', 'plus') else 2),
             args.shell
         )
     )

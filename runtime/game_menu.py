@@ -29,6 +29,10 @@ from typing import NamedTuple
 # written by usr/libexec/rgds/power when a sleep ends only to power off (the launcher acts on it too)
 POWEROFF_REQUEST = Path('/run/rgds/poweroff-requested')
 
+# DSCore writes no save state while local wireless holds a session (nothing restores one); the game's own saves
+# still work, and leaving or turning local wireless off quits without a checkpoint.
+SAVE_NET_MESSAGE = 'Save states are off while local wireless is on. The game\'s own saves still work.'
+
 
 class SwitchGame(NamedTuple):
     core: str
@@ -311,11 +315,11 @@ class GameMenu:
         self.menu_began = None
         self.menu_seconds = 0
         self.folder.mkdir(parents=True, exist_ok=True)
-        # The cheat list is the engine's: a stale one from the last game must not show for this one.
+        # The cheat list and the wireless session are the engine's: stale ones from the last game must not show.
         for path in (
             self.request, self.status, self.trigger, self.home_trigger, self.game_menu_trigger, self.block,
-            Path(str(self.control) + '.cheats'), self.folder / 'game-menu.wake', self.folder / 'game-menu.audio-sleep',
-            self.folder / 'game-menu.audio-sleep.ready'
+            Path(str(self.control) + '.cheats'), Path(str(self.control) + '.net'), self.folder / 'game-menu.wake',
+            self.folder / 'game-menu.audio-sleep', self.folder / 'game-menu.audio-sleep.ready'
         ):
             path.unlink(missing_ok=True)
         # Load the pause path's modules while the engine boots, not on the
@@ -1155,7 +1159,7 @@ class GameMenu:
                 if state == 'saved' and not self.has_checkpoint():
                     state = 'save-failed'
                 if state in (
-                    "saved", "loaded", "load-dispatched", "save-timeout", "save-failed", "load-failed",
+                    "saved", "loaded", "load-dispatched", "save-timeout", "save-failed", "save-net", "load-failed",
                     'fast-forward-on', 'fast-forward-off', 'fast-forward-unavailable', 'shader-applied',
                     'shader-failed', 'shader-restart-required', 'fps-on', 'fps-off', 'threaded-on', 'threaded-off',
                     'threaded-failed', 'graphics-applied', 'graphics-failed', 'filter2d-applied', 'filter2d-failed',
@@ -1176,6 +1180,8 @@ class GameMenu:
                             operation = self.slot_operation
                             self.slot_operation = None
                             try:
+                                if state == 'save-net':
+                                    raise ValueError(SAVE_NET_MESSAGE)
                                 if state != 'saved':
                                     raise ValueError('Current progress could not be saved. No slot was changed.')
                                 vault = self.vault()
@@ -1294,8 +1300,8 @@ class GameMenu:
                             'fps-on' else 'FPS counter hidden.' if state == 'fps-off' else 'Shader applied.' if state ==
                             'shader-applied' else 'Could not apply this shader.' if state ==
                             'shader-failed' else 'Shader saved. Restart this game to apply it.' if state ==
-                            'shader-restart-required' else "Could not " + ("load" if action == "load" else "save") +
-                            ". Resume, retry, or return without saving."
+                            'shader-restart-required' else SAVE_NET_MESSAGE if state == 'save-net' else "Could not " +
+                            ("load" if action == "load" else "save") + ". Resume, retry, or return without saving."
                         )
             if self.pending and time.monotonic() - self.pending["began"] > (
                 45 if self.pending["action"].startswith("graphics:") else 12

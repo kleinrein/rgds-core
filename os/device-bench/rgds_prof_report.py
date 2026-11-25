@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Functions and libraries by share of CPU samples, per thread, from rgds_prof.so's output.
 
-    rgds_prof_report.py PREFIX [--from S] [--to S] [--lib NAME=UNSTRIPPED.so ...] [--top N]
+    rgds_prof_report.py PREFIX [--from S] [--to S] [--lib NAME=UNSTRIPPED.so ...] [--top N] [--callers TEXT]
 
 PREFIX.samples / .maps / .threads come from the handheld. A library is named from the unstripped copy given with
 --lib (its file name as the handheld maps it = the local path), otherwise from the mapped file itself if it is here,
-otherwise by its offset. Symbols come from `nm` (any ELF-aware nm: Apple's is llvm-nm), so .bss blocks such as a JIT's
+otherwise by its offset. --callers TEXT adds, for every function whose name holds TEXT, who called it (the sampled
+return address: right for leaf functions such as libc's system call stubs). Symbols come from `nm` (any ELF-aware nm: Apple's is llvm-nm), so .bss blocks such as a JIT's
 code buffer get a name too.
 """
 import argparse
@@ -47,6 +48,9 @@ def main():
     parser.add_argument('--to', type=float, default=1e9)
     parser.add_argument('--lib', action='append', default=[])
     parser.add_argument('--top', type=int, default=25)
+    parser.add_argument('--callers', action='append', default=[])
+    parser.add_argument('--stacks', type=int, default=0, help='PREFIX.stacks: the N most common call chains')
+    parser.add_argument('--depth', type=int, default=9)
     parser.add_argument(
         '--maps',
         help='a /proc/PID/maps copied while the libraries were loaded (default PREFIX.maps, '
@@ -77,9 +81,22 @@ def main():
             return short, f'+{vaddr:#x}'
         return name, '?'
 
+    if args.stacks:
+        chains, spans = collections.Counter(), set()
+        for line in Path(args.prefix + '.stacks').read_text().splitlines():
+            ms, tid, *pcs = line.split()
+            if not args.start <= int(ms) / 1000 < args.to: continue
+            spans.add(int(ms) // 1000)
+            chains[' <- '.join(where(int(pc, 16))[1].split('(')[0] for pc in pcs[1:args.depth + 1])] += 1
+        total = sum(chains.values())
+        print(f'{total} calls over {len(spans)} s ({total / max(1, len(spans)):.0f} a second)')
+        for chain, n in chains.most_common(args.stacks):
+            print(f'  {n:6d} ({n / max(1, len(spans)):6.1f}/s)  {chain}')
+        return
     per_thread = collections.defaultdict(collections.Counter)
     per_lib = collections.defaultdict(collections.Counter)
     totals = collections.Counter()
+    callers = collections.defaultdict(collections.Counter)
     for line in Path(args.prefix + '.samples').read_text().splitlines():
         ms, tid, pc, lr = line.split()
         if not args.start <= int(ms) / 1000 < args.to: continue
@@ -88,6 +105,8 @@ def main():
         per_thread[name][f'{lib}: {function}'] += 1
         per_lib[name][lib] += 1
         totals[name] += 1
+        if any(text in function for text in args.callers):
+            callers[f'{name}: {function}']['{}: {}'.format(*where(int(lr, 16)))] += 1
     every = sum(totals.values())
     print(f'{every} samples ({every / 1000:.1f} s of CPU at 1 kHz) from {args.start:g} s to {min(args.to, 1e8):g} s')
     for name, count in totals.most_common():
@@ -95,6 +114,10 @@ def main():
         print('  by library:', ', '.join(f'{lib} {100 * n / count:.0f}%' for lib, n in per_lib[name].most_common(8)))
         for function, n in per_thread[name].most_common(args.top):
             print(f'  {100 * n / count:5.1f}%  {function}')
+    for function, counts in callers.items():
+        print(f'\n== callers of {function} ({sum(counts.values())} samples)')
+        for caller, n in counts.most_common(args.top):
+            print(f'  {n:6d}  {caller}')
 
 
 main()

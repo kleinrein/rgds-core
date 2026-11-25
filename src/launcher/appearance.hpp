@@ -47,7 +47,7 @@ void App::remember_appearance(bool announce) {
     select_theme();
     try {
         save_preferences(o.preferences, preferences);
-        if (announce) status = "Settings saved";
+        (void)announce; // the changed value shows the change: no "Settings saved" toast (owner, 2026-11-25)
     } catch (const std::exception& e) {
         status = "Could not save all settings. Check storage.";
         std::cerr << e.what() << std::endl;

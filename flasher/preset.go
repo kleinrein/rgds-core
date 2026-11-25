@@ -31,6 +31,26 @@ type Preset struct {
 	Name     string `json:"name"`
 	SSID     string `json:"ssid"`
 	Password string `json:"password"`
+	SSHKey   string `json:"-"` // developers only (--ssh-key): one public key line, so SSH works from the first boot
+}
+
+// sshKeyLine is the part of a public key line the handoff accepts: type and key, no comment.
+var sshKeyLine = regexp.MustCompile(`^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp256) [A-Za-z0-9+/]+={0,3}`)
+
+// devSSHKey is the --ssh-key file's key, put into every flash's preset; "" without the flag.
+var devSSHKey string
+
+// readSSHKey reads a public key file (~/.ssh/id_ed25519.pub) down to the part the handoff takes.
+func readSSHKey(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	key := sshKeyLine.FindString(strings.TrimSpace(string(data)))
+	if key == "" {
+		return "", fmt.Errorf("%s is not an SSH public key (ssh-ed25519, ssh-rsa or ecdsa-sha2-nistp256)", path)
+	}
+	return key, nil
 }
 
 var (
@@ -41,7 +61,7 @@ var (
 const nameLimit = 10 // the DS firmware's nickname
 
 func (p Preset) empty() bool {
-	return p.Language == "" && p.Timezone == "" && strings.TrimSpace(p.Name) == "" && p.SSID == ""
+	return p.Language == "" && p.Timezone == "" && strings.TrimSpace(p.Name) == "" && p.SSID == "" && p.SSHKey == ""
 }
 
 // ini is the preset as the handoff and setup read it; it checks every field first.
@@ -87,6 +107,13 @@ func (p Preset) ini() ([]byte, error) {
 		default:
 			return nil, errors.New("a Wi-Fi password has 8 to 63 characters")
 		}
+	}
+	if p.SSHKey != "" {
+		key := sshKeyLine.FindString(p.SSHKey)
+		if key == "" || key != p.SSHKey {
+			return nil, errors.New("the SSH key is not a public key line")
+		}
+		fmt.Fprintf(&b, "ssh_key=%s\n", key)
 	}
 	return b.Bytes(), nil
 }

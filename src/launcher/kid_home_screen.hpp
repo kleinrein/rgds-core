@@ -1,14 +1,17 @@
 #pragma once
 // A Little kid's whole launcher (Page::KidHome): every game this profile may play, from every system, as big
 // pictures. Six to a page on the lower screen, the chosen one large on the upper screen with its name. A tap or A
-// plays it. There are no menus, settings, search or switcher here, and enforce_lock brings every other page back
-// to this one. A grown-up leaves with Select or the Menu button (Who's playing?), and the owner's PIN.
+// plays it. The pages follow the finger and are thrown or dropped back, as on a phone. There are no menus, settings,
+// search or switcher here, enforce_lock brings every other page back to this one, and no button leads anywhere: a
+// grown-up holds the small picture at the bottom for a second (Who's playing?), then the owner's PIN.
 // Members of App in main.cpp; included once, right after the class.
 
 namespace kid_layout {
 inline constexpr int per_page = 6, columns = 3, tile = 164, gap = 20, top = 22; // the lower screen's grid
 inline constexpr int left = (640 - (columns * tile + (columns - 1) * gap)) / 2;
 inline constexpr SDL_Rect back{24, 412, 112, 56}, next{504, 412, 112, 56}, who{292, 412, 56, 56};
+inline constexpr Uint32 hold_ms = 1000, settle_ms = 280; // a grown-up's long press; a page landing
+inline constexpr int page_width = 640;
 } // namespace kid_layout
 
 // The games in a fixed order, by name: a small child finds a game again by where it was. Kept until the library
@@ -65,10 +68,11 @@ void App::kid_move_to(size_t index, int direction) {
     if (games.empty() || index >= games.size() || index == kid_focus) return;
     const int page = int(index) / kid_layout::per_page;
     if (page != kid_page_shown) {
-        kid_page_from = kid_page_shown;
+        // The new page comes in from the side it lies on, from wherever a finger let go of the old one.
+        kid_slide_from = kid_slide_offset(s.GetTicks()) + direction * kid_layout::page_width;
+        kid_slide_at = s.GetTicks();
         kid_page_shown = page;
-        kid_page_at = s.GetTicks();
-        micro_until = std::max(micro_until, kid_page_at + 260);
+        micro_until = std::max(micro_until, kid_slide_at + kid_layout::settle_ms + 20);
     }
     kid_focus = index;
     kid_moved_at = s.GetTicks();
@@ -96,12 +100,20 @@ void App::kid_play(size_t index) {
     play_game(Game(games[index])); // a copy: the list can be rebuilt while the game starts
 }
 
+// Where the page stands now: under the finger, or settling from where it was let go.
+double App::kid_slide_offset(Uint32 now) const {
+    if (kid_dragging) return kid_drag_dx;
+    const Uint32 settle = kid_layout::settle_ms;
+    if (!preferences.animations || now - kid_slide_at >= settle) return 0;
+    const double t = double(now - kid_slide_at) / settle;
+    return kid_slide_from * (1 - t) * (1 - t) * (1 - t);
+}
+
 void App::kid_home_action(int code) {
     const auto& games = kid_home_games();
     const int count = int(games.size()), focus = int(kid_focus);
     using kid_layout::columns;
-    if (code == 7) open_profile_picker(false); // Select: Who's playing?, the grown-up's way out
-    else if (count == 0) return;
+    if (count == 0 || code == 7) return; // Select and Menu do nothing here: no button leads to a PIN
     else if (code == 2 || code == 4) kid_play(kid_focus);
     else if (code == 13 || code == 14) kid_page_step(code == 13 ? -1 : 1);
     else if (code == 0 || code == 1) kid_move_to(size_t((focus + (code == 0 ? -1 : 1) + count) % count), code ? 1 : -1);
@@ -119,10 +131,7 @@ void App::kid_home_action(int code) {
 
 void App::kid_home_tap(int x, int y) {
     const auto& games = kid_home_games();
-    if (point_in(kid_layout::who, x, y)) {
-        open_profile_picker(false);
-        return;
-    }
+    if (point_in(kid_layout::who, x, y)) return; // held, not tapped (kid_hold_tick)
     if (kid_page_count() > 1 && point_in(kid_layout::back, x, y)) {
         kid_page_step(-1);
         return;
@@ -142,14 +151,104 @@ void App::kid_home_tap(int x, int y) {
     }
 }
 
-// A finger lifted: a sideways swipe turns the page, a short touch is a tap where it began and ended.
+void App::kid_home_press(int x, int y) {
+    const Uint32 now = s.GetTicks();
+    // A finger on a page still landing catches it where it is.
+    kid_drag_dx = kid_slide_offset(now);
+    kid_dragging = std::abs(kid_drag_dx) > 1;
+    kid_slide_at = 0;
+    kid_grab_x = x - int(std::lround(kid_drag_dx));
+    kid_last_x = x;
+    kid_last_at = now;
+    kid_velocity = 0;
+    kid_hold_fired = false;
+    (void)y;
+}
+
+// A finger moving: once it is plainly sideways the page is in its hand, and follows it exactly.
+void App::kid_home_drag(int x, int y) {
+    const Uint32 now = s.GetTicks();
+    const int dx = x - kid_grab_x;
+    if (!kid_dragging && std::abs(x - down_x) >= 14 && std::abs(x - down_x) > std::abs(y - down_y)) kid_dragging = true;
+    if (kid_dragging) {
+        // One page has nowhere to go: it gives a little and comes back.
+        kid_drag_dx = kid_page_count() > 1 ? dx : dx * 0.3;
+        if (now > kid_last_at) {
+            const double sample = double(x - kid_last_x) / double(now - kid_last_at);
+            kid_velocity = kid_velocity * 0.4 + sample * 0.6; // px per ms, the last moves weighed most
+        }
+        micro_until = std::max(micro_until, now + 60);
+    }
+    kid_last_x = x;
+    kid_last_at = now;
+}
+
+// A finger lifted: a page dragged far enough or thrown goes; one that is not drops back. A short touch is a tap.
 void App::kid_home_release(int x, int y) {
-    const int dx = x - down_x, dy = y - down_y;
-    if (std::abs(dx) >= 64 && std::abs(dx) > std::abs(dy) * 3 / 2) {
-        kid_page_step(dx < 0 ? 1 : -1);
+    const Uint32 now = s.GetTicks();
+    if (kid_hold_fired) return;
+    if (kid_dragging) {
+        // Decided from the last place the finger was seen moving: a lift reports no movement of its own.
+        const double dx = kid_drag_dx,
+                     speed = now - kid_last_at > 90 ? 0 : kid_velocity; // a pause before lifting stops a throw
+        int direction = 0;
+        if (kid_page_count() > 1) {
+            if (std::abs(speed) >= 0.35) direction = speed < 0 ? 1 : -1;
+            else if (std::abs(dx) >= kid_layout::page_width / 4) direction = dx < 0 ? 1 : -1;
+        }
+        kid_slide_from = dx;
+        kid_slide_at = now;
+        kid_dragging = false;
+        if (direction) {
+            kid_slide_at = now;
+            kid_page_step(direction); // starts from where it was let go
+        } else micro_until = std::max(micro_until, now + kid_layout::settle_ms + 20);
+        dirty = true;
         return;
     }
-    if (std::abs(dx) < 28 && std::abs(dy) < 28) touch(down_x, down_y);
+    if (std::abs(x - down_x) < 28 && std::abs(y - down_y) < 28) touch(down_x, down_y);
+}
+
+// A grown-up's long press: the small picture on the wall (Who's playing?), the lock in the game menu (the whole
+// menu, behind the owner's PIN). A ring fills while it is held; letting go early does nothing.
+SDL_Rect App::kid_hold_box() const {
+    return settings.page == Page::KidMenu ? SDL_Rect{566, 432, 44, 40} : kid_layout::who;
+}
+
+double App::kid_hold_progress(Uint32 now) const {
+    if (!pointer_down || kid_dragging || kid_hold_fired || !point_in(kid_hold_box(), down_x, down_y) ||
+        !point_in(kid_hold_box(), contact_x, contact_y))
+        return 0;
+    return std::min(1.0, double(now - pointer_at) / kid_layout::hold_ms);
+}
+
+void App::kid_hold_tick(Uint32 now) {
+    if (settings.page != Page::KidHome && settings.page != Page::KidMenu) return;
+    const double held = kid_hold_progress(now);
+    if (held > 0) micro_until = std::max(micro_until, now + 40);
+    if (held < 1) return;
+    kid_hold_fired = true;
+    kid_swallow_release = true; // the finger still down must not tap the screen this opens
+    emit_sound(MenuCue::Open);
+    if (settings.page == Page::KidHome) open_profile_picker(false);
+    else if (owner_pin().empty()) {
+        settings_unlocked = true;
+        settings.page = Page::QuickMenu;
+        settings.focus = 0;
+    } else {
+        pin_target_page = Page::QuickMenu;
+        pin_target_focus = 0;
+        open_pin(PinPurpose::Unlock, owner_pin());
+    }
+    dirty = true;
+}
+
+void App::kid_hold_ring(SDL_Renderer* r, int y) {
+    const double held = kid_hold_progress(s.GetTicks());
+    if (held <= 0) return;
+    const auto box = kid_hold_box();
+    smooth_arc(r, box.x + box.w / 2, y + box.y + box.h / 2, std::max(box.w, box.h) / 2 + 6, 5, 0, held,
+               theme.at("accent"));
 }
 
 // A solid triangle pointing left (-1) or right (1), its tip rounded off by drawing it as spans: arrows and Play.
@@ -223,33 +322,35 @@ void App::kid_home_bottom(SDL_Renderer* r, int y) {
         draw_profile_tile(r, active_profile(), kid_layout::who.x, y + kid_layout::who.y, kid_layout::who.w);
         return;
     }
-    // The page slides in from the side it came from.
-    double slide = 0;
-    if (preferences.animations && kid_page_from != kid_page_shown && now - kid_page_at < 240) {
-        const double t = (now - kid_page_at) / 240.0, eased = 1 - (1 - t) * (1 - t) * (1 - t);
-        const int pages = kid_page_count();
-        int direction = kid_page_shown > kid_page_from ? 1 : -1;
-        if (std::abs(kid_page_shown - kid_page_from) == pages - 1 && pages > 2) direction = -direction; // wrapped
-        slide = direction * 220 * (1 - eased);
-    }
-    const bool pressing = pointer_down && std::abs(contact_x - down_x) < 28 && std::abs(contact_y - down_y) < 28;
-    for (int slot = 0; slot < kid_layout::per_page; slot++) {
-        const size_t index = size_t(kid_page_shown * kid_layout::per_page + slot);
-        if (index >= games.size()) break;
-        auto box = kid_tile_box(slot);
-        box.x += int(std::lround(slide));
-        box.y += y;
-        const bool focused = index == kid_focus;
-        const bool pressed = pressing && point_in(kid_tile_box(slot), down_x, down_y);
-        if (focused && preferences.animations && now - kid_moved_at < 160) {
-            const int grow = int(std::lround(8 * std::sin((now - kid_moved_at) / 160.0 * 3.14159)));
-            box = {box.x - grow / 2, box.y - grow / 2, box.w + grow, box.h + grow};
-        }
-        if (pressed) box = {box.x + 6, box.y + 8, box.w - 12, box.h - 12};
-        kid_cover(r, games[index], box, focused, focused);
-    }
-    // Where we are: a dot per page, the current one long; past sixteen pages a bar.
+    // The page under the finger, and its neighbour on the side it is pulled from (round and round).
     const int pages = kid_page_count();
+    const double slide = kid_slide_offset(now);
+    const bool pressing =
+        pointer_down && !kid_dragging && std::abs(contact_x - down_x) < 28 && std::abs(contact_y - down_y) < 28;
+    std::vector<std::pair<int, int>> shown = {{kid_page_shown, int(std::lround(slide))}};
+    if (pages > 1 && std::abs(slide) >= 1) {
+        const int side = slide > 0 ? -1 : 1;
+        shown.push_back(
+            {(kid_page_shown + side + pages) % pages, int(std::lround(slide)) + side * kid_layout::page_width});
+    }
+    for (const auto& [page, offset] : shown)
+        for (int slot = 0; slot < kid_layout::per_page; slot++) {
+            const size_t index = size_t(page * kid_layout::per_page + slot);
+            if (index >= games.size()) break;
+            auto box = kid_tile_box(slot);
+            box.x += offset;
+            if (box.x + box.w < -16 || box.x > 656) continue;
+            box.y += y;
+            const bool focused = index == kid_focus;
+            const bool pressed = pressing && point_in(kid_tile_box(slot), down_x, down_y);
+            if (focused && preferences.animations && now - kid_moved_at < 160) {
+                const int grow = int(std::lround(8 * std::sin((now - kid_moved_at) / 160.0 * 3.14159)));
+                box = {box.x - grow / 2, box.y - grow / 2, box.w + grow, box.h + grow};
+            }
+            if (pressed) box = {box.x + 6, box.y + 8, box.w - 12, box.h - 12};
+            kid_cover(r, games[index], box, focused, focused);
+        }
+    // Where we are: a dot per page, the current one long; past sixteen pages a bar.
     if (pages > 1) {
         const Color accent = theme.at("accent"), line = theme.at("line");
         if (pages <= 16) {
@@ -276,16 +377,17 @@ void App::kid_home_bottom(SDL_Renderer* r, int y) {
     Profile face = active_profile();
     face.restricted = false; // their own face, without the Kids mark
     draw_profile_tile(r, face, kid_layout::who.x, y + kid_layout::who.y, kid_layout::who.w);
+    kid_hold_ring(r, y);
 }
 
 // ---- In a game: Play and Home ----------------------------------------------------------------------------------------
 // The game menu a Little kid sees (Page::KidMenu, in `rgds-launcher --game-menu`): two big buttons over the paused
 // game. Play goes back to it; Home leaves it as Return home does, saving as the profile's auto-save says, and the
-// launcher opens on their games again. B, Start and the Menu button play on. Select is a grown-up's: the owner's PIN,
-// then the whole game menu (straight to it when the owner has no PIN).
+// launcher opens on their games again. B, Select and the Menu button play on. A grown-up holds the small lock in the
+// corner for a second: the owner's PIN, then the whole game menu (straight to it when the owner has no PIN).
 
 namespace kid_layout {
-inline constexpr SDL_Rect play{28, 36, 584, 232}, home{28, 292, 584, 148};
+inline constexpr SDL_Rect play{28, 36, 584, 232}, home{28, 292, 584, 132};
 } // namespace kid_layout
 
 void App::kid_menu_choose(int choice) {
@@ -301,15 +403,7 @@ void App::kid_menu_choose(int choice) {
 }
 
 void App::kid_menu_action(int code) {
-    if (code == 7 && owner_pin().empty()) {
-        settings_unlocked = true;
-        settings.page = Page::QuickMenu;
-        settings.focus = 0;
-    } else if (code == 7) {
-        pin_target_page = Page::QuickMenu;
-        pin_target_focus = 0;
-        open_pin(PinPurpose::Unlock, owner_pin());
-    } else if (code == 3) kid_menu_choose(0);
+    if (code == 3 || code == 7) kid_menu_choose(0); // B, and Menu or Select (one code here): back to the game
     else if (code == 8 || code == 9 || code == 0 || code == 1) {
         const int next = code == 8 || code == 0 ? 0 : 1;
         if (next != settings.focus) {
@@ -380,6 +474,11 @@ void App::kid_menu_bottom(SDL_Renderer* r, int y) {
         }
         raw_label_colour(r, word, left + glyph + 28, centred_label_y(word, size, cy), size, ink, 400);
     }
+    // The grown-up's lock: small, in the corner, and it has to be held.
+    const auto lock = kid_hold_box();
+    fill_round(r, lock.x, y + lock.y, lock.w, lock.h, lock.h / 2, theme.at("panel"));
+    ui_icon(r, SettingsIcon::Key, lock.x + lock.w / 2, y + lock.y + lock.h / 2, 18, "muted");
+    kid_hold_ring(r, y);
     if (busy) {
         // Saving: the buttons wait, under a veil.
         s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);

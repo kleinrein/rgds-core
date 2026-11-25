@@ -10,8 +10,9 @@ void App::text(SDL_Renderer* r, std::string value, int x, int y, int size, const
         return;
     }
     color(r, key);
+    const DotGrid grid(s, r, x, y, size); // whole panel pixels per dot on a larger panel
     pixel_dots(
-        value, x, y, size, max_chars, [&](const SDL_Rect& p) { s.RenderFillRect(r, &p); },
+        value, x, y, size, max_chars, [&](const SDL_Rect& p) { grid.fill(s, r, p); },
         [&](unsigned c, int cell_x, int baseline_y) {
             // The rounded glyph, centred in two cells and standing on the dot baseline.
             try {
@@ -38,6 +39,7 @@ void App::centered(SDL_Renderer* r, const std::string& source, int y, int size, 
 
 void App::label(SDL_Renderer* r, const std::string& source, int x, int y, int pixels, const std::string& key, int width,
                 bool translate) {
+    if (bench_off("rowtext") && settings.page != Page::Library) return;
     auto value = translate ? locale.text(source) : source;
     if (!preferences.pixel && font_ready) {
         rounded.draw(r, value, x, y, pixels, theme.at(key), 1000, width);
@@ -117,7 +119,7 @@ void App::settings_footer(SDL_Renderer* r, int y) {
         footer_button(r, 468, y + 432, 160, "Journal", "A", true, a_pressed);
         return;
     }
-    if (settings.page == Page::Microphone) return;
+    if (settings.page == Page::Microphone || settings.page == Page::BatteryHealth) return;
     if (settings.page == Page::Journal) {
         if (journal_count() > 1) key_hints(r, 320, y + 452, {{"L R", "Day"}}, 0, 16, 200);
         const auto* entry = journal_entry(settings.focus);
@@ -230,6 +232,7 @@ void App::list_row(SDL_Renderer* r, int y, int index, const std::string& title, 
     int dx = 24;
     move_element(uint32_t(index), dx, row, 566, 66, focused, list_top, list_top + list_height, 20, 595);
     dx -= 24;
+    if (bench_off("rows")) return;
     settings_card(r, 24 + dx, row, 566, 66, focused);
     round_rect(r, 38 + dx, row + 11, 44, 44, well_radius, focused && enabled ? "accent" : "slot");
     // The Settings root's Files row has a rich icon of its own (tools/build_app_icons.py); the Folder glyph inside
@@ -336,6 +339,7 @@ void App::draw_scrollbar(SDL_Renderer* r, int x, int y, int height, int thumb, i
 // its own, and a screen of cards, pills and badges came to thousands a frame. Same rectangles, same order, same pixels.
 void App::round_rect(SDL_Renderer* r, int x, int y, int w, int h, int radius, const std::string& key) {
     color(r, key);
+    if (fill_round_on_panel(s, r, x, y, w, h, std::clamp(radius, 0, std::min(w, h) / 2), panel_rows)) return;
     auto& rows = fill_rows;
     rows.clear();
     rows.push_back({x + radius, y, w - 2 * radius, h});

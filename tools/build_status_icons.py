@@ -49,9 +49,12 @@ for theme, ink, quiet in [('light', '#2d3944', '#bfccd7'), ('dark', '#e5eef7', '
             if name == 'wifi-off':
                 line([(5, 5), (23, 23)], quiet, 4)
                 line([(5, 5), (23, 23)], ink, 2)
-        im = im.resize((28, 28), Image.Resampling.LANCZOS)
-        pixels = im.tobytes('raw', 'BGRA')
-        dib = struct.pack('<IiiHHIIiiII', 108, 28, -28, 1, 32, 3, len(pixels), 0, 0, 0, 0)
-        dib += struct.pack('<5I', 0xff0000, 0xff00, 0xff, 0xff000000, 0x73524742) + bytes(48)
-        (ROOT / (theme + '-' + name + '.bmp')
-         ).write_bytes(struct.pack('<2sIHHI', b'BM', 122 + len(pixels), 0, 0, 122) + dib + pixels)
+        # 28 px for the RG DS's panels and @2x (56 px) for larger ones (the RG DS Plus's 1024x768, where the launcher
+        # draws the 28 px box over 45 panel pixels and picks the @2x file: src/launcher/status_bar.hpp)
+        for side, suffix in ((28, ''), (56, '@2x')):
+            small = im.resize((side, side), Image.Resampling.LANCZOS)
+            pixels = small.tobytes('raw', 'BGRA')
+            dib = struct.pack('<IiiHHIIiiII', 108, side, -side, 1, 32, 3, len(pixels), 0, 0, 0, 0)
+            dib += struct.pack('<5I', 0xff0000, 0xff00, 0xff, 0xff000000, 0x73524742) + bytes(48)
+            (ROOT / (theme + '-' + name + suffix + '.bmp')
+             ).write_bytes(struct.pack('<2sIHHI', b'BM', 122 + len(pixels), 0, 0, 122) + dib + pixels)

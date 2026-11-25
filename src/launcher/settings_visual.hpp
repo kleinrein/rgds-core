@@ -105,7 +105,9 @@ inline SettingsIcon settings_icon_for(const std::string& title) {
     if (title == "Set a PIN" || title == "Change the PIN" || title == "Remove the PIN") return SettingsIcon::Key;
     if (title == "Erase removed profiles") return SettingsIcon::Shutdown;
     if (title == "Cheats" || title == "Local wireless") return SettingsIcon::Spark;
-    if (title == "Online play") return SettingsIcon::Wifi;
+    if (title == "Online play" || title == "Play together") return SettingsIcon::Wifi;
+    if (title == "Leave session") return SettingsIcon::Back;
+    if (title == "Play now") return SettingsIcon::Play;
     if (title == "Hide this game" || title == "Visible to…") return SettingsIcon::Key;
     if (title == "Remove game") return SettingsIcon::Trash;
     if (title == "Dim when idle") return SettingsIcon::Sun;
@@ -226,6 +228,10 @@ inline std::string settings_row_hint(const std::string& title) {
     if (title == "Threaded 3D") return "Use an additional rendering thread";
     if (title == "Frameskip") return "Reduce rendering work when needed";
     if (title == "Save & restart") return "Save your checkpoint and restart";
+    if (title == "Play together") return "Local wireless and online play for this game";
+    if (title == "Leave session") return "Play on alone or return home";
+    if (title == "Restart game") return "Start again from the game's own save";
+    if (title == "Play now") return "Start the game with these settings";
     if (title == "Screenshot") return "Save the game behind this menu to the Album";
     return {};
 }

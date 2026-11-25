@@ -491,8 +491,9 @@ function viewFlash() {
 }
 
 const putIn = () => handheld === "plus" ? "RG DS Plus's <b>TF1</b> slot" : "RG DS";
-// a stock Plus keeps its games on a second card: setup finds it in TF2 and offers to bring its saves over (migrate.py)
-const plusGamesNote = () => handheld === "plus" ? `<p class="muted">Had games on a card in TF2? Leave it there: setup offers to bring its saves over and never changes it.</p>` : "";
+// a stock Plus keeps its games on a second card: RG DS OS plays them from TF2 as they are (/media/tf2), and setup
+// offers to bring that card's saves over (migrate.py)
+const plusGamesNote = () => handheld === "plus" ? `<p class="muted">Had games on a card in TF2? Leave it there: they show up in your library, and setup offers to bring their saves over.</p>` : "";
 function viewDone() {
   const c = st.carried;
   const copyNote = st.cardCopy ? `<p class="muted" style="font-size:12.5px">The old card is kept whole on this computer: <a href="#" data-act="backup">${esc(st.cardCopy)}</a>. Open the flasher with that card in to put it back.</p>` : "";

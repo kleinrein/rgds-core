@@ -60,6 +60,9 @@ The window is Edge or Chrome in app mode (a window without tabs) when one is ins
 
 ```sh
 flasher/build.sh          # all targets into flasher/dist/, plus SHA256SUMS
+go run . --image ../.cache/own-os/build/rgds-os.img.gz --ssh-key ~/.ssh/id_ed25519.pub
+                          # a local build, and SSH in from its first boot (the key travels in preset.ini;
+                          # the handoff adds it to rgds/ssh/authorized_keys)
 flasher/build.sh --test   # runs the Go tests first
 ```
 

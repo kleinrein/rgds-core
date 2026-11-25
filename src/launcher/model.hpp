@@ -238,15 +238,46 @@ inline const GamesFolder* games_folder(const std::string& name) {
         {"adobe flash", "flash", ""},
         {"flashpoint", "flash", ""},
         {"swf", "flash", ""},
+        // Anbernic's stock firmware's Roms folders (runtime/migrate.py STOCK_FOLDERS), on a games card in the RG DS
+        // Plus's second slot (games_card.hpp); its PICO is PICO-8, told apart in games_folder_in
+        {"fc", "nes", ""},
+        {"sfc", "snes", ""},
+        {"ps", "psx", ""},
+        {"mdcd", "md", "segacd"},
+        {"sega32x", "md", ""},
+        {"gg", "sms", ""},
+        {"a2600", "atari", ""},
+        {"a5200", "atari5200", ""},
+        {"a7800", "atari7800", ""},
+        // and the other systems' names Bring over knows (runtime/migrate.py FOLDERS), for their cards played in place
+        {"famicom", "nes", ""},
+        {"superfamicom", "snes", ""},
+        {"mastersystem", "sms", ""},
+        {"gamegear", "sms", ""},
+        {"ps1", "psx", ""},
+        {"playstation", "psx", ""},
+        {"zxspectrum", "zx", ""},
+        {"pcenginecd", "pce", "pcecd"},
+        {"wswanc", "wonderswan", ""},
+        {"gameandwatch", "gw", ""},
+        {"scummvm", "scummvm", ""},
     };
     for (const auto& f : folders)
         if (name == f.name) return &f;
     return nullptr;
 }
+// A folder's games folder: by its name, except the stock firmware's Roms/PICO, which holds PICO-8 carts (ours,
+// roms/pico, is the Sega Pico). FAT keeps the names' spelling, and the stock layout is told by it, as migrate.py does.
+inline const GamesFolder* games_folder_in(const fs::path& folder) {
+    static const GamesFolder stock_pico{"pico", "pico8", ""};
+    const auto name = lower(folder.filename().string());
+    if (name == "pico" && folder.parent_path().filename() == "Roms") return &stock_pico;
+    return games_folder(name);
+}
 // The nearest games folder above a game, or null.
 inline const GamesFolder* games_folder_of(const fs::path& path) {
     for (auto folder = path.parent_path(); folder.has_relative_path(); folder = folder.parent_path())
-        if (const auto* f = games_folder(lower(folder.filename().string()))) return f;
+        if (const auto* f = games_folder_in(folder)) return f;
     return nullptr;
 }
 // The system a game file is for: its games folder's when that folder claims the file (any archive, an extension the

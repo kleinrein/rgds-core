@@ -9,7 +9,7 @@ int App::run() {
     for (auto& panel : surfaces) {
         for (const char* name : {"brand/mark-48.bmp", "brand/mark-120.bmp"})
             media.warm(panel.renderer, asset_path(name));
-        media.warm(panel.renderer, asset_path(preferences.dark ? "brand/status-dark.bmp" : "brand/status-light.bmp"));
+        media.warm(panel.renderer, sharp_asset(preferences.dark ? "brand/status-dark.bmp" : "brand/status-light.bmp"));
         media.warm(panel.renderer,
                    asset_path(preferences.dark ? "brand/wordmark-dark.bmp" : "brand/wordmark-light.bmp"));
     }
@@ -166,10 +166,12 @@ int App::run() {
             hold_felt = true;
             haptics.play(Haptic::Hold);
         }
-        // Plugging in a charger, as on a phone.
-        if (charge_seen && hardware.charging && !was_charging && !probe) haptics.play(Haptic::Notify);
+        // Plugging in a charger, as on a phone: the charger coming online, not the battery's status, which flips
+        // between Charging and Discharging every few seconds when a weak port (a computer's 500 mA) can't keep up
+        // with the handheld (the RG DS Plus on a Mac buzzed on a clock, 2026-11-24).
+        if (charge_seen && hardware.external_power && !was_plugged && !probe) haptics.play(Haptic::Notify);
         charge_seen = true;
-        was_charging = hardware.charging;
+        was_plugged = hardware.external_power;
         if (!departure_action.empty() && int32_t(now - departure_at) >= 0) {
             auto request = std::move(departure_action);
             departure_action.clear();
@@ -250,9 +252,14 @@ int App::run() {
             summary = std::move(*result);
             summary_ready = true;
             if (settings.page == Page::Journal) journal_refresh();
+            if (settings.page == Page::BatteryHealth) battery_refresh();
             dirty = true;
         }
         day_light_tick(now);
+        // Battery health follows the gauge while it is open (battery-watch writes a row every 5 minutes).
+        if (settings.page == Page::BatteryHealth && now - battery_read_at >= 30000) battery_refresh();
+        // Power's Battery health row shows the maximum capacity: read when the page opens, then now and then.
+        if (settings.page == Page::Power && (!battery_read_at || now - battery_read_at >= 300000)) battery_refresh();
         if (!o.game_menu && o.boot_startup && library_ready && boot_hardware_ready && !return_writes_pending() &&
             !system.volume_pending() && !system.brightness_pending() && !resume_checked &&
             settings.page != Page::BootWarning && settings.page != Page::Welcome &&
@@ -435,6 +442,13 @@ int App::run() {
                 }
                 frame_log.last = at;
                 frame_log.frames++;
+                {
+                    namespace dc = rgds::draw_count;
+                    frame_log.copies += dc::copies, frame_log.fills += dc::fills, frame_log.lines += dc::lines;
+                    frame_log.peak_draws = std::max(frame_log.peak_draws, dc::copies + dc::fills + dc::lines);
+                    frame_log.uploads += dc::uploads, frame_log.upload_px += dc::upload_px, frame_log.targets += dc::targets;
+                    dc::copies = dc::fills = dc::lines = dc::uploads = dc::upload_px = dc::targets = 0;
+                }
                 if (!frame_log.began) frame_log.began = at;
                 if (at - frame_log.began >= 1000) {
                     static const char* names[] = {"interval", "prepare",        "top",  "top_present",
@@ -445,6 +459,12 @@ int App::run() {
                     std::fprintf(frame_log.file, " touches=%d/%d gaps=%d,%d,%d,%d,%d", frame_log.touches,
                                  frame_log.top_touches, frame_log.gaps[0], frame_log.gaps[1], frame_log.gaps[2],
                                  frame_log.gaps[3], frame_log.gaps[4]);
+                    std::fprintf(frame_log.file, " uploads=%ld upload_px=%ld targets=%ld", frame_log.uploads,
+                                 frame_log.upload_px, frame_log.targets);
+                    std::fprintf(frame_log.file, " copies=%ld fills=%ld lines=%ld peak_draws=%ld",
+                                 frame_log.copies / std::max(1, frame_log.frames),
+                                 frame_log.fills / std::max(1, frame_log.frames),
+                                 frame_log.lines / std::max(1, frame_log.frames), frame_log.peak_draws);
                     zoom_sprite_builds = 0;
                     for (int i = 0; i < FrameLog::Count; i++) {
                         const int n = i == FrameLog::TopDraw || i == FrameLog::TopPresent ? frame_log.top_frames
@@ -489,8 +509,12 @@ int App::run() {
                                     browser_motion.active() || (page_drag.active() && !page_drag.holding()) ||
                                     (preferences.animations && int32_t(micro_until - s.GetTicks()) > 0) ||
                                     sheet_leaving();
+        // An animation frame is due 16 ms after the last one began, not 16 ms after it was presented: a fixed 16
+        // here woke the loop just past a vblank, so every frame of a view transition took two refreshes (~30 fps
+        // on the RG DS Plus, RGDS_FRAME_LOG 2026-11-25: 6 ms of drawing, 50 ms of waiting a second per 18 frames).
+        const int frame_left = std::clamp(16 - int(s.GetTicks() - feedback_frame_at), 1, 16);
         int wait_ms = animated || dirty                     ? 1
-                      : feedback_active || motion_started   ? 16
+                      : feedback_active || motion_started   ? frame_left
                       : launching && preferences.animations ? int(std::min(50u, 75u - (now - launch_at) % 75))
                                                             : idle_wait_ms(now);
         if (o.game_menu && (!menu_pending_token.empty() || menu_status["state"] == "busy"))
@@ -575,8 +599,9 @@ int App::run() {
         report << "\"systems_menu\":" << systems_menu << ",\"systems_selected\":" << systems_selected << ',';
         report << "\"show_systems\":" << preferences.show_systems << ",\"shown_system\":" << std::quoted(shown_system)
                << ",\"listed_systems\":" << listed_systems.size() << ",\"launching_core\":" << launching_core
-               << ",\"library_count\":" << model.games.size() << ",\"play_fit\":" << play_fit
-               << ",\"play_second\":" << play_second << ",\"play_frame\":" << std::quoted(play_frame) << ',';
+               << ",\"library_count\":" << model.games.size() << ",\"games_card\":" << games_card.has_value()
+               << ",\"play_fit\":" << play_fit << ",\"play_second\":" << play_second
+               << ",\"play_frame\":" << std::quoted(play_frame) << ',';
         report << "\"port_titles\":["; // the Ports shelf: ports and apps (docs/APPS.md)
         bool first_port = true;
         for (const auto& game : all_games)

@@ -8,7 +8,7 @@ void App::page_drag_follow(int x, int y) {
     const bool right = edge_gesture == EdgeGesture::Right;
     const int pull = home ? down_y - y : right ? down_x - x : x - down_x;
     if (pull <= 4 && !page_drag.active()) return; // a tap on the edge leaves the page still
-    page_drag.follow(home ? PageDrag::Kind::Home : PageDrag::Kind::Back, pull, right ? -1 : 1);
+    page_drag.follow(home ? PageDrag::Kind::Home : PageDrag::Kind::Back, pull, right ? -1 : 1, x - down_x);
     dirty = true;
 }
 

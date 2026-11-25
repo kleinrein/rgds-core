@@ -48,6 +48,7 @@ void App::open_welcome() {
     welcome_enter(0);
 }
 
+// Setup saves as it goes and says nothing about it: remember_appearance(false) here, never the "Settings saved" toast.
 void App::welcome_begin() {
     settings.page = Page::Welcome;
     welcome_active = true;
@@ -56,7 +57,7 @@ void App::welcome_begin() {
     if (welcome_step == 0 && !preferences.show_systems) {
         // A new card has every system's folder: unless the Systems step says otherwise, its games show from the first copy.
         preferences.show_systems = true;
-        remember_appearance();
+        remember_appearance(false);
         refresh_other_systems();
     }
     welcome_import_scan();
@@ -86,7 +87,7 @@ void App::welcome_apply_preset() {
     const std::string language = values["language"];
     if (std::any_of(languages.begin(), languages.end(), [&](const auto& l) { return l.first == language; })) {
         preferences.language = language;
-        remember_appearance();
+        remember_appearance(false);
         welcome_language_defaults(); // time and date formats for the language, and its zone unless one follows
         welcome_preset |= 1u << WelcomeLanguage;
     }
@@ -309,7 +310,7 @@ void App::welcome_choose_motion(int choice) {
     preferences.view_animations = choice >= 2;
     if (choice >= 2)
         preferences.view_style = choice == 3 ? ViewStyle::Push : choice == 4 ? ViewStyle::Zoom : ViewStyle::Spring;
-    remember_appearance();
+    remember_appearance(false);
     if (preferences.view_animations) start_view_motion(s.GetTicks());
 }
 
@@ -318,25 +319,25 @@ void App::welcome_activate(int id) {
     if (id == welcome_next) {
         if (welcome_step == WelcomeDone) welcome_finish();
         else {
-            if (welcome_step == WelcomeColour) remember_appearance();
+            if (welcome_step == WelcomeColour) remember_appearance(false);
             welcome_enter(welcome_step + 1);
         }
         return;
     }
     if (id == welcome_back) {
-        if (welcome_step == WelcomeColour) remember_appearance();
+        if (welcome_step == WelcomeColour) remember_appearance(false);
         welcome_enter(welcome_step - 1, ViewTravel::Back);
         return;
     }
     if (id == welcome_skip) {
-        if (welcome_step == WelcomeColour) remember_appearance();
+        if (welcome_step == WelcomeColour) remember_appearance(false);
         welcome_enter(WelcomeDone);
         return;
     }
     switch (welcome_step) {
     case WelcomeLanguage:
         preferences.language = locale.languages().at(size_t(id)).first;
-        remember_appearance();
+        remember_appearance(false);
         welcome_language_defaults();
         welcome_enter(WelcomeImport);
         break;
@@ -352,11 +353,11 @@ void App::welcome_activate(int id) {
     case WelcomeColour:
         if (id <= 16) {
             preferences.accent = id == 16 ? -1 : id;
-            remember_appearance();
+            remember_appearance(false);
             welcome_enter(WelcomeName);
         } else {
             preferences.dark = id == welcome_mode + 1;
-            remember_appearance();
+            remember_appearance(false);
         }
         break;
     case WelcomeName: begin_edit(7); break;
@@ -374,7 +375,7 @@ void App::welcome_activate(int id) {
             if (!pixel && !font_ready) status = "ROUNDED FONT UNAVAILABLE";
             else preferences.pixel = pixel;
         }
-        remember_appearance();
+        remember_appearance(false);
         break;
     case WelcomeTime:
         if (id == 0) {
@@ -408,7 +409,7 @@ void App::welcome_activate(int id) {
         break;
     case WelcomeLibrary:
         preferences.show_systems = id == 1;
-        remember_appearance();
+        remember_appearance(false);
         refresh_other_systems();
         summary_ready = false;
         library_summary.request(o.data, all_games);

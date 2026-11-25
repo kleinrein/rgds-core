@@ -423,16 +423,13 @@ class ManageTests(Base):
         self.run_ui(self.edit_page() + ['Down'] * 10 + ['a'], settings=True)
         self.assertIn('all_games=0', (folder / 'ui.ini').read_text())
 
-    def test_the_music_player_is_switched_per_profile(self):
+    def test_a_kid_page_has_no_music_player_row(self):
+        # 2026-11-25: the Music player switch is gone, per profile too; after Games opens a Kid's page goes on to
+        # Ports, Homebrew, PictoChat and Cheats.
         folder = self.add()
-        # Kid: Who it's for, Name, DS name, Birthday, Picture, Colour, Language, Age limit, Games with no rating, Games,
-        # Games opens, Ports, Homebrew, PictoChat, Music player
         report = self.run_ui(self.edit_page() + ['Down'] * 14 + ['a'], settings=True, seconds=5, gap=90)
         self.assertEqual(report['page'], EDIT)
-        self.assertIn('music_player=1', (folder / 'ui.ini').read_text())
-        self.assertNotIn('music_player=1', (self.data / 'ui.ini').read_text())  # the owner's stays as it was
-        self.run_ui(self.edit_page() + ['Down'] * 14 + ['a'], settings=True, seconds=5, gap=90)
-        self.assertNotIn('music_player=1', (folder / 'ui.ini').read_text())
+        self.assertNotIn('music_player', (folder / 'ui.ini').read_text() if (folder / 'ui.ini').exists() else '')
 
     def test_language_is_chosen_per_profile(self):
         folder = self.add()
@@ -464,9 +461,10 @@ class LittleKidTests(Base):
             (roms / (name + '.nds')).write_bytes(bytes(12) + b'K%03d' % i + bytes(0x200))
         return roms
 
-    def run_with_roms(self, events, roms, seconds=3, flags=(), output=None):
+    def run_with_roms(self, events, roms, seconds=3, flags=(), output=None, start=300, gap=110):
+        """Events are keys, or touches as the preview script spells them ("tap x y", "drag x y", "release 0")."""
         script = self.data.parent / 'input.txt'
-        script.write_text(''.join(f'{300 + i * 110} {e if " " in e else "key " + e}\n' for i, e in enumerate(events)))
+        script.write_text(''.join(f'{start + i * gap} {e if " " in e else "key " + e}\n' for i, e in enumerate(events)))
         report = self.data.parent / 'report.json'
         report.unlink(missing_ok=True)
         result = subprocess.run(
@@ -490,9 +488,9 @@ class LittleKidTests(Base):
 
     def test_a_little_kid_has_one_screen_and_keys_do_not_leave_it(self):
         roms = self.little()
-        report = self.run_with_roms(['b', 'c', 'x', 'y', 'Escape', 'Tab'], roms)
+        # No button goes anywhere: not B, X, Y, Tab, Select or the Home key (no search, no PIN pad).
+        report = self.run_with_roms(['b', 'c', 'x', 'y', 'Escape', 'Tab', 's', 'Home'], roms)
         self.assertEqual((report['page'], report['profile'], report['kid_games']), (KID_HOME, 'p1', 8))
-        self.assertEqual(self.run_with_roms(['Home'], roms)['page'], PICKER)  # no search: Who's playing?
 
     def test_the_arrows_move_and_turn_the_page_round(self):
         roms = self.little()
@@ -505,12 +503,30 @@ class LittleKidTests(Base):
         report = self.run_with_roms(['Left'], roms)  # before the first game: the last one
         self.assertEqual((report['kid_focus'], report['kid_page']), (7, 1))
 
-    def test_select_asks_whos_playing_and_back_returns(self):
+    def test_the_page_follows_the_finger_and_goes_or_drops_back(self):
         roms = self.little()
-        self.assertEqual(self.run_with_roms(['s'], roms)['page'], PICKER)
-        self.assertEqual(self.run_with_roms(['s', 'Escape'], roms)['page'], KID_HOME)
+        swipe = lambda *xs: ['tap %d 200' % xs[0], *('drag %d 200' % x for x in xs[1:]), 'release 0']
+        # Dragged a quarter of the screen and held there: it goes. A little, slowly: it drops back.
+        report = self.run_with_roms(swipe(450, 400, 330, 260, 200, 200, 200, 200), roms, start=1500, gap=60, seconds=4)
+        self.assertEqual((report['kid_page'], report['kid_focus']), (1, 6))
+        report = self.run_with_roms(swipe(450, 420, 390, 360, 360, 360, 360), roms, start=1500, gap=60, seconds=4)
+        self.assertEqual(report['kid_page'], 0)
+        # Thrown, even a short way: it goes, either way round.
+        report = self.run_with_roms(swipe(400, 370, 340, 320), roms, start=1500, gap=16, seconds=4)
+        self.assertEqual(report['kid_page'], 1)
+        report = self.run_with_roms(swipe(300, 330, 360, 380), roms, start=1500, gap=16, seconds=4)
+        self.assertEqual(report['kid_page'], 1)  # two pages: back from the first is the last
+
+    def test_holding_the_picture_asks_whos_playing_and_a_tap_does_not(self):
+        roms = self.little()
+        self.assertEqual(self.run_with_roms(['tap 320 440', 'release 0'], roms, start=1500, gap=200)['page'], KID_HOME)
+        report = self.run_with_roms(['tap 320 440', 'release 0'], roms, start=1500, gap=1300, seconds=4)
+        self.assertEqual(report['page'], PICKER)
+        events = ['tap 320 440', 'release 0', 'Escape']
+        self.assertEqual(self.run_with_roms(events, roms, start=1500, gap=1300, seconds=5)['page'], KID_HOME)
         # Choosing the owner goes to the owner's own Home.
-        report = self.run_with_roms(['s', 'Left', 'a'], roms)
+        events = ['tap 320 440', 'release 0', 'Left', 'a']
+        report = self.run_with_roms(events, roms, start=1500, gap=1300, seconds=7)
         self.assertEqual((report['page'], report['profile']), (LIBRARY, 'owner'))
 
     def menu(self, roms, core):
@@ -522,7 +538,7 @@ class LittleKidTests(Base):
             report = self.run_with_roms(['Down', 'Up', 'Down'], roms, flags=self.menu(roms, core))
             self.assertEqual((report['page'], report['profile_focus']), (KID_MENU, 1), core)
             # Play goes back to the game, Home leaves it; B plays on too.
-            for keys, action in ((['a'], 'resume'), (['Down', 'a'], 'quit'), (['b'], 'resume')):
+            for keys, action in ((['a'], 'resume'), (['Down', 'a'], 'quit'), (['b'], 'resume'), (['s'], 'resume')):
                 said = []
                 self.run_with_roms(keys, roms, flags=self.menu(roms, core), output=said)
                 self.assertIn(' ' + action + ' after', said[0], (core, keys))
@@ -530,17 +546,20 @@ class LittleKidTests(Base):
             report = self.run_with_roms(['x', 'y', 'Tab', 'Right', 'Left'], roms, flags=self.menu(roms, core))
             self.assertEqual(report['page'], KID_MENU, core)
 
-    def test_select_is_the_grown_ups_way_to_the_whole_game_menu(self):
+    def test_holding_the_lock_is_the_grown_ups_way_to_the_whole_game_menu(self):
         roms = self.little()
         menu = self.menu(roms, 'rgds-experimental')
-        self.assertEqual(self.run_with_roms(['s'], roms, flags=menu)['page'], QUICK_MENU)  # no owner's PIN
+        hold = lambda *after: self.run_with_roms(
+            ['tap 588 452', 'release 0', *after], roms, flags=menu, start=1500, gap=1300, seconds=4 + len(after)
+        )
+        self.assertEqual(
+            self.run_with_roms(['tap 588 452', 'release 0'], roms, flags=menu, start=1500, gap=200)['page'], KID_MENU
+        )  # a tap is not enough
+        self.assertEqual(hold()['page'], QUICK_MENU)  # no owner's PIN
         index = self.data / 'profiles/index.ini'
         index.write_text(index.read_text() + 'owner_pin=' + self.stored_pin('1234') + '\n')
-        self.assertEqual(self.run_with_roms(['s'], roms, flags=menu)['page'], PIN_PAD)
-        self.assertEqual(self.run_with_roms(['s', 'Escape'], roms, flags=menu)['page'], KID_MENU)
-        # 1, 2, 3 along the pad's top row, then 4 below 1: the whole game menu.
-        keys = ['s', 'a', 'Right', 'a', 'Right', 'a', 'Down', 'Left', 'Left', 'a']
-        self.assertEqual(self.run_with_roms(keys, roms, flags=menu, seconds=4)['page'], QUICK_MENU)
+        self.assertEqual(hold()['page'], PIN_PAD)
+        self.assertEqual(hold('Escape')['page'], KID_MENU)
 
     @staticmethod
     def stored_pin(pin, salt='0011223344556677'):

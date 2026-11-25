@@ -899,6 +899,16 @@ int main(int argc, char** argv) {
     int peak = 0;
     const Uint32 target_queue = Uint32(have.freq / 20) * 4; // 50 ms of stereo s16
     const bool self_paced = o.system == "psp";
+    // Flycast keeps the game's time too: its emulation thread runs on its own and drops a drawn frame when the game
+    // falls behind (package patch 0007), so its sound arrives at the game's rate whatever this loop does. Steering the
+    // queue by holding a frame back then never empties it: one picture in twenty was repeated for as long as the
+    // queue stayed full (Crazy Taxi at 57 pictures a second, menus included). So for the Dreamcast frames are owed by
+    // the clock alone and sound that arrives too late is dropped. Not one frame a pass as for the PSP: a pass that
+    // missed a refresh has to run two (tried: 50 pictures a second in the drive instead of 57).
+    // RGDS_PLAY_PACED says so for any core: 0 steered by the sound queue, 1 one frame a pass, 2 by the clock alone.
+    const char* paced_env = std::getenv("RGDS_PLAY_PACED");
+    const int pacing = paced_env ? std::atoi(paced_env) : self_paced ? 1 : o.system == "dc" ? 2 : 0;
+    const bool core_paced = pacing == 1;
 
     // On its own on the RG DS the pad is read and grabbed directly. Under RG
     // DS Core it stays shared: the runtime watches it for Home.
@@ -1252,7 +1262,7 @@ int main(int argc, char** argv) {
         owed += double(now - last) / SDL_GetPerformanceFrequency() * (fast ? 3 : 1);
         last = now;
         // Keep the sound queue near its target by running a frame early or late.
-        if (audio && !fast) {
+        if (audio && !fast && pacing == 0) {
             Uint32 queued = SDL_GetQueuedAudioSize(audio);
             if (queued < target_queue / 2) owed += frame_seconds * 0.05;
             else if (queued > target_queue * 2) owed -= frame_seconds * 0.05;
@@ -1288,7 +1298,7 @@ int main(int argc, char** argv) {
                                       SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_RIGHTY));
         // PPSSPP keeps the game's time itself and a frame from it waits until the next is ready: holding it back here to
         // steer the sound queue only repeats a picture, one frame in twenty in OutRun 2006's 60 fps menus.
-        if (self_paced && !held && !fast) owed = frame_seconds;
+        if (core_paced && !held && !fast) owed = frame_seconds;
         while (owed >= frame_seconds) {
             uint32_t pressed = buttons;
             if (!inputs.empty()) {
@@ -1318,7 +1328,7 @@ int main(int argc, char** argv) {
                     peak = 0;
                 }
                 // Nothing steers a self-paced game's queue, so what a stall leaves in it is dropped: sound on time.
-                const bool too_late = self_paced && audio && SDL_GetQueuedAudioSize(audio) > target_queue * 3;
+                const bool too_late = pacing != 0 && audio && SDL_GetQueuedAudioSize(audio) > target_queue * 3;
                 if (n && !fast && !too_late) SDL_AudioStreamPut(stream, samples.data(), int(n * 4));
                 int ready;
                 while ((ready = SDL_AudioStreamAvailable(stream)) > 0) {

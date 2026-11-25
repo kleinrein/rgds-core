@@ -18,21 +18,19 @@ PictoChat off its tile leaves Home. A Kid profile wears a **Kids** mark on **Who
 
 A **Little kid** profile is a Kid profile for the smallest players, with no menus at all. Its whole launcher is one
 screen: every game it may play, from every system, as big pictures, six to a page and always in the same order (by
-name). The chosen game shows large on the upper screen with its name. A tap on a picture, or A, plays it; the D-pad,
-L/R, the arrow buttons and a sideways swipe move through the pages, round and round. There is no Home, no settings, no
-search and no game switcher: any other screen (a key, a restored state, a game ending) comes back to this one. A
-grown-up leaves with **Select**, the **Menu** button or the small picture at the bottom (**Who's playing?**), then the
-owner's PIN. A new Little kid profile starts at age 3 with unrated games hidden, so approve its games as for a Kid.
+name). The chosen game shows large on the upper screen with its name. A tap on a picture, or A, plays it. The pages
+follow the finger: drag one a quarter of the way, or flick it, and it goes; a little nudge drops back. The D-pad, L/R
+and the arrow buttons turn them too, round and round. There is no Home, no settings, no search and no game switcher,
+and no button leads anywhere else: any other screen (a key, a restored state, a game ending) comes back to this one,
+and starting a game shows no "Settings saved". A grown-up **holds the small picture at the bottom for a second** (a
+ring fills) for **Who's playing?**, then the owner's PIN. A new Little kid profile starts at age 3 with unrated games
+hidden, so approve its games as for a Kid.
 
 In a game, DS or any system RG DS Play runs, the Menu button opens just two big buttons over the paused game:
-**Play** (back to the game; B does the same) and **Home** (leaves it as Return home does, saving as the profile's
-auto-save says, back to the wall of games). There is no switcher, cheats, checkpoints or settings. **Select** is the
-grown-up's way to the whole game menu: the owner's PIN first, or straight there when the owner has none.
-
-A new profile opens **Games** straight onto every game in one list, sorted by name, instead of a Systems page first.
-Change that on the profile's own page under **Settings → Profiles** (**Games opens**: All games or Systems), or, for
-whoever is playing, in **Settings → Library → Games opens**. In that list
-the Y sheet's **System** row narrows it to one system, and its **Systems page** chip still reaches Ports and Homebrew.
+**Play** (back to the game; B, Select and Menu do the same) and **Home** (leaves it as Return home does, saving as the
+profile's auto-save says, back to the wall of games). There is no switcher, cheats, checkpoints or settings. A grown-up
+**holds the small key in the corner for a second** for the whole game menu: the owner's PIN first, or straight there
+when the owner has none.
 
 ## What a Kid profile sees
 

@@ -24,6 +24,7 @@ void App::alpha_round(SDL_Renderer* r, int x, int y, int w, int h, int radius, C
     radius = std::clamp(radius, 0, std::min(w, h) / 2);
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
     s.SetRenderDrawColor(r, fill.r, fill.g, fill.b, Uint8(std::clamp(alpha, 0, 255)));
+    if (fill_round_on_panel(s, r, x, y, w, h, radius, panel_rows)) return;
     auto& rows = fill_rows; // one call for every row, as round_rect
     rows.clear();
     for (int dy = 0; dy < radius; dy++) {
@@ -43,6 +44,27 @@ void App::shoulder_fill(SDL_Renderer* r, int x, int y, int w, int h, bool right,
     };
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
     s.SetRenderDrawColor(r, fill.r, fill.g, fill.b, Uint8(std::clamp(alpha, 0, 255)));
+    // A larger panel (the RG DS Plus): the same shape worked out in panel pixels, so its curve steps one panel pixel
+    // at a time rather than 1.6.
+    if (const float k = panel_scale(s, r); k > 1.2f && s.RenderFillRectsF && panel_part("rounds")) {
+        const int x0 = int(std::lround(x * k)), y0 = int(std::lround(y * k)), pw = int(std::lround((x + w) * k)) - x0,
+                  ph = int(std::lround((y + h) * k)) - y0;
+        const double prx = rx * k, pry = ry * k, psmall = small * k;
+        const auto pcorner = [](double radius, int row) {
+            return row >= radius ? 0
+                                 : int(radius - std::sqrt(radius * radius - (radius - row - .5) * (radius - row - .5)));
+        };
+        panel_rows.clear();
+        for (int dy = 0; dy < ph; dy++) {
+            const double t = std::max(0.0, (pry - dy - .5) / pry);
+            const int sweep = dy < pry ? int(std::lround(prx - prx * std::sqrt(std::max(0.0, 1 - t * t)))) : 0,
+                      flat = std::max(pcorner(psmall, dy), pcorner(psmall, ph - 1 - dy)),
+                      outer = std::max(sweep, pcorner(psmall, ph - 1 - dy)), inner = flat;
+            panel_rows.push_back({(x0 + (right ? inner : outer)) / k, (y0 + dy) / k, (pw - inner - outer) / k, 1 / k});
+        }
+        s.RenderFillRectsF(r, panel_rows.data(), int(panel_rows.size()));
+        return;
+    }
     fill_rows.clear();
     for (int dy = 0; dy < h; dy++) {
         const double t = std::max(0.0, (ry - dy - .5) / ry);

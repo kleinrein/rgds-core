@@ -154,6 +154,7 @@ void App::settings_top(SDL_Renderer* r, int y) {
         symbol = SettingsIcon::Spark;
         break;
     case Page::Colours: colours_top(r, y); return;
+    case Page::BatteryHealth: battery_top(r, y); return;
     case Page::Profiles: profiles_top(r, y); return;
     case Page::ProfileEdit: profile_edit_top(r, y); return;
     case Page::PinPad: pin_top(r, y); return;
@@ -248,6 +249,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
     case Page::DSControls:
         title = "DS controls";
         symbol = SettingsIcon::Controller;
+        break;
+    case Page::PlayTogether:
+        title = "Play together";
+        symbol = SettingsIcon::Wifi;
         break;
     case Page::Statistics:
         title = "Statistics";
@@ -375,6 +380,10 @@ void App::settings_top(SDL_Renderer* r, int y) {
                 532, 4);
         return;
     }
+    if (page == Page::PlayTogether) {
+        play_together_top(r, y);
+        return;
+    }
     if (page == Page::DSControls) {
         round_rect(r, 24, y + top_card_y, 592, top_card_h, 12, "panel");
         ui_icon(r, SettingsIcon::Controller, 320, y + 148, 48, "accent");
@@ -383,7 +392,7 @@ void App::settings_top(SDL_Renderer* r, int y) {
             r,
             !ds_supported()
                 ? "Use the engine's native controls for microphone and DS settings."
-                : "Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Local wireless plays with another RG DS on the same Wi-Fi; save states and fast forward wait while a session is live.",
+                : "Real microphone is enabled by default. Blow and lid actions return to the game for two seconds. Language changes apply after restarting. Play together holds local wireless and online play.",
             54, y + 264, 22, 532, 5);
         return;
     }
@@ -655,6 +664,10 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
         playtime_bottom(r, y);
         return;
     }
+    if (settings.page == Page::BatteryHealth) {
+        battery_bottom(r, y);
+        return;
+    }
     if (settings.page == Page::GameSwitcher) {
         sync_list();
         settings_header(r, y, "Game switcher");
@@ -709,6 +722,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                             : settings.page == Page::SaveGallery                                   ? gallery_title()
                             : settings.page == Page::PortFiles                                     ? "Add game files"
                             : settings.page == Page::DSControls                                    ? "DS controls"
+                            : settings.page == Page::PlayTogether                                  ? "Play together"
                             : settings.page == Page::Settings                                      ? "Settings"
                             : settings.page == Page::Appearance                                    ? "Theme"
                             : settings.page == Page::DisplayOptions                                ? "Display"
@@ -791,21 +805,24 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 list_row(r, y, i, shader_name(value), shader_current() == value ? "Selected" : "");
             } else if (settings.page == Page::Power) {
                 // indexed by control id; power_rows gives the order on the page
-                const std::array<std::string, 9> names = {
-                    "Power mode", "Menu idle sleep", "Sleep on lid close", "Battery percentage",  "Sleep now",
-                    "Power off",  "Restart",         "Dim when idle",      "Sleep timer in games"};
-                const std::array<std::string, 9> values = {power_name(system_preferences.power),
-                                                           idle_name(system_preferences.idle),
-                                                           system_preferences.lid ? "On" : "Off",
-                                                           system_preferences.battery_percent ? "On" : "Off",
-                                                           "Sleep",
-                                                           "Power off",
-                                                           "Restart",
-                                                           dim_name(system_preferences.dim),
-                                                           game_sleep_name(system_preferences.game_sleep)};
-                const std::array<bool, 9> enabled = {hardware.power,        hardware.sleep,      hardware.lid,
-                                                     hardware.battery >= 0, hardware.sleep,      hardware.poweroff,
-                                                     hardware.poweroff,     hardware.brightness, hardware.sleep};
+                const std::array<std::string, 10> names = {
+                    "Power mode", "Menu idle sleep", "Sleep on lid close", "Battery percentage",   "Sleep now",
+                    "Power off",  "Restart",         "Dim when idle",      "Sleep timer in games", "Battery health"};
+                const std::array<std::string, 10> values = {power_name(system_preferences.power),
+                                                            idle_name(system_preferences.idle),
+                                                            system_preferences.lid ? "On" : "Off",
+                                                            system_preferences.battery_percent ? "On" : "Off",
+                                                            "Sleep",
+                                                            "Power off",
+                                                            "Restart",
+                                                            dim_name(system_preferences.dim),
+                                                            game_sleep_name(system_preferences.game_sleep),
+                                                            battery.health >= 0 ? std::to_string(battery.health) + "%"
+                                                                                : ""};
+                const std::array<bool, 10> enabled = {hardware.power,        hardware.sleep,      hardware.lid,
+                                                      hardware.battery >= 0, hardware.sleep,      hardware.poweroff,
+                                                      hardware.poweroff,     hardware.brightness, hardware.sleep,
+                                                      hardware.battery >= 0};
                 const int id = power_rows[size_t(i)];
                 list_row(r, y, i, names[id], enabled[id] ? values[id] : "Unavailable", enabled[id]);
             } else if (settings.page == Page::LibraryOptions) {
@@ -901,7 +918,15 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 const bool hidden = load_visibility(o.player).count(game_key(model.games[model.selected].path)) > 0;
                 if (profiles.enabled()) list_row(r, y, i, "Visible to…", "");
                 else list_row(r, y, i, "Hide this game", hidden ? "On" : "Off");
-            } else if (settings.page == Page::GameOptions && i == game_options_base())
+            } else if (settings.page == Page::GameOptions && i == game_play_row()) {
+                const auto local = fields(player_item_folder(model.selected) / "ds-input.ini");
+                const int online = std::atoi(local.count("online") ? local.at("online").c_str() : "0"),
+                          wireless = std::atoi(local.count("wireless") ? local.at("wireless").c_str() : "0");
+                list_row(r, y, i, "Play together",
+                         online > 0 && online <= 2 ? online_names()[size_t(online)]
+                         : wireless > 0            ? locale.text("Local wireless")
+                                                   : "Off");
+            } else if (settings.page == Page::GameOptions && i == game_remove_row())
                 list_row(r, y, i, "Remove game", ""); // only listed when game_removable()
             else if (settings.page == Page::GameOptions && other_system_selected() && i == game_options_base() - 1)
                 list_row(r, y, i, "DS controls", "Unavailable", false);
@@ -927,9 +952,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 if (i == 0) volume_row(r, y);
                 else if (!o.game_menu && !probe && i == sound_toy_row())
                     list_row(r, y, i, "Sound toy", preferences.sound_toy ? "On" : "Off");
-                else if (i >= 5)
-                    list_row(r, y, i, i == 5 ? "Music player" : "Play with the lid closed",
-                             (i == 5 ? preferences.music_player : preferences.music_lid) ? "On" : "Off");
+                else if (i >= 5) list_row(r, y, i, "Play with the lid closed", preferences.music_lid ? "On" : "Off");
                 else {
                     const bool on = i == 4 ? preferences.menu_haptics || preferences.game_rumble
                                            : preferences.menu_sounds || preferences.menu_music;
@@ -981,6 +1004,7 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             else if (settings.page == Page::PortFiles) port_files_row(r, y, i);
             else if (settings.page == Page::Cheats) cheat_row(r, y, i);
             else if (settings.page == Page::DSControls) ds_controls_row(r, y, i);
+            else if (settings.page == Page::PlayTogether) play_together_row(r, y, i);
             else if (settings.page == Page::Network) {
                 const std::array<std::string, 9> names = {"Wi-Fi",
                                                           "Available networks",
@@ -1108,8 +1132,11 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                          : i == 4 ? pictures.at(size_t(std::clamp(preferences.extra_pictures, 0, 3)))
                                   : "");
             } else if (settings.page == Page::DeviceInfo)
-                list_row(r, y, i, device_info_name(i), device_info_value(i), true, nullptr, true, i == 2 ? " " : "",
-                         i == 2 ? storage_used_fraction() : -1);
+                list_row(r, y, i, device_info_name(i), device_info_value(i), true, nullptr, true,
+                         i == 2 || i == 4 ? " " : "",
+                         i == 2   ? storage_used_fraction()
+                         : i == 4 ? games_card_used_fraction()
+                                  : -1);
             else if (settings.page == Page::Graphics) {
                 const std::array<std::string, 9> names = {"3D resolution", "3D edge smoothing", "Heavy 3D scenes",
                                                           "2D scaling",    "Screen filter",     "Frameskip",
@@ -1193,20 +1220,38 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
             label(r, mode, 612 - width, y + 29, 18, "muted", width);
         }
         bool busy = menu_status["state"] == "busy";
-        const std::array<std::string, 14> names = {
-            "Resume",          "Save checkpoint",
-            "Load checkpoint", experimental_game() || active_engine() == play_core ? "Graphics" : "Shaders",
-            "Emulator",        "Sound",
-            "Brightness",      "Save & restart",
-            "Return home",     "Controls",
-            "Game switcher",   "Cheats",
-            "Screenshot",      "Rewind"};
+        // In a local-wireless session there are no checkpoints: those tiles are the session's (Play together).
+        const bool session = net_session_live();
+        const std::array<std::string, 14> names = {"Resume",
+                                                   session ? "Play together" : "Save checkpoint",
+                                                   session ? "Leave session" : "Load checkpoint",
+                                                   experimental_game() || active_engine() == play_core ? "Graphics"
+                                                                                                       : "Shaders",
+                                                   "Emulator",
+                                                   "Sound",
+                                                   "Brightness",
+                                                   session ? "Restart game" : "Save & restart",
+                                                   "Return home",
+                                                   "Controls",
+                                                   "Game switcher",
+                                                   "Cheats",
+                                                   "Screenshot",
+                                                   "Rewind"};
         static const std::string port_restart = "Restart port"; // ports have no checkpoint to save first
-        const std::array<SettingsIcon, 14> symbols = {
-            SettingsIcon::Play,    SettingsIcon::Save,       SettingsIcon::Load,    SettingsIcon::Shader,
-            SettingsIcon::Sliders, SettingsIcon::Volume,     SettingsIcon::Sun,     SettingsIcon::Restart,
-            SettingsIcon::Home,    SettingsIcon::Controller, SettingsIcon::Library, SettingsIcon::Spark,
-            SettingsIcon::Art,     SettingsIcon::Clock};
+        const std::array<SettingsIcon, 14> symbols = {SettingsIcon::Play,
+                                                      session ? SettingsIcon::Wifi : SettingsIcon::Save,
+                                                      session ? SettingsIcon::Back : SettingsIcon::Load,
+                                                      SettingsIcon::Shader,
+                                                      SettingsIcon::Sliders,
+                                                      SettingsIcon::Volume,
+                                                      SettingsIcon::Sun,
+                                                      SettingsIcon::Restart,
+                                                      SettingsIcon::Home,
+                                                      SettingsIcon::Controller,
+                                                      SettingsIcon::Library,
+                                                      SettingsIcon::Spark,
+                                                      SettingsIcon::Art,
+                                                      SettingsIcon::Clock};
         // One rule for the page: wide tiles on the top and bottom rows, a 3x3 grid between them,
         // 16 px between tiles. Cheats stays muted outside DSCore or without a database entry.
         // The top row is Resume, Rewind (tile 13) and Screenshot (tile 12), over the grid's three columns.

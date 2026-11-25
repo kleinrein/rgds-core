@@ -23,6 +23,9 @@ void App::files_setup_roots() {
         if (!o.music_dirs.empty()) files_roots.push_back({"Music", o.music_dirs.front()});
         files_roots.push_back({"Card", card});
     }
+    // The RG DS Plus's second card while it is in (games_card.hpp): copies there and back go through files.py as on
+    // the card; a delete there is for good, as the trash is on the system card.
+    if (games_card && !std::getenv("RGDS_FILES_ROOTS")) files_roots.push_back({"Second card", games_card->point});
     // Network places (network/sources.ini, written by runtime/net_sources.py), or one Network root to add the first.
     bool any = false;
     std::ifstream ini(o.data / "network/sources.ini");
@@ -1135,7 +1138,7 @@ SettingsIcon App::files_place_icon(const FilesRoot& root) const {
     if (root.name == "Screenshots") return SettingsIcon::Art;
     if (root.name == "Music") return SettingsIcon::Music;
     if (root.name == "Trash") return SettingsIcon::Trash;
-    if (root.name == "Card") return SettingsIcon::Save;
+    if (root.name == "Card" || root.name == "Second card") return SettingsIcon::Save;
     return SettingsIcon::Folder;
 }
 

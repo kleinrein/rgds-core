@@ -72,7 +72,12 @@ int main(){
  PageDrag page;assert(!page.active());
  page.follow(PageDrag::Kind::Home,2);assert(page.holding() && page.dy<0 && page.scale<1 && page.scale>.85);
  page.follow(PageDrag::Kind::Home,72);double lifted=page.dy,shrunk=page.scale;
- page.follow(PageDrag::Kind::Home,300);assert(page.dy<lifted && page.dy>lifted-60 && page.scale<shrunk && page.scale>.8);
+ page.follow(PageDrag::Kind::Home,240);assert(page.dy<lifted-120 && page.scale<shrunk && page.scale>.6);lifted=page.dy;shrunk=page.scale;
+page.follow(PageDrag::Kind::Home,300);assert(page.dy<lifted && page.dy>lifted-60 && page.scale<shrunk && page.scale>.6);
+page.follow(PageDrag::Kind::Home,300,1,100);assert(page.dx>40);page.follow(PageDrag::Kind::Home,300);
+// Home decides on release: far enough, or thrown; a finger heading back down cancels.
+assert(PageDrag::home_commits(120,0) && PageDrag::home_commits(40,.8) && !PageDrag::home_commits(40,.2));
+assert(!PageDrag::home_commits(200,-.5) && !PageDrag::home_commits(10,3));
  page.depart(1000);assert(page.departing());bool faded=false;
  for(unsigned t=1016;t<2000 && page.active();t+=16){page.update(t,1.0);if(page.active())assert(page.alpha>=0 && page.alpha<=1 && page.scale<=shrunk+1e-9);faded|=page.alpha<.5;}
  assert(faded && !page.active() && page.scale==1 && page.alpha==1);
@@ -84,7 +89,8 @@ int main(){
  mirror.depart(0);mirror.update(1000,1.0);mirror.follow(PageDrag::Kind::Back,40,-1);mirror.depart(0);mirror.update(150,1.0);assert(mirror.dx<-300);
  // A relaxed pace takes longer than the normal one.
  PageDrag slow;slow.follow(PageDrag::Kind::Home,72);slow.depart(0);slow.update(250,2.8);assert(slow.active());
- PageDrag normal;normal.follow(PageDrag::Kind::Home,72);normal.depart(0);normal.update(320,1.0);assert(!normal.active());
+ PageDrag normal;normal.follow(PageDrag::Kind::Home,72);normal.depart(0);normal.update(370,1.0);assert(!normal.active());
+PageDrag thrown;thrown.follow(PageDrag::Kind::Home,72);thrown.depart(0,3);thrown.update(200,1.0);assert(!thrown.active());
  // The carousel: an ordinary swipe settles on the nearest item, only a hard flick coasts on, further the harder.
  Carousel soft;soft.reset(2);soft.down(320,205,false,0);
  for(unsigned t=16;t<=80;t+=16){soft.drag(320-int(t*1.6),20);soft.sample(t);}

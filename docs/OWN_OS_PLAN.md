@@ -628,12 +628,23 @@ The owner would rather not carry ROCKNIX's drivers. Swap them one at a time on t
 
 The same image boots the RG DS and the RG DS Plus. The tester guide is [RG_DS_PLUS_TEST.md](RG_DS_PLUS_TEST.md).
 
-- **Detection in U-Boot.** The SARADC's channel 5 is a board ID: 1.06 V on the RG DS (our unit reads raw 607 of
-  1023 at 1.758 mV, 1.067 V) and 1.77 V on the Plus (BananaLinux's measurement). `uboot-patches/004` turns the
-  SARADC on in U-Boot's device tree, with `vdd-microvolts` as its reference: U-Boot does not read Linux's
-  `vref-supply`. The preboot in `uboot-rgds.fragment` sets `$fdtfile` to the Plus's tree above 1.4 V and to the RG
-  DS's otherwise, including when the reading fails. `extlinux.conf` loads it with `FDTDIR /a/`. `rgds.detected=` and
-  `rgds.adc=` go on the kernel command line. BananaLinux's universal card never booted its RG DS (clang build, cause
+- **Detection.** The SARADC's channel 5 is a board ID: 1.06 V on the RG DS (our unit reads raw 607 of 1023 at
+  1.758 mV, 1.067 V), 1.8 V on the Plus (raw 1023 in Linux under either device tree; BananaLinux's 1.77 V was a Linux
+  reading). In U-Boot the Plus's ID divider is not powered yet: the owner's Plus read 0.27, 0.33, 1.03 and 1.57 V
+  on four boots (2026-11-24), the 1.03 inside the RG DS's 1.06, so no threshold works there. Linux decides instead:
+  `usr/libexec/rgds/board-check` (rcS, in the background once `/boot` is mounted; the Plus's ID also ramps up in
+  Linux's first seconds, 892 at 3.2 s on one boot and inside the RG DS's window on another, so the Plus is any reading
+  at 900 or more and the RG DS needs every reading from 12 to 20 s inside its window) writes `rgds_known=rgds|rgds-plus` to
+  `rgds-board.txt` on the boot partition, and when the running device tree is not this handheld's it restarts once
+  (`rgds-board.reboot` marks it, so a second mismatch never restarts; a U-Boot that does not read the file, which
+  the command line shows by lacking `rgds.from=`, gets the file and no restart). The preboot in
+  `uboot-rgds.fragment` loads that file first (`load mmc 1:1`, `env import`) and only without it goes by the
+  voltage (the RG DS's window 0.8-1.4 V and a failed reading mean the RG DS, either side the Plus).
+  `uboot-patches/004` turns the SARADC on in U-Boot's device tree, with `vdd-microvolts` as its reference: U-Boot does
+  not read Linux's `vref-supply`. `extlinux.conf` loads the tree with `FDTDIR /a/`. `rgds.detected=`, `rgds.adc=`
+  and `rgds.from=` (`file` or `adc`) go on the kernel command line. On the Plus (2026-11-24): U-Boot read 0.998 V and
+  picked the RG DS, board-check restarted once, the next boot said `rgds.from=file` and came up right. Tests:
+  `tests/test_board_check.py`. BananaLinux's universal card never booted its RG DS (clang build, cause
   unknown); ours is built with GCC.
 - **Verified on our RG DS (2026-10-29, build 0.8.0-0dac2b9bab68-ose0952b33, slot b, `own_os_push.py --uboot
   --fdtdir`).** U-Boot read 1,064,516 µV, picked `rgds` and booted slot b through `FDTDIR`, with the same boot times

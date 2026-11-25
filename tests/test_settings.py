@@ -383,6 +383,7 @@ class SettingsTests(unittest.TestCase):
 40 key Right
 60 key Right
 80 key A
+110 key Down
 120 key Down
 140 key Down
 160 key Down
@@ -432,12 +433,12 @@ class SettingsTests(unittest.TestCase):
         self.assertIn("power=1\n", self.system_prefs.read_text())  # one step down from Balanced: there is no Stock
 
     def test_dim_and_game_sleep_timers_are_saved_only_when_changed(self):
-        # rows 4 and 5 (Dim when idle, Sleep timer in games) sit under Menu idle sleep in the Sleep group, each with a
-        # picker; the default dim (1 min) is not written
+        # rows 5 and 6 (Dim when idle, Sleep timer in games) sit under Menu idle sleep in the Sleep group, each with a
+        # picker (Battery health is row 2); the default dim (1 min) is not written
         self.run_preview("20 key A\n40 key Right\n60 key A\n", extra=("--settings", "--section", "power"))
         self.assertNotIn("dim=", self.system_prefs.read_text())
         self.run_preview(
-            "100 key Down\n120 key Down\n140 key Down\n160 key Down\n180 key A\n220 key Right\n260 key A\n300 key Down\n340 key A\n"
+            "90 key Down\n100 key Down\n120 key Down\n140 key Down\n160 key Down\n180 key A\n220 key Right\n260 key A\n300 key Down\n340 key A\n"
             "380 key Right\n420 key Right\n460 key A\n",
             extra=("--settings", "--section", "power")
         )
@@ -446,7 +447,7 @@ class SettingsTests(unittest.TestCase):
         self.assertIn("game_sleep=2\n", saved)
         # back to the default: the line goes, the other choice stays
         self.run_preview(
-            "100 key Down\n120 key Down\n140 key Down\n160 key Down\n180 key A\n220 key Left\n260 key A\n",
+            "90 key Down\n100 key Down\n120 key Down\n140 key Down\n160 key Down\n180 key A\n220 key Left\n260 key A\n",
             extra=("--settings", "--section", "power")
         )
         self.assertNotIn("dim=", self.system_prefs.read_text())

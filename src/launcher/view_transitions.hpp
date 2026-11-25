@@ -15,7 +15,8 @@ void App::motion_input(int code) {
 
 void App::move_element(uint32_t id, int& x, int& y, int width, int height, bool focused, int clip_top, int clip_bottom,
                        int clip_left, int clip_right) {
-    if (!drawing_elements || !view_transitions_enabled() || layered(preferences.view_style)) return;
+    if (!drawing_elements || !view_transitions_enabled() || layered(preferences.view_style) || view_motion_from_gesture)
+        return;
     MotionRect bounds{x, y - element_origin_y, width, height};
     auto offset = view_motion.element(id, bounds, focused, view_drawn_at);
     if (pointer_down && bounds.contains(contact_x, contact_y)) offset.y += 3;
@@ -55,7 +56,7 @@ void App::capture_view_for_input(const SDL_Event& e) {
     if (!trigger || view_capture_frame == rendered_frames) return;
     SDL_Renderer* renderer = bottom_renderer();
     if (!view_previous)
-        view_previous = s.CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 480);
+        view_previous = panel_canvas(renderer);
     if (!view_previous || s.SetRenderTarget(renderer, view_previous) != 0) {
         view_canvas_failed = true;
         s.ClearError();
@@ -116,7 +117,8 @@ void App::sync_view_motion(Uint32 now) {
         // crossfade, never a sideways slide of the whole screen.
         if (same_page) view_route = ViewTravel::Fade;
         start_view_motion(now, view_route);
-        if (view_route == ViewTravel::Back) back_transitions++;
+        view_motion_from_gesture = page_drag.departing(); // the upper panel still crossfades on this motion
+        if (view_route == ViewTravel::Back && !view_motion_from_gesture) back_transitions++;
         view_route = ViewTravel::Forward;
         view_transitions++;
     }

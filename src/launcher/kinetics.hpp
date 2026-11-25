@@ -173,8 +173,19 @@ struct PageDrag {
     double pull = 0, dx = 0, dy = 0, scale = 1, alpha = 1;
     double side = 1; // Back: 1 when the finger came from the left edge, -1 from the right
     double from_dx = 0, from_dy = 0, from_scale = 1;
+    double fling = 0; // Home: the finger's upward speed at release (px/ms); a harder flick throws the page faster
     uint32_t began = 0;
     static constexpr uint32_t depart_ms = 300, return_ms = 420;
+    // Home commits on release, like a phone: a long enough pull, or a short one thrown upward. A finger that was
+    // heading back down when it lifted cancels.
+    static constexpr double home_reach = 110, home_flick = .5, home_cancel = -.25;
+    static bool home_commits(double pull, double speed) {
+        return (pull >= home_reach && speed > home_cancel) || (pull >= 20 && speed >= home_flick);
+    }
+    uint32_t depart_span() const {
+        if (kind != Kind::Home) return depart_ms;
+        return uint32_t(std::clamp(360 - 70 * fling, 190.0, 360.0));
+    }
     bool active() const { return kind != Kind::None; }
     bool holding() const { return active() && phase == Phase::Holding; }
     bool departing() const { return active() && phase == Phase::Departing; }
@@ -187,18 +198,19 @@ struct PageDrag {
     }
     static double ease_out(double t) { return 1 - std::pow(1 - std::clamp(t, 0.0, 1.0), 3); }
     // The finger's pull along the gesture (px from where it touched the edge).
-    void follow(Kind which, double distance, double direction = 1) {
+    void follow(Kind which, double distance, double direction = 1, double lateral = 0) {
         kind = which;
         side = direction < 0 ? -1 : 1;
         phase = Phase::Holding;
         pull = std::max(0.0, distance);
         alpha = 1;
         if (kind == Kind::Home) {
-            // The page lifts with the finger and shrinks toward the middle; past the trigger it keeps giving a little.
-            const double near = std::min(pull, 72.0), beyond = ScrollMotion::band(std::max(0.0, pull - 72));
-            dx = 0;
-            dy = -(near * .7 + beyond * .5);
-            scale = 1 - .14 * ease_out(near / 72) - .04 * (beyond / ScrollMotion::extent);
+            // A card under the finger: it rides up nearly one to one, leans with the finger sideways and shrinks
+            // as it goes; well past the trigger it gets heavy.
+            const double near = std::min(pull, 240.0), beyond = ScrollMotion::band(std::max(0.0, pull - 240));
+            dx = std::clamp(lateral, -260.0, 260.0) * .55;
+            dy = -(near * .85 + beyond * .6);
+            scale = 1 - .34 * ease_out(near / 240) - .05 * (beyond / ScrollMotion::extent);
         } else {
             const double near = std::min(pull, 72.0), beyond = ScrollMotion::band(std::max(0.0, pull - 72));
             dx = (near * .9 + beyond * .6) * side;
@@ -206,8 +218,9 @@ struct PageDrag {
             scale = 1 - .03 * ease_out(near / 72);
         }
     }
-    void depart(uint32_t now) {
+    void depart(uint32_t now, double speed = 0) {
         if (!active()) return;
+        fling = std::clamp(speed, 0.0, 4.0);
         phase = Phase::Departing;
         began = now;
         from_dx = dx;
@@ -225,15 +238,17 @@ struct PageDrag {
     // True while a repaint is due.
     bool update(uint32_t now, double pace) {
         if (!active() || phase == Phase::Holding) return false;
-        const double span = (phase == Phase::Departing ? depart_ms : return_ms) * pace;
+        const double span = (phase == Phase::Departing ? depart_span() : return_ms) * pace;
         const double t = std::min(1.0, (now - began) / std::max(1.0, span));
         if (phase == Phase::Departing) {
             const double e = ease_out(t);
             if (kind == Kind::Home) {
-                dx = 0;
-                dy = from_dy + (-150 - from_dy) * e;
-                scale = from_scale * (1 - .45 * e);
-                alpha = 1 - e;
+                // Thrown: it keeps the finger's direction, swings back to the middle and shrinks away into Home,
+                // fading only once it is small.
+                dx = from_dx * (1 - e);
+                dy = from_dy + (-(260 + 70 * fling) - from_dy) * e;
+                scale = from_scale * (1 - .7 * e);
+                alpha = 1 - e * e;
             } else {
                 dx = from_dx + (660 * side - from_dx) * e;
                 dy = 0;

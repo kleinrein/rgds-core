@@ -69,6 +69,10 @@ mkdir -p /data/rgds/userdata /data/rgds/logs /data/rgds/cache/mesa /data/rgds/ss
 # the 3DS folder where the engine is (emulators.tanuki_engine: in the image since 0.9.1, or on the data partition)
 for e in /data/rgds/engines/tanuki3ds /usr/share/rgds/engines/tanuki3ds; do [ -f $e/run.sh ] && mkdir -p /data/roms/3ds; done
 mark "rcS: data ready"
+# a games card in the RG DS Plus's second slot, read-write at /media/tf2 beside /data/roms (usr/libexec/rgds/games-card):
+# one already in is mounted before RG DS Core lists the games, and the slot is watched for one put in or pulled out
+[ -b "$DISK" ] && /usr/libexec/rgds/games-card boot 2>> /run/rgds/messages
+[ -b "$DISK" ] && nice -n 10 /usr/libexec/rgds/games-card watch 2>> /run/rgds/messages &
 # last boot's system and kernel logs become *.prev.txt; from here they are copied to the card every minute
 # (usr/libexec/rgds/logs), and compressed swap in RAM is set up (usr/libexec/rgds/zram)
 /usr/libexec/rgds/logs boot
@@ -91,6 +95,9 @@ if ls /sys/fs/pstore/dmesg-* >/dev/null 2>&1; then
 fi
 rm -f /sys/fs/pstore/* 2>/dev/null
 mount -t vfat -o ro,noatime ${DISK}p1 /boot 2>/dev/null
+# which handheld this is, for U-Boot's next boot (rgds-board.txt); a wrong device tree restarts once. In the
+# background: the Plus's ID only settles in the first seconds of Linux, and an RG DS is only called one after 20 s.
+/usr/libexec/rgds/board-check &
 # a slot switch on trial (usr/libexec/rgds/trial): a fallback U-Boot made is recorded for the launcher, and a trial
 # slot that never commits (the session commits once RG DS Core has stayed up) restarts so U-Boot's counter advances
 /usr/libexec/rgds/trial boot

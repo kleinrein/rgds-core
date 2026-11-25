@@ -82,7 +82,8 @@ class EmulatorSettingsUiTests(unittest.TestCase):
     def test_ds_local_wireless_picker_writes_the_mode(self):
         path = self.game.parent / 'ds-input.ini'
         write_fields(path, dict(nickname='Old'))
-        keys = self.row(7, 'A', 'Down', 'Down', 'Down', 'Down', 'Down', 'A')
+        # DS controls > Play together (row 5) > Local wireless (row 0)
+        keys = self.row(7, 'A', *(['Down'] * 5), 'A', 'A')
         report = self.run_ui(keys, 'rgds-experimental')
         self.assertEqual(report['picker_title'], 'Local wireless')
         self.assertEqual(report['picker_focus'], 0)
@@ -94,7 +95,8 @@ class EmulatorSettingsUiTests(unittest.TestCase):
     def test_ds_online_play_picker_writes_the_service(self):
         path = self.game.parent / 'ds-input.ini'
         write_fields(path, dict(nickname='Old'))
-        keys = self.row(7, 'A', *(['Down'] * 6), 'A')
+        # DS controls > Play together (row 5) > Online play (row 1)
+        keys = self.row(7, 'A', *(['Down'] * 5), 'A', 'Down', 'A')
         report = self.run_ui(keys, 'rgds-experimental')
         self.assertEqual(report['picker_title'], 'Online play')
         self.assertEqual(report['picker_focus'], 0)

@@ -3,6 +3,7 @@
 #pragma once
 #include "core/gpu/rgds_sample_plan.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -12,6 +13,7 @@
 #include <fcntl.h>
 #include <fstream>
 #include <functional>
+#include <mutex>
 #include <string>
 #include <unistd.h>
 
@@ -93,6 +95,13 @@ inline std::function<bool(int)> adaptive_handler;
 // Online play: 0 off, 1 Wiimmfi, 2 WiiLink WFC. Live: the emulated access point always beacons, and this
 // swaps the host network behind it. False when local wireless holds the radio or the stack cannot start.
 inline std::function<bool(int)> online_handler;
+// Local wireless: 1 while a session holds the radio (main.cpp's net_live). Save states wait then (nothing restores a
+// network session), so the bridge leaves without one rather than waiting out a save the engine will never write.
+inline int net_live = 0;
+// The session as the game menu shows it: "role=host|guest" then one "player=<name>\t<ping ms>\t<1 if this console>"
+// line per console. main.cpp refreshes it about once a second from the emulation thread; the bridge reads a copy.
+inline std::mutex net_info_mutex;
+inline std::string net_info;
 // Cheats: the Action Replay codes loaded for the cart, listed and toggled from
 // the RG DS game menu. Text pointers are the engine's own strings; they stay
 // valid until the cart changes (the loader cart's reset), and the bridge copies
@@ -194,6 +203,19 @@ extern "C" __attribute__((used, visibility("default"))) inline int rgds_set_onli
     std::fprintf(stderr, "RG DS online play: %s\n", e.what());
     return 0;
   }
+}
+
+// 1 while a local-wireless session is live (no save states then); 0 otherwise. Any thread.
+extern "C" __attribute__((used, visibility("default"))) inline int rgds_net_live() { return rgds::net_live; }
+// The session text above, copied into out (at most size - 1 bytes, always terminated); returns its full length.
+extern "C" __attribute__((used, visibility("default"))) inline int rgds_net_info(char* out, int size) {
+  std::lock_guard<std::mutex> lock(rgds::net_info_mutex);
+  if (out && size > 0) {
+    const size_t n = std::min(rgds::net_info.size(), static_cast<size_t>(size - 1));
+    std::memcpy(out, rgds::net_info.data(), n);
+    out[n] = '\0';
+  }
+  return static_cast<int>(rgds::net_info.size());
 }
 
 // Cheats, called by RGDS on the SDL/emulation thread between emulated frames.

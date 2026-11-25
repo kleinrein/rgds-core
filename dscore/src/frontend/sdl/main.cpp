@@ -2334,6 +2334,7 @@ sdl_ready:
 #if DSPERATE_NET
   net_live = lan != nullptr;
 #endif
+  rgds::net_live = net_live ? 1 : 0;
   int state_slot = 0;
   // Fast forward: ff_speed floors the limiter (0 = uncapped); ff_skip
   // presents one frame in ff_skip+1, every frame still emulated exactly.
@@ -3262,7 +3263,24 @@ sdl_ready:
 
     const Uint64 t0 = SDL_GetPerformanceCounter();
 #if DSPERATE_NET
-    if (lan) lan->process(); // the LAN's turn, once a frame, on this thread
+    if (lan) {
+      lan->process(); // the LAN's turn, once a frame, on this thread
+      // About once a second, the session for the game menu's Play together page (rgds_net_info).
+      if (static unsigned net_info_frame = 0; net_live && net_info_frame++ % 60 == 0) {
+        std::string info = lan->is_host() ? "role=host\n" : "role=guest\n";
+        for (const auto& p : lan->players()) {
+          if (p.status == ds::net::LanMp::PlayerStatus::None || p.status == ds::net::LanMp::PlayerStatus::Disconnected)
+            continue;
+          std::string name(p.name, strnlen(p.name, sizeof p.name));
+          for (char& ch : name)
+            if (ch == '\n' || ch == '\t' || ch == '\r') ch = ' ';
+          info += "player=" + name + "\t" + std::to_string(p.is_local ? 0 : p.ping) + "\t" +
+                  (p.id == lan->my_id() ? "1" : "0") + "\n";
+        }
+        std::lock_guard<std::mutex> lock(rgds::net_info_mutex);
+        rgds::net_info = std::move(info);
+      }
+    }
     if (slirp) slirp->process();
 #endif
     nds.run_frame();

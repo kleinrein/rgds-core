@@ -65,7 +65,8 @@ void App::restore_dac_level() {
 
 bool App::emit_sound(MenuCue cue, int direction) {
     // The motor answers first and also while muted, as a phone does on silent.
-    if (!probe) haptics.play(static_cast<Haptic>(cue));
+    if (!probe && !bench_off("haptics")) haptics.play(static_cast<Haptic>(cue));
+    if (bench_off("sound")) return false;
     if (probe || settings.page == Page::Microphone || vt.recording || (hardware.volume && hardware.volume_percent == 0))
         return false;
     return sounds.play(cue, s.GetTicks(), direction, motion_touch ? (contact_x / 640.f - .5f) * .5f : direction * .12f);

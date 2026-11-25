@@ -7,6 +7,8 @@
 // out.samples (milliseconds since start, tid, pc and lr in hex) and out.maps (a copy of /proc/self/maps) and out.threads (tid name); turning
 // addresses into function names happens on a machine with the unstripped libraries (rgds_prof_report.py).
 // RGDS_PROF_START=N skips the first N seconds (boot), RGDS_PROF_HZ sets the rate (default 1000).
+// RGDS_PROF_STACKS=HEX also writes out.stacks: for the ioctl with that request code, who called it (ms, tid, then the
+// return addresses up the frame-pointer chain), for the first 60,000 calls after the start.
 #define _GNU_SOURCE
 #include <dirent.h>
 #include <dlfcn.h>
@@ -37,13 +39,45 @@ static atomic_int written;
 static double start_after;
 static struct timespec began;
 
-// Every ioctl counted by request code, with the time it took (out.ioctls: request hex, calls, total ms), so kernel
+// Every ioctl counted by request code, with the time it took (out.ioctls: request hex, calls, total ms; after the start only), so kernel
 // time in a GPU driver can be split into submits, waits, buffer creation and so on.
 #define IOCTL_SLOTS 128
 static struct {
     _Atomic unsigned long request;
     atomic_ulong calls, ns;
 } ioctls[IOCTL_SLOTS];
+
+#define STACK_DEPTH 14
+#define MAX_STACKS 60000u
+static struct stack {
+    uint32_t tid, ms;
+    uint64_t pc[STACK_DEPTH];
+}* stacks;
+static atomic_uint stacks_used;
+static unsigned long stack_request;
+
+static double elapsed(void) {
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    return now.tv_sec - began.tv_sec + (now.tv_nsec - began.tv_nsec) / 1e9;
+}
+
+// AArch64 keeps x29 chains by default (GCC and Clang): each frame record is {caller's x29, return address}.
+__attribute__((noinline)) static void record_stack(double seconds) {
+    unsigned at = atomic_fetch_add_explicit(&stacks_used, 1, memory_order_relaxed);
+    if (at >= MAX_STACKS) return;
+    struct stack* s = &stacks[at];
+    s->tid = (uint32_t)syscall(SYS_gettid);
+    s->ms = (uint32_t)(seconds * 1000);
+    uintptr_t* frame = __builtin_frame_address(0);
+    const uintptr_t low = (uintptr_t)frame;
+    for (int depth = 0; depth < STACK_DEPTH; ++depth) {
+        s->pc[depth] = frame[1];
+        uintptr_t next = frame[0];
+        if (next <= (uintptr_t)frame || next - low > (8u << 20) || (next & 15)) break;
+        frame = (uintptr_t*)next;
+    }
+}
 
 int ioctl(int fd, unsigned long request, ...) {
     static int (*real)(int, unsigned long, ...);
@@ -53,6 +87,9 @@ int ioctl(int fd, unsigned long request, ...) {
     void* arg = va_arg(args, void*);
     va_end(args);
     if (!samples) return real(fd, request, arg);
+    const double seconds = elapsed();
+    if (seconds < start_after) return real(fd, request, arg);
+    if (stacks && request == stack_request) record_stack(seconds);
     struct timespec a, b;
     clock_gettime(CLOCK_MONOTONIC, &a);
     int result = real(fd, request, arg);
@@ -126,6 +163,19 @@ static void dump(void) {
             fprintf(f, "%lx %lu %.1f\n", (unsigned long)ioctls[i].request, (unsigned long)ioctls[i].calls,
                     ioctls[i].ns / 1e6);
     if (f) fclose(f);
+    unsigned kept = atomic_load(&stacks_used);
+    if (kept > MAX_STACKS) kept = MAX_STACKS;
+    if (stacks) {
+        snprintf(path, sizeof path, "%s.stacks", out);
+        f = fopen(path, "w");
+        for (unsigned i = 0; f && i < kept; ++i) {
+            fprintf(f, "%u %u", stacks[i].ms, stacks[i].tid);
+            for (int d = 0; d < STACK_DEPTH && stacks[i].pc[d]; ++d)
+                fprintf(f, " %llx", (unsigned long long)stacks[i].pc[d]);
+            fputc('\n', f);
+        }
+        if (f) fclose(f);
+    }
     snprintf(path, sizeof path, "%s.samples", out);
     f = fopen(path, "w");
     unsigned n = atomic_load(&used);
@@ -152,6 +202,11 @@ __attribute__((constructor)) static void start(void) {
     const char* after = getenv("RGDS_PROF_START");
     start_after = after ? atof(after) : 0;
     clock_gettime(CLOCK_MONOTONIC, &began);
+    const char* wanted = getenv("RGDS_PROF_STACKS");
+    if (wanted && *wanted) {
+        stack_request = strtoul(wanted, NULL, 16);
+        stacks = calloc(MAX_STACKS, sizeof *stacks);
+    }
     const char* hz_env = getenv("RGDS_PROF_HZ");
     int hz = hz_env ? atoi(hz_env) : 1000;
     if (hz < 1) hz = 1000;

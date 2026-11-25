@@ -5,28 +5,87 @@
   </picture>
 </p>
 
-**Our own operating system for the Anbernic RG DS.** A lightweight Linux image that boots straight into a DSi-style library in a few seconds, plays DS, GBA, Game Boy, PSP and more, and sleeps when you close the lid.
+**Our own operating system for the Anbernic RG DS and RG DS Plus.** A lightweight Linux image that boots straight into a DSi-style library in a few seconds, plays DS, GBA, Game Boy, PSP and more, and sleeps when you close the lid.
 
 ![Home screen, the Nintendo 64 shelf and a kart game's pause board, captured on an RG DS](docs/images/screens.png)
 
-> **Early release.** RG DS OS 0.9.1 is the latest public image. The standard RG DS is tested; the RG DS Plus runs the same image but is still being checked ([Plus tester guide](docs/RG_DS_PLUS_TEST.md)). Details in [Status](#status).
+> **Early release.** RG DS OS 0.9.1 is the latest public image. The RG DS and the RG DS Plus are both fully supported. This page describes the current source, which is ahead of 0.9.1; some newer features are not yet tested on a handheld.
 
-## What you get
+## Features
 
-- **A real OS:** Quick boot, low RAM consumption and fast game starts.
-- **DS games in DSCore:** sharp 2x-5x 3D (heavy games can glitch or slow down), 32 shaders and LCD filters, fast-forward, low input latency.
-- **More systems:** GBA, GB and GBC in RG DS Play, plus NES, SNES, Master System (with Game Gear and SG-1000), Mega Drive (with Mega-CD and Sega Pico), PC Engine (with CD-ROM), N64, PlayStation, PSP, Dreamcast, ZX Spectrum, Commodore 64, Amiga, DOS (through DOSBox Pure), MSX, Amstrad CPC, Atari 2600, 5200 and 7800, Atari Lynx, WonderSwan (and Color), Neo Geo Pocket (and Color), Virtual Boy (red on black, or in 3D with one eye on each screen), ColecoVision, Intellivision, PICO-8 (through fake-08), Game & Watch, Nintendo's two-monitor arcade cabinets (Punch-Out!!, Super Punch-Out!! and the Vs. dual games, one monitor per screen) ScummVM and Flash games (through Ruffle, with Flashpoint Archive packs imported). Nintendo 3DS is experimental.
-- **Dual screen mode:** maps, HUDs and your team on the bottom panel. See [the games](#second-screen-games).
-- **One in-game menu for every system:** pause, checkpoints, cheats, game switcher, settings.
-- **Library:** covers, list or cartridges. Search, favourites, recents, play time, and artwork and game info fetched for you.
-- **Profiles:** everyone who plays gets their own saves, favourites and look. A Kid profile shows games for its age and locks the settings with a PIN. [More](docs/PROFILES.md)
-- **Music player:** your own music from the card, MP3 and FLAC to tracker modules. [More](docs/MUSIC.md)
-- **PortMaster ports**.
-- **PictoChat:** our own Wi-Fi chat between handhelds, no Nintendo files. [More](docs/PICTOCHAT.md)
-- **Sound toy:** record your voice and play it back as a chipmunk, robot, monster or backwards, draw to bend it, and make it the startup sound. [More](docs/SOUND_TOY.md)
-- **Safe updates:** signed, over Wi-Fi, into a second system slot. A bad update rolls back by itself, and Use previous build takes you back by hand. [More](docs/OTA.md)
-- **True sleep and power modes:** the lid puts it to rest on very little power; pick a power mode to trade speed for battery and heat.
-- **Yours:** light/dark, accent colours, 23 languages, menu sounds and music.
+### DS games
+
+- DSCore: 2x-5x 3D (heavy games can glitch or slow down), fast-forward and low input latency. [Engine](dscore/README.md)
+- Microphone (or simulated blowing), lid, DS language, name and birthday, Rumble Pak.
+- Local wireless between handhelds and with melonDS, and online play through Wiimmfi or WiiLink.
+- DSiWare (experimental).
+
+### Two screens
+
+- Maps, HUDs, teams and battle panels on the bottom screen. [Games](docs/PLAY.md)
+- Touch keyboards and keypads for computers and consoles, a touch mouse for DOS.
+- Arcade vertical games across both panels, two-monitor cabinets, Game & Watch, Virtual Boy in 3D.
+- Game manuals (PDF or CBZ) beside the game, for systems other than DS.
+
+### While you play
+
+- One menu: pause, checkpoints with previews and undo, game switcher and settings. [Saves](docs/SAVES.md)
+- Rewind on most systems, fast-forward, auto-save and resume after power off.
+- [Cheats](docs/CHEATS.md) and [RetroAchievements](https://retroachievements.org/).
+- Button mapping per game, left stick as D-pad, rumble.
+- 30+ shaders and LCD filters, Game Boy colour screens, console bezels and your own, defaults per system.
+- [Screenshots](docs/SCREENSHOTS.md) with Menu + R.
+
+### Systems
+
+| | |
+| --- | --- |
+| **Nintendo** | DS, DSiWare, 3DS (experimental), N64, SNES, NES and Famicom Disk System, GBA, Game Boy and Color, Virtual Boy, Game & Watch |
+| **Sega** | Dreamcast, Mega Drive, 32X, Mega-CD, Pico, Master System, Game Gear, SG-1000 |
+| **Sony** | PlayStation, PSP |
+| **Atari** | 2600, 5200, 7800, Lynx |
+| **Computers** | DOS, Amiga, Commodore 64, ZX Spectrum, Amstrad CPC, MSX |
+| **Handhelds and more** | PC Engine and CD, WonderSwan and Color, Neo Geo Pocket and Color, ColecoVision, Intellivision, arcade, PICO-8, ScummVM, Flash (with Flashpoint packs) |
+
+### Library
+
+- Covers, list or cartridges. Pinch with a finger on each screen to zoom out to a wall of games.
+- Search, filters, favourites, recents, hidden games and a Game info page with pictures.
+- [Artwork](docs/SCREENSCRAPER.md) and game info from GameTDB, Libretro or ScreenScraper.
+- Free homebrew shelves for DS, GBA and NES.
+- A second game card in the RG DS Plus.
+
+### Players
+
+- [Profiles](docs/PROFILES.md) with their own saves, look and language.
+- Kid profiles with age limits and a PIN; Little kid is one screen of big pictures.
+- Play time, streaks, a play journal with a year recap, and "Where you left off".
+
+### Apps
+
+- **[PortMaster ports](https://portmaster.games/)**, with game files sent from your phone by QR code, and [your own apps](docs/APPS.md).
+- **Media:** [music](docs/MUSIC.md) with equaliser and visualisers, videos with subtitles, and books, comics and manga.
+- **Files:** copy, move, zip and trash, plus SMB and SFTP network folders.
+- **Album:** photo mode, and send pictures to your phone or PictoChat.
+- **[PictoChat](docs/PICTOCHAT.md):** our own Wi-Fi chat between handhelds.
+- **[Sound toy](docs/SOUND_TOY.md):** change your voice and make it the startup sound.
+- A hidden game, if you find it.
+
+### The system
+
+- First-boot setup that can bring saves over from another card.
+- Quick boot, low memory use, true sleep on lid close, idle dimming and a sleep timer.
+- Power modes, battery health and a safe shutdown on low battery.
+- Wi-Fi, Bluetooth controllers and headphones (aptX, aptX HD, LDAC).
+- File sharing, SSH, USB-C network and USB drive.
+- Signed over-the-air updates with automatic rollback. [More](docs/OTA.md)
+- One card image for both handhelds, with sharper menus on the RG DS Plus.
+
+### Make it yours
+
+- Light and dark, 16 DS favourite colours, high contrast, rounded or pixel style.
+- Carousel or column Home, touch gestures, animations, haptics, menu sounds and music.
+- 23 [languages](docs/I18N.md), time zones and daylight saving.
 
 ![Cartridge, cover and list views](docs/images/library.png)
 
@@ -34,34 +93,9 @@
 
 ![The music player with its visualiser on the upper screen, and the profile list with a Kid profile selected](docs/images/music-profiles.png)
 
-## Second-screen games
-
-The game plays on the top panel. The bottom panel shows what the game hides. A selection:
-
-| Game                                           | Bottom screen                |
-| ---------------------------------------------- | ---------------------------- |
-| Metroid Fusion, Zero Mission                   | Map                          |
-| Metroid, Super Metroid, Metroid II             | Explored-area map            |
-| Castlevania: Aria, Harmony, Circle of the Moon | Castle map                   |
-| The Legend of Zelda (NES, A Link to the Past)  | World and dungeon maps       |
-| The Legend of Zelda: The Minish Cap            | Hearts, items and collection |
-| Pokémon (Red to Emerald)                       | Live team and battle panel   |
-| Mario Kart: Super Circuit                      | HUD, course map              |
-| Super Mario Kart                               | Course map                   |
-| Mario Kart 64                                  | Whole course and your place  |
-| Wario Land, Super Mario Advance 2 and 4        | Status board                 |
-| Golden Sun                                     | Live party panel             |
-| Advance Wars                                   | Commander and terrain panels |
-
-![Pokémon, Super Mario Advance 4, Mario Kart: Super Circuit and Mario Kart 64 with their bottom-screen panels](docs/images/second-screen.png)
-
-Over 50 games have profiles. Everything else shows a title card and plays as normal. [Full list](docs/PLAY.md)
-
-![More second screens: kart standings, Castlevania, Yoshi's Island and Duck Hunt](docs/images/dscore.png)
-
 ## Install
 
-1. Download **RG DS Flasher** for [Windows](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-Windows.exe), [macOS](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-macOS.zip) or [Linux](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-Linux-x64) and open it. Put a spare microSD card (8 GB or more) in your computer, pick it and press Flash. It downloads the latest RG DS OS, writes it, checks it and ejects the card. [More about the flasher](flasher/README.md)
+1. Download **RG DS Flasher** for [Windows](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-Windows.exe), [macOS](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-macOS.zip) or [Linux](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-Linux-x64) and open it. Put a spare microSD card (8 GB or more) in your computer, pick it and press Flash. It downloads the latest RG DS OS, writes it, checks it and ejects the card. It can also preset your language and Wi-Fi, keep saves from a BananaOS or stock card, and back up or restore a whole card. [More about the flasher](flasher/README.md)
 2. Put the card in and power on. First boot sets up the rest of the card, then a short setup asks for your language, colour, name, Home and animations, DS or all systems, time and Wi-Fi, and shows how to add games. Every step can be skipped.
 3. Join Wi-Fi in Settings and turn on file sharing. Copy games into `roms/nds`, `roms/gba` and so on from a computer, over Wi-Fi, USB-C or as a USB drive.
 
@@ -79,9 +113,10 @@ Prefer doing it by hand? Download `RG-DS-OS-<version>.img.gz` from [releases](ht
 
 ## BIOS files
 
-Most systems run with nothing extra. A few need, or run better with, a BIOS from your own console. None are included, so you have to dump or find them yourself.
+Most systems need none. For the rest, copy your own files into `rgds/bios` (shown as `bios` when file sharing is on), with these exact names, then restart the game.
 
-**Where they go:** in one folder, `rgds/bios`, on the card's data partition next to `roms`. With file sharing on, it shows up as `bios` beside the game folders, over Wi-Fi, USB-C or as a USB drive. Copy the files in with the exact names below, with no subfolders unless the table says so. Restart the game afterwards.
+<details>
+<summary>BIOS files by system</summary>
 
 | System (core)                              | BIOS                                 | File name(s)                                | Notes                                                                                           |
 | ------------------------------------------ | ------------------------------------ | ------------------------------------------- | ----------------------------------------------------------------------------------------------- |
@@ -96,15 +131,20 @@ Most systems run with nothing extra. A few need, or run better with, a BIOS from
 | Atari 7800 (ProSystem)                     | Optional                             | `7800 BIOS (U).rom`                         | Shows the Atari logo first.                                                                     |
 | Atari 5200 (a5200)                         | Optional                             | `5200.rom`                                  | Without it the free Altirra OS runs. A few games need the real one.                             |
 | Atari Lynx (Handy)                         | Optional                             | `lynxboot.img`                              | Without it the core starts the cartridge itself.                                                |
-| DSiWare (DSCore)                           | **Required**                         | `bios9.bin`, `bios7.bin`, `dsi_bios9.bin`, `dsi_bios7.bin` | All four: the DS pair and the DSi pair (melonDS's and DraStic's names work too, also in an `nds` subfolder). DS games need none. DSiWare goes in the DS folder as `.nds`, `.dsi`, `.srl` or a decrypted `.cia`; its saves are kept per player as `GAMECODE.pub`/`.prv`, and each player gets a DSi SD card folder. No camera or DSP sound yet. |
+| DSiWare (DSCore)                           | **Required**                         | `bios9.bin`, `bios7.bin`, `dsi_bios9.bin`, `dsi_bios7.bin` | All four: the DS pair and the DSi pair (melonDS's and DraStic's names work too, also in an `nds` subfolder). DS games need none. DSiWare goes in the DS folder as `.nds`, `.dsi`, `.srl` or a decrypted `.cia`; its saves are kept per player as `GAMECODE.pub`/`.prv`, and each player gets a DSi SD card folder. No camera yet. |
 
-No BIOS is needed for DS games (DSCore has its own), GBA, Game Boy, NES, SNES, Master System, Mega Drive, N64, PSP, ZX Spectrum, Commodore 64, Amstrad CPC, DOS, Atari 2600, WonderSwan, Neo Geo Pocket, Virtual Boy, PICO-8, Game & Watch, the two-monitor arcade games, ScummVM and Flash.
+</details>
 
 ## Thanks
 
 RG DS Core stands on a lot of other people's work. Thank you all.
 
-**[DSperate](https://github.com/beebono/DSperate)** by beebono is the heart of it. DSCore, the DS engine here, is a fork of DSperate ([what we changed](dscore/FORK.md)), and every DS game you play on this handheld runs on its recompiler, renderer and timing. Thanks also to everyone who sends it fixes; several of theirs are in DSCore too. DSperate itself builds on two emulators it learned from:
+**[DSperate](https://github.com/beebono/DSperate)** by beebono is the heart of it. DSCore, the DS engine here, is a fork of DSperate ([what we changed](dscore/FORK.md)), and every DS game you play on this handheld runs on its recompiler, renderer and timing. Thanks also to everyone who sends it fixes; several of theirs are in DSCore too.
+
+<details>
+<summary>Everyone else</summary>
+
+DSperate itself builds on two emulators it learned from:
 
 - **DraStic** by Exophase, whose JIT and NEON rendering techniques DSperate reimplements from scratch. Exophase approved sharing the debug build those techniques were studied from.
 - **[melonDS](https://github.com/melonDS-emu/melonDS)**, the reference DSperate checks itself against, frame by frame and instruction by instruction. Its local wireless protocol lets an RG DS play with a melonDS user. Its DSi DSP programs and its copy of [teakra](https://github.com/wwylele/teakra) (with [FAAD2](https://github.com/knik0/faad2) for AAC) are how DSiWare's DSP sound runs here.
@@ -134,6 +174,8 @@ RG DS Core stands on a lot of other people's work. Thank you all.
 - jdgleaver's [DraStic DS shaders](https://github.com/jdgleaver/drastic_ds_shaders), Pokefan531's GBA colour model, SameBoy's Game Boy palettes and the [Nunito](https://github.com/google/fonts/tree/main/ofl/nunito) typeface.
 - Nintendo's DSi Menu, which the look of the launcher pays homage to, and the Nokia phones Snake came from.
 
+</details>
+
 Licences and exact versions are in [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ## Developing
@@ -149,4 +191,4 @@ make release        # card image, signed update and feed in dist/release-os/ (up
 
 See [development](docs/DEVELOPMENT.md), the [documentation index](docs/README.md) and [releases with automatic updates](docs/OTA.md). The emulator lives in [`dscore/`](dscore/README.md).
 
-AI tools helped write the code, documentation and artwork. Tested on a RG DS, not a plus. Third-party components keep their own licenses; see [THIRD_PARTY.md](THIRD_PARTY.md).
+AI tools helped write the code, documentation and artwork. Third-party components keep their own licenses; see [THIRD_PARTY.md](THIRD_PARTY.md).

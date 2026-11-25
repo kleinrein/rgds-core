@@ -114,13 +114,20 @@ struct ViewMotion {
     double fade(uint32_t now) const {
         if (!running) return 1;
         const int32_t elapsed = int32_t(now - started);
-        return ease(std::max(0, elapsed) / std::max(1.0, double(span(push_duration))));
+        const double t = std::max(0, elapsed) / std::max(1.0, double(span(push_duration)));
+        return travel == ViewTravel::Back ? ease_back(t) : ease(t); // in step with the lower panel
     }
     // Smootherstep: zero velocity and acceleration at both ends, so a slide
     // eases off the mark instead of jumping to full speed on the first frame.
     static double ease(double t) {
         t = std::clamp(t, 0.0, 1.0);
         return t * t * t * (t * (6 * t - 15) + 10);
+    }
+    // Back leaves at once and settles softly (cubic ease-out): under smootherstep the page that was left sat still
+    // for its first ~80 ms, which read as a slow Back on the RG DS Plus (owner, 2026-11-25). 90% there by ~205 ms.
+    static double ease_back(double t) {
+        t = 1 - std::clamp(t, 0.0, 1.0);
+        return 1 - t * t * t;
     }
     struct PushLayers {
         double incoming = 0, outgoing = 0, shade = 0;
@@ -129,7 +136,8 @@ struct ViewMotion {
     };
     PushLayers push(uint32_t now) const {
         if (!running || now - started >= span(push_duration)) return {};
-        double t = double(now - started) / span(push_duration), progress = ease(t), remaining = 1 - progress;
+        double t = double(now - started) / span(push_duration),
+               progress = travel == ViewTravel::Back ? ease_back(t) : ease(t), remaining = 1 - progress;
         if (travel == ViewTravel::Fade) return {0, 0, 0, true, progress};
         if (travel == ViewTravel::Back) return {-160 * remaining, 640 * progress, .12 * remaining, false};
         if (travel == ViewTravel::Left) return {-640 * remaining, 640 * progress, 0, true};
@@ -143,7 +151,7 @@ struct ViewMotion {
     };
     ZoomLayers zoom(uint32_t now) const {
         if (!running || now - started >= span(push_duration)) return {};
-        double t = double(now - started) / span(push_duration), p = ease(t);
+        double t = double(now - started) / span(push_duration), p = travel == ViewTravel::Back ? ease_back(t) : ease(t);
         // Ease the fade faster than the scale, so the new view reads at once.
         double in = ease(std::min(1.0, t * 1.25)), out = 1 - ease(std::min(1.0, t * 1.6));
         switch (travel) {

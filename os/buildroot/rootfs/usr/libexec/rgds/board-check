@@ -1,0 +1,88 @@
+#!/bin/sh
+# Which handheld this card is in, as Linux sees it, for U-Boot's next boot: rgds-board.txt on the boot partition
+# (`rgds_known=rgds` or `rgds_known=rgds-plus`), which U-Boot's preboot reads before it falls back to the board ID
+# voltage (uboot-rgds.fragment). U-Boot's own reading of that voltage cannot be trusted on the RG DS Plus: the ID
+# divider is unpowered before Linux, so U-Boot read 0.27, 0.33, 1.03 and 1.57 V on four boots of one Plus
+# (2026-11-24), the 1.03 inside the RG DS's 1.06 V. Linux reads SARADC channel 5 at raw 1023 on the Plus under
+# either device tree, and about 607 on the RG DS.
+#
+# The Plus's divider also takes its first seconds of Linux to come up (2026-11-25: 892 at 3.2 s, a reading inside the
+# RG DS's window at the same point of another boot, which this script once wrote down as an RG DS, and 1023 from then
+# on). So any reading at 900 or more means the Plus at once, and the RG DS needs every reading from 12 to 20 s after
+# boot inside its window (450-750). rcS runs this in the background, so the boot never waits for it.
+#
+# When the running device tree is not this handheld's and the U-Boot here reads the file (rgds.from= on the command
+# line), the file is fixed and the handheld restarts once; a card moved between an RG DS and a Plus does the same.
+# rgds-board.reboot on the boot partition marks that restart, so a second mismatch never restarts again.
+#   board-check                 run from rcS in the background once /boot is mounted (read-only)
+SYS=${RGDS_BOARD_SYSFS:-/sys}
+UPTIME=${RGDS_BOARD_UPTIME:-/proc/uptime}
+BOOT=${RGDS_BOARD_BOOT:-/boot}
+CMDLINE=${RGDS_BOARD_CMDLINE:-/proc/cmdline}
+REBOOT=${RGDS_BOARD_REBOOT:-reboot}
+LOG=${RGDS_BOARD_LOG:-/run/rgds/messages}
+
+channel=
+for d in "$SYS"/bus/iio/devices/iio:device*; do
+    [ "$(cat "$d/name" 2>/dev/null)" = fe720000.saradc ] && channel="$d/in_voltage5_raw" && break
+done
+[ -n "$channel" ] || exit 0
+board= outside= low=9999 high=0
+while :; do
+    raw=$(cat "$channel" 2>/dev/null)
+    case $raw in '' | *[!0-9]*) exit 0 ;; esac
+    if [ "$raw" -ge 900 ]; then
+        board=rgds-plus
+        break
+    fi
+    up=$(cut -d. -f1 "$UPTIME")
+    if [ "$up" -ge 12 ]; then
+        [ "$raw" -lt "$low" ] && low=$raw
+        [ "$raw" -gt "$high" ] && high=$raw
+        { [ "$raw" -lt 450 ] || [ "$raw" -gt 750 ]; } && outside=1
+        if [ "$up" -ge 20 ]; then
+            [ -z "$outside" ] && board=rgds
+            break
+        fi
+    fi
+    sleep 1
+done
+if [ -z "$board" ]; then
+    echo "board-check: ID channel at $low-$high after boot, neither handheld; nothing changed" >> "$LOG"
+    exit 0
+fi
+case "$(tr -d '\0' < "$SYS/firmware/devicetree/base/model" 2>/dev/null)" in
+    *Plus*) running=rgds-plus ;;
+    '') exit 0 ;;
+    *) running=rgds ;;
+esac
+
+writable() { mount -o remount,rw "$BOOT" 2>/dev/null || [ -n "$RGDS_BOARD_BOOT" ]; }
+readonly_again() { sync; mount -o remount,ro "$BOOT" 2>/dev/null; true; }
+want="rgds_known=$board"
+if [ "$(cat "$BOOT/rgds-board.txt" 2>/dev/null)" != "$want" ]; then
+    if writable; then
+        printf '%s\n' "$want" > "$BOOT/rgds-board.txt.new" && mv -f "$BOOT/rgds-board.txt.new" "$BOOT/rgds-board.txt"
+        readonly_again
+        echo "board-check: $board (ID channel $raw), recorded for U-Boot" >> "$LOG"
+    fi
+fi
+if [ "$running" = "$board" ]; then
+    if [ -e "$BOOT/rgds-board.reboot" ] && writable; then
+        rm -f "$BOOT/rgds-board.reboot"
+        readonly_again
+    fi
+    exit 0
+fi
+# The wrong device tree: white panels on a Plus, the wrong panel modes on an RG DS.
+if ! grep -q 'rgds\.from=' "$CMDLINE" 2>/dev/null; then
+    echo "board-check: running $running on a $board; this U-Boot does not read rgds-board.txt" >> "$LOG"
+    exit 0
+fi
+if [ -e "$BOOT/rgds-board.reboot" ]; then
+    echo "board-check: running $running on a $board after a restart for it; not restarting again" >> "$LOG"
+    exit 0
+fi
+writable && : > "$BOOT/rgds-board.reboot" && readonly_again
+echo "board-check: running $running on a $board; restarting with the right device tree" >> "$LOG"
+$REBOOT

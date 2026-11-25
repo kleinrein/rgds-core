@@ -80,6 +80,9 @@ PIN=; command -v taskset > /dev/null && PIN="taskset -c 0-2"
 # 3DS games only where the engine is (emulators.tanuki_engine): in the image since 0.9.1, or a development build on the
 # data partition; an image built without it (own_os_build.py --no-3ds) shows no 3DS games that could not start
 CTR=; for e in /data/rgds/engines/tanuki3ds /usr/share/rgds/engines/tanuki3ds; do [ -f $e/run.sh ] && CTR=--system-dir\ 3ds=/data/roms/3ds; done
+# the second card's state (usr/libexec/rgds/games-card): its games join the library while it is in. Passed in the
+# environment, which a launcher from before 2026-11-24 ignores, rather than as an option it would refuse.
+export RGDS_GAMES_CARD_STATE=/run/rgds/games-card.ini
 export RGDS_READY_FILE=/run/rgds/launcher-ready
 rm -f $RGDS_READY_FILE
 ( sleep 60; kill -0 $$ 2>/dev/null && [ -f $RGDS_READY_FILE ] && /usr/libexec/rgds/trial commit ) >> /run/rgds/messages 2>&1 &

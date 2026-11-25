@@ -3,16 +3,19 @@
 // Members of App in main.cpp; included once, right after the class.
 
 void App::ds_controls_row(SDL_Renderer* r, int y, int i) {
-    const std::array<std::string, 7> names = {"Blow into microphone", "Close and open DS lid", "DS language",
-                                              "Real microphone",      "DS nickname",           "Local wireless",
-                                              "Online play"};
+    const std::array<std::string, 6> names = {"Blow into microphone", "Close and open DS lid", "DS language",
+                                              "Real microphone",      "DS nickname",           "Play together"};
     const bool no_network = kid_locked() && !active_profile().allow_wireless;
     const std::array<std::string, 6> languages = {"Japanese", "English", "French", "German", "Italian", "Spanish"};
     int language = ds_settings.count("language") ? std::clamp(std::atoi(ds_settings["language"].c_str()), 0, 5) : 1;
+    // Play together sums up what is on: online play wins over local wireless in the engine.
+    const std::string together = no_network      ? "Off"
+                                 : ds_online()   ? online_names()[ds_online()]
+                                 : ds_wireless() ? locale.text("Local wireless")
+                                                 : "Off";
     list_row(r, y, i, names[i],
              !ds_supported() ? "Engine managed"
-             : i == 6        ? online_names()[no_network ? 0 : ds_online()]
-             : i == 5        ? wireless_names()[no_network ? 0 : ds_wireless()]
+             : i == 5        ? together
              : i == 4        ? (ds_settings.count("nickname") ? ds_settings["nickname"] : ds_owner_name())
              : i == 2        ? languages[language]
              : i == 3        ? (ds_settings.count("microphone") && ds_settings["microphone"] == "0") ? "Off" : "On"
@@ -37,19 +40,7 @@ void App::ds_controls_action() {
                         ds_apply_in_game("language");
                     });
     } else if (settings.focus == 4) begin_edit(5);
-    else if (settings.focus >= 5 && kid_locked() && !active_profile().allow_wireless) status = "Not on this profile";
-    else if (settings.focus == 6)
-        show_picker("Online play", online_names(), ds_online(), [this](int n) {
-            if (n == ds_online()) return;
-            save_ds_setting("online", n);
-            ds_apply_in_game("online");
-        });
-    else if (settings.focus == 5)
-        show_picker("Local wireless", wireless_names(), ds_wireless(), [this](int n) {
-            if (n == ds_wireless()) return;
-            save_ds_setting("wireless", n);
-            ds_apply_in_game("wireless");
-        });
+    else if (settings.focus == 5) open_play_together(Page::DSControls);
     else {
         save_ds_setting("microphone", ds_settings.count("microphone") && ds_settings["microphone"] == "0");
         ds_apply_in_game("microphone");
@@ -132,4 +123,139 @@ void App::confirm_reset_state() {
     show_picker("Restart without loading a state?", {"Cancel", "Reset state"}, 0, [this](int n) {
         if (n) menu_request("reset-state");
     });
+}
+
+// ---- Play together: local wireless and online play for a DS game, on one page --------------------------------
+// Reached from the library (the game's options, before it starts, so it starts straight into the session), from
+// DS controls, and in a game from the session tiles: while local wireless holds a session there are no checkpoints
+// to save or load, so those two tiles become Play together and Leave session. The engine reports the session
+// through the bridge (session/emulator.control.net, written when the menu opens): live=1, role, player lines.
+
+void App::load_net_session() {
+    net_session.clear();
+    net_players.clear();
+    std::ifstream file(o.data / "session/emulator.control.net");
+    std::string line;
+    while (std::getline(file, line)) {
+        const auto eq = line.find('=');
+        if (eq == std::string::npos) continue;
+        const std::string key = line.substr(0, eq), value = line.substr(eq + 1);
+        if (key != "player") {
+            net_session[key] = value;
+            continue;
+        }
+        NetPlayer player;
+        const auto a = value.find('\t'), b = a == std::string::npos ? a : value.find('\t', a + 1);
+        player.name = value.substr(0, a);
+        if (a != std::string::npos) player.ping = std::atoi(value.c_str() + a + 1);
+        if (b != std::string::npos) player.me = value.substr(b + 1) == "1";
+        if (player.name.empty()) player.name = "DS";
+        net_players.push_back(player);
+    }
+    // The preview shows a session with RGDS_PREVIEW_NET=1 (there is no engine behind it).
+    if (o.preview && o.game_menu && net_session.empty() && std::getenv("RGDS_PREVIEW_NET")) {
+        net_session = {{"live", "1"}, {"role", "host"}};
+        net_players = {{"Ada", 0, true}, {"Kim", 6, false}};
+    }
+}
+
+bool App::net_session_live() const {
+    auto found = net_session.find("live");
+    return o.game_menu && found != net_session.end() && found->second == "1";
+}
+
+void App::open_play_together(Page back) {
+    ds_settings = fields(player_item_folder(model.selected) / "ds-input.ini");
+    play_together_return = back;
+    load_net_session();
+    status.clear();
+    settings.page = Page::PlayTogether;
+    settings.focus = 0;
+    dirty = true;
+}
+
+// Rows: Local wireless, Online play, then Play now (library) or Leave session (in a live session).
+int App::play_together_rows() const { return (!o.game_menu || net_session_live()) ? 3 : 2; }
+
+void App::play_together_row(SDL_Renderer* r, int y, int i) {
+    const bool no_network = kid_locked() && !active_profile().allow_wireless;
+    if (i == 0)
+        list_row(r, y, i, "Local wireless",
+                 !ds_supported() ? "Engine managed" : wireless_names()[no_network ? 0 : ds_wireless()],
+                 ds_supported() && !no_network);
+    else if (i == 1)
+        list_row(r, y, i, "Online play",
+                 !ds_supported() ? "Engine managed" : online_names()[no_network ? 0 : ds_online()],
+                 ds_supported() && !no_network);
+    else if (o.game_menu) list_row(r, y, i, "Leave session", "");
+    else
+        list_row(r, y, i, "Play now", ds_wireless() || ds_online() ? "" : "Turn one on first",
+                 ds_supported() && (ds_wireless() || ds_online()));
+}
+
+void App::play_together_action() {
+    if (!ds_supported()) return;
+    if (kid_locked() && !active_profile().allow_wireless) {
+        status = "Not on this profile";
+        return;
+    }
+    if (settings.focus == 0)
+        show_picker("Local wireless", wireless_names(), ds_wireless(), [this](int n) {
+            if (n == ds_wireless()) return;
+            save_ds_setting("wireless", n);
+            ds_apply_in_game("wireless");
+        });
+    else if (settings.focus == 1)
+        show_picker("Online play", online_names(), ds_online(), [this](int n) {
+            if (n == ds_online()) return;
+            save_ds_setting("online", n);
+            ds_apply_in_game("online");
+        });
+    else if (o.game_menu) leave_session();
+    else if (ds_wireless() || ds_online()) {
+        back_to(play_together_return);
+        launch();
+    }
+}
+
+// Leaving: nothing restores a session, so there is no checkpoint either way; the game's own save stays.
+void App::leave_session() {
+    show_picker("Leave the session", {"Stay in the session", "Play on alone", "Return home"}, 0, [this](int n) {
+        if (n == 1) {
+            save_ds_setting("wireless", 0);
+            menu_request("relaunch:wireless-off");
+        } else if (n == 2) menu_request("quit");
+    });
+}
+
+void App::play_together_top(SDL_Renderer* r, int y) {
+    round_rect(r, 24, y + top_card_y, 592, top_card_h, 12, "panel");
+    ui_icon(r, SettingsIcon::Wifi, 320, y + 118, 48, "accent");
+    centered(r, "Play together", y + 173, 2, "ink");
+    if (net_session_live()) {
+        const bool host = net_session["role"] == "host";
+        const int others = int(std::count_if(net_players.begin(), net_players.end(), [](auto& p) { return !p.me; }));
+        centered(r,
+                 others == 0
+                     ? (host ? "Hosting, waiting for another DS" : "In a session, waiting for the host")
+                     : (host ? "Hosting" : "Joined") + std::string("  ·  ") + std::to_string(others + 1) + " players",
+                 y + 218, 1, "muted");
+        int row = y + 254;
+        for (const auto& p : net_players) {
+            if (row > y + top_card_y + top_card_h - 34) break;
+            ui_icon(r, p.me ? SettingsIcon::Controller : SettingsIcon::Wifi, 92, row + 14, 22, "accent");
+            label(r, p.me ? p.name + "  (" + locale.text("you") + ")" : p.name, 116, row, 22, "ink", 330);
+            if (!p.me) label(r, std::to_string(p.ping) + " ms", 470, row, 22, "muted", 90);
+            row += 36;
+        }
+        return;
+    }
+    wrapped(r,
+            !ds_supported() ? "Use the engine's native settings for wireless play."
+            : o.game_menu
+                ? "Local wireless plays with another RG DS on the same Wi-Fi; the game restarts to turn it on. Online "
+                  "play uses Wiimmfi or WiiLink, from the game's Nintendo WFC menu."
+                : "Local wireless plays with another RG DS on the same Wi-Fi: both pick it, then start the game. "
+                  "Online play uses Wiimmfi or WiiLink, from the game's Nintendo WFC menu.",
+            54, y + 234, 22, 532, 5);
 }

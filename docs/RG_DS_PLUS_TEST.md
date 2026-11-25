@@ -1,9 +1,13 @@
 # Testing RG DS OS on an RG DS Plus
 
-RG DS OS ships one card image for both handhelds. Before Linux starts, U-Boot reads the board's ID voltage (SARADC
-channel 5): about 1.06 V on the RG DS and 1.77 V on the RG DS Plus. It then loads the matching device tree. Nobody
-has run RG DS OS on a Plus yet, so this page is for the first tester. The design is in
-[OWN_OS_PLAN.md](OWN_OS_PLAN.md) ("One card for both handhelds").
+RG DS OS ships one card image for both handhelds. The board's ID voltage (SARADC channel 5) tells them apart: about
+1.06 V on the RG DS, 1.8 V on the Plus. Linux reads it reliably, U-Boot does not: before Linux the Plus's ID divider
+is unpowered, and one Plus read 0.27, 0.33, 1.03 and 1.57 V in U-Boot on four boots. So Linux records the handheld in
+`rgds-board.txt` on the boot partition (`usr/libexec/rgds/board-check`), and U-Boot loads the device tree that file
+names. Only a card's first boot, before the file exists, goes by U-Boot's own reading (0.8 to 1.4 V means the RG DS,
+anything else the Plus); when that guess is wrong, Linux writes the file and restarts once, so a first start may show
+the boot twice. A card moved between an RG DS and a Plus does the same. The first Plus ran RG DS OS on 2026-11-24. The
+design is in [OWN_OS_PLAN.md](OWN_OS_PLAN.md) ("One card for both handhelds").
 
 ## What to flash
 
@@ -52,13 +56,15 @@ Put the card in a computer and send these files from the card's large partition:
 - `rgds/logs/launcher.log`
 
 If the screens stay black, the first file to look at is `hardware.txt`. The `cmdline:` line ends in
-`rgds.detected=… rgds.adc=…`: the board U-Boot picked and the voltage it read, in microvolts.
+`rgds.detected=… rgds.adc=… rgds.from=…`: the board U-Boot picked, the voltage it read (in microvolts) and whether it
+went by `rgds-board.txt` (`file`) or that voltage (`adc`). `board-check:` lines in the same file say what Linux read
+and whether it restarted.
 
 ## For the developer: what each result points to
 
 | Symptom | Likely cause | Where |
 | --- | --- | --- |
-| Black screens with the universal image, working with the Plus image | The ID voltage read wrong (see `rgds.adc` in `hardware.txt`) | `uboot-rgds.fragment` preboot, `uboot-patches/004` |
+| Black or white screens with the universal image, working with the Plus image | The wrong device tree (`rgds.detected` and `rgds.from` in `hardware.txt`); `board-check` should have restarted once | `usr/libexec/rgds/board-check`, `uboot-rgds.fragment` preboot |
 | Black screens with both images | Panel timing | `dts-patches/0006` (59.9986 Hz); drop it to try ROCKNIX's 60.17 Hz |
 | No sound from the speakers | The AW88166 card (`aw88166` in the card list), its firmware (`aw88166_acf.bin` in dmesg), or the route | `package/rocknix-extra-firmware`, `usr/libexec/rgds/audio` |
 | Volume keys do nothing on the speakers | The amplifiers' control names (`Left PCM`/`Right PCM` or `PCM`) | `runtime/audio.py` `Amplifier` |

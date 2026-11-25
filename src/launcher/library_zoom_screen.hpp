@@ -424,12 +424,18 @@ SDL_Texture* App::zoom_sprite(SDL_Renderer* r, size_t index, int size, bool cove
     if (budget <= 0) return sprite.texture; // the old picture for one more frame, or drawn directly
     budget--;
     zoom_sprite_builds++;
+    // On a panel larger than the layout (the RG DS Plus) the tile is drawn at the panel's pixels and copied 1:1, not
+    // drawn at layout pixels and stretched: its own logical size scales what is drawn into it, text included.
+    const float k = panel_scale(s, r);
+    const bool native = k > 1.2f && panel_part("tiles");
     if (!sprite.texture) {
         // Smooth scaling for the morph; at rest each texture is copied at its own size.
         const char* quality = s.GetHint("SDL_RENDER_SCALE_QUALITY");
         const std::string before = quality ? quality : "";
         s.SetHint("SDL_RENDER_SCALE_QUALITY", "1");
-        sprite.texture = s.CreateTexture(r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, size + 4, size + 6);
+        const int w = native ? int(std::lround((size + 4) * k)) : size + 4,
+                  h = native ? int(std::lround((size + 6) * k)) : size + 6;
+        sprite.texture = s.CreateTexture(r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
         s.SetHint("SDL_RENDER_SCALE_QUALITY", before.empty() ? "0" : before.c_str());
         if (!sprite.texture) {
             s.ClearError();
@@ -439,6 +445,8 @@ SDL_Texture* App::zoom_sprite(SDL_Renderer* r, size_t index, int size, bool cove
         s.SetTextureBlendMode(sprite.texture, SDL_BLENDMODE_BLEND);
     }
     SDL_Texture* previous = s.GetRenderTarget(r);
+    int logical_w = 0, logical_h = 0;
+    if (native) s.RenderGetLogicalSize(r, &logical_w, &logical_h);
     if (s.SetRenderTarget(r, sprite.texture) != 0) {
         s.ClearError();
         s.DestroyTexture(sprite.texture);
@@ -449,8 +457,10 @@ SDL_Texture* App::zoom_sprite(SDL_Renderer* r, size_t index, int size, bool cove
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_NONE);
     s.SetRenderDrawColor(r, line.r, line.g, line.b, 0);
     s.RenderClear(r);
+    if (native) s.RenderSetLogicalSize(r, size + 4, size + 6);
     zoom_paint(r, index, {2, 2, size, size}, false, level, pick);
     s.SetRenderTarget(r, previous);
+    if (native) s.RenderSetLogicalSize(r, logical_w, logical_h); // the panel's (or the canvas's) own again
     s.SetRenderDrawBlendMode(r, o.game_menu ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
     s.ClearError();
     sprite.pick = pick;

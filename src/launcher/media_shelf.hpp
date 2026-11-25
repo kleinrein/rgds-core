@@ -39,7 +39,7 @@ bool App::media_indexes() const {
     return media_index_found == 1;
 }
 
-// The sections shown, in order: Music only where the music player is on.
+// The sections shown, in order: Music, Videos, Books.
 std::vector<int> App::media_section_list() const {
     std::vector<int> out;
     if (music_available()) out.push_back(0);

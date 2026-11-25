@@ -435,7 +435,7 @@ void App::change_system(int focus, int delta, bool cycle) {
     try {
         save_system_preferences(o.system_preferences, next);
         system_preferences = next;
-        status = o.preview ? "Saved - desktop simulation" : "Settings saved";
+        // Saved quietly: the row shows the new value (no "Settings saved" toast, owner 2026-11-25).
     } catch (const std::exception& e) {
         apply_control(focus, previous);
         status = "Could not save settings";

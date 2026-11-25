@@ -563,6 +563,12 @@ func (s *server) startFlash(id, confirm string, keep, games, backup bool, preset
 	if id == "" || confirm != id {
 		return errors.New("not confirmed; nothing was written")
 	}
+	s.mu.Lock()
+	restoring := s.st.Image != nil && strings.HasPrefix(s.st.Image.Model, "backup:")
+	s.mu.Unlock()
+	if !restoring { // --ssh-key travels with the setup answers; a backup goes back byte for byte, without it
+		preset.SSHKey = devSSHKey
+	}
 	presetPath, err := savePreset(preset) // a bad answer stops here, before anything happens to the card
 	if err != nil {
 		return err

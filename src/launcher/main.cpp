@@ -1,4 +1,5 @@
 #include "launcher/model.hpp"
+#include "launcher/games_card.hpp"
 #include "../../play/src/ui/frame_styles.hpp" // the frames per system (shared with the player)
 #include "../../play/src/ui/gb_palettes.hpp"  // the Game Boy palettes and corrections (shared with the player)
 #include "launcher/photo_play_sources.hpp"    // the player's canvas and console frames, for photo mode
@@ -17,9 +18,11 @@
 #include "launcher/collection_filter.hpp"
 #include "launcher/keyboard.hpp"
 #include "launcher/library_summary.hpp"
+#include "launcher/battery_health.hpp"
 #include "launcher/settings_visual.hpp"
 #include "launcher/pixel_icons.hpp"
 #include "launcher/font.hpp"
+#include "launcher/panel_scale.hpp"
 #include "launcher/pixel_text.hpp"
 #include "launcher/line_break.hpp"
 #include "launcher/kinetics.hpp"
@@ -53,6 +56,7 @@
 #include "platform/scanout_mirror.hpp"
 #include "platform/volume_keys.hpp"
 #include "launcher/repeat.hpp"
+#include "launcher/draw_count.hpp"
 #include "platform/overlay_frame.hpp"
 #include "platform/control_mapping.hpp"
 #include "platform/mainline_controls.hpp"
@@ -196,6 +200,7 @@ struct Options {
     std::vector<fs::path> roots;
     std::vector<std::pair<std::string, fs::path>> system_roots; // --system-dir gba=PATH: RG DS Play's games
     std::vector<fs::path> music_dirs;                           // --music-dir PATH: where the music player looks
+    fs::path games_card; // --games-card FILE: the second card's state, /run/rgds/games-card.ini (games_card.hpp)
     fs::path game_rom;
     std::string game_system; // from the runtime, which also looks inside a .zip and at the folder
     std::string game_core = "dsperate";
@@ -214,10 +219,12 @@ class App {
     // detents below play on it alongside the sounds, also when muted.
     Haptics haptics;
     Uint32 edge_felt_at = 0;
-    bool hold_felt = false, charge_seen = false, was_charging = false;
+    bool hold_felt = false, charge_seen = false, was_plugged = false;
     void configure_haptics();
     // A detent while a finger drags through a list, a carousel or a slider.
-    void haptic_detent() { haptics.play(Haptic::Detent); }
+    void haptic_detent() {
+        if (!bench_off("haptics")) haptics.play(Haptic::Detent);
+    }
     Options o;
     Model model;
     bool session_initialized = false, library_ready = false, boot_displayed = false, boot_touch_candidate = false,
@@ -234,6 +241,19 @@ class App {
     fs::path games_keep_selected;     // the game to stay on after a scan that watch_games started
     std::string games_signature() const;
     void watch_games(Uint32 now);
+    // The second card (games_card.hpp): the roots the session named, the card its folders were added from, and the
+    // state file's text then. apply_games_card runs before every library scan.
+    std::vector<fs::path> own_roots;
+    std::vector<std::pair<std::string, fs::path>> own_system_roots;
+    bool own_roots_kept = false, games_card_ejected = false; // ejected: its own message says so, not a toast
+    std::optional<GamesCard> games_card;
+    std::string games_card_seen;
+    void apply_games_card();
+    void rescan_quietly();
+    bool games_card_changed() const {
+        return !o.games_card.empty() && games_card_text(o.games_card) != games_card_seen;
+    }
+    double games_card_used_fraction() const;
     std::string library_bytes;
     std::vector<Game> all_games;
     // Show all systems: the DS games as scanned, the systems listed on the Systems
@@ -364,6 +384,21 @@ class App {
     // so the frame before a transition is at hand without drawing anything twice (a texture belongs to one
     // renderer, and the panels may have one each).
     SDL_Texture *top_canvas = nullptr, *top_previous = nullptr;
+    // A canvas for one panel's page. The upper panel's (`native`) is at the panel's own pixels: every upper frame is
+    // drawn into one and copied to the panel (animated_top), so it must be as sharp as the panel; it is only redrawn
+    // when the upper screen changes. The lower panel's, used during a view transition or a page drag, stay at the
+    // layout's 640x480: 1024x768 ones cost the RG DS Plus's GPU 7-22 ms a frame (2026-11-25, RGDS_FRAME_LOG and a
+    // scripted run), and a page in motion does not need them. Drawing the upper panel straight to the screen with a
+    // capture on input instead was tried twice (2026-10-28, 2026-11-25) and misbehaved on the handheld both times.
+    // RGDS_PANEL_CANVAS=1 (developers, for measuring) makes every canvas panel-sized.
+    SDL_Texture* panel_canvas(SDL_Renderer* renderer, bool native = false) {
+        int w = 0, h = 0;
+        s.GetRendererOutputSize(renderer, &w, &h);
+        static const bool all = std::getenv("RGDS_PANEL_CANVAS") && std::string(std::getenv("RGDS_PANEL_CANVAS")) == "1";
+        const int width = (native || all) && panel_part("canvas") ? std::clamp(w, 640, 4096) : 640,
+                  height = width * 480 / 640;
+        return s.CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, width, height);
+    }
     bool top_previous_ready = false, top_canvas_failed = false;
     uint64_t top_animation_frames = 0, kinetic_frames = 0, gesture_frames = 0, sheet_frames = 0;
     uint64_t top_fade_reversals = 0; // the upper crossfade stepped backwards within one transition: never
@@ -392,6 +427,8 @@ class App {
     SDL_Texture* view_canvas = nullptr;
     SDL_Texture *view_previous = nullptr, *view_presented = nullptr;
     bool view_snapshot_ready = false, view_previous_ready = false;
+    // The running view motion came from an edge gesture whose card is the transition: the lower panel stays still.
+    bool view_motion_from_gesture = false;
     ViewStyle last_view_style = ViewStyle::Spring;
     std::vector<std::pair<int, int>> view_levels;
     uint64_t push_animation_frames = 0;
@@ -609,11 +646,11 @@ class App {
     }
     // Sound is a shared list: row 0 is the volume slider itself (Left and Right only act there); under it
     // Mute (1), Test microphone (2), Sounds & music (3) and Vibration (4).
-    // The launcher adds Music player (5) and, while that is on, Play with the lid closed (6).
+    // The launcher adds Play with the lid closed (5) and Sound toy (6).
     static constexpr int sound_track_x = 60, sound_track_width = 504;
-    int sound_row_count() const { return o.game_menu || probe ? 5 : preferences.music_player ? 8 : 7; }
+    int sound_row_count() const { return o.game_menu || probe ? 5 : 7; }
     // Settings > Sound's last row: whether Home has the Sound toy.
-    int sound_toy_row() const { return preferences.music_player ? 7 : 6; }
+    int sound_toy_row() const { return 6; }
     int list_count() const {
         switch (settings.page) {
         case Page::Settings: return int(section_order.size());
@@ -632,10 +669,11 @@ class App {
         case Page::Album: return int(album.size());
         case Page::Journal: return journal_count();
         case Page::Files: return int(files_rows.size());
-        case Page::DeviceInfo: return 4;
+        // Device information: a fifth row, the second card's, while one is in
+        case Page::DeviceInfo: return games_card ? 5 : 4;
         case Page::System: return o.rgds_os ? 8 : 9; // last rows: Touch to continue, Run setup again
         case Page::GameOptions:
-            return game_options_base() + (game_removable() ? 1 : 0) + (game_visibility_row() >= 0 ? 1 : 0);
+            return game_remove_row() + (game_removable() ? 1 : 0) + (game_visibility_row() >= 0 ? 1 : 0);
         case Page::ProfileEdit: return int(profile_edit_rows().size());
         case Page::ProfileGames: return int(games_rows.size());
         case Page::ProfileGameRules: return int(profiles.profiles().size());
@@ -644,7 +682,8 @@ class App {
         case Page::Network: return 9;
         case Page::SaveGallery: return gallery_has_auto() ? 10 : 9; // row 10 is the auto-save
         case Page::PortFiles: return 3;
-        case Page::DSControls: return 7;
+        case Page::DSControls: return 6;
+        case Page::PlayTogether: return play_together_rows();
         case Page::EmulatorOptions: return 9;
         case Page::ShaderPicker: return int(shader_choices.size());
         case Page::Controls: return 27;
@@ -1085,7 +1124,13 @@ class App {
     void gesture_cues(SDL_Renderer* r, int y);
     bool gestures_available() const;
     // A swipe that started on an edge and travelled far enough: act once, then swallow the rest of the touch.
+    // Back acts mid-swipe; Home decides when the finger lifts, from how far and how fast it was thrown.
     bool edge_gesture_move(int x, int y);
+    bool home_gesture_release(int y);
+    bool edge_gesture_commit(bool home, bool from_right);
+    FingerSpeed home_finger;
+    bool home_armed = false;
+    double home_fling = 0;
     enum class PointerSource { None, Mouse, SDL, Raw };
     PointerSource pointer_source = PointerSource::None;
     Uint32 raw_touch_at = 0, sdl_touch_at = 0;
@@ -1139,6 +1184,9 @@ class App {
     int game_options_base() const {
         return other_system_selected() ? 7 : 8; // other systems: DS controls reads Unavailable
     }
+    // After the base rows: Play together (DS games), then Remove game and Visible to... when they apply.
+    int game_play_row() const { return other_system_selected() ? -1 : game_options_base(); }
+    int game_remove_row() const { return game_options_base() + (game_play_row() >= 0 ? 1 : 0); }
     fs::path homebrew_folder(const std::string& system) const;
     void homebrew_top(SDL_Renderer* r, int y);
     std::string homebrew_row_value(int i);
@@ -1334,6 +1382,24 @@ class App {
     void ds_controls_row(SDL_Renderer* r, int y, int i);
     void ds_controls_action();
     void ds_apply_in_game(const std::string& key);
+    // Play together (game_settings.hpp): the session the engine reports through the bridge, and the page.
+    struct NetPlayer {
+        std::string name;
+        int ping = 0;
+        bool me = false;
+    };
+    std::map<std::string, std::string> net_session;
+    std::vector<NetPlayer> net_players;
+    Page play_together_return = Page::GameOptions;
+    fs::file_time_type net_session_stamp{};
+    void load_net_session();
+    bool net_session_live() const;
+    void open_play_together(Page back);
+    int play_together_rows() const;
+    void play_together_row(SDL_Renderer* r, int y, int i);
+    void play_together_action();
+    void play_together_top(SDL_Renderer* r, int y);
+    void leave_session();
     std::vector<std::string> wireless_names() const;
     int ds_wireless();
     std::vector<std::string> online_names() const;
@@ -1484,7 +1550,10 @@ class App {
         }
 
         if (settings.focus == 0) menu_request("resume");
-        else if (settings.focus == 1 || settings.focus == 2)
+        else if ((settings.focus == 1 || settings.focus == 2) && net_session_live()) {
+            if (settings.focus == 1) open_play_together(Page::QuickMenu);
+            else leave_session();
+        } else if (settings.focus == 1 || settings.focus == 2)
             open_gallery(settings.focus == 1 ? GalleryMode::Save : GalleryMode::Load);
         else if (settings.focus == 3) {
             game_preferences = library_cache.reload_options(model.games[0]);
@@ -1790,6 +1859,14 @@ class App {
     // The Playtime page (playtime_screen.hpp).
     void playtime_top(SDL_Renderer* r, int y);
     void playtime_bottom(SDL_Renderer* r, int y);
+    // Settings > Power > Battery health (battery_screen.hpp); battery_refresh reads the gauge and the history.
+    BatteryReport battery;
+    Uint32 battery_read_at = 0;
+    void open_battery_health();
+    void battery_refresh();
+    std::string battery_status_line();
+    void battery_top(SDL_Renderer* r, int y);
+    void battery_bottom(SDL_Renderer* r, int y);
     std::string playtime_days(int days);
     // An anti-aliased ring piece (start/amount in turns, clockwise from the top), cached as a texture.
     void smooth_arc(SDL_Renderer* r, int cx, int cy, int radius, int thickness, double start, double amount, Color ink,
@@ -2152,7 +2229,7 @@ class App {
     std::string birthday_text(DsBirthday birthday) const;
     std::string month_name(int month) const; // 1-12, in the menus' language
     void reload_themes();
-    // announce: "Settings saved" for a setting the player changed; navigation that is only remembered says nothing.
+    // Saves the appearance preferences. Success says nothing (the row shows it); only a failure gets a status.
     void remember_appearance(bool announce = true);
     // Theme & display uses the shared settings list, four roomy rows per
     // screen: 0 colour mode, 1 accent colour, 2 high contrast, 3 typeface,
@@ -2247,8 +2324,17 @@ class App {
     std::vector<Game> kid_games;
     std::string kid_games_stamp;
     size_t kid_focus = 0;
-    int kid_page_shown = 0, kid_page_from = 0;
-    Uint32 kid_moved_at = 0, kid_page_at = 0, kid_pressed_at = 0;
+    int kid_page_shown = 0, kid_grab_x = 0, kid_last_x = 0;
+    Uint32 kid_moved_at = 0, kid_slide_at = 0, kid_pressed_at = 0, kid_last_at = 0;
+    double kid_drag_dx = 0, kid_slide_from = 0, kid_velocity = 0; // the page under a finger, px and px per ms
+    bool kid_dragging = false, kid_hold_fired = false, kid_swallow_release = false;
+    double kid_slide_offset(Uint32 now) const;
+    void kid_home_press(int x, int y);
+    void kid_home_drag(int x, int y);
+    SDL_Rect kid_hold_box() const;
+    double kid_hold_progress(Uint32 now) const;
+    void kid_hold_tick(Uint32 now);
+    void kid_hold_ring(SDL_Renderer* r, int y);
     const std::vector<Game>& kid_home_games();
     void open_kid_home(bool reset);
     SDL_Rect kid_tile_box(int slot) const;
@@ -2449,6 +2535,9 @@ class App {
     void triangle(SDL_Renderer* r, int x, int y, int half, int height, const std::string& key, bool down = true);
     void battery_icon(SDL_Renderer* r, int y, int x = 576);
     fs::path status_asset(const std::string& name);
+    // Panels larger than the 640x480 layout (the RG DS Plus): small pictures with an @2x file use it there.
+    bool large_panels = false;
+    fs::path sharp_asset(const std::string& relative);
     std::string wifi_asset();
     std::string sound_asset() { return hardware.volume && hardware.volume_percent == 0 ? "muted" : "sound"; }
     // Covers are being fetched: a small spinner and the count beside the
@@ -2544,12 +2633,14 @@ class App {
                         int width = 36);
     void round_rect(SDL_Renderer* r, int x, int y, int w, int h, int radius, const std::string& key);
     std::vector<SDL_Rect> fill_rows; // round_rect's and alpha_round's rows, reused
+    std::vector<SDL_FRect> panel_rows; // the same in panel pixels on a larger panel (fill_round_on_panel)
     // RGDS_FRAME_LOG=FILE: one line a second of where frame time goes (ms; average and worst), for the handheld.
     struct FrameLog {
         std::FILE* file = nullptr;
         enum { Interval, Prepare, TopDraw, TopPresent, BottomDraw, BottomPresent, Work, Wait, Count };
         double sum[Count]{}, peak[Count]{}, last = 0, began = 0, loop_top = 0, waited = 0;
         int frames = 0, top_frames = 0, touches = 0, top_touches = 0;
+        long copies = 0, fills = 0, lines = 0, peak_draws = 0, uploads = 0, upload_px = 0, targets = 0; // draw_count.hpp
         int gaps[5]{}; // frame intervals: up to 18, 34, 50, 100 ms, longer
         static double clock() {
             return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch())
@@ -2610,8 +2701,10 @@ class App {
     double storage_advance(bool closing);
     bool storage_scanning();
     std::string device_info_detail(int row);
+    void eject_games_card();
     void open_device_detail() {
         if (settings.focus == 2) open_storage();
+        else if (settings.focus == 4) eject_games_card();
         else show_detail(device_info_name(settings.focus), device_info_detail(settings.focus));
     }
     void show_detail(const std::string& title, const std::string& value);
@@ -3118,7 +3211,18 @@ class App {
                 throw std::runtime_error("Cannot determine native panel size");
             width = bounds.w;
             height = bounds.h;
-            if (width > 640) s.SetHint("SDL_RENDER_SCALE_QUALITY", "1");
+            if (width > 640) {
+                s.SetHint("SDL_RENDER_SCALE_QUALITY", "1");
+                large_panels = panel_native();
+            }
+        } else if (const char* scale = std::getenv("RGDS_PREVIEW_SCALE"); scale && std::atof(scale) > 1.01 &&
+                   std::atof(scale) <= 4) {
+            // Developers: the desktop preview at a larger panel's size (1.6 for the RG DS Plus's 1024x768), the same
+            // 640-wide layout scaled up as on the handheld, so --screenshot shows what the Plus shows.
+            width = int(std::lround(640 * std::atof(scale)));
+            height = int(std::lround(h * std::atof(scale)));
+            s.SetHint("SDL_RENDER_SCALE_QUALITY", "1");
+            large_panels = true;
         }
         auto* w = s.CreateWindow(title, SDL_WINDOWPOS_CENTERED_DISPLAY(index), SDL_WINDOWPOS_CENTERED_DISPLAY(index),
                                  width, height, flags);
@@ -3154,8 +3258,10 @@ class App {
     }
     void open() {
         if (o.independent && !o.game_menu) ui_trace.open(std::getenv("RGDS_UI_TRACE"));
-        if (const char* path = std::getenv("RGDS_FRAME_LOG"); path && *path && !o.game_menu && !frame_log.file)
+        if (const char* path = std::getenv("RGDS_FRAME_LOG"); path && *path && !frame_log.file) {
             frame_log.file = std::fopen(path, "a");
+            if (frame_log.file) rgds::draw_count::install(s);
+        }
         s.SetMainReady();
         s.SetHint("SDL_TOUCH_MOUSE_EVENTS", "0");
         s.SetHint("SDL_MOUSE_TOUCH_EVENTS", "0");
@@ -3856,6 +3962,7 @@ public:
         } else {
             launch_profile.mark("themes-loaded");
             session_initialized = true;
+            if (!o.game_menu) apply_games_card(); // the second card's folders, as begin_library_scan adds them
             const auto games = o.game_menu ? std::vector<Game>{} : scan(o.roots);
             launch_profile.mark("library-scanned", int(games.size()));
             load_library(games);
@@ -3964,6 +4071,7 @@ public:
 #include "launcher/game_info_screen.hpp"
 #include "launcher/playtime_screen.hpp"
 #include "launcher/journal_screen.hpp"
+#include "launcher/battery_screen.hpp"
 #include "launcher/filter_sheet.hpp"
 #include "launcher/library_zoom_screen.hpp"
 
@@ -4033,6 +4141,34 @@ static int self_test() {
              play_subsystem(r / "pce/Game.zip", "pce") == "pce" &&
              play_subsystem(r / "pce/Game.ccd", "pce") == "pcecd" && play_subsystem(r / "sms/Game.sg", "sms") == "sg";
     }
+    // A second card (games_card.hpp): the stock firmware's Roms folders and ours, as library roots by shelf; their
+    // games are each system's, PICO in the stock layout is PICO-8.
+    {
+        const fs::path c = root / "card";
+        for (const char* folder : {"Roms/NDS", "Roms/SFC", "Roms/MDCD", "Roms/PICO", "Roms/PS", "Roms/A2600",
+                                   "Roms/3DS", "Roms/Unknown", "Roms/.Trash"})
+            fs::create_directories(c / folder);
+        std::ofstream(c / "Roms/MDCD/Game.cue") << "FILE \"Game.bin\" BINARY\n";
+        std::ofstream(c / "Roms/MDCD/Game.bin").put('x');
+        std::ofstream(c / "Roms/PICO/Cart.p8.png").put('x');
+        std::ofstream(c / "Roms/A2600/Game.bin").put('x');
+        const auto folders = games_card_folders(c, {"snes", "md", "pico8", "psx", "atari"});
+        const std::vector<std::pair<std::string, fs::path>> expected = {
+            {"atari", c / "Roms/A2600"}, {"md", c / "Roms/MDCD"}, {"nds", c / "Roms/NDS"},
+            {"pico8", c / "Roms/PICO"},  {"psx", c / "Roms/PS"},  {"snes", c / "Roms/SFC"}};
+        ok = ok && folders == expected;
+        const auto md = scan_system({c / "Roms/MDCD"}, "md"), p8 = scan_system({c / "Roms/PICO"}, "pico8"),
+                   atari = scan_system({c / "Roms/A2600"}, "atari");
+        ok = ok && md.size() == 1 && md[0].path.filename() == "Game.cue" &&
+             play_subsystem(md[0].path, "md") == "segacd" && p8.size() == 1 && p8[0].title == "Cart" &&
+             atari.size() == 1 && system_for_path(c / "roms/pico/Game.md") == "pico" &&
+             system_for_path(c / "Roms/FC/Game.zip") == "nes" && system_for_path(c / "Roms/PS/Game.pbp") == "psx" &&
+             system_for_path(c / "Roms/GG/Game.zip") == "sms" && system_for_path(c / "Roms/SFC/Game.zip") == "snes";
+        ok = ok && games_card_folders(root / "nothing", {"md"}).empty();
+        const auto card = parse_games_card("point=" + c.string() + "\ndevice=/dev/mmcblk2p1\nfs=exfat\nid=1\n");
+        ok = ok && card && card->point == c && card->fs == "exfat" && !parse_games_card("point=/nowhere/at/all\n") &&
+             !parse_games_card("");
+    }
     { // One IMA ADPCM block of rising nibbles must decode to a rising ramp of the declared length.
         std::vector<uint8_t> wav = {'R', 'I', 'F', 'F', 0, 0, 0,    0, 'W', 'A', 'V',  'E',  'f',  'm',
                                     't', ' ', 20,  0,   0, 0, 0x11, 0, 1,   0,   0,    0x7d, 0,    0,
@@ -4098,6 +4234,7 @@ int main(int argc, char** argv) {
         if (const char* profile = std::getenv("RGDS_INPUT_PROFILE"))
             o.mainline = o.independent && std::string(profile) == "mainline-rg-ds";
         if (const char* os = std::getenv("RGDS_OS")) o.rgds_os = o.independent && std::string(os) == "1";
+        if (const char* card = std::getenv("RGDS_GAMES_CARD_STATE")) o.games_card = card; // games_card.hpp
         o.executable = fs::absolute(argv[0]);
         for (int i = 1; i < argc; i++) {
             std::string arg = argv[i];
@@ -4148,6 +4285,7 @@ int main(int argc, char** argv) {
             else if (arg == "--screenshot") o.screenshot = value();
             else if (arg == "--rom-dir") o.roots.emplace_back(value());
             else if (arg == "--music-dir") o.music_dirs.emplace_back(value());
+            else if (arg == "--games-card") o.games_card = value();
             else if (arg == "--system-dir") {
                 const std::string entry = value();
                 const auto eq = entry.find('=');
@@ -4172,7 +4310,7 @@ int main(int argc, char** argv) {
                     << "--boot-startup (direct startup with deferred scan and hardware work)\n"
                     << "--cache-report PATH (development asset-cache counters)\n"
                     << "--touch-recording FILE (preview Linux AArch64 evdev capture)\n"
-                    << "--settings [--section theme|brightness|power|library|sound|connectivity|system|controls]\n"
+                    << "--settings [--section theme|brightness|power|battery|library|sound|connectivity|system|controls]\n"
                     << "--game-menu --game-core rgds-experimental|rgds-play [--game-rom FILE] [--game-system ID]\n"
                     << "--mode light|dark --font rounded|pixel --preferences FILE --themes DIR\n"
                     << "--system-preferences FILE (power, brightness and menu sleep)\n"

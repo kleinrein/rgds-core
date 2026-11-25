@@ -22,3 +22,7 @@ The dark variant preserves the same identity with light lettering.
 BMP V4 assets for SDL. The original PNGs preserve generation output. Regenerate
 early boot art with `python3 tools/build_boot_assets.py` after preparing the BMPs.
 The earlier symbol and the generated wordmark PNGs were removed from the repository; the SVG lockups and BMP adaptations here are the current source.
+
+`status-light@2x.bmp` and `status-dark@2x.bmp` are the status bar logo at 2x (258x44) for panels larger than
+640x480 (the RG DS Plus's 1024x768), made by `tools/build_status_logo_2x.py` from the SVG lockups laid out in the 1x
+logo's proportions. The launcher picks them through `App::sharp_asset`.

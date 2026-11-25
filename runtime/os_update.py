@@ -371,6 +371,10 @@ class OsUpdater(Updater):
                     )
                     conf = self.boot / 'extlinux/extlinux.conf'
                     new = replace_label(conf.read_text(), other, template)
+                    # Never a boot menu without both slots (a 0-byte extlinux.conf stopped an RG DS Plus at U-Boot,
+                    # 2026-11-24): an old one that reads back incomplete stops the update here, nothing renamed.
+                    if not all(re.search(rf'^LABEL {slot}$', new, re.M) for slot in ('a', 'b')):
+                        raise ValueError('The boot menu could not be read. Restart and try the update again.')
                     # On the card before the rename: on vfat a cut after an unsynced rename can leave extlinux.conf
                     # empty, and neither slot boots.
                     with conf.with_name('extlinux.conf.new').open('w', encoding='utf-8') as out:

@@ -45,7 +45,6 @@ void App::apply_profile() {
         summary_ready = false;
         library_summary.request(o.data, all_games);
     }
-    if (!preferences.music_player && music_open) close_music();
     music_switched(); // a profile with the player off stops the song another left playing
     home_selected = home_fit(home_selected);
     carousel.reset(navigation_selected());
@@ -469,14 +468,14 @@ const Profile* App::edited_profile() const {
 std::vector<int> App::profile_edit_rows() const {
     // Who it's for 0, Name 1, DS name 2, Picture 3, Colour 4, Language 18, Age limit 6, No rating 7, Games 8, Games opens 17,
     // Ports 9,
-    // Homebrew 10, PictoChat 11, Music player 19, Cheats 12, Local wireless 13, PIN 14, Remove the PIN 15, Erase removed
+    // Homebrew 10, PictoChat 11, (Music player 19, removed 2026-11-25), Cheats 12, Local wireless 13, PIN 14, Remove the PIN 15, Erase removed
     // 16, Remove 5: the numbers stay, the order is what reads best.
     const auto* profile = edited_profile();
     std::vector<int> rows;
     // Birthday 20 follows the DS name: the rest of the DS profile.
     if (profile && profile->owner()) rows = {1, 2, 20, 3, 4, 18, 8, 17, 14}; // the owner's own is in Settings > Sound
-    else if (profile && !profile->restricted) rows = {0, 1, 2, 20, 3, 4, 18, 6, 7, 8, 17, 19, 14};
-    else rows = {0, 1, 2, 20, 3, 4, 18, 6, 7, 8, 17, 9, 10, 11, 19, 12, 13, 14};
+    else if (profile && !profile->restricted) rows = {0, 1, 2, 20, 3, 4, 18, 6, 7, 8, 17, 14};
+    else rows = {0, 1, 2, 20, 3, 4, 18, 6, 7, 8, 17, 9, 10, 11, 12, 13, 14};
     if (profile && !profile->pin.empty()) rows.push_back(15);
     if (profile && profile->owner() && profiles.removed_count() > 0) rows.push_back(16);
     if (!profile || !profile->owner()) rows.push_back(5);
@@ -522,15 +521,6 @@ void App::profile_edit_activate(int row) {
     } else if (row == 11) {
         changed.allow_pictochat = !changed.allow_pictochat;
         save();
-    } else if (row == 19) {
-        // The profile's own Music player switch (Settings > Sound), set from here for any profile; a Kid cannot
-        // change it there.
-        const bool on = !profile->music;
-        const bool active = profile->id == profiles.active();
-        profile_change_look(*profile, [on](Preferences& look) { look.music_player = on; });
-        if (active) music_switched();
-        emit_sound(on ? MenuCue::Enable : MenuCue::Disable);
-        profile_edit_focus(19);
     } else if (row == 12) {
         changed.allow_cheats = !changed.allow_cheats;
         save();
@@ -654,7 +644,6 @@ void App::profile_edit_row(SDL_Renderer* r, int y, int i) {
     case 10: list_row(r, y, i, "Homebrew", profile->allow_homebrew ? "On" : "Off"); break;
     case 11: list_row(r, y, i, "PictoChat", profile->allow_pictochat ? "On" : "Off"); break;
     case 12: list_row(r, y, i, "Cheats", profile->allow_cheats ? "On" : "Off"); break;
-    case 19: list_row(r, y, i, "Music player", profile->music ? "On" : "Off"); break;
     case 13: list_row(r, y, i, "Local wireless", profile->allow_wireless ? "On" : "Off"); break;
     case 14:
         list_row(r, y, i, profile->pin.empty() ? "Set a PIN" : "Change the PIN", profile->pin.empty() ? "None" : "Set");
@@ -1555,7 +1544,7 @@ int App::game_visibility_row() const {
     if (active_rules.restricted || model.games.empty() || model.selected >= model.games.size() ||
         model.games[model.selected].demo)
         return -1;
-    return game_options_base() + (game_removable() ? 1 : 0);
+    return game_remove_row() + (game_removable() ? 1 : 0);
 }
 
 void App::open_game_visibility() {
@@ -1702,6 +1691,11 @@ void App::enforce_lock(Uint32 now) {
         // Left on from before: the card should not be open on the network on a child's profile.
         sharing_stopped_at = now;
         start_worker("device.sharing-off");
+    }
+    if (who.simple) {
+        const Page before = settings.page;
+        kid_hold_tick(now);
+        if (settings.page != before) return; // a grown-up's long press: the page it opened stands
     }
     if (who.simple && o.game_menu && !settings_unlocked && settings.page != Page::KidMenu &&
         settings.page != Page::LeaveGame) {

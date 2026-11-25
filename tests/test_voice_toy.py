@@ -71,8 +71,8 @@ class VoiceToyUITests(unittest.TestCase):
         return result
 
     def open_toy(self):
-        # Carousel: Settings, Games, Favourites, Recents, PictoChat, Album, Sound toy (Music is off by default). The
-        # state file writes the toy as 7 whatever its place.
+        # Carousel: Settings, Games, Favourites, Recents, PictoChat, Music, Album, Sound toy (Music is always there
+        # since 2026-11-25). The state file writes the toy as 7 whatever its place.
         (self.root / 'state').write_text('1 0 0 ""\nhome 7\n')
 
     def test_the_tile_is_on_home_and_its_setting_hides_it(self):
@@ -81,7 +81,8 @@ class VoiceToyUITests(unittest.TestCase):
         self.assertIn('home 7', (self.root / 'state').read_text())
         self.ui.write_text(self.ui.read_text() + 'sound_toy=0\n')
         self.run_ui()
-        self.assertIn('home 5', (self.root / 'state').read_text())  # the tile is gone: back to the last one (Album)
+        # the tile is gone: back to the last one, Album (position 6, written as 10)
+        self.assertIn('home 10', (self.root / 'state').read_text())
 
     def test_recording_saves_a_sound_and_the_startup_sound_follows_it(self):
         self.open_toy()

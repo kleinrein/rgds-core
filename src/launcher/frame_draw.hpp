@@ -19,7 +19,12 @@ void App::animated_bottom(SDL_Renderer* renderer, int y) {
             draw_dragged_page(renderer, y);
             return;
         }
-        animated_page(renderer, y);
+        // The page revealed under the departing card, as it is: the card is the whole transition. A Back slide
+        // here as well showed the page that left a second time, sliding out under the card (owner, 2026-11-25).
+        if (page_drag.departing()) {
+            view_previous_ready = false;
+            paint_bottom(renderer, y);
+        } else animated_page(renderer, y);
         if (page_drag.departing() && gesture_canvas) {
             // The page that left, from where the finger had it.
             SDL_Rect clip{0, y, 640, 480};
@@ -44,7 +49,7 @@ void App::animated_bottom(SDL_Renderer* renderer, int y) {
 // pushed aside under a Back pull, with the panel's background behind.
 void App::draw_dragged_page(SDL_Renderer* renderer, int y) {
     if (!gesture_canvas)
-        gesture_canvas = s.CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 480);
+        gesture_canvas = panel_canvas(renderer);
     if (!gesture_canvas || s.SetRenderTarget(renderer, gesture_canvas) != 0) {
         s.ClearError();
         gesture_canvas_failed = true;
@@ -84,6 +89,15 @@ void App::draw_dragged_page(SDL_Renderer* renderer, int y) {
 }
 
 void App::animated_page(SDL_Renderer* renderer, int y) {
+    if (view_motion_from_gesture) {
+        // What is left of the motion once the card has gone: the page stays put, no slide or spring after it.
+        if (view_motion.running) {
+            view_previous_ready = false;
+            paint_bottom(renderer, y);
+            return;
+        }
+        view_motion_from_gesture = false;
+    }
     if (view_transitions_enabled() && layered(preferences.view_style) && !view_canvas_failed) {
         push_bottom(renderer, y);
         return;
@@ -93,7 +107,7 @@ void App::animated_page(SDL_Renderer* renderer, int y) {
         return;
     }
     if (!view_canvas)
-        view_canvas = s.CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 480);
+        view_canvas = panel_canvas(renderer);
     if (!view_canvas || s.SetRenderTarget(renderer, view_canvas) != 0) {
         view_canvas_failed = true;
         view_motion.stop();
@@ -133,7 +147,7 @@ void App::push_bottom(SDL_Renderer* renderer, int y) {
         return;
     }
     if (!view_canvas)
-        view_canvas = s.CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 480);
+        view_canvas = panel_canvas(renderer);
     auto fallback = [&]() {
         s.ClearError();
         clear_view_canvases();
@@ -206,7 +220,7 @@ void App::animated_top(SDL_Renderer* renderer, int y) {
         return;
     }
     if (!top_canvas)
-        top_canvas = s.CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, 640, 480);
+        top_canvas = panel_canvas(renderer, true); // the upper panel: every frame goes through it, at panel size
     // A transition that interrupts another leaves from where the last one was heading, not from two pages ago.
     if (top_canvas && top_previous_ready && top_fading && view_motion.running && view_motion.started != top_fade_at)
         std::swap(top_canvas, top_previous);
@@ -365,6 +379,8 @@ void App::draw(bool screenshot) {
                 if (s.RenderReadPixels(renderer, nullptr, SDL_PIXELFORMAT_RGBA32, pixels + i * overlay_panel_bytes,
                                        640 * 4) != 0)
                     throw std::runtime_error("Menu frame capture failed");
+                if (frame_log.file)
+                    frame_log.add(i == 0 ? FrameLog::TopPresent : FrameLog::BottomPresent, FrameLog::clock() - flushed);
             } else if (surfaces[i].window) { // the port helper's top canvas on RG DS OS has no window
                 ui_trace.mark(i == 0 ? UiTrace::TopPresent : UiTrace::BottomPresent, rendered_frames,
                               uint32_t(settings.page));

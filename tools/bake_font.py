@@ -8,6 +8,10 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parents[1]
 DEST = ROOT / "assets/fonts"
 SIZES = (16, 20, 24, 28, 36)
+# The same Latin sizes at 1.6x, for panels larger than 640x480 (the RG DS Plus's 1024x768): the launcher lays text
+# out with SIZES and draws each glyph from these onto whole physical pixels (src/launcher/font.hpp). Latin only: CJK
+# glyphs keep the SIZES families, stretched.
+HIRES_SIZES = (26, 32, 38, 45, 58)
 # Vietnamese uses precomposed vowels with both shape and tone marks.
 VIETNAMESE = [0x102, 0x103, 0x110, 0x111, 0x128, 0x129, 0x168, 0x169, 0x1A0, 0x1A1, 0x1AF, 0x1B0
               ] + list(range(0x1EA0, 0x1EFA))
@@ -93,8 +97,15 @@ def family_codepoints(source, base, language):
 
 
 if __name__ == "__main__":
+    import sys
+    if "--hires" in sys.argv[1:]:  # only the 1.6x Latin atlases; the others stay as they are
+        for size in HIRES_SIZES:
+            bake(size, DEST / "source/Nunito.ttf", CODEPOINTS, "rounded-%d.rgf" % size, 1024, 600)
+        sys.exit(0)
     for size in SIZES:
         bake(size, DEST / "source/Nunito.ttf", CODEPOINTS, "rounded-%d.rgf" % size, 512, 600)
+    for size in HIRES_SIZES:
+        bake(size, DEST / "source/Nunito.ttf", CODEPOINTS, "rounded-%d.rgf" % size, 1024, 600)
     for family, (source, base, language) in FAMILIES.items():
         codepoints = family_codepoints(SOURCES / source, base, language)
         for size in SIZES:

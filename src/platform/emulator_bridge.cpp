@@ -40,6 +40,7 @@
 #ifdef __linux__
 #include <linux/input.h>
 #include <sys/ioctl.h>
+#include <sys/sysmacros.h>
 #include <cstdarg>
 #endif
 #include <atomic>
@@ -120,6 +121,7 @@ std::map<SDL_JoystickID, std::array<bool, 8>> stick_held;
 void release_controls();
 void graphics_texture_changed(bool enhanced);
 void write_cheats(bool force = false);
+void write_net();
 void release_touch_after_resume();
 void remember_control_event(const SDL_Event& event) {
     Uint32 kind = event.type;
@@ -568,6 +570,7 @@ bool input_blocked() {
         if (blocked && !blocked_cache) {
             release_controls();
             write_cheats(true);
+            write_net();
         }
         blocked_cache = blocked;
         blocked_shared = blocked;
@@ -995,8 +998,27 @@ void quit_events(bool checkpoint_saved = false) {
     quit_at = now();
     answer(checkpoint_saved ? "saved" : "quitting");
 }
+// DSCore with a local-wireless session live: it writes no save state (a state cannot carry the session), so an
+// injected save key would only run out the 7 s timeout and strand the player on "Could not save" with no way to
+// turn local wireless off (that relaunch saves first). The game's own save still flushes when the engine quits.
+bool net_live() {
+    static auto live = reinterpret_cast<int (*)()>(dlsym(RTLD_DEFAULT, "rgds_net_live"));
+    return live && live() != 0;
+}
 void start_save(bool exit_after) {
     if (saving) return;
+    if (net_live()) {
+        failed = false;
+        if (!exit_after) {
+            answer("save-net");
+            return;
+        }
+        if (!quitting) {
+            quitting = true;
+            quit_events();
+        }
+        return;
+    }
     before = stamps();
     candidate.clear();
     if (!state_slot.empty()) unlink((state_slot + ".skip").c_str());
@@ -1126,6 +1148,25 @@ void write_cheats(bool force) {
     file.close();
     rename(pending.c_str(), path.c_str());
 }
+// Local wireless (DSCore): the live session, written to <control>.net for the game menu when the menu opens:
+// "live=1", then the engine's rgds_net_info lines (role, one player line each). "live=0" outside a session, and
+// with an engine that has no session hook, so the menu never shows a session from an older run.
+void write_net() {
+    if (control.empty()) return;
+    static auto info_fn = reinterpret_cast<int (*)(char*, int)>(dlsym(RTLD_DEFAULT, "rgds_net_info"));
+    std::string text = net_live() ? "live=1\n" : "live=0\n";
+    if (net_live() && info_fn) {
+        char buffer[2048];
+        info_fn(buffer, sizeof buffer);
+        text += buffer;
+    }
+    const std::string path = control + ".net", pending = path + ".pending";
+    {
+        std::ofstream file(pending);
+        file << text;
+    }
+    rename(pending.c_str(), path.c_str());
+}
 // Rewind (docs/TIME_TRAVEL_PLAN.md): the engine's moments (rgds_rewind_* in DSCore and RG DS Play) written beside the
 // control file for the game menu's Rewind screen, in play/src/app/moments.hpp's format. All between frames, here.
 void write_file_atomic_bytes(const std::string& path, const std::string& bytes) {
@@ -1148,8 +1189,9 @@ std::string rewind_files() {
 bool write_rewind(unsigned now_id) {
     static auto count_fn = reinterpret_cast<int (*)()>(dlsym(RTLD_DEFAULT, "rgds_rewind_count"));
     static auto rate_fn = reinterpret_cast<double (*)()>(dlsym(RTLD_DEFAULT, "rgds_rewind_rate"));
-    static auto moment_fn = reinterpret_cast<int (*)(int, unsigned*, unsigned*, unsigned long long*, int*, int*,
-                                                     const uint32_t**)>(dlsym(RTLD_DEFAULT, "rgds_rewind_moment"));
+    static auto moment_fn =
+        reinterpret_cast<int (*)(int, unsigned*, unsigned*, unsigned long long*, int*, int*, const uint32_t**)>(
+            dlsym(RTLD_DEFAULT, "rgds_rewind_moment"));
     if (control.empty() || !count_fn || !moment_fn) return false;
     const int count = std::max(0, count_fn());
     std::ostringstream list;
@@ -1191,8 +1233,8 @@ bool write_rewind(unsigned now_id) {
     return true;
 }
 bool write_rewind_shown(unsigned id) {
-    static auto show_fn =
-        reinterpret_cast<int (*)(unsigned, int*, int*, int*, const uint32_t**)>(dlsym(RTLD_DEFAULT, "rgds_rewind_show"));
+    static auto show_fn = reinterpret_cast<int (*)(unsigned, int*, int*, int*, const uint32_t**)>(
+        dlsym(RTLD_DEFAULT, "rgds_rewind_show"));
     int screens = 0, w = 0, h = 0;
     const uint32_t* px = nullptr;
     if (control.empty() || !show_fn || !show_fn(id, &screens, &w, &h, &px) || !px || screens < 1 || screens > 2 ||
@@ -1398,10 +1440,11 @@ void tick(bool graphics_safe = false) {
                     const unsigned long id = std::strtoul(command.c_str() + colon + 1, &end, 10);
                     const bool valid = end && !*end && id > 0 && id < 0xFFFFFFFFul;
                     const std::string verb = command.substr(0, colon);
-                    if (verb == "rewind-show") answer(valid && write_rewind_shown(unsigned(id)) ? "rewind-shown"
-                                                                                                : "rewind-failed");
+                    if (verb == "rewind-show")
+                        answer(valid && write_rewind_shown(unsigned(id)) ? "rewind-shown" : "rewind-failed");
                     else {
-                        auto jump_fn = reinterpret_cast<int (*)(unsigned, int)>(dlsym(RTLD_DEFAULT, "rgds_rewind_jump"));
+                        auto jump_fn =
+                            reinterpret_cast<int (*)(unsigned, int)>(dlsym(RTLD_DEFAULT, "rgds_rewind_jump"));
                         const bool play = verb == "rewind-play";
                         answer(valid && jump_fn && jump_fn(unsigned(id), play ? 1 : 0)
                                    ? (play ? "rewind-played" : "rewind-back")
@@ -2121,6 +2164,9 @@ extern "C" int ioctl(int descriptor, unsigned long request, ...) noexcept {
     va_start(arguments, request);
     void* value = va_arg(arguments, void*);
     va_end(arguments);
+    // Only evdev requests matter here. A GPU-drawing game makes a thousand DRM calls a second through this hook
+    // (Crazy Taxi on Flycast: 950), and each one searched the environment for RGDS_SHARED_MENU.
+    if (_IOC_TYPE(request) != 'E') return next ? next(descriptor, request, value) : -1;
     // The shared menu and volume watcher need independent evdev clients.
     // Engines otherwise grab touch/keys exclusively.
     if (request == EVIOCGRAB && value && env("RGDS_SHARED_MENU") == "1") return 0;
@@ -2146,13 +2192,13 @@ extern "C" int ioctl(int descriptor, unsigned long request, ...) noexcept {
 extern "C" ssize_t read(int descriptor, void* buffer, size_t size) {
     using Fn = ssize_t (*)(int, void*, size_t);
     static auto next = reinterpret_cast<Fn>(dlsym(RTLD_NEXT, "read"));
-    if (!std::getenv("RGDS_SHARED_MENU")) return next ? next(descriptor, buffer, size) : -1;
-    char reference[64], path[256];
-    std::snprintf(reference, sizeof(reference), "/proc/self/fd/%d", descriptor);
-    auto length = readlink(reference, path, sizeof(path) - 1);
-    if (length < 0) return next ? next(descriptor, buffer, size) : -1;
-    path[length] = '\0';
-    bool input = std::strncmp(path, "/dev/input/event", 16) == 0;
+    static const bool shared = std::getenv("RGDS_SHARED_MENU") != nullptr; // set by the launcher, never in flight
+    if (!shared) return next ? next(descriptor, buffer, size) : -1;
+    // An evdev node is a character device, major 13, minor 64 and up (below: js, mouse, mice). fstat instead of
+    // reading the descriptor's path back from /proc on every read of anything (2% of Flycast's drawing thread).
+    struct stat node{};
+    bool input = fstat(descriptor, &node) == 0 && S_ISCHR(node.st_mode) && major(node.st_rdev) == 13 &&
+                 minor(node.st_rdev) >= 64;
     // Every evdev client reads libc directly; touch framing and calibration
     // stay native.
     Fn reader = next;

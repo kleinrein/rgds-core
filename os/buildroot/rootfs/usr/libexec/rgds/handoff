@@ -8,7 +8,8 @@
 # Looked for on the first boot only: handoff.done says it was.
 # The bundle may also hold preset.ini, the flasher's Set up step (flasher/preset.go): a Wi-Fi network goes into
 # wifi.conf here, before Wi-Fi starts, and the rest (language, time zone, name) into userdata/flasher-setup.ini for
-# setup (src/launcher/welcome_screen.hpp). A bundle with nothing else in it is not kept for Bring over.
+# setup (src/launcher/welcome_screen.hpp), and a developer's SSH key (ssh_key=) into ssh/authorized_keys. A bundle
+# with nothing else in it is not kept for Bring over.
 #   handoff <disk>
 DISK=$1
 OUT=${RGDS_HANDOFF_OUT:-/data/rgds/import}
@@ -23,6 +24,13 @@ preset() {
         # scan_ssid: a hidden network is found too
         printf '\nnetwork={\n\tssid=%s\n\tscan_ssid=1\n\t%s\n}\n' "$ssid" "$key" >> $DATA/wifi.conf
         echo "handoff: Wi-Fi network from RG DS Flasher" >> /run/rgds/messages
+    fi
+    # a developer's flash (flasher --ssh-key): the key lets SSH in from the first boot (net starts dropbear on it)
+    key=$(sed -n 's/^ssh_key=\(\(ssh-ed25519\|ssh-rsa\|ecdsa-sha2-nistp256\) [A-Za-z0-9+/]*=*\)$/\1/p' "$1" | head -n 1)
+    if [ -n "$key" ]; then
+        mkdir -p $DATA/ssh
+        grep -qxF "$key" $DATA/ssh/authorized_keys 2>/dev/null || echo "$key" >> $DATA/ssh/authorized_keys
+        echo "handoff: SSH key from RG DS Flasher" >> /run/rgds/messages
     fi
     mkdir -p $DATA/userdata
     grep -E '^(format|language|timezone|name)=' "$1" > $DATA/userdata/flasher-setup.ini
@@ -44,12 +52,15 @@ if [ "$(sha256sum $OUT/flasher.tar.gz.part | cut -d' ' -f1)" = "$sum" ]; then
     mv -f $OUT/flasher.tar.gz.part $OUT/flasher.tar.gz
     echo "$sum" > $OUT/handoff.done
     echo "handoff: $len bytes from RG DS Flasher" >> /run/rgds/messages
-    names=$(tar -tzf $OUT/flasher.tar.gz 2>/dev/null)
-    if echo "$names" | grep -qx preset.ini && tar -xzf $OUT/flasher.tar.gz -O preset.ini > $OUT/preset.ini 2>/dev/null; then
+    # BusyBox tar here has no -z: gunzip feeds it
+    names=$(gunzip -c $OUT/flasher.tar.gz 2>/dev/null | tar -tf - 2>/dev/null)
+    if echo "$names" | grep -qx preset.ini &&
+        gunzip -c $OUT/flasher.tar.gz 2>/dev/null | tar -xOf - preset.ini > $OUT/preset.ini 2>/dev/null; then
         preset $OUT/preset.ini
     fi
     rm -f $OUT/preset.ini
-    echo "$names" | grep -qx manifest.json || rm -f $OUT/flasher.tar.gz
+    # an unreadable list keeps the bundle: Bring over (migrate.py) reads it with Python's tarfile
+    [ -n "$names" ] && ! echo "$names" | grep -qx manifest.json && rm -f $OUT/flasher.tar.gz
 else
     rm -f $OUT/flasher.tar.gz.part
     echo bad > $OUT/handoff.done

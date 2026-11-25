@@ -430,3 +430,29 @@ func TestBackupRoundTrip(t *testing.T) {
 		t.Fatal("the backup did not go back as it was")
 	}
 }
+
+// --ssh-key: the key line goes into preset.ini without its comment, and nothing else passes for one.
+func TestPresetSSHKey(t *testing.T) {
+	dir := t.TempDir()
+	pub := filepath.Join(dir, "id_ed25519.pub")
+	os.WriteFile(pub, []byte("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJjpTest me@mac\n"), 0o644)
+	key, err := readSSHKey(pub)
+	if err != nil || key != "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJjpTest" {
+		t.Fatalf("readSSHKey = %q, %v", key, err)
+	}
+	p := Preset{SSHKey: key}
+	if p.empty() {
+		t.Fatal("a preset with only a key must still be written")
+	}
+	ini, err := p.ini()
+	if err != nil || !strings.Contains(string(ini), "\nssh_key="+key+"\n") {
+		t.Fatalf("ini = %q, %v", ini, err)
+	}
+	os.WriteFile(pub, []byte("-----BEGIN OPENSSH PRIVATE KEY-----\n"), 0o600)
+	if _, err := readSSHKey(pub); err == nil {
+		t.Fatal("a private key file was taken as a public key")
+	}
+	if _, err := (Preset{SSHKey: key + "\nlanguage=xx"}).ini(); err == nil {
+		t.Fatal("a key with a second line got through")
+	}
+}

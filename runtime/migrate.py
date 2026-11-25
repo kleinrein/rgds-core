@@ -5,7 +5,9 @@ Where an old system's files can be found (sources, newest first):
 - flasher: RG DS Flasher read the old card before it erased it and left a bundle at the end of this card; rcS
   (usr/libexec/rgds/handoff) copies it to /data/rgds/import/flasher.tar.gz on the first boot. The games stayed on
   the computer, so the bundle lists them (manifest.json) for play time and saves to find them later.
-- card: the old card itself, in the RG DS Plus's second slot or a USB reader, mounted read-only here.
+- card: the old card itself, in the RG DS Plus's second slot or a USB reader, mounted read-only here. A card RG DS OS
+  already plays from (the second card, usr/libexec/rgds/games-card, mounted read-write at /media/tf2) is read where
+  it is, and its games stay on it: they are in the library already, so play time and favourites go to them there.
 - folder: the old card's files copied into /data/import on this card.
 
 BananaOS (its docs/EMULATORS.md and ARCHITECTURE.md): an exFAT partition with roms/<folder>, saves/ (RetroArch's
@@ -320,6 +322,8 @@ class Game:
         self.ours = folders.get(folder.lower())
         # False for a DS game known only from its save (stock DraStic's backup/): it has a save, not a place
         self.listed = listed
+        # True on the second card RG DS OS plays from: the game is played where it is (Source live)
+        self.live = False
 
     @property
     def wanted(self):
@@ -328,7 +332,7 @@ class Game:
         return self.rel.suffix.lower() in (".zip", ".7z") and self.rel.stem.lower() in arcade_catalog()
 
     def destination(self, roms):
-        return Path(roms) / self.ours / self.rel
+        return self.source if self.live and self.source else Path(roms) / self.ours / self.rel
 
     @property
     def stem(self):
@@ -336,14 +340,16 @@ class Game:
 
 
 class Source:
-    """An old system's files under root (read only)."""
-    def __init__(self, root, place, kind, extra=()):
-        self.root, self.place, self.kind = Path(root), place, kind
+    """An old system's files under root (read only). live: the second card RG DS OS plays from, whose games stay."""
+    def __init__(self, root, place, kind, extra=(), live=False):
+        self.root, self.place, self.kind, self.live = Path(root), place, kind, live
         # more partitions of the same old card (stock: the vendor partition with DraStic's saves)
         self.extra = [Path(p) for p in extra]
         self.folders = STOCK_FOLDERS if kind == "stock" else FOLDERS
         self.manifest = read_manifest(root) or {}
         self.games = self.find_games()
+        for game in self.games:
+            game.live = live
         if kind == "stock":
             # DS games known only by DraStic's saves (the games may be on the computer, or nowhere)
             stems = {g.stem for g in self.games if g.ours == "nds"}
@@ -810,6 +816,19 @@ def other_partitions():
     return found
 
 
+def mounted_at(name, mounts="/proc/mounts"):
+    """Where /dev/<name> is mounted already (the second card, for play), or None."""
+    try:
+        with open(mounts, encoding="utf-8", errors="replace") as table:
+            for line in table:
+                fields = line.split()
+                if len(fields) > 1 and fields[0] == "/dev/" + name:
+                    return Path(fields[1].replace("\\040", " ").replace("\\011", "\t"))
+    except OSError:
+        pass
+    return None
+
+
 def mount(name, place):
     point = Path("/run/rgds/import") / name
     point.mkdir(parents=True, exist_ok=True)
@@ -839,16 +858,19 @@ def sources(paths, devices=True):
         # DraStic's saves on another (the vendor partition, whose root holds deep/).
         cards = {}
         for name, disk in other_partitions():
-            point = mount(name, "card")
+            # the second card, mounted read-write for play, is read where it is (a read-only mount of it would be
+            # refused) and never unmounted from here
+            live = mounted_at(name)
+            point = live or mount(name, "card")
             if point is None: continue
             kind = layout(point)
-            if kind: cards.setdefault(disk, []).append((point, kind))
-            else: subprocess.run(["umount", str(point)], capture_output=True)
+            if kind: cards.setdefault(disk, []).append((point, kind, live is not None))
+            elif live is None: subprocess.run(["umount", str(point)], capture_output=True)
         for disk, parts in cards.items():
             # the partition with the games leads; the rest of the same system come along
             parts.sort(key=lambda part: roms_folder(part[0]) is None)
-            (main, kind), rest = parts[0], [point for point, other in parts[1:] if other == parts[0][1]]
-            found.append(Source(main, "usb" if disk.startswith("sd") else "slot", kind, rest))
+            (main, kind, live), rest = parts[0], [point for point, other, _ in parts[1:] if other == parts[0][1]]
+            found.append(Source(main, "usb" if disk.startswith("sd") else "slot", kind, rest, live=live))
     folder = paths["folder"]
     for root in [folder] + [folder / name for name in list_dirs(folder)]:
         kind = layout(root) if root.is_dir() else None

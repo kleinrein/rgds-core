@@ -20,7 +20,18 @@ void App::watch_menu(Uint32 now) {
         } else settings.page = Page::QuickMenu;
         settings.focus = 0;
         load_cheats();
+        load_net_session();
         dirty = true;
+    }
+    // The bridge writes the session when it sees the menu open, which can land after the view request.
+    {
+        std::error_code error;
+        const auto stamp = fs::last_write_time(o.data / "session/emulator.control.net", error);
+        if (!error && stamp != net_session_stamp) {
+            net_session_stamp = stamp;
+            load_net_session();
+            dirty = true;
+        }
     }
     // The old status can still be on disk after a tap. Keep the local
     // busy state until the supervisor acknowledges this exact request.

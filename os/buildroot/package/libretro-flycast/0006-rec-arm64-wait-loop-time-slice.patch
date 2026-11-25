@@ -1,0 +1,495 @@
+From: RG DS <rgds@localhost>
+Subject: [PATCH] rec-arm64: give a wait loop's time slice back
+
+Games spend what is left of each frame spinning on a variable an interrupt
+handler will change. Crazy Taxi's is four tiny blocks (0x8c1583f8: a call
+through an empty hook, two compares against the vertical blank counter) and
+took 15-25% of the SH4 thread in its drive on the RG DS: found by sampling
+the thread with ptrace (os/device-bench/jit_peek.c) and reading the busiest
+page of translated code.
+
+Guest memory only changes at a scheduler tick, so once a pass of such a loop
+has changed nothing, every pass up to the next tick is the same pass. The
+block that holds the loop's backward branch now sets cycle_counter to 0 when
+it takes that branch: the loop runs once a tick (448 cycles) instead of once
+every 34. No guest code is skipped and guest time passes as before.
+
+A loop qualifies only when every instruction from its head to the backward
+branch has no side effect (register moves and arithmetic, compares, branches,
+loads from fixed main RAM addresses, never hardware registers) and no register
+carries a value into the next pass, so counted delay loops don't. One call
+through a pointer in RAM is allowed while it leads to a bare "rts; nop",
+checked on every pass. MMU games are left alone.
+
+Crazy Taxi drive, RG DS, 2026-11-24: Flycast-emu 88-94% -> 79-81% of a core,
+same picture. RGDS_FLYCAST_IDLESKIP=0 turns it off, =2 logs each loop found.
+
+--- a/core/rec-ARM64/idle_loop.h	1970-01-01 01:00:00.000000000 +0100
++++ b/core/rec-ARM64/idle_loop.h	2026-11-24 23:30:29.805943436 +0100
+@@ -0,0 +1,430 @@
++// RG DS: wait loops. Games spend the rest of each frame spinning on a variable an interrupt handler will change
++// ("has the vertical blank counter passed N yet?"). Crazy Taxi's drive gives 15-25% of the SH4 thread to one such
++// loop of four tiny blocks. Guest memory only changes at a scheduler tick (interrupts, DMA), so once one pass of
++// a loop is known to change nothing, the passes up to the next tick are all the same pass: the block that holds the
++// loop's backward branch gives the rest of the time slice back (cycle_counter to 0) and the loop runs once a tick
++// instead of a dozen times. No guest code is skipped, only repeated less often; guest time passes as before.
++//
++// A loop qualifies only when every instruction from its head to the backward branch is on a short list with no
++// side effects: register moves and arithmetic, compares, branches, loads from fixed addresses in main RAM (never
++// hardware registers), and no register carries a value from one pass to the next (so no counted delay loops). One
++// call through a pointer held in RAM is allowed (a hook the game leaves empty), and only while that pointer leads to
++// a bare "rts; nop", which is checked on every pass. RGDS_FLYCAST_IDLESKIP=0 turns it off, =2 logs each loop found.
++#pragma once
++#include "types.h"
++#include "hw/sh4/sh4_mem.h"
++#include "hw/sh4/sh4_core.h"
++#include "hw/sh4/dyna/blockmanager.h"
++#include "hw/sh4/dyna/decoder.h"
++#include "hw/sh4/modules/mmu.h"
++#include <cstdio>
++#include <cstdlib>
++
++namespace rgds_idle
++{
++
++static inline int mode()
++{
++	static int value = -1;
++	if (value < 0)
++	{
++		const char *env = getenv("RGDS_FLYCAST_IDLESKIP");
++		value = env != nullptr ? atoi(env) : 1;
++	}
++	return value;
++}
++
++// Main RAM through P0, P1 or P2 (not the TLB-mapped P3, not P4).
++static inline bool inRam(u32 addr)
++{
++	u32 top = addr >> 29;
++	return ((addr >> 26) & 7) == 3 && (top == 0 || top == 4 || top == 5);
++}
++
++static inline bool read16(u32 addr, u16& value)
++{
++	if (!inRam(addr))
++		return false;
++	const u8 *p = GetMemPtr(addr, 2);
++	if (p == nullptr)
++		return false;
++	value = *(const u16 *)p;
++	return true;
++}
++
++static inline bool read32(u32 addr, u32& value)
++{
++	if (!inRam(addr) || (addr & 3) != 0)
++		return false;
++	const u8 *p = GetMemPtr(addr, 4);
++	if (p == nullptr)
++		return false;
++	value = *(const u32 *)p;
++	return true;
++}
++
++// The function a hook pointer leads to does nothing: rts with a nop in its delay slot.
++static inline bool emptyHook(u32 pointerAddr)
++{
++	u32 function;
++	u16 op0, op1;
++	return read32(pointerAddr, function) && read16(function, op0) && read16(function + 2, op1)
++			&& op0 == 0x000b && op1 == 0x0009;
++}
++
++// Called at the start of the block holding a wait loop's backward branch.
++static void DYNACALL burn(u32 hookPointer)
++{
++	if (hookPointer != 0 && !emptyHook(hookPointer))
++		return;
++	Sh4Context& ctx = p_sh4rcb->cntx;
++	if (ctx.cycle_counter > 0)
++		ctx.cycle_counter = 0;
++}
++
++constexpr u32 REG_T = 1u << 16;
++constexpr u32 REG_PR = 1u << 17;
++constexpr int MAX_OPS = 48;
++
++// True when [head, end) is a wait loop as described above; hookPointer is the RAM address of its hook pointer, or 0.
++static bool analyse(u32 head, u32 end, u32& hookPointer)
++{
++	hookPointer = 0;
++	if (!inRam(head) || end <= head || ((end - head) & 1) != 0)
++		return false;
++	int count = (end - head) / 2;
++	if (count > MAX_OPS - 1)
++		return false;
++
++	enum Kind { Plain, Cond, CondDelayed, Jump, Call };
++	u32 reads[MAX_OPS] = {}, writes[MAX_OPS] = {}, target[MAX_OPS] = {};
++	Kind kind[MAX_OPS] = {};
++	bool joins[MAX_OPS + 1] = {};
++	u32 constant[16] = {}, loadedFrom[16] = {};
++	u32 constMask = 0, loadedMask = 0;
++	bool inSlot = false;
++
++	for (int i = 0; i < count; i++)
++	{
++		const u32 pc = head + i * 2;
++		u16 op;
++		if (!read16(pc, op))
++			return false;
++		if (joins[i])
++			constMask = loadedMask = 0;
++		const u32 n = (op >> 8) & 15, m = (op >> 4) & 15;
++		const u32 rn = 1u << n, rm = 1u << m;
++		const bool slot = inSlot;
++		inSlot = false;
++		kind[i] = Plain;
++		auto kill = [&](u32 r) { constMask &= ~(1u << r); loadedMask &= ~(1u << r); };
++		auto branch = [&](Kind k, int32_t displacement) {
++			if (slot)
++				return false;
++			kind[i] = k;
++			target[i] = pc + 4 + displacement * 2;
++			if (target[i] >= head && target[i] < end)
++			{
++				if (target[i] <= pc && target[i] != head)
++					return false;	// an inner loop
++				if (target[i] > pc)
++					joins[(target[i] - head) / 2] = true;
++			}
++			inSlot = k != Cond;
++			return true;
++		};
++		auto load = [&](u32 addr, int size) {
++			if ((constMask & rm) == 0 || !inRam(addr) || (addr & (size - 1)) != 0)
++				return false;
++			reads[i] = rm;
++			writes[i] = rn;
++			kill(n);
++			if (size == 4)
++			{
++				loadedFrom[n] = addr;
++				loadedMask |= rn;
++			}
++			return true;
++		};
++
++		switch (op >> 12)
++		{
++		case 0x0:
++			if (op != 0x0009)	// nop
++				return false;
++			break;
++		case 0x2:
++			switch (op & 15)
++			{
++			case 0x8:	// tst Rm,Rn
++				reads[i] = rn | rm;
++				writes[i] = REG_T;
++				break;
++			case 0x9: case 0xa: case 0xb:	// and, xor, or
++				reads[i] = rn | rm;
++				writes[i] = rn;
++				kill(n);
++				break;
++			default:
++				return false;
++			}
++			break;
++		case 0x3:
++			switch (op & 15)
++			{
++			case 0x0: case 0x2: case 0x3: case 0x6: case 0x7:	// cmp/eq hs ge hi gt
++				reads[i] = rn | rm;
++				writes[i] = REG_T;
++				break;
++			case 0x8: case 0xc:	// sub, add
++				reads[i] = rn | rm;
++				writes[i] = rn;
++				kill(n);
++				break;
++			default:
++				return false;
++			}
++			break;
++		case 0x4:
++			switch (op & 0xff)
++			{
++			case 0x00: case 0x01: case 0x20: case 0x21:	// shll shlr shal shar
++				reads[i] = rn;
++				writes[i] = rn | REG_T;
++				kill(n);
++				break;
++			case 0x08: case 0x09: case 0x18: case 0x19: case 0x28: case 0x29:	// shll2/8/16 shlr2/8/16
++				reads[i] = rn;
++				writes[i] = rn;
++				kill(n);
++				break;
++			case 0x11: case 0x15:	// cmp/pz cmp/pl
++				reads[i] = rn;
++				writes[i] = REG_T;
++				break;
++			case 0x0b:	// jsr @Rn: only through a pointer this pass loaded from RAM
++				if (slot || hookPointer != 0 || (loadedMask & rn) == 0)
++					return false;
++				hookPointer = loadedFrom[n];
++				kind[i] = Call;
++				reads[i] = rn;
++				writes[i] = REG_PR;
++				inSlot = true;
++				break;
++			default:
++				return false;
++			}
++			break;
++		case 0x5:	// mov.l @(disp,Rm),Rn
++			if (!load(constant[m] + (op & 15) * 4, 4))
++				return false;
++			break;
++		case 0x6:
++			switch (op & 15)
++			{
++			case 0x0:	// mov.b @Rm,Rn
++				if (!load(constant[m], 1))
++					return false;
++				break;
++			case 0x1:	// mov.w @Rm,Rn
++				if (!load(constant[m], 2))
++					return false;
++				break;
++			case 0x2:	// mov.l @Rm,Rn
++				if (!load(constant[m], 4))
++					return false;
++				break;
++			case 0x3:	// mov Rm,Rn
++			{
++				reads[i] = rm;
++				writes[i] = rn;
++				const bool isConst = (constMask & rm) != 0, isLoaded = (loadedMask & rm) != 0;
++				const u32 value = constant[m], from = loadedFrom[m];
++				kill(n);
++				if (isConst)
++				{
++					constant[n] = value;
++					constMask |= rn;
++				}
++				if (isLoaded)
++				{
++					loadedFrom[n] = from;
++					loadedMask |= rn;
++				}
++				break;
++			}
++			case 0x7: case 0xb: case 0xc: case 0xd: case 0xe: case 0xf:	// not neg extu exts
++				reads[i] = rm;
++				writes[i] = rn;
++				kill(n);
++				break;
++			default:
++				return false;
++			}
++			break;
++		case 0x7:	// add #imm,Rn
++			reads[i] = rn;
++			writes[i] = rn;
++			loadedMask &= ~rn;
++			if (constMask & rn)
++				constant[n] += (int32_t)(int8_t)(op & 0xff);
++			break;
++		case 0x8:
++			switch (n)
++			{
++			case 0x8:	// cmp/eq #imm,R0
++				reads[i] = 1;
++				writes[i] = REG_T;
++				break;
++			case 0x9: case 0xb:	// bt bf
++				reads[i] = REG_T;
++				if (!branch(Cond, (int8_t)(op & 0xff)))
++					return false;
++				break;
++			case 0xd: case 0xf:	// bt/s bf/s
++				reads[i] = REG_T;
++				if (!branch(CondDelayed, (int8_t)(op & 0xff)))
++					return false;
++				break;
++			default:
++				return false;
++			}
++			break;
++		case 0x9:	// mov.w @(disp,PC),Rn
++		{
++			u16 value;
++			if (slot || !read16(pc + 4 + (op & 0xff) * 2, value))
++				return false;
++			writes[i] = rn;
++			kill(n);
++			constant[n] = (int32_t)(int16_t)value;
++			constMask |= rn;
++			break;
++		}
++		case 0xa:	// bra
++			if (!branch(Jump, ((int32_t)(op & 0xfff) << 20) >> 20))
++				return false;
++			break;
++		case 0xc:
++			switch (n)
++			{
++			case 0x8:	// tst #imm,R0
++				reads[i] = 1;
++				writes[i] = REG_T;
++				break;
++			case 0x9: case 0xa: case 0xb:	// and xor or #imm,R0
++				reads[i] = 1;
++				writes[i] = 1;
++				kill(0);
++				break;
++			default:
++				return false;
++			}
++			break;
++		case 0xd:	// mov.l @(disp,PC),Rn
++		{
++			u32 value;
++			if (slot || !read32((pc & ~3u) + 4 + (op & 0xff) * 4, value))
++				return false;
++			writes[i] = rn;
++			kill(n);
++			constant[n] = value;
++			constMask |= rn;
++			break;
++		}
++		case 0xe:	// mov #imm,Rn
++			writes[i] = rn;
++			kill(n);
++			constant[n] = (int32_t)(int8_t)(op & 0xff);
++			constMask |= rn;
++			break;
++		default:
++			return false;
++		}
++	}
++	if (inSlot)
++		return false;	// a delay slot past the end
++	if (hookPointer != 0 && !emptyHook(hookPointer))
++		return false;
++
++	// Where each instruction goes next: an index, or -1 for out of the loop. Reaching index 0 is the backward branch.
++	int next[MAX_OPS][2];
++	auto indexOf = [&](u32 addr) { return addr >= head && addr < end ? (int)((addr - head) / 2) : -1; };
++	for (int i = 0; i < count; i++)
++	{
++		next[i][0] = i + 1 < count ? i + 1 : -1;
++		next[i][1] = -1;
++		if (kind[i] == Cond)
++			next[i][1] = indexOf(target[i]);
++		if (i > 0 && kind[i - 1] == CondDelayed)
++		{
++			next[i][0] = i + 1 < count ? i + 1 : -1;
++			next[i][1] = indexOf(target[i - 1]);
++		}
++		else if (i > 0 && kind[i - 1] == Jump)
++			next[i][0] = indexOf(target[i - 1]);
++	}
++	bool fromHead[MAX_OPS] = {}, toHead[MAX_OPS] = {};
++	fromHead[0] = true;
++	for (bool changed = true; changed;)
++	{
++		changed = false;
++		for (int i = 0; i < count; i++)
++			for (int s : next[i])
++			{
++				if (s < 0)
++					continue;
++				if (fromHead[i] && !fromHead[s])
++					fromHead[s] = changed = true;
++				if ((s == 0 || toHead[s]) && !toHead[i])
++					toHead[i] = changed = true;
++			}
++	}
++	if (!toHead[0])
++		return false;
++	// Registers a pass reads before it writes them, along the paths that come round again.
++	u32 liveIn[MAX_OPS] = {};
++	for (bool changed = true; changed;)
++	{
++		changed = false;
++		for (int i = count - 1; i >= 0; i--)
++		{
++			if (!toHead[i])
++				continue;
++			u32 out = 0;
++			for (int s : next[i])
++				if (s >= 0 && (s == 0 || toHead[s]))
++					out |= liveIn[s];
++			u32 in = reads[i] | (out & ~writes[i]);
++			if (in != liveIn[i])
++			{
++				liveIn[i] = in;
++				changed = true;
++			}
++		}
++	}
++	u32 written = 0;
++	for (int i = 0; i < count; i++)
++		if (fromHead[i] && toHead[i])
++			written |= writes[i];
++	return (liveIn[0] & written) == 0;
++}
++
++// For the block being compiled: is it the tail of a wait loop?
++static bool blockEndsWaitLoop(const RuntimeBlockInfo *block, u32& hookPointer)
++{
++	if (mode() == 0 || mmu_enabled())
++		return false;
++	if (block->BlockType != BET_Cond_0 && block->BlockType != BET_Cond_1 && block->BlockType != BET_StaticJump)
++		return false;
++	const u32 head = block->BranchBlock, end = block->addr + block->sh4_code_size;
++	if (head > block->addr || block->sh4_code_size == 0)
++		return false;
++	if (!analyse(head, end, hookPointer))
++		return false;
++	if (mode() >= 2)
++		fprintf(stderr, "rgds-idle: wait loop %08x-%08x hook %08x\n", head, end, hookPointer);
++	return true;
++}
++
++}
+--- a/core/rec-ARM64/rec_arm64.cpp	2026-11-24 23:30:29.804942806 +0100
++++ b/core/rec-ARM64/rec_arm64.cpp	2026-11-24 23:30:29.805943436 +0100
+@@ -41,6 +41,7 @@
+ #include "hw/sh4/sh4_mem.h"
+ #include "hw/sh4/sh4_rom.h"
+ #include "arm64_regalloc.h"
++#include "idle_loop.h"
+ #include "hw/mem/addrspace.h"
+ #include "oslib/virtmem.h"
+ #include "emulator.h"
+@@ -979,6 +980,25 @@
+ 		}
+ 		regalloc.Cleanup();
+ 
++		// RG DS: a wait loop's backward branch gives the rest of the time slice back (idle_loop.h)
++		u32 idleHook;
++		if (rgds_idle::blockEndsWaitLoop(block, idleHook))
++		{
++			Label loop_left;
++			if (block->BlockType != BET_StaticJump)
++			{
++				if (block->has_jcond)
++					Ldr(w11, sh4_context_mem_operand(&sh4ctx.jdyn));
++				else
++					Ldr(w11, sh4_context_mem_operand(&sh4ctx.sr.T));
++				Cmp(w11, block->BlockType & 1);
++				B(ne, &loop_left);
++			}
++			Mov(w0, idleHook);
++			GenCallRuntime(rgds_idle::burn);
++			Bind(&loop_left);
++		}
++
+ 		block->relink_offset = (u32)GetBuffer()->GetCursorOffset();
+ 		block->relink_data = 0;
+ 

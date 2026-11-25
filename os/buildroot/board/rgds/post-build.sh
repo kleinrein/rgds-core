@@ -5,7 +5,7 @@ set -e
 T=$1
 # rcS starts everything; Buildroot's own init scripts go
 rm -f "$T"/etc/init.d/S[0-9]*
-mkdir -p "$T/data" "$T/run" "$T/boot"
+mkdir -p "$T/data" "$T/run" "$T/boot" "$T/media/tf2"
 V=$(cat "$BR2_EXTERNAL_RGDS_PATH/../../VERSION")
 printf 'NAME="RG DS OS"\nID=rgds\nID_LIKE=buildroot\nVERSION="%s"\nVERSION_ID=%s\nPRETTY_NAME="RG DS OS %s"\n' \
     "$V" "$V" "$V" > "$T/usr/lib/os-release"

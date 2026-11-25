@@ -14,6 +14,9 @@ same chip, and reports from RK3566 handhelds, which have the same Mali-G52 and s
 | Player: Flycast options, shared-texture frames, sticks kept, VMU on the second screen | Done, host-built, play-tests pass |
 | OS: `/data/roms/dc` made at boot, the session passes it to the launcher | Done, not booted |
 | Device spike | **2026-11-19**: Crazy Taxi drives at **55-60 fps** on the RG DS (was ~30) after Flycast patches 0002-0003; see "Spike results" |
+| Crazy Taxi, 2026-11-24 | Patches 0006 (wait loop) and 0007 (frame drop by game lag): the game holds 60 in the scripted drive, 53-58 frames drawn where the GPU is the limit; on the RG DS until reboot, not in an image |
+| Crazy Taxi, 2026-11-25 | The picture was held at 57 a second by the player's sound steering, not the GPU (about 60% busy): the Dreamcast now gets frames by the clock alone; menus back at 60. Player change, needs an image |
+| Crazy Taxi, 2026-11-25, main thread | Each frame was copied twice on its way to the panel. Patch 0008 plus the player's framebuffer texture remove both: the core's work per frame in the drive 12.6 -> 10.3 ms, late passes 11 -> 3 of 300, loop 17.5 -> 16.9 ms. Core + player + bridge together: on the RG DS in image `0.9.2-2d1a6fa0f6e1-osf1d60aec` (slot b) since 2026-11-25, not yet hand-played or measured from a normal launch |
 
 ## Short answer
 
@@ -74,9 +77,15 @@ faster and our Mesa is tuned further than stock ROCKNIX's.
   bundled libraries static. No OpenMP: its texture threads would take the cores the SH4 and render threads need.
 - Patch `0001-vmu-screen-hook.patch`: Flycast keeps each VMU's decoded 48×32 picture; `retro_rgds_vmu(index, dots)`
   copies it out and returns when the game last drew it.
+- Speed patches `0002`-`0008` (draw ranges, whole-buffer uploads, unchanged poly state, depth from the vertex shader,
+  the wait loop, frame drop by game lag, drawing into the frontend's framebuffer): each is described under "Spike results" with its numbers and its off switch.
 - The checkout with every submodule is 865 MB with history; Buildroot's git download would clone all of it. The VM's
   `~/own-os/dl/libretro-flycast/` holds a hand-made tarball of a shallow checkout (172 MB, no `.git`), as was done for
-  PPSSPP. A clean machine downloads the full checkout.
+  PPSSPP. A clean machine downloads the full checkout. On 2026-11-25 that tarball was gone from the VM, and a
+  `libretro-flycast-dirclean` sent Buildroot cloning everything onto a disk with 1.8 GB free (it filled). The tarball
+  is now made on the Mac (`.cache/flycast-src/`: `git fetch --depth 1` of the pinned commit, `submodule update
+  --init --recursive --depth 1`, tar without `.git`, named `libretro-flycast-<commit>-git4.tar.gz`) and the VM's
+  download folder holds a link to it. Check the tarball is there before a dirclean.
 - The core is 33 MB before the image's strip step. The image's rootfs (235 of 768 MiB) and the 512 MiB OTA cap have
   room.
 - **The next image build needs `--reconfigure`**: the defconfig now enables the package, and `check_cores` stops a
@@ -356,6 +365,115 @@ e10c53c2f8b90bab96ead2d368858623, no `dc_flash.bin`), player built from this che
   verify the release folder, not `/usr/lib/libretro`). A direct `make` in the VM must set
   `BR2_DL_DIR=$HOME/own-os/dl` as `own_os_build.py` does: without it Buildroot cloned Flycast's 1.4 GB repository into
   `buildroot/dl` and filled the VM disk (removed).
+- **Patch 0006, the game's wait loop (2026-11-24):** a ptrace sampler for translated code
+  (`os/device-bench/jit_peek.c`: program counters of the `Flycast-emu` thread plus the busiest 4 KiB pages of JIT
+  code, with `dc_guest_ram.py` for the guest RAM to disassemble; run by `dc_run_t.sh`) showed one loop of four tiny
+  blocks at `0x8c1583f8` taking 16.6% of that thread's running time in the drive (25.7% over the whole 11-23 profile):
+  Crazy Taxi's wait for the next frame (a call through an empty hook, then two compares against the vertical blank
+  counter, 34 cycles a pass). The block with the loop's backward branch now gives the rest of the time slice back, so
+  the loop runs once a scheduler tick (448 cycles) instead; nothing is skipped and guest time is unchanged
+  (`core/rec-ARM64/idle_loop.h` says which loops qualify). Same drive, same stats core, off against on
+  (`dc_run_u.sh`): **`Flycast-emu` 88-94% -> 79-81% of a core**, same picture, the drive itself 55.6-57 -> 58-58.9
+  game frames a second. The detector finds 34 such loops in Crazy Taxi's RAM (host test in `build/dc-spike/idle`),
+  8 of them run. `RGDS_FLYCAST_IDLESKIP=0` turns it off, `=2` logs each loop.
+- **After 0006 the GPU is the limit in this drive:** the SH4 thread waits 20-25% of the time and the profile is flat
+  (the busiest page of translated code is 3.5%). `reicast_auto_skip_frame=more` showed the headroom: 66-72 game
+  frames a second, because "more" never waits for the renderer and nothing else paces the emulation thread in the
+  libretro build (sound is dropped when its buffer is full, not waited on). So "more" is not usable as it is.
+- **Patch 0007, which frames to drop (2026-11-24):** "some" waits for the renderer while the SH4's average speed is
+  85% or more, so a scene the GPU can't draw in a refresh slows the whole game to the GPU's pace, and frames go in
+  bursts once the average drops. The emulation thread now tracks how far the game is behind the wall clock: under
+  8 ms it waits as before, over it the frame is not drawn. Same drive (`dc_run_w.sh`, twice): **the game holds
+  59.5-60.2 frames a second through the GPU-limited stretch (58.2-58.5 before), same frames drawn (53-58)**.
+  `RGDS_FLYCAST_PACE=0` gives the old rule back, `RGDS_FLYCAST_PACE_MS` sets the limit. How evenly the drawn frames
+  are spaced was not measured (the bridge wrote no frame statistics in the spike runs).
+- **Installed 2026-11-24:** core with 0001-0007 (md5 2db907c5...) in `/data/rgds/dc-core/` on the RG DS, bound over
+  `/usr/lib/libretro/flycast_libretro.so` until the next reboot (the 0005 core is kept beside it as
+  `flycast_libretro.0005.so`). The VM's build tree holds the same source (hand-applied, backups `*.pre-idle` and
+  `*.pre-pace`; both patches checked to reproduce it), so the next image build carries it with or without a dirclean.
+  Not tried on the Plus, in other games, or in a hand-played drive.
+- **The GPU is not what limits the drive (2026-11-25).** A stats core with switches (`os/device-bench/flycast_gpux.py`
+  applies them to the VM tree on top of `flycast-stats.patch`, `flycast_gpux_restore.sh` undoes both; run by
+  `dc_run_x.sh`, table by `dc_x_report.sh`), one drive each, GPU time from fdinfo over the drive:
+
+  | Case | Fragment ms/s | Per drawn frame | Drawn a second |
+  |---|---|---|---|
+  | as installed (0001-0007) | 601 | 10.6 ms | 56.9 |
+  | no translucent list (`RGDS_X_SKIP=t`) | 483 | 8.5 ms | 56.7 |
+  | no opaque list (`o`) | 395 | 7.0 ms | 56.7 |
+  | no modifier volumes (`m`) | 478 | 8.4 ms | 56.8 |
+  | no punch-through list (`p`) | 585 | 10.3 ms | 56.8 |
+  | colour cleared at the start, depth and stencil dropped at the end (`RGDS_X_CLEAR`, `RGDS_X_INVAL`) | 580 | 10.2 ms | 56.9 |
+  | the GPU's own perspective correction, real w (`RGDS_X_PERSP`) | 615 | 10.8 ms | 56.9 |
+  | the same with mediump colours (`RGDS_X_MEDIUMP`) | 614 | 10.7 ms | 57.2 |
+
+  So opaque is ~34% of the fragment time, translucent and the shadows ~20% each, punch-through ~3%, and ~23% is there
+  with nothing drawn (the copy to the player's target and the player's own two passes). The perspective rewrite gains
+  nothing, the clear and discard ~3% (one drive each, so within the noise). And with half the GPU's work removed the
+  drawn frames did not move from 56.8: the fragment engine is about 60% busy, not the limit. None of these became a
+  package patch.
+- **What held the picture at 57: the player's sound steering (2026-11-25).** The player's loop period was 17.56-17.61
+  ms in every case, menus with a 4 ms core frame included: one doubled refresh in twenty. That is the loop holding a
+  frame back (5% a pass) while its sound queue is over twice its target. It works for a core whose sound follows the
+  frames it is asked for; Flycast's emulation thread makes sound at the game's rate whatever the loop does, so the
+  queue never empties and the hold never ends (until the old frameskip rule slowed the game itself: Crazy Taxi's
+  results screen ran at 56.8 game frames a second). The Dreamcast now gets its frames by the clock alone, and sound
+  that arrives too late is dropped (`play/src/frontend/main.cpp`, `RGDS_PLAY_PACED` 0 steered / 1 one frame a pass /
+  2 clock; `dc` defaults to 2). Same drive, `clock` against `steered`: **menus and the results screen 59.8-60 game
+  and drawn frames a second (56.8 before), loop 16.72 ms (17.61)**; in the drive the loop is 16.9-17.3 ms against
+  17.1-17.5. One frame a pass, as the PSP has it, was worse in the drive (loop ~20 ms, ~50 pictures a second: after
+  each frame Flycast drops, the pass waits a whole emulated frame and misses a refresh). Note the stats core's
+  "shown" counts frames Flycast drew, not refreshes: a pass that runs two frames shows one.
+- **Not on the handheld yet:** the player is checked against the release's manifest at launch, so this needs an image.
+  The spike folder on the RG DS has the new player (`rgds-play`, the 11-23 one kept as `rgds-play-1123`) and a current
+  `runtime/`.
+- **The main thread (2026-11-25, afternoon).** Measured with `os/device-bench/dc_run_y.sh` (the player's own loop
+  numbers; `PROF=1` adds `rgds_prof.so`, which now counts ioctls from its start time only and, with
+  `RGDS_PROF_STACKS=<request hex>`, records who called one ioctl by walking the frame-pointer chain;
+  `rgds_prof_report.py --stacks N` and `--callers TEXT` read it; `dc_y_report.sh` gives one line a case over the
+  drive's nine windows of 300 passes).
+  - **Where the kernel time went:** in the drive the thread made 10-16 `PANFROST_SUBMIT` calls a frame at 110 us
+    each (1.8 ms a frame), 33 `WAIT_BO` checks (0.3 ms), two page flips (0.17 ms). The submits by caller: almost half
+    came from two full-screen copies. Flycast drew the scene into a framebuffer of its own and blitted it, upside
+    down, into the player's (`PostProcessor::render`); the player blitted that into the panel's texture and turned it
+    back over. Each copy is a GPU job (two submits) and forces the one before it out.
+  - **Patch 0008, the scene into the frontend's framebuffer:** Flycast binds the frontend's framebuffer for the
+    scene and declares `bottom_left_origin = false`. Not with the PowerVR2 filter (decided at start); a frame with a
+    video shift and the 2D framebuffer path still copy, the same way up. `RGDS_FLYCAST_DIRECT=0` turns it off.
+  - **Player, the panel's texture as the framebuffer's colour** (`aim_framebuffer` in
+    `play/src/core/libretro_core.cpp`): for a core that draws top row first, when the last frame was the texture's
+    size, the texture replaces the colour renderbuffer and nothing is copied. Only for `dc`
+    (`RGDS_PLAY_FBO_TEXTURE=0/1` forces it; note `RGDS_PLAY_DIRECT` is the older switch for sharing the context at
+    all). Capture at 95 s: right way up, same picture.
+  - **Bridge hooks** (`src/platform/emulator_bridge.cpp`): the `ioctl` hook searched the environment for
+    `RGDS_SHARED_MENU` on every successful call (a thousand DRM calls a second here) and the `read` hook read the
+    descriptor's path back from `/proc` on every read. Now only evdev requests go past the first line of the ioctl
+    hook, and an input node is told by `fstat` (character device 13, minor 64 and up: checked against the RG DS's
+    `/dev/input`). Built on its own for the bench (`bridge-1125.so` in the spike folder); the menu key filter was
+    not exercised by the scripted drive.
+  - **Drives (two each, RG DS):**
+
+    | Case | Core's run a pass | Passes over 16.7 ms, of 300 | Loop |
+    |---|---|---|---|
+    | 0001-0007, new player | 12.6 ms | 10.8 / 11.7 | 17.5 ms |
+    | + 0008 and the framebuffer texture | 10.2 / 10.4 ms | 3.6 / 3.3 | 16.89 ms |
+    | + the bridge fix | 10.0 / 10.2 ms | 3.2 / 3.1 | 16.89 ms |
+    | 0008 with the player still copying | 12.9 ms | 25.7 | 18.7 ms |
+
+    The last row is why 0008 is **not** bound over the installed core: with the image's player (which still copies)
+    it is worse than 0007. Core, player and bridge go into an image together. Menus: 4.3 -> 3.95 ms.
+  - **Installed 2026-11-25:** the package rebuilt from patches 0001-0008 after a dirclean gives the same core as the
+    bench build (md5 9a418f2a... before the image's strip). Image `0.9.2-2d1a6fa0f6e1-osf1d60aec` pushed to the RG
+    DS's slot b (slot a keeps `os86393bed`); it boots, and the installed core, player and bridge carry the changes.
+    No drive was run from the installed image (the panels were left to the owner after the install).
+  - **After:** 8.5 submits a frame over the run (6.8 in the drive): the scene, the upper panel and the lower panel,
+    each flushed where it must be (swap, context switch, the panel sampling the scene). `WAIT_BO` 23 a frame (0.2 ms),
+    nearly all the batch pools probing the buffer cache (`panfrost_pool_alloc_backing`); not worth a Mesa patch yet.
+- **What is left for Crazy Taxi:** about 1% of refreshes still missed in the drive (3 passes of 300 over, worst
+  windows 12 ms average). The main thread's time is now Mesa's per-draw state and Flycast's list building: joining
+  consecutive polygons with the same state into one draw is the next lever. The lower panel is cleared, drawn and
+  flipped every pass even when its picture has not changed (two submits and a flip). After that the sound chip's
+  ~25% of the SH4 thread.
 - **Next fixes, in order:** (1) and the buffer stall done, above. (The `u_vbuf` name in the first profile was Panfrost borrowing u_vbuf's
   scan helper, not the vertex-translation path; no layout change needed.) (2) Cut redundant per-poly state in
   `SetGPState`: skip texture binds, `glTexParameter` calls and uniform updates when they equal the previous poly's

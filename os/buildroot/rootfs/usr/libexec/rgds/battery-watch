@@ -4,6 +4,15 @@
 # the way a sleep that ends on an empty battery does (poweroff-requested, usr/libexec/rgds/power): a running game
 # saves and quits in its own time, then the launcher powers off. Only if that has not happened after WAIT seconds
 # does init do it (SIGTERM to every process, which gives a large save state about a second). Started by rcS.
+#
+# The same readings feed Settings > Power > Battery health (src/launcher/battery_health.hpp): a row every SAMPLE
+# seconds in HISTORY, one at once when the charger comes or goes, and two around a sleep. The loop's sleep stops
+# while the handheld is suspended, so a wall-clock gap longer than GAP between two readings was a sleep: the reading
+# before it is written too, so the drain in the sleep is only the sleep's. Columns, tab-separated:
+#   time  level %  charge_now uAh  current_avg uA  voltage_avg uV  status (C D F N)  charger (0 1)
+#   row (b first after boot, s first after a sleep, a any other)  charged uAh in all  charge_full uAh
+# "charged" adds up what the charger put in, for the charge cycle count (charged / design capacity); it carries on
+# from the last row after a reboot. The newest KEEP rows are kept (14 days of 5-minute rows).
 B=${RGDS_BATTERY_DIR:-/sys/class/power_supply/battery}
 C=${RGDS_CHARGER_DIR:-/sys/class/power_supply/charger}
 LIMIT=${RGDS_BATTERY_LIMIT:-3}
@@ -11,10 +20,63 @@ LOG=${RGDS_BATTERY_LOG:-/data/rgds/logs/battery.log}
 POWEROFF=${RGDS_POWEROFF:-poweroff}
 REQUEST=${RGDS_RUN:-/run/rgds}/poweroff-requested
 WAIT=${RGDS_POWEROFF_WAIT:-45}
+HISTORY=${RGDS_BATTERY_HISTORY:-/data/rgds/userdata/logs/battery-history.tsv}
+SAMPLE=${RGDS_BATTERY_SAMPLE:-300}
+GAP=${RGDS_BATTERY_GAP:-120}
+KEEP=${RGDS_BATTERY_KEEP:-4032}
+
+# a whole number from a sysfs file, 0 when it is missing or not a number
+number() {
+    v=$(cat "$1" 2>/dev/null)
+    case "$v" in '' | - | *[!0-9-]* | ?*-*) echo 0 ;; *) echo "$v" ;; esac
+}
+
+charged=$(tail -n 1 "$HISTORY" 2>/dev/null | cut -f 9)
+case "$charged" in '' | *[!0-9]*) charged=0 ;; esac
+mkdir -p "$(dirname "$HISTORY")" 2>/dev/null
+row=b last_time= last_charge= last_plug= written=0 rows=0 held=
+
+record() {
+    printf '%s\n' "$1" >> "$HISTORY" 2>/dev/null || return
+    written=$time
+    rows=$((rows + 1))
+    # trimmed once a day of rows has gone past the limit, so the card sees one rewrite a day
+    if [ $((rows % 288)) = 0 ] && [ "$(wc -l < "$HISTORY" 2>/dev/null)" -gt $((KEEP + 288)) ]; then
+        tail -n "$KEEP" "$HISTORY" > "$HISTORY.tmp" 2>/dev/null && mv -f "$HISTORY.tmp" "$HISTORY"
+    fi
+}
+
+history() {
+    time=$(date +%s)
+    charge=$(number $B/charge_now)
+    case "$(cat $B/status 2>/dev/null)" in Charging) state=C ;; Full) state=F ;; Discharging) state=D ;; *) state=N ;; esac
+    plug=0
+    [ "$(cat $C/online 2>/dev/null)" = 1 ] && plug=1
+    [ -n "$last_time" ] && [ $((time - last_time)) -gt "$GAP" ] && row=s
+    # what the charger put in since the last reading, never more than 3.6 A could (a gauge that recalibrates jumps)
+    if [ "$plug" = 1 ] && [ "$last_plug" = 1 ] && [ -n "$last_charge" ] && [ "$charge" -gt "$last_charge" ]; then
+        gain=$((charge - last_charge))
+        most=$(((time - last_time + 1) * 1000))
+        [ $gain -gt $most ] && gain=$most
+        charged=$((charged + gain))
+    fi
+    line=$(printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$time" "$1" "$charge" "$(number $B/current_avg)" \
+        "$(number $B/voltage_avg)" $state $plug $row $charged "$(number $B/charge_full)")
+    if [ $row = s ] && [ -n "$held" ]; then record "$held"; fi
+    if [ $row != a ] || [ "$plug" != "$last_plug" ] || [ $((time - written)) -ge "$SAMPLE" ]; then
+        record "$line"
+        held=
+    else
+        held=$line
+    fi
+    row=a last_time=$time last_charge=$charge last_plug=$plug
+}
+
 low=0
 while sleep "${RGDS_BATTERY_INTERVAL:-30}"; do
     cap=$(cat $B/capacity 2>/dev/null) || continue
     case "$cap" in ''|*[!0-9]*) continue;; esac
+    history "$cap"
     if [ "$(cat $C/online 2>/dev/null)" = 1 ] || [ "$(cat $B/status 2>/dev/null)" = Charging ]; then low=0; continue; fi
     if [ "$cap" -le "$LIMIT" ]; then
         low=$((low + 1))

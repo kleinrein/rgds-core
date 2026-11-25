@@ -128,7 +128,8 @@ class ViewAnimationUITests(unittest.TestCase):
         self.assertFalse(report['view_animation_active'])
         self.assertFalse(report['view_canvas_failed'])
         self.assertEqual(report['render_file_reads'], 0)
-        self.assertLess(report['frames'], 150)
+        # Idle frames stay out; a transition is ~23 frames since animations pace at 60 fps (2026-11-25), not 30.
+        self.assertLess(report['frames'], 180)
 
     def test_legacy_preferences_and_default_do_not_enable_view_motion(self):
         for entry in (('--settings',), ('--game-menu',)):
@@ -410,6 +411,49 @@ class ViewAnimationUITests(unittest.TestCase):
         self.assertTrue(report['home_menu'])
         self.assertGreater(report['gesture_frames'], 3)
         self.assertFalse(report['kinetics_active'])
+        self.assert_settled(report)
+
+    def test_the_home_card_is_the_whole_transition(self):
+        # 2026-11-25 on the RG DS Plus: after the card flew off, a Back slide ran under it as well, so the page that
+        # left showed twice. The upper panel still crossfades on the same motion.
+        for style in ('push', 'spring', 'zoom'):
+            self.enable(style=style)
+            (self.root / 'ui.ini').write_text(
+                (self.root / 'ui.ini').read_text() + 'gestures=1\nhome_layout=carousel\nbackground=plain\n'
+            )
+            swipe = ''.join('%d drag 320 %d\n' % (900 + i * 16, 474 - i * 30) for i in range(1, 7))
+            report = self.run_ui('900 tap 320 474\n' + swipe + '1020 release\n', ('--library',), seconds=3)
+            self.assertTrue(report['home_menu'], style)
+            self.assertGreater(report['gesture_frames'], 3, style)
+            self.assertEqual(report['view_animation_frames'], 0, style)  # no slide, spring or zoom of the lower page
+            self.assertGreater(report['top_animation_frames'], 0, style)
+            self.assert_settled(report)
+
+    def home_swipe(self, moves, release_at):
+        self.enable()
+        (self.root / 'ui.ini').write_text(
+            (self.root / 'ui.ini').read_text() + 'gestures=1\nhome_layout=carousel\nbackground=plain\n'
+        )
+        drags = ''.join('%d drag %d %d\n' % move for move in moves)
+        return self.run_ui('100 key A\n700 tap 320 474\n' + drags + '%d release\n' % release_at, ('--home',), seconds=3)
+
+    def test_a_short_quick_flick_goes_home(self):
+        # 60 px in 64 ms: short of the reach, but thrown, as on a phone.
+        report = self.home_swipe([(700 + i * 16, 320, 474 - i * 15) for i in range(1, 5)], 776)
+        self.assertTrue(report['home_menu'])
+        self.assert_settled(report)
+
+    def test_a_slow_short_pull_springs_back(self):
+        report = self.home_swipe([(700 + i * 60, 320, 474 - i * 15) for i in range(1, 5)], 1000)
+        self.assertFalse(report['home_menu'])
+        self.assertFalse(report['kinetics_active'])
+        self.assert_settled(report)
+
+    def test_pulling_back_down_before_lifting_cancels(self):
+        up = [(700 + i * 16, 320, 474 - i * 30) for i in range(1, 7)]
+        down = [(796 + i * 16, 320, 294 + i * 20) for i in range(1, 5)]
+        report = self.home_swipe(up + down, 870)
+        self.assertFalse(report['home_menu'])
         self.assert_settled(report)
 
     def test_back_returns_to_the_tile_the_library_was_entered_from(self):

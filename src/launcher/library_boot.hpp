@@ -34,6 +34,7 @@ void App::load_library(std::vector<Game> games) {
         settings.page = Page::QuickMenu;
         menu_status = {{"state", "paused"}, {"checkpoint", o.preview ? "1" : "0"}};
         load_cheats();
+        load_net_session();
     }
     if (o.game_switcher) {
         load_switcher();
@@ -57,7 +58,11 @@ void App::load_library(std::vector<Game> games) {
             else if (o.section == "album") open_album();
             else if (o.section == "journal") open_journal();
             else if (o.section == "files") open_files();
-            else if (o.section == "updates") open_updates(Page::Settings);
+            else if (o.section == "battery") {
+                settings.section = 1;
+                settings.enter();
+                open_battery_health();
+            } else if (o.section == "updates") open_updates(Page::Settings);
             else {
                 static const std::array<std::string, 8> ids = {"theme",        "power",  "library",  "sound",
                                                                "connectivity", "system", "controls", "statistics"};
@@ -122,14 +127,55 @@ std::string App::games_signature() const {
 // Games put on the card while the menu is open turn up by themselves: from Home (or the Library
 // settings) the folders are looked at every few seconds, and a change starts the same scan as the button.
 void App::watch_games(Uint32 now) {
-    if (o.preview || o.game_menu || launching || !library_ready || !session_initialized || worker > 0 ||
-        now - games_checked_at < 4000 || picker_open)
+    if (o.game_menu || launching || !library_ready || worker > 0 || now - games_checked_at < 4000 || picker_open)
         return;
     games_checked_at = now;
+    // The second card put in or taken out: its games join or leave the library wherever the menu is (and in a
+    // preview, for the tests). Their play time, favourites and saves are in userdata, kept for when the card is back.
+    if (games_card_changed()) {
+        rescan_quietly();
+        if (games_card || !games_card_ejected) notify(games_card ? "Second card ready" : "Second card removed");
+        games_card_ejected = false;
+        if (settings.page == Page::Files) {
+            files_setup_roots();
+            files_open_root(std::min(files_root, int(files_roots.size()) - 1));
+        }
+        return;
+    }
+    if (o.preview || !session_initialized) return;
     if (!((home_menu && settings.page == Page::Library) || settings.page == Page::LibraryOptions ||
           (settings.page == Page::Welcome && welcome_step == WelcomeGames)))
         return;
     if (games_signature() == games_signature_seen) return;
+    rescan_quietly();
+}
+
+// The second card's folders join the session's roots while it is in, and leave them when it is out (games_card.hpp).
+// Before every library scan, so the DS list, the other systems, the artwork index and the change watch all see the
+// same folders.
+void App::apply_games_card() {
+    if (!own_roots_kept) {
+        own_roots = o.roots;
+        own_system_roots = o.system_roots;
+        own_roots_kept = true;
+    }
+    games_card_seen = games_card_text(o.games_card);
+    games_card = parse_games_card(games_card_seen);
+    o.roots = own_roots;
+    o.system_roots = own_system_roots;
+    if (games_card) {
+        std::set<std::string> shelves;
+        for (const auto& entry : own_system_roots) shelves.insert(entry.first);
+        for (const auto& [shelf, folder] : games_card_folders(games_card->point, shelves))
+            if (shelf != "nds") o.system_roots.emplace_back(shelf, folder);
+            else if (!own_roots.empty()) o.roots.push_back(folder); // the DS shelf, where the session has one
+    }
+    settings.device_rows = games_card ? 5 : 4;
+    if (settings.page == Page::DeviceInfo) settings.focus = std::min(settings.focus, settings.device_rows - 1);
+}
+
+// A scan that began by itself: the selection, and the page, stay where they are.
+void App::rescan_quietly() {
     if (!model.games.empty() && model.selected < model.games.size())
         games_keep_selected = model.games[model.selected].path;
     auto_scrape_pending = preferences.auto_scrape;
@@ -137,6 +183,7 @@ void App::watch_games(Uint32 now) {
 }
 
 void App::begin_library_scan() {
+    apply_games_card();
     library_scan_started = true;
     games_signature_seen = games_signature();
     if (o.roots.empty()) {

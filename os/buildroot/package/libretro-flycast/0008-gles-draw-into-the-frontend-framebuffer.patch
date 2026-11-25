@@ -1,0 +1,132 @@
+From: RG DS <rgds@localhost>
+Subject: [PATCH] gles: draw the scene into the frontend's framebuffer
+
+The libretro build draws each frame into a framebuffer of its own and then
+copies it, upside down, into the frontend's (PostProcessor::render). RG DS
+Play shows the frame as a texture, so it copied the picture once more and
+turned it back over. Each copy is a GPU job of its own: on Mali (Panfrost)
+two job submits of about 110 us each, plus the blit's state save and restore
+in Mesa. Crazy Taxi's drive on the RG DS made 10-16 submits a frame, found by
+recording who called the submit ioctl (os/device-bench/rgds_prof.c,
+RGDS_PROF_STACKS).
+
+The scene now goes straight into the frontend's framebuffer, top row first,
+and the core says so (bottom_left_origin = false). The frontend's framebuffer
+already has the depth and stencil the core asks for. Decided once, when the
+context is asked for. Not with the PowerVR2 post-processing filter, which
+needs the scene as a texture (turning it on in a running game takes effect at
+the next start). A frame with a video shift, and the 2D framebuffer path,
+still go through the copy, now the same way up.
+
+Crazy Taxi drive, RG DS, 2026-11-25, with RG DS Play using its panel texture
+as the framebuffer's colour (no copy left): the core's run time per frame
+12.6 -> 10.3 ms, passes over a refresh 11 -> 3.4 of 300, the player's loop
+17.5 -> 16.9 ms. With the core's half only (the frontend still copying) it
+was worse than before (12.9 ms, 26 of 300 over): the two go together.
+RGDS_FLYCAST_DIRECT=0 gives the copies back.
+
+--- a/core/deps/libretro-common/glsm/glsm.c
++++ b/core/deps/libretro-common/glsm/glsm.c
+@@ -3017,6 +3017,8 @@
+    return true;
+ }
+ 
++int rgds_flycast_direct_output(void);
++
+ static bool glsm_state_ctx_init(glsm_ctx_params_t *params)
+ {
+    if (!params || !params->environ_cb)
+@@ -3038,7 +3040,7 @@
+    hw_render.context_destroy    = params->context_destroy;
+    hw_render.stencil            = params->stencil;
+    hw_render.depth              = true;
+-   hw_render.bottom_left_origin = true;
++   hw_render.bottom_left_origin = !rgds_flycast_direct_output();
+    hw_render.cache_context      = false;
+ 
+    if (!params->environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render))
+--- a/core/rend/gles/gles.cpp
++++ b/core/rend/gles/gles.cpp
+@@ -411,6 +411,17 @@
+ 	static const bool on = [] { const char *e = getenv("RGDS_FLYCAST_VTXDEPTH"); return !(e && *e == '0'); }();
+ 	return on && !settings.platform.isNaomi2();
+ }
++
++bool rgds_direct_output()
++{
++#ifdef LIBRETRO
++	static const bool on = [] { const char *e = getenv("RGDS_FLYCAST_DIRECT"); return !(e && *e == '0') && !config::PowerVR2Filter; }();
++	return on;
++#else
++	return false;
++#endif
++}
++extern "C" int rgds_flycast_direct_output() { return rgds_direct_output(); }
+ gl_ctx gl;
+ 
+ GLuint fogTextureId;
+@@ -1119,6 +1130,7 @@
+ 		initVideoRoutingFrameBuffer();
+ 	
+ 	bool is_rtt = gl.rendContext->isRTT;
++	bool rgdsDirectFrame = false;
+ 
+ 	float vtx_max_fZ = gl.rendContext->fZ_max;
+ 
+@@ -1227,7 +1239,9 @@
+ 		}
+ 		else
+ 		{
+-			glBindFramebuffer(GL_FRAMEBUFFER, postProcessor.getFramebuffer(width, height));
++			rgdsDirectFrame = rgds_direct_output() && gl.ofbo.shiftX == 0 && gl.ofbo.shiftY == 0;
++			glBindFramebuffer(GL_FRAMEBUFFER, rgdsDirectFrame ? (GLuint)glsm_get_current_framebuffer()
++					: postProcessor.getFramebuffer(width, height));
+ 			glViewport(0, 0, width, height);
+ 		}
+ #else
+@@ -1289,7 +1303,7 @@
+ 
+ 	DrawStrips();
+ #ifdef LIBRETRO
+-	if (!is_rtt && !config::EmulateFramebuffer)
++	if (!is_rtt && !config::EmulateFramebuffer && !rgdsDirectFrame)
+ 		postProcessor.render(glsm_get_current_framebuffer());
+ #endif
+ 
+--- a/core/rend/gles/gles.h
++++ b/core/rend/gles/gles.h
+@@ -578,6 +578,13 @@
+ // every draw, so all overdraw is shaded. On for the Dreamcast (not Naomi 2); RGDS_FLYCAST_VTXDEPTH=0 turns it off.
+ bool rgds_vertex_depth();
+ 
++// RG DS: the scene goes straight into the frontend's framebuffer, top row first (bottom_left_origin = false), instead
++// of into a framebuffer of the core's own that is then copied across upside down, which a frontend showing the
++// picture as a texture copies and turns over once more. Each copy is a GPU job of its own (two submits on Mali).
++// Decided once, when the context is asked for; not with the PowerVR2 filter (it needs the scene as a texture), and a
++// frame with a video shift still goes through the copy, the same way up. RGDS_FLYCAST_DIRECT=0 turns it off.
++bool rgds_direct_output();
++
+ class OpenGlSource : public ShaderSource
+ {
+ public:
+--- a/core/rend/gles/postprocess.cpp
++++ b/core/rend/gles/postprocess.cpp
+@@ -282,7 +282,7 @@
+ 	glcache.Disable(GL_CULL_FACE);
+ 	glcache.Disable(GL_BLEND);
+ 
+-	if (!config::PowerVR2Filter)
++	if (!config::PowerVR2Filter || rgds_direct_output())
+ 	{
+ 		// Just handle shifting and Y flipping
+ 		if (gl.bogusBlitFramebuffer)
+@@ -314,7 +314,8 @@
+ 			glcache.ClearColor(VO_BORDER_COL.red(), VO_BORDER_COL.green(), VO_BORDER_COL.blue(), 1.f);
+ 			glClear(GL_COLOR_BUFFER_BIT);
+ 			glBlitFramebuffer(-gl.ofbo.shiftX, -gl.ofbo.shiftY, framebuffer->getWidth() - gl.ofbo.shiftX, framebuffer->getHeight() - gl.ofbo.shiftY,
+-					0, framebuffer->getHeight(), framebuffer->getWidth(), 0,
++					0, rgds_direct_output() ? 0 : framebuffer->getHeight(),
++					framebuffer->getWidth(), rgds_direct_output() ? framebuffer->getHeight() : 0,
+ 					GL_COLOR_BUFFER_BIT, GL_NEAREST);
+ 	    	glBindFramebuffer(GL_FRAMEBUFFER, output_fbo);
+ #endif

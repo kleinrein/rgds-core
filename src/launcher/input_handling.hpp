@@ -215,6 +215,7 @@ void App::action(int code) {
         journal_action(code);
         return;
     }
+    if (settings.page == Page::BatteryHealth && code != 3 && code != 5 && code != 6) return; // read-only: B goes back
     if (settings.page == Page::Statistics && code == 2) {
         open_journal(); // Playtime's footer button
         return;
@@ -231,16 +232,19 @@ void App::action(int code) {
         rewind_action(code);
         return;
     }
-    if (settings.page == Page::SaveGallery || settings.page == Page::DSControls) {
+    if (settings.page == Page::SaveGallery || settings.page == Page::DSControls ||
+        settings.page == Page::PlayTogether) {
         auto page = settings.page;
         if (code == 3) {
-            back_to(page == Page::SaveGallery  ? gallery_return
-                    : page == Page::DSControls ? ds_return
-                                               : Page::LibraryOptions);
+            back_to(page == Page::SaveGallery    ? gallery_return
+                    : page == Page::DSControls   ? ds_return
+                    : page == Page::PlayTogether ? play_together_return
+                                                 : Page::LibraryOptions);
         } else if (code == 8 || code == 9)
             settings.focus = std::clamp(settings.focus + (code == 8 ? -1 : 1), 0, list_count() - 1);
         else if (code == 2 || code == 4) {
             if (page == Page::SaveGallery) slot_primary();
+            else if (page == Page::PlayTogether) play_together_action();
             else ds_controls_action();
         } else if (page == Page::SaveGallery && code == 11) slot_delete();
         else if (page == Page::SaveGallery && code == 12) slot_more();
@@ -470,6 +474,7 @@ void App::action(int code) {
             const int id = power_rows[size_t(std::clamp(settings.focus, 0, int(power_rows.size()) - 1))];
             if ((id < 4 || id == 7 || id == 8) && (code == 0 || code == 1 || code == 2))
                 change_system(id, code == 0 ? -1 : 1, code == 2);
+            else if (id == 9 && code == 2 && hardware.battery >= 0) open_battery_health();
             else if (id == 4 && code == 2) sleep_now();
             else if (id == 5 && code == 2 && hardware.poweroff) confirm("poweroff", Page::Power);
             else if (id == 6 && code == 2 && hardware.poweroff) confirm("reboot", Page::Power);
@@ -488,13 +493,9 @@ void App::action(int code) {
                     remember_appearance();
                     home_selected = home_fit(home_selected);
                 }
-            } else if (settings.focus == 5 && kid_locked()) {
-                // On a Kid profile the owner decides (Settings > Profiles).
-                status = "Not on this profile";
-                emit_sound(MenuCue::Error);
             } else if (settings.focus >= 5 && (code == 0 || code == 1 || code == 2)) {
-                // Music player, and whether it plays on under a closed lid.
-                bool& value = settings.focus == 5 ? preferences.music_player : preferences.music_lid;
+                // Whether music plays on under a closed lid.
+                bool& value = preferences.music_lid;
                 value = code == 2 ? !value : code == 1;
                 sound_intent(value ? MenuCue::Enable : MenuCue::Disable);
                 remember_appearance();
@@ -545,7 +546,9 @@ void App::action(int code) {
             const int base = game_options_base();
             if (settings.focus == game_visibility_row()) {
                 if (code == 2) open_game_visibility();
-            } else if (settings.focus == base) {
+            } else if (settings.focus == game_play_row()) {
+                if (code == 0 || code == 1 || code == 2) open_play_together(Page::GameOptions);
+            } else if (settings.focus == game_remove_row()) {
                 if (code == 2 && game_removable()) confirm("remove-game", Page::GameOptions);
             } else if (other_system_selected() && settings.focus == base - 1) {
             } else if (code == 0 || code == 1 || code == 2) {
@@ -1046,6 +1049,18 @@ int App::cover_hit(int x, int y) {
 
 void App::pointer_begin(int x, int y) {
     if (mu.lid_dark) return; // a closed lid can rest on the lower screen
+    if (settings.page == Page::KidHome || settings.page == Page::KidMenu) {
+        // Before the toasts: a note on a Little kid's screen never takes the touch meant for a game.
+        contact_x = down_x = x;
+        contact_y = down_y = y;
+        pointer_down = true;
+        pointer_at = s.GetTicks();
+        last_activity = pointer_at;
+        if (settings.page == Page::KidHome) kid_home_press(x, y);
+        else kid_hold_fired = false;
+        dirty = true;
+        return;
+    }
     toast_held = toast_touch(x, y);
     if (toast_held) return;
     if (zoom_pointer(0, x, y)) return;
@@ -1065,15 +1080,7 @@ void App::pointer_begin(int x, int y) {
         rewind_pointer(x, y, 0);
         return;
     }
-    if (settings.page == Page::KidHome) {
-        contact_x = down_x = x;
-        contact_y = down_y = y;
-        pointer_down = true;
-        pointer_at = s.GetTicks();
-        last_activity = pointer_at;
-        dirty = true;
-        return;
-    }
+
     if (sn.open) {
         view_touch_dx = view_touch_dy = 0;
         contact_x = down_x = x;
@@ -1334,10 +1341,11 @@ void App::pointer_begin(int x, int y) {
 
 void App::pointer_move(int x, int y) {
     if (toast_held) return;
-    if (settings.page == Page::KidHome) {
+    if (settings.page == Page::KidHome || settings.page == Page::KidMenu) {
         if (pointer_down) {
             contact_x = x;
             contact_y = y;
+            if (settings.page == Page::KidHome) kid_home_drag(x, y);
             dirty = true;
         }
         return;
@@ -1535,7 +1543,27 @@ void App::pointer_move(int x, int y) {
 }
 
 void App::pointer_end(int x, int y) {
+    if (std::exchange(kid_swallow_release, false)) {
+        pointer_down = false;
+        pointer_source = PointerSource::None;
+        dirty = true;
+        return;
+    }
+    if ((settings.page == Page::KidHome || settings.page == Page::KidMenu) && pointer_down) {
+        // A Little kid's screens own their touches whole: no toast, no Home swipe.
+        toast_held = false;
+        if (settings.page == Page::KidHome) kid_home_release(x, y);
+        else if (!kid_hold_fired && std::abs(x - down_x) < 28 && std::abs(y - down_y) < 28) touch(down_x, down_y);
+        pointer_down = false;
+        pointer_source = PointerSource::None;
+        release_at = s.GetTicks();
+        dirty = true;
+        return;
+    }
     if (std::exchange(toast_held, false)) return;
+    // A Home swipe goes (or springs back) as the finger lifts. When it goes, the app it closed no longer owns the
+    // release and the rest falls through to the plain page's release.
+    home_gesture_release(y);
     if (settings.page == Page::KidHome) {
         if (pointer_down) kid_home_release(x, y);
         pointer_down = false;
@@ -1860,11 +1888,8 @@ void App::handle_input(const SDL_Event& e) {
     }
     // Menu + R (or Print Screen on a keyboard) takes a screenshot; a lone Menu opens the switcher on release.
     if (album_chord(e, anbernic_button)) return;
-    if (!o.game_menu && settings.page == Page::KidHome && (anbernic_key || anbernic_button)) {
-        // No switcher or search on a Little kid's screen: the Menu button is how a grown-up gets to Who's playing?.
-        if (anbernic_button || !e.key.repeat) open_profile_picker(false);
-        return;
-    }
+    if (!o.game_menu && settings.page == Page::KidHome && (anbernic_key || anbernic_button))
+        return; // no switcher, no search and no PIN pad from a button on a Little kid's screen
     if (!o.game_menu && session_initialized && settings.page != Page::BootWarning &&
         (anbernic_key || anbernic_button)) {
         // The Anbernic button opens the game switcher; the Home key the game search.

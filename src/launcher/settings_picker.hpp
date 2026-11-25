@@ -161,11 +161,20 @@ bool App::open_setting_picker() {
 }
 
 std::string App::device_info_name(int row) const {
-    static const std::array<const char*, 4> names = {"RGDS build", "Kernel", "Free space", "Device address"};
+    static const std::array<const char*, 5> names = {"RGDS build", "Kernel", "Free space", "Device address",
+                                                     "Second card"};
     return names.at(row);
 }
 
 std::string App::device_info_value(int row) {
+    if (row == 4) { // the second card's free space, read from the card itself (one statvfs)
+        std::error_code ec;
+        const auto space = games_card ? fs::space(games_card->point, ec) : fs::space_info{};
+        if (!games_card || ec) return "Not available";
+        char text[32];
+        std::snprintf(text, sizeof text, "%.1f GB", double(space.available) / 1073741824.0);
+        return text;
+    }
     static const std::array<const char*, 4> keys = {"build", "kernel", "free_gb", "ip"};
     auto value = device_status[keys.at(row)];
     return value.empty() ? "Not available" : value + (row == 2 ? " GB" : "");
@@ -179,6 +188,24 @@ double App::storage_used_fraction() {
     } catch (...) {
         return -1;
     }
+}
+
+// The second card's share in use, or -1 without one.
+double App::games_card_used_fraction() const {
+    std::error_code ec;
+    if (!games_card) return -1;
+    const auto space = fs::space(games_card->point, ec);
+    return ec || !space.capacity ? -1 : std::clamp(1 - double(space.available) / double(space.capacity), 0., 1.);
+}
+
+// A on the second card's row: flushed and unmounted (games-card eject), so it can be taken out cleanly.
+void App::eject_games_card() {
+    if (!games_card || worker > 0) return;
+    show_picker("Second card", {"Cancel", "Eject"}, 0, [this](int n) {
+        if (!n) return;
+        games_card_ejected = true;
+        start_worker("device.games-card-eject");
+    });
 }
 
 std::string App::device_info_detail(int row) {

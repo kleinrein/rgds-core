@@ -64,7 +64,19 @@ void App::battery_icon(SDL_Renderer* r, int y, int x) {
 }
 
 fs::path App::status_asset(const std::string& name) {
-    return asset_path(std::string("status/") + (preferences.dark ? "dark-" : "light-") + name + ".bmp");
+    return sharp_asset(std::string("status/") + (preferences.dark ? "dark-" : "light-") + name + ".bmp");
+}
+
+// The @2x file beside a small picture (status/light-sound@2x.bmp), on panels larger than the layout, when it exists.
+fs::path App::sharp_asset(const std::string& relative) {
+    if (!large_panels) return asset_path(relative);
+    static std::map<std::string, fs::path> chosen;
+    auto found = chosen.find(relative);
+    if (found != chosen.end()) return found->second;
+    const auto dot = relative.rfind('.');
+    fs::path wide = asset_path(relative.substr(0, dot) + "@2x" + relative.substr(dot));
+    std::error_code ec;
+    return chosen[relative] = fs::is_regular_file(wide, ec) ? wide : asset_path(relative);
 }
 
 std::string App::wifi_asset() {
@@ -177,11 +189,13 @@ void App::status_bar(SDL_Renderer* r, int y) {
         // The simple pixel style sets the name in its own dots, not from the rendered wordmark.
         const int dot = pixel_scale(20);
         color(r, "ink");
+        const int word_x = 84 + shift, word_y = status_label_y("RG DS CORE", 20, y);
+        const DotGrid grid(s, r, word_x, word_y, dot);
         pixel_dots(
-            "RG DS CORE", 84 + shift, status_label_y("RG DS CORE", 20, y), dot, 12,
-            [&](const SDL_Rect& p) { s.RenderFillRect(r, &p); }, [](unsigned, int, int) {});
+            "RG DS CORE", word_x, word_y, dot, 12, [&](const SDL_Rect& p) { grid.fill(s, r, p); },
+            [](unsigned, int, int) {});
     } else
-        media.draw(r, asset_path(preferences.dark ? "brand/status-dark.bmp" : "brand/status-light.bmp"),
+        media.draw(r, sharp_asset(preferences.dark ? "brand/status-dark.bmp" : "brand/status-light.bmp"),
                    {84 + shift, y + 13, 129, 22}, false);
     if (artwork_busy()) artwork_loader(r, y, shift);
     drawn_status_stamp = status_stamp();

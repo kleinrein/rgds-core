@@ -1,0 +1,183 @@
+#!/bin/sh
+# The games card: an exFAT or FAT32 card in the RG DS Plus's second slot (TF2), mounted read-write at /media/tf2 as
+# a second games library beside /data/roms (docs/DEVELOPMENT.md "Games card"). While /run/rgds/games-card.ini is
+# there, RG DS Core lists the card's roms/<system> folders and the stock firmware's Roms/<SYS> ones with its own
+# (src/launcher/games_card.hpp); saves, states, play time and favourites stay in userdata on the system card, so
+# pulling the card out loses nothing and its games come back with it.
+#
+# Never the card RG DS OS booted from (/run/rgds/disk, from rcS), never a disk with a partition mounted elsewhere, and
+# never the eMMC (an MMC, not an SD). With the boot card unknown nothing is mounted. The largest exFAT or FAT
+# partition is the one used: a games card has one, a stock system card or an RG DS OS card its big data partition.
+#
+# A card pulled out without Eject loses only what was still being written: sleep (usr/libexec/rgds/power) and every
+# copy in Files end in a sync, which leaves an exFAT volume clean. A card swapped while the handheld slept is told
+# apart by its CID and the old one's mount goes.
+#   games-card boot     rcS: a card already in is mounted now (a repair is left to watch)
+#   games-card watch    rcS: the slot every 2 s; mounts a card put in, unmounts one pulled out or swapped
+#   games-card eject    Settings > Device information: flushed and unmounted, left alone until it is pulled out
+#   games-card stop     rcK: flushed and unmounted before power-off; whatever keeps it busy is stopped
+#   games-card status
+SYS=${RGDS_SYS:-/sys}
+DEV=${RGDS_DEV:-/dev}
+RUN=${RGDS_RUN:-/run/rgds}
+MOUNTS=${RGDS_MOUNTS:-/proc/mounts}
+POINT=${RGDS_GAMES_CARD:-/media/tf2}
+STATE=$RUN/games-card.ini
+EJECTED=$RUN/games-card.ejected
+FAILED=$RUN/games-card.failed
+STOPPED=$RUN/games-card.stopped
+
+say() { echo "games-card: $*" >> $RUN/messages 2> /dev/null; }
+
+field() { sed -n "s/^$1=//p" "$STATE" 2> /dev/null; }
+
+# a disk with a partition (or itself) mounted somewhere other than the games card's place
+in_use() {
+    awk -v d="$DEV/$1" -v p="$POINT" '($1 == d || index($1, d "p") == 1) && $2 != p { f = 1 } END { exit !f }' \
+        "$MOUNTS"
+}
+
+# the SD card that is not the boot card: its disk name (mmcblk2), or nothing
+card() {
+    own=$(cat $RUN/disk 2> /dev/null)
+    own=${own##*/}
+    case "$own" in mmcblk*) ;; *) return 1 ;; esac
+    for d in $SYS/block/mmcblk*; do
+        [ -d "$d" ] || continue
+        n=${d##*/}
+        case $n in *boot* | *rpmb*) continue ;; esac
+        [ "$n" = "$own" ] && continue
+        [ "$(cat "$d/device/type" 2> /dev/null)" = SD ] || continue
+        in_use "$n" && continue
+        echo "$n"
+        return 0
+    done
+    return 1
+}
+
+card_id() { cat "$SYS/block/$1/device/cid" 2> /dev/null || echo "$1"; }
+
+# the disk's partitions, largest first (not an RG DS OS card's boot and root slots); the disk itself with none
+partitions() {
+    for p in "$SYS/block/$1/$1"p*; do
+        [ -d "$p" ] || continue
+        case "$(sed -n 's/^PARTNAME=//p' "$p/uevent" 2> /dev/null)" in rgds-boot | rgds-root-a | rgds-root-b) continue ;; esac
+        echo "$(cat "$p/size" 2> /dev/null || echo 0) ${p##*/}"
+    done | sort -rn | awk '{ print $2 }'
+    [ -n "$(ls -d "$SYS/block/$1/$1"p* 2> /dev/null)" ] || echo "$1"
+}
+
+try_mount() {
+    mkdir -p "$POINT" 2> /dev/null
+    if mount -t exfat -o nosuid,nodev,noatime,uid=0,gid=0,fmask=0000,dmask=0000,iocharset=utf8,errors=remount-ro \
+        "$1" "$POINT" 2> /dev/null; then
+        FS=exfat
+    elif mount -t vfat -o nosuid,nodev,noatime,uid=0,gid=0,fmask=0000,dmask=0000,utf8,shortname=mixed,flush,errors=remount-ro \
+        "$1" "$POINT" 2> /dev/null; then
+        FS=vfat
+    else
+        return 1
+    fi
+}
+
+# $1 = 1: an exFAT volume that does not mount gets fsck's safe repairs first (a card pulled mid-write)
+mount_card() {
+    [ -f $STOPPED ] && return 1
+    n=$(card) || return 1
+    id=$(card_id "$n")
+    [ "$(cat $EJECTED 2> /dev/null)" = "$id" ] && return 1
+    [ "$(cat $FAILED 2> /dev/null)" = "$id" ] && return 1
+    for part in $(partitions "$n"); do
+        if try_mount "$DEV/$part" || { [ "$1" = 1 ] && fsck.exfat -p "$DEV/$part" > /dev/null 2>&1 && try_mount "$DEV/$part"; }; then
+            label=$(blkid -o value -s LABEL "$DEV/$part" 2> /dev/null)
+            printf 'point=%s\ndevice=%s\nfs=%s\nid=%s\nlabel=%s\n' "$POINT" "$DEV/$part" "$FS" "$id" "$label" \
+                > $STATE.new && mv $STATE.new $STATE
+            say "$DEV/$part ($FS) mounted at $POINT"
+            return 0
+        fi
+    done
+    [ "$1" = 1 ] && { echo "$id" > $FAILED; say "the card in $n has no exFAT or FAT partition that mounts"; }
+    return 1
+}
+
+mounted() { awk -v p="$POINT" '$2 == p { f = 1 } END { exit !f }' "$MOUNTS"; }
+
+# the card went (or another is in its place): its mount goes, lazily if a game still has a file open on it
+gone() {
+    sync
+    umount "$POINT" 2> /dev/null || umount -l "$POINT" 2> /dev/null
+    rm -f $STATE
+    say "$1"
+}
+
+check() {
+    [ -f $STOPPED ] && return 0
+    if [ -f $STATE ]; then
+        if ! mounted; then
+            rm -f $STATE
+        elif [ ! -e "$(field device)" ]; then
+            gone "the card was taken out"
+        else
+            n=$(card) && [ "$(card_id "$n")" = "$(field id)" ] || gone "another card is in the slot"
+        fi
+    elif n=$(card); then
+        mount_card 1
+    else
+        # nothing in the slot: a card ejected or refused before is welcome again once it is back
+        rm -f $EJECTED $FAILED
+    fi
+}
+
+eject() {
+    [ -f $STATE ] || { echo "no games card"; return 1; }
+    id=$(field id)
+    sync
+    if umount "$POINT" 2> /dev/null; then
+        rm -f $STATE
+        echo "$id" > $EJECTED
+        say "ejected"
+        return 0
+    fi
+    echo "busy"
+    return 2
+}
+
+stop() {
+    : > $STOPPED
+    mounted || { rm -f $STATE; return 0; }
+    sync
+    tries=0
+    until umount "$POINT" 2> /dev/null; do
+        tries=$((tries + 1))
+        case $tries in
+        4) fuser -k -TERM -m "$POINT" > /dev/null 2>&1 ;;
+        7) fuser -k -KILL -m "$POINT" > /dev/null 2>&1 ;;
+        10)
+            mount -o remount,ro "$POINT" 2> /dev/null
+            break
+            ;;
+        esac
+        sleep 0.5
+    done
+    rm -f $STATE
+    sync
+}
+
+case "$1" in
+boot) mount_card 0 ;;
+watch)
+    while :; do
+        check
+        sleep ${RGDS_GAMES_CARD_POLL:-2}
+        [ -n "$RGDS_GAMES_CARD_ONCE" ] && break
+    done
+    ;;
+check) check ;;
+eject) eject ;;
+stop) stop ;;
+status) cat $STATE 2> /dev/null || echo "no games card" ;;
+*)
+    echo "usage: games-card boot|watch|check|eject|stop|status" >&2
+    exit 2
+    ;;
+esac

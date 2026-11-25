@@ -1,6 +1,7 @@
 #pragma once
 #include "launcher/model.hpp"
 #include "platform/sdl_dynamic.hpp"
+#include "launcher/panel_scale.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <cmath>
@@ -46,6 +47,12 @@ class RoundedFont {
     std::set<std::pair<std::string, int>> missing;
     std::vector<std::string> families{"ja", "zh", "ko"};
     std::map<std::pair<SDL_Renderer*, int>, SDL_Texture*> textures;
+    // The Latin sizes at 1.6x (tools/bake_font.py HIRES_SIZES), for panels larger than 640x480: text is laid out
+    // with the five sizes above, as everywhere, and each glyph is drawn from one of these onto whole panel pixels.
+    // None of these sizes is one of the five, so they share `textures`. A missing file means stretched glyphs.
+    static constexpr std::array<int, 5> hires_sizes = {26, 32, 38, 45, 58};
+    std::map<int, Atlas> hires;
+    std::set<int> hires_missing;
     std::map<std::pair<SDL_Renderer*, int>, Cache> caches;
     size_t bytes_loaded = 0;
     // Five shipped atlases cover all typography. Other requested point sizes
@@ -130,12 +137,33 @@ class RoundedFont {
                 }
         return {&a.glyphs.at('?'), &a};
     }
+    const Atlas* hires_atlas(int px) {
+        auto found = hires.find(px);
+        if (found != hires.end()) return &found->second;
+        if (hires_missing.count(px)) return nullptr;
+        try {
+            auto a = read_atlas(directory / ("rounded-" + std::to_string(px) + ".rgf"), {1024, 2048, 512});
+            if (a.glyphs.count('?')) return &hires.emplace(px, std::move(a)).first->second;
+        } catch (const std::exception&) {}
+        hires_missing.insert(px);
+        return nullptr;
+    }
+    // Panel pixels per layout pixel: 1 on the RG DS (and in any 640-wide target), 1.6 on the RG DS Plus.
+    float pixel_scale(SDL_Renderer* r) {
+        if (!panel_part("text")) return 1;
+        int w = 0, h = 0, lw = 0, lh = 0;
+        if (!s.RenderCopyF || !s.RenderGetLogicalSize || s.GetRendererOutputSize(r, &w, &h) != 0) return 1;
+        s.RenderGetLogicalSize(r, &lw, &lh);
+        return lw > 0 && w > lw ? float(w) / lw : 1;
+    }
     SDL_Texture* texture(SDL_Renderer* r, int size) {
         size = baked_size(size);
+        return atlas_texture(r, size, atlas(size));
+    }
+    SDL_Texture* atlas_texture(SDL_Renderer* r, int size, const Atlas& a) {
         auto key = std::make_pair(r, size);
         auto found = textures.find(key);
         if (found != textures.end()) return found->second;
-        auto& a = atlas(size);
         auto* surface = s.CreateRGBSurfaceWithFormat(0, a.width, a.height, 32, SDL_PIXELFORMAT_RGBA32);
         if (!surface) throw std::runtime_error(s.GetError());
         for (int y = 0; y < a.height; y++) {
@@ -289,6 +317,22 @@ public:
         s.SetTextureAlphaMod(image, Uint8(std::clamp(opacity, 0, 255)));
         auto chars = codepoints(value, limit);
         float total = width(value, size, limit), scale = float(size) / baked_size(size);
+        // A panel larger than the layout: the 1.6x atlas nearest the size on the panel, if it is there.
+        const float k = pixel_scale(r);
+        const Atlas* hi = nullptr;
+        SDL_Texture* hi_image = nullptr;
+        float hi_scale = 0; // layout pixels per pixel of the 1.6x atlas
+        if (k > 1.2f) {
+            int px = hires_sizes.front();
+            for (int candidate : hires_sizes)
+                if (std::abs(candidate - size * k) < std::abs(px - size * k)) px = candidate;
+            if ((hi = hires_atlas(px))) {
+                hi_image = atlas_texture(r, px, *hi);
+                hi_scale = float(size) / px;
+                s.SetTextureColorMod(hi_image, color.r, color.g, color.b);
+                s.SetTextureAlphaMod(hi_image, Uint8(std::clamp(opacity, 0, 255)));
+            }
+        }
         const bool clipped = total > max_width;
         float pen = static_cast<float>(x);
         float ellipsis = width("...", size);
@@ -298,6 +342,24 @@ public:
             if (clipped && pen - x + g.advance / 64.0f * scale > max_width - ellipsis) {
                 draw(r, "...", static_cast<int>(pen), y, size, color, 3, static_cast<int>(ellipsis) + 1);
                 break;
+            }
+            // Sharp: the same pen and baseline as the layout's glyph, the 1.6x glyph's shape on whole panel pixels.
+            if (hi_image && found.atlas == &a) {
+                auto h = hi->glyphs.find(cp);
+                if (h != hi->glyphs.end()) {
+                    const auto& hg = h->second;
+                    if (hg.w && hg.h) {
+                        const float baseline = y + a.ascent * scale;
+                        const float px = std::round((pen + hg.left * hi_scale) * k),
+                                    py = std::round((baseline + hg.top * hi_scale) * k);
+                        const float pw = std::round(hg.w * hi_scale * k), ph = std::round(hg.h * hi_scale * k);
+                        SDL_Rect source{hg.x, hg.y, hg.w, hg.h};
+                        SDL_FRect dest{px / k, py / k, pw / k, ph / k};
+                        s.RenderCopyF(r, hi_image, &source, &dest);
+                    }
+                    pen += g.advance / 64.0f * scale;
+                    continue;
+                }
             }
             SDL_Rect source{g.x, g.y, g.w, g.h},
                 dest{static_cast<int>(std::round(pen + g.left * scale)),

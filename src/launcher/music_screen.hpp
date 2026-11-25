@@ -36,7 +36,9 @@ int App::music_tab_width() {
     return std::clamp(widest + 16, 72, 104);
 }
 
-bool App::music_available() const { return preferences.music_player && !o.game_menu && !probe; }
+// Music is always there (2026-11-25: the Settings > Sound > Music player switch, off on a new card, hid Music from
+// Media and was removed); not in a game's menu.
+bool App::music_available() const { return !o.game_menu && !probe; }
 
 // Under Media's section pills the Music tabs are a second row of pills, and the list starts below them.
 void App::music_sync_layout() {
@@ -48,11 +50,6 @@ void App::music_sync_layout() {
 // The Music player switch moved (Settings > Sound, a profile's page, another profile now playing).
 void App::music_switched() {
     settings.sound_rows = sound_row_count();
-    if (!preferences.music_player) {
-        // Off is off: the song stops with the tile.
-        if (music_ready && music.alive) music.send("quit", s.GetTicks());
-        home_selected = home_fit(home_selected);
-    }
     profiles.load(o.data);
     dirty = true;
 }
@@ -110,11 +107,13 @@ void App::music_glyph(SDL_Renderer* r, MusicGlyph glyph, int cx, int cy, int siz
     const auto key = std::make_tuple(r, int(glyph), size);
     auto found = music_glyph_textures.find(key);
     if (found == music_glyph_textures.end()) {
-        const std::vector<uint8_t> coverage = music_glyph_coverage(glyph, size);
+        // painted at the panel pixels it covers (1.6 times on the RG DS Plus), shown at its layout size
+        const int px = std::clamp(int(std::lround(size * panel_scale(s, r))), size, 512);
+        const std::vector<uint8_t> coverage = music_glyph_coverage(glyph, px);
         std::vector<uint32_t> pixels(coverage.size());
         for (size_t i = 0; i < coverage.size(); i++) pixels[i] = uint32_t(coverage[i]) << 24 | 0xffffff;
-        SDL_Texture* texture = s.CreateTexture(r, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, size, size);
-        if (texture && s.UpdateTexture(texture, nullptr, pixels.data(), size * 4) != 0) {
+        SDL_Texture* texture = s.CreateTexture(r, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, px, px);
+        if (texture && s.UpdateTexture(texture, nullptr, pixels.data(), px * 4) != 0) {
             s.DestroyTexture(texture);
             texture = nullptr;
         }

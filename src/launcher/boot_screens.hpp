@@ -39,7 +39,8 @@ void App::brand(SDL_Renderer* r, int x, int y, int size) {
     if (!preferences.rich_icons &&
         draw_pixel_icon(s, r, SettingsIcon::Display, x + size / 2, y + size / 2, size, theme.at("accent")))
         return;
-    if (!media.draw(r, asset_path(mark_asset(size)), {x, y, size, size}, false))
+    // the bitmap for the panel pixels the tile covers: 1.6 times the layout size on the RG DS Plus
+    if (!media.draw(r, asset_path(mark_asset(large_panels ? size * 8 / 5 : size)), {x, y, size, size}, false))
         ui_icon(r, SettingsIcon::Display, x + size / 2, y + size / 2, size, "accent");
 }
 

@@ -7,11 +7,11 @@
 #   trial boot                              at boot: a fallback that happened is recorded, nothing else
 #   trial commit                            the running slot is good: counter idle, record gone, result success
 #   trial status                            "none", "trial SLOT" or "fallen-back SLOT"
-BOOT=/boot
+BOOT=${RGDS_TRIAL_BOOT:-/boot}  # the RGDS_TRIAL_ paths are for tests (tests/test_trial.py)
 RECORD=$BOOT/rgds-trial.json
 COUNTER=$BOOT/bootcount
-RESULT=/data/rgds/state/update-result.json
-SLOT=$(cat /run/rgds/slot 2>/dev/null)
+RESULT=${RGDS_TRIAL_RESULT:-/data/rgds/state/update-result.json}
+SLOT=${RGDS_TRIAL_SLOT:-$(cat /run/rgds/slot 2>/dev/null)}
 
 rw() { mount -o remount,rw $BOOT; }
 ro() { sync; mount -o remount,ro $BOOT; }
@@ -19,7 +19,16 @@ field() { sed -n "s/.*\"$1\": *\"\([^\"]*\)\".*/\1/p" "$RECORD" 2>/dev/null; }
 counter() { printf '\275\001\000%b' "$1" > $COUNTER; }  # $1: '\000' idle, '\001' armed (count 0)
 # The boot partition is vfat: a rename whose new file is still in the cache can land as an empty extlinux.conf after a
 # power cut, and then neither slot boots. The new file goes to the card first, the rename after it.
-swap() { sync; mv "$1" $BOOT/extlinux/extlinux.conf; sync; }
+# And a new file without both slots' labels is never put in place: on 2026-11-24 a commit on an RG DS Plus left a
+# 0-byte extlinux.conf (its filter read the old one as empty) and the handheld stopped at U-Boot with black panels.
+swap() {
+    if [ ! -s "$1" ] || ! grep -q '^LABEL a$' "$1" || ! grep -q '^LABEL b$' "$1"; then
+        echo "trial: kept extlinux.conf, the new one lacks a slot ($(wc -c < "$1" 2>/dev/null) bytes)" >&2
+        rm -f "$1"
+        return 1
+    fi
+    sync; mv "$1" $BOOT/extlinux/extlinux.conf; sync
+}
 result() {  # STATE BUILD PREVIOUS REASON
     mkdir -p "${RESULT%/*}"
     printf '{"build": "%s", "previous": "%s", "reason": "%s", "state": "%s"}\n' "$2" "$3" "$4" "$1" > $RESULT.new
@@ -66,7 +75,7 @@ commit)
     # what it starts with and a game only its engine, so a slot the card stored wrongly (0.8.0's updater read its
     # write back through the page cache) came up with a menu whose games all failed. Refused, the trial stays open:
     # rcS restarts it and U-Boot goes back to the previous slot, which the launcher then reports. Once a boot.
-    VERIFIED=/run/rgds/release-verified
+    VERIFIED=${RGDS_TRIAL_VERIFIED:-/run/rgds/release-verified}
     if [ ! -f $VERIFIED ]; then
         BUILD=$(cat /usr/share/rgds/active)
         if ! nice -n 19 python3 /usr/share/rgds/releases/$BUILD/runtime/activate.py verify --root /usr/share/rgds \

@@ -20,6 +20,8 @@ sys.dont_write_bytecode = True
 from library import read_fields, write_fields
 
 REPORT_FILE_LIMIT = 2 * 1024 * 1024
+# the second card's mount helper on RG DS OS (Settings > System > Device information > Second card)
+GAMES_CARD = os.environ.get('RGDS_GAMES_CARD_HELPER', '/usr/libexec/rgds/games-card')
 # Logs name the network and the machines on it; a report does not need to.
 REPORT_PRIVATE = (
     (re.compile(rb"(?i)(ssid[=:\s]+)('[^'\n]*'|\"[^\"\n]*\"|\S+)"), rb"\1[network]"),
@@ -533,6 +535,19 @@ class Services:
         finally:
             if devices: migrate.unmount_all()
 
+    def games_card_eject(self):
+        """The RG DS Plus's second card flushed and unmounted (usr/libexec/rgds/games-card), ready to take out. A game
+        or a copy with a file open on it keeps it in: nothing is pulled from under them."""
+        if self.preview:
+            self.publish(state='ready', message='Second card ejected. You can take it out now.')
+            return
+        from emulators import core_running
+        if core_running(self.data): raise ValueError('Return home from your game first.')
+        result = subprocess.run([GAMES_CARD, 'eject'], capture_output=True, text=True, timeout=30)
+        if result.returncode == 2: raise ValueError('A game or a copy is still using the second card.')
+        if result.returncode: raise ValueError('Unavailable')
+        self.publish(state='ready', message='Second card ejected. You can take it out now.')
+
     def usb_drive(self):
         """The session gives the data partition to the computer once the menu has quit (usr/libexec/rgds/usb)."""
         if self.preview:
@@ -802,7 +817,7 @@ def main():
             "clear-cache", "diagnostics", "poweroff", "reboot", "startup", "startup-info", "update-info",
             "update-check", "update-download", "update-apply", "update-discard", "update-auto", "library", "bt-on",
             "bt-off", "bt-scan", "bt-pair", "bt-forget", "homebrew-browse", "homebrew-get", "usb-on", "usb-off",
-            "usb-drive", "storage", "import-scan", "import-apply", "import-games"
+            "usb-drive", "storage", "import-scan", "import-apply", "import-games", "games-card-eject"
         )
     )
     parser.add_argument("--app", required=True, type=Path)

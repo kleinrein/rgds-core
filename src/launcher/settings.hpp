@@ -71,6 +71,8 @@ enum class Page {
     Journal,          // Playtime > A: every sitting by day, unlocks and pictures beside it (journal_screen.hpp)
     KidHome,          // a Little kid profile's whole launcher: its games as big pictures (kid_home_screen.hpp)
     KidMenu,          // a Little kid's game menu: Play and Home, nothing else (kid_home_screen.hpp)
+    PlayTogether,     // a DS game's local wireless and online play, with the live session (game_settings.hpp)
+    BatteryHealth,    // Power > Battery health: charge, the last 24 hours, capacity and use (battery_screen.hpp)
 };
 struct Preferences {
     bool dark = false, pixel = false, auto_load = true, auto_save = true, animations = true, view_animations = false,
@@ -613,8 +615,8 @@ inline std::string game_sleep_name(int index) {
 // The Power page's rows, top to bottom, as control ids (change_system and the original row numbers): the two
 // newer timers (7, 8) sit under Menu idle sleep.
 // Since the 2026-11-11 regroup: Battery (Power mode, Battery percentage), Sleep (lid, menu idle, dim, game sleep), then
-// the actions with Power off last.
-inline constexpr std::array<int, 9> power_rows = {0, 3, 2, 1, 7, 8, 4, 6, 5};
+// the actions with Power off last. Battery health (9, 2026-11-25) opens its own page, last under Battery.
+inline constexpr std::array<int, 10> power_rows = {0, 3, 9, 2, 1, 7, 8, 4, 6, 5};
 // The root list's order. Section ids stay stable (saved state and tests use
 // them). Since the 2026-11-11 regroup (docs/SETTINGS_PLAN.md): Profiles; Look & sound (Theme, Display, Sound); Games
 // (Library, Controls); Device (Connectivity, Power, System, Files, Updates); then Power off on its own. Statistics (7)
@@ -637,6 +639,7 @@ struct Settings {
     int section = 0, focus = 0;
     int library_rows = 11; // Settings > Library: one more while other systems are on (Games opens)
     int sound_rows = 5;    // Settings > Sound: the launcher adds the music player's rows
+    int device_rows = 4;   // Settings > System > Device information: a fifth while a second card is in
     // Brightness and Playtime opened from Home's bottom bar: Back returns Home, not through Settings.
     bool from_home = false;
     // The row you left each page from. Back lands on it again instead of the
@@ -696,6 +699,9 @@ struct Settings {
             page = Page::Settings;
             section = 12;
             focus = 0;
+        } else if (page == Page::BatteryHealth) {
+            page = Page::Power;
+            focus = 2; // Battery health
         } else if (page == Page::Achievements) {
             // RetroAchievements is Library's last row
             focus = library_rows - 1;
@@ -720,7 +726,7 @@ struct Settings {
         else if (page == Page::Achievements) focus = std::clamp(focus + delta, 0, 1);
         else if (page == Page::Sound) focus = std::clamp(focus + delta, 0, sound_rows - 1);
         else if (page == Page::Timezone) focus = std::clamp(focus + delta, 0, int(timezones.size()) - 1);
-        else if (page == Page::DeviceInfo) focus = std::clamp(focus + delta, 0, 3);
+        else if (page == Page::DeviceInfo) focus = std::clamp(focus + delta, 0, device_rows - 1);
         else if (page == Page::System || page == Page::Display) focus = 0;
     }
     void enter() {

@@ -92,7 +92,7 @@ void App::prepare_render_assets() {
     for (auto& panel : surfaces) {
         for (const char* name : {"brand/mark-48.bmp", "brand/mark-120.bmp"})
             media.warm(panel.renderer, asset_path(name));
-        media.warm(panel.renderer, asset_path(preferences.dark ? "brand/status-dark.bmp" : "brand/status-light.bmp"));
+        media.warm(panel.renderer, sharp_asset(preferences.dark ? "brand/status-dark.bmp" : "brand/status-light.bmp"));
         media.warm(panel.renderer,
                    asset_path(preferences.dark ? "brand/wordmark-dark.bmp" : "brand/wordmark-light.bmp"));
     }

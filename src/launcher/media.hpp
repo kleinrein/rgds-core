@@ -2,8 +2,12 @@
 #include "launcher/model.hpp"
 #include "launcher/asset_cache.hpp"
 #include "launcher/bmp_budget.hpp"
+#include "launcher/panel_scale.hpp"
 #include "platform/sdl_dynamic.hpp"
+#include <algorithm>
 #include <array>
+#include <cmath>
+#include <cstring>
 #include <condition_variable>
 #include <cstdint>
 #include <deque>
@@ -114,6 +118,11 @@ class Media {
         bool icon = false;
         AssetStamp stamp;
         uint64_t used = 0, bytes = 0;
+        // Small pictures (icons, up to 256 px) keep their straight RGBA pixels: drawn at well under their size they
+        // are averaged down once to the exact panel size (reduced), not sampled by bilinear filtering, which skips
+        // most of a 128 px icon at 40 px and looks soft and uneven (2026-11-25, the RG DS Plus's dock icons).
+        std::vector<unsigned char> rgba;
+        std::map<std::pair<int, int>, SDL_Texture*> reduced;
     };
     std::map<std::pair<SDL_Renderer*, std::string>, Image> images;
     uint64_t clock = 0, texture_bytes = 0;
@@ -128,6 +137,7 @@ class Media {
     }
     void discard(decltype(images)::iterator entry) {
         if (entry->second.texture) s.DestroyTexture(entry->second.texture);
+        for (auto& [size, texture] : entry->second.reduced) s.DestroyTexture(texture);
         texture_bytes -= entry->second.bytes;
         images.erase(entry);
     }
@@ -173,6 +183,16 @@ class Media {
                 // they go up as RGBA32, opaque, like every other picture.
                 SDL_Surface* rgba = surface->format->BytesPerPixel == 3 ? opaque_rgba(s, surface) : nullptr;
                 image.texture = s.CreateTextureFromSurface(r, rgba ? rgba : surface);
+                if (image.texture && !icon && surface->w <= 256 && surface->h <= 256 && s.ConvertSurfaceFormat) {
+                    if (SDL_Surface* copy = s.ConvertSurfaceFormat(rgba ? rgba : surface, SDL_PIXELFORMAT_RGBA32, 0)) {
+                        image.rgba.resize(size_t(copy->w) * copy->h * 4);
+                        for (int y = 0; y < copy->h; y++)
+                            std::memcpy(image.rgba.data() + size_t(y) * copy->w * 4,
+                                        static_cast<unsigned char*>(copy->pixels) + size_t(y) * copy->pitch,
+                                        size_t(copy->w) * 4);
+                        s.FreeSurface(copy);
+                    }
+                }
                 if (rgba) s.FreeSurface(rgba);
                 if (image.texture) {
                     image.bytes = bytes;
@@ -328,8 +348,10 @@ public:
         clear();
     }
     void clear() {
-        for (auto entry : images)
+        for (auto& entry : images) {
             if (entry.second.texture) s.DestroyTexture(entry.second.texture);
+            for (auto& [size, texture] : entry.second.reduced) s.DestroyTexture(texture);
+        }
         images.clear();
         banners.clear();
         texture_bytes = 0;
@@ -547,6 +569,56 @@ public:
             height = std::max(1, int(std::lround(image.h * scale)));
         return {box.x + (box.w - width) / 2, box.y + (box.h - height) / 2, width, height};
     }
+    // A small picture drawn at under two thirds of its size: averaged down to the panel pixels it covers, once per
+    // size, and copied onto whole panel pixels.
+    bool draw_reduced(SDL_Renderer* r, Image& image, const SDL_Rect& destination, unsigned char alpha) {
+        if (image.rgba.empty() || !s.RenderCopyF || !panel_part("reduced")) return false;
+        const float k = panel_scale(s, r);
+        const int x0 = int(std::lround(destination.x * k)), y0 = int(std::lround(destination.y * k));
+        const int pw = int(std::lround((destination.x + destination.w) * k)) - x0,
+                  ph = int(std::lround((destination.y + destination.h) * k)) - y0;
+        if (pw < 1 || ph < 1 || pw * 3 > image.w * 2 || ph * 3 > image.h * 2) return false;
+        SDL_Texture*& texture = image.reduced[{pw, ph}];
+        if (!texture) {
+            std::vector<unsigned char> out(size_t(pw) * ph * 4);
+            const double sx = double(image.w) / pw, sy = double(image.h) / ph;
+            for (int oy = 0; oy < ph; oy++)
+                for (int ox = 0; ox < pw; ox++) {
+                    // Every source pixel the output pixel covers, weighted by how much of it it covers, in
+                    // premultiplied alpha so transparent edges do not darken.
+                    const double left = ox * sx, right = left + sx, top = oy * sy, bottom = top + sy;
+                    double acc[4] = {0, 0, 0, 0}, area = 0;
+                    for (int y = int(top); y < std::min(image.h, int(std::ceil(bottom))); y++) {
+                        const double wy = std::min(bottom, y + 1.0) - std::max(top, double(y));
+                        for (int x = int(left); x < std::min(image.w, int(std::ceil(right))); x++) {
+                            const double w = wy * (std::min(right, x + 1.0) - std::max(left, double(x)));
+                            const unsigned char* p = image.rgba.data() + (size_t(y) * image.w + x) * 4;
+                            const double a = p[3] / 255.0;
+                            acc[0] += w * p[0] * a;
+                            acc[1] += w * p[1] * a;
+                            acc[2] += w * p[2] * a;
+                            acc[3] += w * a;
+                            area += w;
+                        }
+                    }
+                    unsigned char* q = out.data() + (size_t(oy) * pw + ox) * 4;
+                    const double a = area > 0 ? acc[3] / area : 0;
+                    for (int c = 0; c < 3; c++) q[c] = Uint8(a > 0 ? std::clamp(acc[c] / area / a, 0.0, 255.0) + .5 : 0);
+                    q[3] = Uint8(std::clamp(a * 255 + .5, 0.0, 255.0));
+                }
+            texture = s.CreateTexture(r, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, pw, ph);
+            if (!texture || s.UpdateTexture(texture, nullptr, out.data(), pw * 4) != 0) {
+                if (texture) s.DestroyTexture(texture);
+                texture = nullptr;
+                image.reduced.erase({pw, ph});
+                return false;
+            }
+            s.SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+        }
+        s.SetTextureAlphaMod(texture, alpha);
+        const SDL_FRect to{x0 / k, y0 / k, pw / k, ph / k};
+        return s.RenderCopyF(r, texture, nullptr, &to) == 0;
+    }
     bool draw(SDL_Renderer* r, const fs::path& path, SDL_Rect box, bool icon = false, unsigned char alpha = 255,
               bool fill = false, int radius = 0) {
         return draw_key(r, image_key(path, icon), box, alpha, fill, radius);
@@ -575,6 +647,7 @@ public:
         }
         s.SetTextureAlphaMod(image.texture, alpha);
         radius = std::clamp(radius, 0, std::min(destination.w, destination.h) / 2);
+        if (!radius && !fill && draw_reduced(r, image, destination, alpha)) return true;
         if (!radius) {
             s.RenderCopy(r, image.texture, &source, &destination);
             return true;

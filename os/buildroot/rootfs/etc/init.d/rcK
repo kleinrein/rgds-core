@@ -11,6 +11,9 @@ hwclock -w 2>/dev/null
 # the system and kernel logs, last copy of this boot (usr/libexec/rgds/logs)
 /usr/libexec/rgds/logs save 2>/dev/null
 sync
+# the games card in the second slot (usr/libexec/rgds/games-card) first: flushed and unmounted, so it is clean on a
+# computer or another handheld
+/usr/libexec/rgds/games-card stop 2>/dev/null
 # whatever still has a file open on the card (a game writing its last save, file sharing, a helper) gets three
 # seconds to finish and is then stopped: init runs this before it ends the other processes, and a busy card would
 # neither unmount nor go read-only, which leaves the exFAT volume marked dirty on every such shutdown
