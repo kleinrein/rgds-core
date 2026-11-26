@@ -715,7 +715,7 @@ remotely. The controller line is the launcher's own mapping, and SDL reports the
 port above. Also not checked: the touch pad's pointer in a port with its own udev-less SDL, which sees only devices
 that exist when it starts, and ports that replace `LD_PRELOAD` entirely, which would not get the display.
 
-### mpv for ports (2026-11-23, built in the VM, not on the handheld yet)
+### mpv for ports (2026-11-23, run on the handheld 2026-11-26)
 
 Some ports play video with "the firmware's mpv" instead of bundling a player. PocketTube (an unofficial YouTube
 client, MIT, github.com/ElmarYolchuyev23/pockettube) is the first we looked at: its PortMaster port is aarch64 on
@@ -730,11 +730,23 @@ again afterwards. So mpv, which inherits the port's `LD_PRELOAD`, asks the runne
 nothing else holds one.
 
 Checked in the VM (a chroot into `output/rgds-os/target`): `--vo=help` lists `sdl`, `drm`, `gpu`, `gpu-next`;
-`--ao=help` lists `alsa`; the IPC socket and a lavfi test source play to `null`; an HTTPS URL gets past TLS and the
-certificate check. Not checked: anything on the handheld. That means a picture through the lease, sound, the pad
-through gptokeyb, 720p software decode speed (PocketTube asks for `--hwdec=no`), and the RG DS Plus at 1024x768.
-To try it before an image: `build/mpv-test/install.sh HOST` puts the build in `/data/rgds/mpv-test` with a wrapper.
-Put that folder first on `PATH` in a test copy of `PocketTube.sh`.
+`--ao=help` lists `alsa`; the IPC socket works; an HTTPS URL gets past TLS and the certificate check.
+
+On the handheld (2026-11-26, an RG DS Plus on 0.9.2 `osdda26484`, whose image already has mpv): both YouTube ports
+were installed with `harbourmaster install ZIP` and started as the launcher starts them (`emulators.py launch` on a
+userdata copy), with the panels read through `tools/scanout.c`.
+
+| Port | Where it comes from | Result |
+| --- | --- | --- |
+| YTC ("Your Tube Client", Christopher Roelofs) | PortMaster's catalog (added 2026-10-30) | Runs: its Home feed on the top panel, our info screen on the bottom, pad found. It brings its own libmpv and FFmpeg, so it does not need ours |
+| PocketTube v1.1 | not in the catalog: the author's `pockettube.zip` | Runs: its Home on the top panel, gptokeyb in uinput mode |
+| PocketTube's video path | its own `youtube.get_details()`, then `mpv` with the options `player.py` uses | 360p (640x360) and 480p (854x480) H.264 + AAC each played 20 s on the top panel with sound through ALSA, A-V 0.000, no dropped frames. Streams resolved in about 10 s |
+
+Not checked: buttons pressed inside either app (they cannot be pressed remotely), PocketTube's own player
+overlay and 720p (it needs deno, which the PortMaster zip leaves out), and the RG DS. The first port start on a
+fresh card also waits for the compat download (339 packages, 74 s here) and PocketTube's first start for
+`python_3.11` (32 MB). Ports see UTC: PocketTube's clock read an hour behind the info screen, because the port
+environment carries no `TZ`.
 
 We do not ship PocketTube, list it as ours, or mirror its releases. People install the author's PortMaster zip.
 

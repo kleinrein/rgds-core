@@ -21,7 +21,8 @@
  X(JoystickOpen) X(JoystickClose) X(JoystickName) X(SetHint) \
  X(CreateTexture) X(SetRenderTarget) X(RenderCopyEx) X(CreateTextureFromSurface) X(DestroyTexture) X(SetTextureBlendMode) X(SetTextureColorMod) X(RenderCopy) X(PushEvent) X(GetKeyFromName) \
  X(LoadBMP_RW) X(SetTextureAlphaMod) X(StartTextInput) X(StopTextInput) X(RenderSetClipRect) X(UpdateTexture) X(GetRenderTarget) X(GetHint) X(RenderFillRects) \
- X(RenderCopyF) X(RenderGetLogicalSize) X(RenderFillRectF) X(ConvertSurfaceFormat) X(RenderFillRectsF)
+ X(RenderCopyF) X(RenderGetLogicalSize) X(RenderFillRectF) X(ConvertSurfaceFormat) X(RenderFillRectsF) \
+ X(GetRenderDrawColor) X(GetRenderDrawBlendMode)
 // clang-format on
 
 struct Sdl {

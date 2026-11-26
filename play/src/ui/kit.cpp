@@ -34,8 +34,9 @@ void backdrop(Canvas& out, const Look& look) {
     thread_local uint64_t kept_key = 0;
     const uint64_t key =
         (uint64_t(bg.px()) << 32) ^ (uint64_t(fg.px()) << 2) ^ (look.grid ? 1 : 0) ^ (look.dark ? 2 : 0);
-    if (kept.w() == out.w() && kept.h() == out.h() && kept_key == key) {
-        std::copy(kept.data(), kept.data() + size_t(out.w()) * out.h(), out.data());
+    if (kept.pixel_w() == out.pixel_w() && kept.pixel_h() == out.pixel_h() && kept.scale() == out.scale() &&
+        kept_key == key) {
+        std::copy(kept.data(), kept.data() + size_t(out.pixel_w()) * out.pixel_h(), out.data());
         return;
     }
     out.fill(bg);

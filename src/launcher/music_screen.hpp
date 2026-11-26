@@ -846,6 +846,7 @@ void App::music_shoulders(SDL_Renderer* r, int y) {
         previous = locale.text(music::eq_presets[size_t(at < 0 ? count - 1 : (at + count - 1) % count)].name);
         next = locale.text(music::eq_presets[size_t(at < 0 ? 0 : (at + 1) % count)].name);
     } else if (mu.view == View::Browse) {
+        if (media_sections() && mu.levels.size() <= 1) return media_section_shoulders(r, y);
         if (mu.levels.size() != 1 || music.library.tracks.empty()) return;
         const int n = music_layout::tabs;
         previous = locale.text(music_layout::tab_names[size_t((mu.tab + n - 1) % n)]);
@@ -1409,9 +1410,13 @@ void App::music_action(int code) {
     using View = MusicUi::View;
     music_sync_layout();
     if (media_action(code)) return; // the Videos and Books pages
-    // L2 and R2 step Media's sections from the library's first page; in the player they shuffle and repeat.
-    if ((code == 15 || code == 16) && media_sections() && mu.view == View::Browse && mu.levels.size() <= 1) {
-        media_step_section(code == 15 ? -1 : 1);
+    // On the library's first page under Media, L and R step Media's sections as on Videos and Books, and L2 and
+    // R2 Music's own tabs; in the player L2 and R2 shuffle and repeat.
+    if ((code == 13 || code == 14 || code == 15 || code == 16) && media_sections() && mu.view == View::Browse &&
+        mu.levels.size() <= 1) {
+        if (code == 13 || code == 14) media_step_section(code == 13 ? -1 : 1);
+        else if (mu.levels.size() == 1)
+            music_set_tab((mu.tab + (code == 15 ? music_layout::tabs - 1 : 1)) % music_layout::tabs);
         return;
     }
     // Everywhere: Start plays and pauses, L2 shuffles, R2 repeats, the Anbernic button leaves.

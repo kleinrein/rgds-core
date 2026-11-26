@@ -7,6 +7,7 @@ extern "C" {
 }
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstring>
 #include <filesystem>
@@ -109,8 +110,18 @@ bool Book::open(const std::string& path, std::string& error) {
         bool ok = true;
         fz_try(ctx) {
             fz_register_document_handlers(ctx);
+            // A picture taller than the page is pushed to the next one by MuPDF when the body's own top and bottom
+            // margins leave it short of room, leaving a blank page in front (Project Gutenberg's cover page does
+            // this): the page has its own margins, so the body's vertical ones go.
+            static const char* css = "body{margin-top:0 !important;margin-bottom:0 !important}img{margin:0}";
+#if FZ_VERSION_MAJOR == 1 && FZ_VERSION_MINOR < 26
+            fz_set_user_css(ctx, css); // the image's MuPDF 1.23
+#endif
             impl_->doc = fz_open_document(ctx, path.c_str());
             reflowable_ = fz_is_document_reflowable(ctx, impl_->doc);
+#if !(FZ_VERSION_MAJOR == 1 && FZ_VERSION_MINOR < 26)
+            if (reflowable_) fz_style_document(ctx, impl_->doc, 1, css);
+#endif
             if (reflowable_) {
                 // A first layout for a 480x640 page; the reader lays it out again for its own size.
                 fz_layout_document(ctx, impl_->doc, 360, 480, 11);
@@ -384,23 +395,241 @@ std::shared_ptr<Page> Book::render(const Job& j) {
     return page;
 }
 
+namespace {
+
+// A file inside the EPUB's zip, or empty.
+std::string archive_entry(fz_context* ctx, fz_archive* zip, const std::string& name) {
+    std::string out;
+    fz_buffer* buf = nullptr;
+    fz_try(ctx) {
+        if (fz_has_archive_entry(ctx, zip, name.c_str())) {
+            buf = fz_read_archive_entry(ctx, zip, name.c_str());
+            unsigned char* data = nullptr;
+            size_t n = fz_buffer_storage(ctx, buf, &data);
+            out.assign(reinterpret_cast<const char*>(data), n);
+        }
+    }
+    fz_always(ctx) {
+        if (buf) fz_drop_buffer(ctx, buf);
+    }
+    fz_catch(ctx) { out.clear(); }
+    return out;
+}
+
+// The value of attribute `name` in the tag starting at `at` ("" when absent).
+std::string attribute(const std::string& xml, size_t at, const std::string& name) {
+    size_t end = xml.find('>', at);
+    std::string tag = xml.substr(at, end == std::string::npos ? std::string::npos : end - at);
+    for (size_t i = tag.find(name); i != std::string::npos; i = tag.find(name, i + 1)) {
+        if (i > 0 && !std::isspace(static_cast<unsigned char>(tag[i - 1]))) continue;
+        size_t eq = tag.find_first_not_of(" \t\r\n", i + name.size());
+        if (eq == std::string::npos || tag[eq] != '=') continue;
+        size_t q = tag.find_first_not_of(" \t\r\n", eq + 1);
+        if (q == std::string::npos || (tag[q] != '"' && tag[q] != '\'')) continue;
+        size_t close = tag.find(tag[q], q + 1);
+        if (close == std::string::npos) return "";
+        return tag.substr(q + 1, close - q - 1);
+    }
+    return "";
+}
+
+// Every tag named `name` (`<name ` or `<prefix:name `), as offsets.
+std::vector<size_t> tags(const std::string& xml, const std::string& name) {
+    std::vector<size_t> out;
+    for (size_t i = xml.find('<'); i != std::string::npos; i = xml.find('<', i + 1)) {
+        size_t s = i + 1, e = xml.find_first_of(" \t\r\n/>", s);
+        if (e == std::string::npos) break;
+        std::string t = xml.substr(s, e - s);
+        size_t colon = t.find(':');
+        if (colon != std::string::npos) t = t.substr(colon + 1);
+        if (t == name) out.push_back(i);
+    }
+    return out;
+}
+
+std::string url_decode(const std::string& s) {
+    std::string out;
+    for (size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '%' && i + 2 < s.size() && std::isxdigit(static_cast<unsigned char>(s[i + 1])) &&
+            std::isxdigit(static_cast<unsigned char>(s[i + 2]))) {
+            out += char(std::stoi(s.substr(i + 1, 2), nullptr, 16));
+            i += 2;
+        } else out += s[i];
+    }
+    return out;
+}
+
+// "a/b/../c.png" relative to the folder of `base`.
+std::string resolve(const std::string& base, const std::string& href) {
+    std::string h = url_decode(href.substr(0, href.find('#')));
+    size_t slash = base.rfind('/');
+    std::string joined = (slash == std::string::npos ? "" : base.substr(0, slash + 1)) + h;
+    std::vector<std::string> parts;
+    size_t i = 0;
+    while (i <= joined.size()) {
+        size_t j = joined.find('/', i);
+        if (j == std::string::npos) j = joined.size();
+        std::string part = joined.substr(i, j - i);
+        if (part == "..") {
+            if (!parts.empty()) parts.pop_back();
+        } else if (!part.empty() && part != ".") parts.push_back(part);
+        i = j + 1;
+    }
+    std::string out;
+    for (const auto& part : parts) out += (out.empty() ? "" : "/") + part;
+    return out;
+}
+
+// The cover picture an EPUB names (EPUB 3 `cover-image`, EPUB 2 `<meta name="cover">`, or the first picture of the
+// guide's cover page): its path in the zip, or empty.
+std::string epub_cover_entry(fz_context* ctx, fz_archive* zip) {
+    std::string container = archive_entry(ctx, zip, "META-INF/container.xml");
+    std::string opf_path;
+    for (size_t at : tags(container, "rootfile"))
+        if (opf_path.empty()) opf_path = attribute(container, at, "full-path");
+    if (opf_path.empty()) return "";
+    std::string opf = archive_entry(ctx, zip, opf_path);
+    if (opf.empty()) return "";
+    std::vector<size_t> items = tags(opf, "item");
+    auto is_picture = [&](size_t at) { return attribute(opf, at, "media-type").rfind("image/", 0) == 0; };
+    for (size_t at : items) {
+        std::string props = " " + attribute(opf, at, "properties") + " ";
+        if (props.find(" cover-image ") != std::string::npos) return resolve(opf_path, attribute(opf, at, "href"));
+    }
+    std::string id;
+    for (size_t at : tags(opf, "meta"))
+        if (attribute(opf, at, "name") == "cover") id = attribute(opf, at, "content");
+    if (!id.empty())
+        for (size_t at : items)
+            if (attribute(opf, at, "id") == id && is_picture(at))
+                return resolve(opf_path, attribute(opf, at, "href"));
+    // An item called cover that is a picture.
+    for (size_t at : items) {
+        std::string i = attribute(opf, at, "id"), h = attribute(opf, at, "href");
+        for (auto& ch : i) ch = char(std::tolower(static_cast<unsigned char>(ch)));
+        for (auto& ch : h) ch = char(std::tolower(static_cast<unsigned char>(ch)));
+        if (is_picture(at) && (i.find("cover") != std::string::npos || h.find("cover") != std::string::npos))
+            return resolve(opf_path, attribute(opf, at, "href"));
+    }
+    // The guide's cover page, and the first picture on it.
+    for (size_t at : tags(opf, "reference")) {
+        if (attribute(opf, at, "type") != "cover") continue;
+        std::string page_path = resolve(opf_path, attribute(opf, at, "href"));
+        std::string page = archive_entry(ctx, zip, page_path);
+        for (size_t img : tags(page, "img"))
+            if (std::string src = attribute(page, img, "src"); !src.empty()) return resolve(page_path, src);
+        for (size_t img : tags(page, "image")) {
+            std::string src = attribute(page, img, "xlink:href");
+            if (src.empty()) src = attribute(page, img, "href");
+            if (!src.empty()) return resolve(page_path, src);
+        }
+    }
+    return "";
+}
+
+// The EPUB's own cover picture, fitted into max_w x max_h, over white where it is see-through.
+bool epub_cover(const std::string& path, int max_w, int max_h, std::vector<uint32_t>& px, int& w, int& h) {
+    fz_context* ctx = fz_new_context(nullptr, nullptr, 32u << 20);
+    if (!ctx) return false;
+    bool ok = false;
+    fz_archive* zip = nullptr;
+    fz_buffer* buf = nullptr;
+    fz_image* image = nullptr;
+    fz_pixmap *pix = nullptr, *rgb = nullptr, *scaled = nullptr;
+    fz_try(ctx) {
+        zip = fz_open_archive(ctx, path.c_str());
+        std::string entry = epub_cover_entry(ctx, zip);
+        if (!entry.empty() && fz_has_archive_entry(ctx, zip, entry.c_str())) {
+            buf = fz_read_archive_entry(ctx, zip, entry.c_str());
+            image = fz_new_image_from_buffer(ctx, buf);
+            pix = fz_get_pixmap_from_image(ctx, image, nullptr, nullptr, nullptr, nullptr);
+            rgb = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), nullptr, nullptr, fz_default_color_params, 1);
+            int iw = fz_pixmap_width(ctx, rgb), ih = fz_pixmap_height(ctx, rgb);
+            // A tiny picture is a logo, not a cover.
+            if (iw >= 64 && ih >= 64) {
+                double s = std::min({double(max_w) / iw, double(max_h) / ih, 1.0});
+                int tw = std::max(1, int(iw * s + .5)), th = std::max(1, int(ih * s + .5));
+                scaled = fz_scale_pixmap(ctx, rgb, 0, 0, float(tw), float(th), nullptr);
+                int sw = fz_pixmap_width(ctx, scaled), sh = fz_pixmap_height(ctx, scaled);
+                int n = fz_pixmap_components(ctx, scaled), stride = fz_pixmap_stride(ctx, scaled);
+                bool alpha = fz_pixmap_alpha(ctx, scaled) != 0;
+                const unsigned char* src = fz_pixmap_samples(ctx, scaled);
+                px.assign(size_t(sw) * sh, 0xFFFFFFFFu);
+                for (int y = 0; y < sh; ++y) {
+                    const unsigned char* row = src + size_t(y) * stride;
+                    for (int x = 0; x < sw; ++x, row += n) {
+                        int r = row[0], g = row[1], b = row[2];
+                        if (alpha) {
+                            // Premultiplied: over white.
+                            int a = row[n - 1];
+                            r = std::min(255, r + 255 - a), g = std::min(255, g + 255 - a),
+                            b = std::min(255, b + 255 - a);
+                        }
+                        px[size_t(y) * sw + x] = uint32_t(r) | (uint32_t(g) << 8) | (uint32_t(b) << 16) | 0xFF000000u;
+                    }
+                }
+                w = sw, h = sh;
+                ok = true;
+            }
+        }
+    }
+    fz_always(ctx) {
+        if (scaled) fz_drop_pixmap(ctx, scaled);
+        if (rgb) fz_drop_pixmap(ctx, rgb);
+        if (pix) fz_drop_pixmap(ctx, pix);
+        if (image) fz_drop_image(ctx, image);
+        if (buf) fz_drop_buffer(ctx, buf);
+        if (zip) fz_drop_archive(ctx, zip);
+    }
+    fz_catch(ctx) { ok = false; }
+    fz_drop_context(ctx);
+    return ok;
+}
+
+// How much of a page is not paper: a blank page (white, or one colour) is near 0.
+double ink(const std::vector<uint32_t>& px) {
+    if (px.empty()) return 0;
+    const uint32_t ground = px[0] & 0xFFFFFFu;
+    size_t marked = 0, seen = 0;
+    for (size_t i = 0; i < px.size(); i += 7, ++seen) {
+        uint32_t p = px[i] & 0xFFFFFFu;
+        int dr = int(p & 255) - int(ground & 255), dg = int((p >> 8) & 255) - int((ground >> 8) & 255),
+            db = int((p >> 16) & 255) - int((ground >> 16) & 255);
+        if (std::abs(dr) + std::abs(dg) + std::abs(db) > 48) ++marked;
+    }
+    return seen ? double(marked) / double(seen) : 0;
+}
+
+} // namespace
+
 bool Book::cover(const std::string& path, int max_w, int max_h, std::vector<uint32_t>& px, int& w, int& h, int& pages,
                  std::string& title, std::string& error) {
     Book b;
     if (!b.open(path, error)) return false;
     pages = b.count();
     title = b.title();
-    b.want(0, max_w, max_h, 100, Paper::White);
-    for (int i = 0; i < 400; ++i) { // at most 4 s
-        if (auto p = b.get(0, max_w, max_h, 100, Paper::White)) {
-            if (p->failed) break;
+    std::string ext = fs::path(path).extension().string();
+    for (auto& ch : ext) ch = char(std::tolower(static_cast<unsigned char>(ch)));
+    if (ext == ".epub" && epub_cover(path, max_w, max_h, px, w, h)) return true;
+    // The first page that has something on it (a book may open on an empty page): at most the first three.
+    bool have = false;
+    for (int index = 0; index < std::min(3, b.count()); ++index) {
+        b.want(index, max_w, max_h, 100, Paper::White);
+        std::shared_ptr<const Page> p;
+        for (int i = 0; i < 400 && !p; ++i) { // at most 4 s a page
+            p = b.get(index, max_w, max_h, 100, Paper::White);
+            if (!p) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        if (!p || p->failed) break;
+        if (!have || ink(p->px) > .004) {
             px = p->px;
             w = p->w;
             h = p->h;
-            return true;
+            have = true;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        if (ink(p->px) > .004) break;
     }
+    if (have) return true;
     error = "the first page did not render";
     return false;
 }

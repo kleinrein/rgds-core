@@ -7,7 +7,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace rgds {
@@ -76,20 +78,70 @@ struct DotGrid {
     }
 };
 
+// A rounded rectangle's corner rows inset (panel pixels from the edge) at row dy of a corner of radius rp.
+inline int round_inset(int rp, int dy) { return rp - int(std::sqrt(double(rp) * rp - (rp - dy - .5) * (rp - dy - .5))); }
+
+// The four corners of a radius as one white disc (2rp x 2rp, alpha 255 inside, 0 outside, rows exactly as
+// round_inset), one texture per renderer and radius. A corner drawn from it is one quad, where drawing it as rows was
+// rp quads a panel pixel high and the rectangle's whole width: the RG DS Plus's tile-based GPU paid for every tile
+// each of those thin rows crossed, about 20 ms a frame of Settings rows (RGDS_BENCH_OFF=rows, 2026-11-25).
+struct RoundCorners {
+    std::map<std::pair<SDL_Renderer*, int>, SDL_Texture*> discs;
+    SDL_Texture* disc(Sdl& s, SDL_Renderer* r, int rp) {
+        auto& texture = discs[{r, rp}];
+        if (texture) return texture;
+        const int side = rp * 2;
+        std::vector<Uint32> pixels(size_t(side) * side, 0);
+        for (int j = 0; j < side; j++) {
+            const int inset = round_inset(rp, j < rp ? j : side - 1 - j);
+            for (int i = inset; i < side - inset; i++) pixels[size_t(j) * side + i] = 0xffffffffu;
+        }
+        texture = s.CreateTexture(r, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, side, side);
+        if (texture && s.UpdateTexture(texture, nullptr, pixels.data(), side * 4) != 0) {
+            s.DestroyTexture(texture);
+            texture = nullptr;
+        }
+        if (texture) s.SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+        return texture;
+    }
+};
+
 // A rounded rectangle's rows worked out in panel pixels (the radius times 1.6 on the RG DS Plus), so a corner steps
 // one panel pixel at a time, not 1.6; the same rows as the layout-pixel code (corner rows, then the middle, nothing
 // drawn twice, so it suits a translucent fill too). False on a panel the size of the layout: the caller draws as
 // before.
 inline bool fill_round_on_panel(Sdl& s, SDL_Renderer* r, int x, int y, int w, int h, int radius,
-                                std::vector<SDL_FRect>& rows) {
+                                std::vector<SDL_FRect>& rows, RoundCorners* corners = nullptr) {
     const float k = panel_scale(s, r);
     if (k <= 1.2f || !s.RenderFillRectsF || w <= 0 || h <= 0 || !panel_part("rounds")) return false;
     const int x0 = int(std::lround(x * k)), y0 = int(std::lround(y * k)), x1 = int(std::lround((x + w) * k)),
               y1 = int(std::lround((y + h) * k)), pw = x1 - x0, ph = y1 - y0;
     const int rp = std::clamp(int(std::lround(radius * k)), 0, std::min(pw, ph) / 2);
     rows.clear();
+    // Corners from the disc: the same pixels when the fill blends, or is opaque (a fill that replaces with a
+    // translucent colour keeps the rows, the disc's outside would blend instead).
+    SDL_BlendMode mode = SDL_BLENDMODE_NONE;
+    Uint8 cr = 0, cg = 0, cb = 0, ca = 255;
+    if (corners && rp >= 2 && s.RenderCopyF && !bench_off("slivers") && s.GetRenderDrawColor(r, &cr, &cg, &cb, &ca) == 0 &&
+        s.GetRenderDrawBlendMode(r, &mode) == 0 && (mode == SDL_BLENDMODE_BLEND || ca == 255)) {
+        if (SDL_Texture* disc = corners->disc(s, r, rp)) {
+            rows.push_back({(x0 + rp) / k, y0 / k, (pw - rp * 2) / k, rp / k});
+            rows.push_back({(x0 + rp) / k, (y1 - rp) / k, (pw - rp * 2) / k, rp / k});
+            rows.push_back({x0 / k, (y0 + rp) / k, pw / k, (ph - rp * 2) / k});
+            s.RenderFillRectsF(r, rows.data(), int(rows.size()));
+            s.SetTextureColorMod(disc, cr, cg, cb);
+            s.SetTextureAlphaMod(disc, ca);
+            const SDL_Rect quarter[4] = {{0, 0, rp, rp}, {rp, 0, rp, rp}, {0, rp, rp, rp}, {rp, rp, rp, rp}};
+            const SDL_FRect place[4] = {{x0 / k, y0 / k, rp / k, rp / k},
+                                        {(x1 - rp) / k, y0 / k, rp / k, rp / k},
+                                        {x0 / k, (y1 - rp) / k, rp / k, rp / k},
+                                        {(x1 - rp) / k, (y1 - rp) / k, rp / k, rp / k}};
+            for (int i = 0; i < 4; i++) s.RenderCopyF(r, disc, &quarter[i], &place[i]);
+            return true;
+        }
+    }
     for (int dy = 0; dy < rp; dy++) {
-        const int inset = rp - int(std::sqrt(double(rp) * rp - (rp - dy - .5) * (rp - dy - .5)));
+        const int inset = round_inset(rp, dy);
         rows.push_back({(x0 + inset) / k, (y0 + dy) / k, (pw - inset * 2) / k, 1 / k});
         rows.push_back({(x0 + inset) / k, (y1 - 1 - dy) / k, (pw - inset * 2) / k, 1 / k});
     }

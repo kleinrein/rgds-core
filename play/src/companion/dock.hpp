@@ -66,6 +66,8 @@ public:
     double openness() const;
     // Something is changing by itself (an opening, a hold, a fade, a note).
     bool moving() const;
+    // Over the companion with nothing but the button drawn: controls shut (not closing), no note, screen on.
+    bool resting() const;
 
     // What the player asked for; the frontend does it and reports back.
     Action take_action();
@@ -124,6 +126,8 @@ private:
     std::string toast_;
     uint64_t toast_at_ = 0;
     // The battery's charge, read now and then (the handheld's power supply).
+    // The canvas last drawn (the lower panel: 1024x768 on an RG DS Plus), where touches are hit.
+    mutable int w_ = 640, h_ = 480;
     mutable int battery_ = -2;
     mutable bool charging_ = false;
     std::string system_id_;

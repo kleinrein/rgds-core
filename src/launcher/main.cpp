@@ -1066,6 +1066,7 @@ class App {
     Uint32 network_after = 0; // the first network probe waits until Home has been up a moment
     Uint32 last_activity = 0, system_poll = 0, system_retry = 0, lid_poll = 0, brightness_changed = 0,
            connection_poll = 0;
+    Uint32 idle_busy_at = 0; // last time something kept the idle sleep away (music, a helper, a copy)
     int brightness_applied = 60;
     bool brightness_unsaved = false;
     int volume_applied = 25;
@@ -1074,7 +1075,10 @@ class App {
     std::optional<int> return_volume, return_brightness, return_power, return_lid, active_return_volume,
         active_return_brightness;
     bool return_status_needed = false, return_audio_failed = false;
+    Uint32 return_controls_at = 0; // when the controls a game or film left began to be put back
     bool return_writes_pending() const;
+    // Said on screen only when putting them back is slow: the usual second after a game is not news.
+    bool return_writes_slow() const;
     void begin_return_controls();
     void poll_return_controls(bool wait = false);
     void flush_return_controls();
@@ -2634,6 +2638,7 @@ class App {
     void round_rect(SDL_Renderer* r, int x, int y, int w, int h, int radius, const std::string& key);
     std::vector<SDL_Rect> fill_rows; // round_rect's and alpha_round's rows, reused
     std::vector<SDL_FRect> panel_rows; // the same in panel pixels on a larger panel (fill_round_on_panel)
+    rgds::RoundCorners round_corners; // their corners as discs there (panel_scale.hpp)
     // RGDS_FRAME_LOG=FILE: one line a second of where frame time goes (ms; average and worst), for the handheld.
     struct FrameLog {
         std::FILE* file = nullptr;
@@ -2984,6 +2989,9 @@ class App {
     void touch_feedback(SDL_Renderer* r, int y);
     double launch_opacity(Uint32 now) const;
     void loading_overlay(SDL_Renderer* r, int y, bool lower);
+    // A film starting (media_launch.hpp): the lights go down instead of a game's loader.
+    const MediaEntry* film_launching() const;
+    void film_loading_overlay(SDL_Renderer* r, int y, bool lower, Uint32 now);
     struct LibraryHeader {
         SDL_Rect card, back, view, options, title, search, clear;
         int category_x, category_width;
@@ -3412,6 +3420,7 @@ class App {
             cache.clear();
         };
         drop(arc_textures);
+        drop(round_corners.discs);
         drop(music_glyph_textures);
         drop(music_display_textures);
         drop(vt.faces);
@@ -3731,6 +3740,7 @@ class App {
     void media_fit_section();
     void media_set_section(int section);
     void media_step_section(int delta);
+    void media_section_shoulders(SDL_Renderer* r, int y);
     void media_start_index(bool again);
     bool media_poll(Uint32 now, bool force);
     std::string media_focused_path();

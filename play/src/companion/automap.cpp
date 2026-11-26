@@ -108,12 +108,7 @@ public:
         // Rock light, caverns dark, the rooms' walls in the accent colour.
         const Rgb rock = mix(look.muted, look.ink, 40), open = mix(look.background, look.panel, 160),
                   wall = look.accent;
-        uint32_t* px = out.data();
-        const int W = out.w(), H = out.h();
-        auto fill = [&](int x, int y, int w, int h, uint32_t c) {
-            for (int yy = std::max(0, y); yy < std::min(H, y + h); ++yy)
-                std::fill(px + size_t(yy) * W + std::max(0, x), px + size_t(yy) * W + std::min(W, x + w), c);
-        };
+        auto fill = [&](int x, int y, int w, int h, uint32_t c) { out.fill_rect(x, y, w, h, Rgb::from_px(c)); };
         for (const auto& [index, s] : area) {
             const int sx = (index % 16) * tiles - ox, sy = (index / 16) * tiles - oy;
             if (sx + tiles < 0 || sy + tiles < 0 || sx > view_w || sy > view_h) continue;

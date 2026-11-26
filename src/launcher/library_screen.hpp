@@ -168,7 +168,7 @@ std::string App::cover_notice() {
     if (!home_menu && settings.page == Page::Library && !model.games.empty() && model.selected < model.games.size() &&
         is_port_entry(model.games[model.selected].path))
         return "Get, update and remove ports";
-    if (return_writes_pending()) return "Restoring settings…";
+    if (return_writes_slow()) return "Restoring settings…";
     if (o.boot_startup && (!boot_hardware_ready || system.volume_pending())) return "Preparing controls…";
     return "";
 }

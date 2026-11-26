@@ -340,8 +340,9 @@ public:
         const Item& it = items_[size_t(i)];
         Layout l = layout_for(books());
         if (!t.tex) {
-            Canvas cv(l.tile_w, l.tile_h);
-            std::fill(cv.data(), cv.data() + size_t(cv.w()) * cv.h(), 0x00000000u);
+            FontScale fs_(c.font, c.scale);
+            Canvas cv(l.tile_w, l.tile_h, c.scale);
+            std::fill(cv.data(), cv.data() + size_t(cv.pixel_w()) * cv.pixel_h(), 0x00000000u);
             const int pw = l.pic_w, ph = l.pic_h;
             const Place place = c.places.get(it.key);
             // The picture, or a card in its place.
@@ -350,14 +351,16 @@ public:
                 double s = std::max(double(pw) / t.poster.w, double(ph) / t.poster.h);
                 int sw = std::max(1, int(pw / s)), sh = std::max(1, int(ph / s));
                 int sx = (t.poster.w - sw) / 2, sy = (t.poster.h - sh) / 2;
-                std::vector<uint32_t> crop(size_t(sw) * sh), out(size_t(pw) * ph);
+                // At the panel's own pixels (1.6x on the RG DS Plus).
+                const int ow = cv.to_px(pw), oh = cv.to_px(ph);
+                std::vector<uint32_t> crop(size_t(sw) * sh), out(size_t(ow) * oh);
                 for (int y = 0; y < sh; ++y)
                     std::copy(t.poster.px.begin() + (size_t(sy + y) * t.poster.w + sx),
                               t.poster.px.begin() + (size_t(sy + y) * t.poster.w + sx + sw),
                               crop.begin() + size_t(y) * sw);
-                resample(crop.data(), sw, sh, out.data(), pw, ph);
+                resample(crop.data(), sw, sh, out.data(), ow, oh);
                 play::soft_round(cv, 1, 3, pw - 2, ph - 1, 10, c.look.shadow(), c.look.dark ? 110 : 45);
-                blit_rounded(cv, out.data(), pw, ph, 0, 0, 10);
+                blit_rounded(cv, out.data(), ow, oh, 0, 0, 10);
             } else {
                 play::soft_round(cv, 1, 3, pw - 2, ph - 1, 10, c.look.shadow(), c.look.dark ? 110 : 45);
                 play::glossy(cv, 0, 0, pw, ph, 10, it.kind == Kind::Folder ? c.look.focus : c.look.panel);
@@ -412,7 +415,7 @@ public:
 
     void draw_lower(SDL_Renderer* r) override {
         if (!backdrop_) {
-            Canvas bg(PW, PH);
+            Canvas bg(PW, PH, c.scale);
             play::backdrop(bg, c.look);
             upload(r, backdrop_, bg);
         }
@@ -451,8 +454,9 @@ public:
 
     void draw_empty(SDL_Renderer* r) {
         if (!empty_) {
-            Canvas cv(PW, PH - grid_top);
-            std::fill(cv.data(), cv.data() + size_t(cv.w()) * cv.h(), 0x00000000u);
+            FontScale fs_(c.font, c.scale);
+            Canvas cv(PW, PH - grid_top, c.scale);
+            std::fill(cv.data(), cv.data() + size_t(cv.pixel_w()) * cv.pixel_h(), 0x00000000u);
             Box card{margin, 40, PW - 2 * margin, 230};
             play::raised(cv, c.look, card.x, card.y, card.w, card.h, 18, c.look.panel);
             glyph(cv, books() ? Glyph::Book : Glyph::Film, PW / 2, card.y + 58, 52, c.look.accent, c.look.panel);
@@ -472,8 +476,9 @@ public:
 
     void draw_header(SDL_Renderer* r) {
         if (header_stale_ || !header_) {
-            Canvas cv(PW, header_h);
-            std::fill(cv.data(), cv.data() + size_t(cv.w()) * cv.h(), 0x00000000u);
+            FontScale fs_(c.font, c.scale);
+            Canvas cv(PW, header_h, c.scale);
+            std::fill(cv.data(), cv.data() + size_t(cv.pixel_w()) * cv.pixel_h(), 0x00000000u);
             // A strip of the panel colour, as the launcher's bars, fading into the grid below.
             cv.fill_rect(0, 0, PW, header_h - 8, c.look.panel, 235);
             for (int i = 0; i < 8; ++i) cv.fill_rect(0, header_h - 8 + i, PW, 1, c.look.panel, 200 - i * 25);
@@ -496,15 +501,16 @@ public:
         Box a = tab_box(0), b = tab_box(1);
         double x = a.x + (b.x - a.x) * tab_spring_.value;
         if (!pill_) {
-            Canvas cv(a.w, a.h + 4);
-            std::fill(cv.data(), cv.data() + size_t(cv.w()) * cv.h(), 0x00000000u);
+            Canvas cv(a.w, a.h + 4, c.scale);
+            std::fill(cv.data(), cv.data() + size_t(cv.pixel_w()) * cv.pixel_h(), 0x00000000u);
             play::raised(cv, c.look, 2, 1, a.w - 4, a.h - 4, 12, c.look.accent);
             upload(r, pill_, cv, true, true);
         }
         draw(r, pill_, x, a.y + 1);
         if (!tab_words_) {
-            Canvas cv(PW, header_h);
-            std::fill(cv.data(), cv.data() + size_t(cv.w()) * cv.h(), 0x00000000u);
+            FontScale fs_(c.font, c.scale);
+            Canvas cv(PW, header_h, c.scale);
+            std::fill(cv.data(), cv.data() + size_t(cv.pixel_w()) * cv.pixel_h(), 0x00000000u);
             const char* names[3] = {"Videos", "Books", "Music"};
             const Glyph gl[3] = {Glyph::Film, Glyph::Book, Glyph::Audio};
             for (int i = 0; i < tabs(); ++i) {
@@ -524,7 +530,8 @@ public:
             double lit = 1 - std::min(1.0, std::abs(tab_spring_.value - i));
             Rgb ink = play::mix(c.look.ink, c.look.on_accent, int(256 * lit));
             SDL_SetTextureColorMod(tab_words_.t, ink.r, ink.g, ink.b);
-            SDL_Rect src{t.x, 0, t.w, header_h};
+            const float k = tab_words_.k; // the texture's pixels a layout unit
+            SDL_Rect src{int(std::lround(t.x * k)), 0, int(std::lround(t.w * k)), int(std::lround(header_h * k))};
             draw_part(r, tab_words_, src, t.x, 0, t.w, header_h);
         }
         SDL_SetTextureColorMod(tab_words_.t, 255, 255, 255);
@@ -537,8 +544,9 @@ public:
         hero_prev_ = std::move(hero_);
         blur_prev_ = std::move(blur_);
         hero_fade_ = c.animations() ? 0 : 1;
-        Canvas cv(PW, PH - 36);
-        std::fill(cv.data(), cv.data() + size_t(cv.w()) * cv.h(), 0x00000000u);
+        FontScale fs_(c.font, c.scale);
+        Canvas cv(PW, PH - 36, c.scale);
+        std::fill(cv.data(), cv.data() + size_t(cv.pixel_w()) * cv.pixel_h(), 0x00000000u);
         if (items_.empty()) {
             upload(r, hero_, cv, true);
             hero_stale_ = false;
@@ -576,7 +584,8 @@ public:
         }
         play::soft_round(cv, px - 2, py + 6, pw + 4, ph + 4, 16, Rgb{0, 0, 0}, 120);
         if (picture) {
-            std::vector<uint32_t> big(size_t(pw) * ph);
+            const int bw = cv.to_px(pw), bh = cv.to_px(ph); // at the panel's own pixels
+            std::vector<uint32_t> big(size_t(bw) * bh);
             // Fill the frame, cropping the overflow.
             double s = std::max(double(pw) / t.poster.w, double(ph) / t.poster.h);
             int sw = std::max(1, int(pw / s)), sh = std::max(1, int(ph / s));
@@ -585,8 +594,8 @@ public:
             for (int y = 0; y < sh; ++y)
                 std::copy(t.poster.px.begin() + (size_t(sy + y) * t.poster.w + sx),
                           t.poster.px.begin() + (size_t(sy + y) * t.poster.w + sx + sw), crop.begin() + size_t(y) * sw);
-            resample(crop.data(), sw, sh, big.data(), pw, ph);
-            blit_rounded(cv, big.data(), pw, ph, px, py, 14);
+            resample(crop.data(), sw, sh, big.data(), bw, bh);
+            blit_rounded(cv, big.data(), bw, bh, px, py, 14);
         } else {
             play::glossy(cv, px, py, pw, ph, 14, c.look.panel);
             glyph(cv,
@@ -669,7 +678,8 @@ public:
         if (hero_prev_ && f < 1) draw(r, hero_prev_, 0, 36 - 6 * f, int(255 * (1 - f)));
         if (hero_) draw(r, hero_, 0, 36 + 10 * (1 - f), int(255 * f));
         if (bar_stale_ || !bar_) {
-            Canvas bar(PW, 36);
+            FontScale fs_(c.font, c.scale);
+            Canvas bar(PW, 36, c.scale);
             std::string where =
                 path_.empty() ? c.tr(books() ? "Books" : "Videos") : fs::path(path_.back()).filename().string();
             status_bar(bar, c.look, c.font, c.power, where);

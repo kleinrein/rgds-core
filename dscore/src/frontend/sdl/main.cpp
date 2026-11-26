@@ -24,6 +24,8 @@
 #if DSPERATE_NET
 #include "net/lan_mp.h"
 #include "net/slirp_driver.h"
+#include "net/twin_mp.h"
+#include "frontend/sdl/twin_session.h"
 #endif
 #if DSPERATE_JIT
 #include "core/cpu/jit/jit.h"
@@ -1397,14 +1399,16 @@ static int run(int argc, char** argv) {
   std::string lan_name_str = lan_name;
   if (!lan_name_set && !user.nickname.empty()) lan_name_str = user.nickname;
   lan_name = lan_name_str.c_str();
+  bool twin_mode = false;
   if (!lan_host && !lan_join && !netplay && !internet) {
     const std::string mode = cfg.str("net.mode", "off");
     if (mode == "auto") netplay = true;
+    else if (mode == "twin") twin_mode = true; // two consoles a handheld, inputs only (twin_session.h)
     else if (mode == "host") lan_host = lan_name;
     else if (mode == "guest") lan_guest = true;
     else if (mode == "internet") internet = true;
-    else if (mode != "off")
-      std::fprintf(stderr, "net.mode: \"%s\" is not off, auto, host, guest or internet\n", mode.c_str());
+    else if (mode != "off" && mode != "twin")
+      std::fprintf(stderr, "net.mode: \"%s\" is not off, auto, twin, host, guest or internet\n", mode.c_str());
   }
   if (internet && (lan_host || lan_join || netplay || lan_guest)) {
     std::fprintf(stderr, "net: --internet is not local wireless; pick one\n");
@@ -2083,7 +2087,41 @@ sdl_ready:
   if (nds.dsi && dsi_title_lo && !dsi_menu) nds.dsi_autoload(dsi_title_lo);
   // Off in the core by default for reproducibility. Not under --replay: a
   // game reading the date would replay differently each time.
-  if (!replay || rtc_host) nds.io.start_rtc_clock();
+#if DSPERATE_NET
+  // A two-console session starts here, before the clock and the first frame: both handhelds boot this console
+  // from the same seat, so nothing of this run may come from elsewhere (no auto state, no cheats).
+  std::unique_ptr<ds::sdl::TwinSession> twin;
+  if (twin_mode && !replay) {
+    ds::sdl::TwinSession::Params tp;
+    tp.rom = rom_path;
+    tp.save = session.sav;
+    tp.fw_override = fw_override;
+    tp.name = lan_name_str;
+    tp.user = user;
+    tp.mac_suffix = static_cast<u32>(cfg.num("net.mac_suffix", 0)) & 0xFFFFFF;
+    tp.timing = std::getenv("DS_TIMING") ? std::getenv("DS_TIMING") : cfg.str("emu.timing", "");
+    tp.idle_skip = std::getenv("DS_IDLE_SKIP") ? std::getenv("DS_IDLE_SKIP") : cfg.str("emu.idle_skip", "");
+    tp.jit = jit;
+    tp.delay = static_cast<int>(cfg.num("net.input_delay", 3));
+    if (const char* b = std::getenv("DS_TWIN_BIN")) tp.child = b;
+    else {
+      std::error_code ec;
+      tp.child = (std::filesystem::read_symlink("/proc/self/exe", ec).parent_path() / "rgds-twin").string();
+    }
+    tp.now = [&nds] { return nds.sched.now(); };
+    std::string err;
+    twin = ds::sdl::TwinSession::start(tp, 2500, static_cast<int>(cfg.num("net.twin_wait_ms", 60000)), err);
+    if (!twin) std::fprintf(stderr, "twin: %s; playing alone\n", err.c_str());
+    else {
+      nds.io.wifi.set_transport(twin->link());
+      for (ds::cheat::Code& c : nds.cheats.codes) c.enabled = false;
+    }
+  }
+  if (twin) nds.io.start_rtc_clock_at(twin->rtc());
+  else
+#endif
+      if (!replay || rtc_host)
+    nds.io.start_rtc_clock();
   else VLOG("rtc: frozen for the replay\n");
   if (replay && rtc_host) std::fprintf(stderr, "rtc: --rtc-host over a replay; this run is not reproducible\n");
 #if DSPERATE_JIT
@@ -2127,6 +2165,9 @@ sdl_ready:
   // opens (can wind forward to the state's frame). Skipped under
   // replay/recording, since the log runs inputs from boot.
   const std::string autoload = load_state || log.reading() || log.writing()
+#if DSPERATE_NET
+                                       || twin
+#endif
                                    ? std::string()
                                    : autoload_path(nds, session.states_dir, cfg.flag("emu.autoload", false));
   if (load_state || !autoload.empty()) {
@@ -2332,7 +2373,7 @@ sdl_ready:
   // live, gates save states, fast forward, frameskip, speed knobs, and pause.
   bool net_live = false;
 #if DSPERATE_NET
-  net_live = lan != nullptr;
+  net_live = lan != nullptr || twin != nullptr;
 #endif
   rgds::net_live = net_live ? 1 : 0;
   int state_slot = 0;
@@ -2702,6 +2743,9 @@ sdl_ready:
   };
   rgds::cheat_set_handler = [&](int index, bool on) {
     if (index < 0 || size_t(index) >= nds.cheats.codes.size()) return false;
+#if DSPERATE_NET
+    if (twin && on) return false; // the other handheld's copy of this console has none
+#endif
     ds::cheat::Code& code = nds.cheats.codes[size_t(index)];
     if (code.is_note()) return false;
     // An exclusive group (the database's flag) keeps one code on at a time.
@@ -3144,7 +3188,15 @@ sdl_ready:
       }
       ds::input::decimate_mic(in, mic.data(), mic.size());
       if (log.writing()) log.write(in);
-      ds::input::apply(nds, in, mic.data(), mic.size());
+#if DSPERATE_NET
+      if (twin) {
+        // What this frame applies was read `delay` frames ago and went to the other handheld then; the mic is
+        // its eight samples, as the other copy has it.
+        const ds::input::Frame applied = twin->frame(in);
+        ds::input::apply(nds, applied);
+      } else
+#endif
+        ds::input::apply(nds, in, mic.data(), mic.size());
     }
 
     // With per-scanline scaling the core writes straight into the
@@ -3280,10 +3332,53 @@ sdl_ready:
         std::lock_guard<std::mutex> lock(rgds::net_info_mutex);
         rgds::net_info = std::move(info);
       }
+      // Every 600 frames of a session, how it went: frames a second, and how much of each frame waited on the other
+      // handheld. The log is rewritten at every launch, so a session that ends in a relaunch keeps these lines only.
+      if (static unsigned stats_frame = 0; net_live && ++stats_frame % 600 == 0) {
+        static auto t_last = std::chrono::steady_clock::now();
+        static double wait_last = lan->wait_total_ms();
+        static unsigned timeouts_last = lan->wait_timeouts();
+        const auto t = std::chrono::steady_clock::now();
+        const double secs = std::chrono::duration<double>(t - t_last).count();
+        if (stats_frame > 600 && secs > 0)
+          std::fprintf(stderr, "lan: %.1f fps, %.2f ms a frame waiting, %u timeouts\n", 600 / secs,
+                       (lan->wait_total_ms() - wait_last) / 600, lan->wait_timeouts() - timeouts_last);
+        t_last = t;
+        wait_last = lan->wait_total_ms();
+        timeouts_last = lan->wait_timeouts();
+      }
+    }
+    if (twin) {
+      static unsigned twin_frame = 0;
+      if (twin_frame % 60 == 0) { // the Play together page: this console and the other player's
+        std::string other = twin->peer_name();
+        for (char& ch : other)
+          if (ch == '\n' || ch == '\t' || ch == '\r') ch = ' ';
+        std::string info = std::string(twin->host() ? "role=host\n" : "role=guest\n") + "player=" + user.nickname +
+                           "\t0\t1\nplayer=" + other + "\t0\t0\n";
+        std::lock_guard<std::mutex> lock(rgds::net_info_mutex);
+        rgds::net_info = std::move(info);
+      }
+      // Every 600 frames, as for the LAN: frames a second, and how much of each frame this console waited for the
+      // hidden one (which waits in turn for the other handheld's inputs).
+      static auto t_last = std::chrono::steady_clock::now();
+      static double wait_last = 0;
+      if (++twin_frame % 600 == 0) {
+        const auto t = std::chrono::steady_clock::now();
+        const double secs = std::chrono::duration<double>(t - t_last).count();
+        if (twin_frame > 600 && secs > 0)
+          std::fprintf(stderr, "twin: %.1f fps, %.2f ms a frame waiting for the hidden console%s\n", 600 / secs,
+                       (twin->link()->wait_ms() - wait_last) / 600, twin->child_running() ? "" : " (it has stopped)");
+        t_last = t;
+        wait_last = twin->link()->wait_ms();
+      }
     }
     if (slirp) slirp->process();
 #endif
     nds.run_frame();
+#if DSPERATE_NET
+    if (twin) twin->after_frame(nds.bus.main_ram.get(), 4u << 20);
+#endif
     rgds_completed_frames.fetch_add(1, std::memory_order_relaxed);
     if (rewind_allowed()) {
       try {

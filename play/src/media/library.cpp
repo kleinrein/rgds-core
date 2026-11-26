@@ -233,8 +233,10 @@ std::vector<std::pair<std::string, Poster>> Posters::take() {
 void resample(const uint32_t* src, int sw, int sh, uint32_t* dst, int dw, int dh); // shared.cpp
 
 std::string poster_path(const std::string& dir, const Item& item) {
-    // The key holds the path; size and time make a changed file a new poster.
-    return dir + "/" + item.key + "-" + std::to_string(item.size ^ uint64_t(item.mtime)) + ".px";
+    // The key holds the path; size and time make a changed file a new poster. Books carry the cover maker's
+    // generation: c2 reads an EPUB's own cover picture and steps over blank first pages (c1 made white covers).
+    return dir + "/" + item.key + "-" + std::to_string(item.size ^ uint64_t(item.mtime)) +
+           (item.kind == Kind::Book ? "-c2" : "") + ".px";
 }
 
 static std::string poster_file(const std::string& dir, const Item& item) { return poster_path(dir, item); }

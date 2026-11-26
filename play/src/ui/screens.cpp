@@ -33,8 +33,9 @@ void draw_game(Canvas& panel, const Picture& game, Fit fit) {
 }
 
 bool write_bmp(const std::string& path, const Canvas& top, const Canvas* bottom) {
-    int w = top.w(), h = top.h() + (bottom ? bottom->h() : 0);
-    if (bottom && bottom->w() != w) return false;
+    // The stored pixels (a scaled canvas: the panel's own).
+    int w = top.pixel_w(), h = top.pixel_h() + (bottom ? bottom->pixel_h() : 0);
+    if (bottom && bottom->pixel_w() != w) return false;
     int row = (w * 3 + 3) & ~3;
     std::vector<uint8_t> file(54 + static_cast<size_t>(row) * h, 0);
     auto put32 = [&](size_t at, uint32_t v) {
@@ -51,8 +52,8 @@ bool write_bmp(const std::string& path, const Canvas& top, const Canvas* bottom)
     file[28] = 24;
     put32(34, uint32_t(row * h));
     for (int y = 0; y < h; ++y) {
-        const Canvas& c = y < top.h() ? top : *bottom;
-        int cy = y < top.h() ? y : y - top.h();
+        const Canvas& c = y < top.pixel_h() ? top : *bottom;
+        int cy = y < top.pixel_h() ? y : y - top.pixel_h();
         uint8_t* out = &file[54 + static_cast<size_t>(h - 1 - y) * row];
         for (int x = 0; x < w; ++x) {
             uint32_t v = c.at(x, cy);

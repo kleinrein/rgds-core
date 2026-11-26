@@ -330,8 +330,8 @@ int App::run() {
             touch_tail = false;
             dirty = true;
         }
-        bool launch_transition =
-            launching && preferences.animations && (now - launch_at < 110 || launch_phase == LaunchPhase::Exiting);
+        bool launch_transition = launching && preferences.animations &&
+                                 (now - launch_at < 110 || launch_phase == LaunchPhase::Exiting || film_launching());
         if (preferences.animations && homebrew_loading()) dirty = true; // the loader turns
         if (launching && preferences.animations) {
             int head = int((now - launch_at) / 75) % 8;

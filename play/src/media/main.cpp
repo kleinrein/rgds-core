@@ -5,7 +5,8 @@
 //              [--music DIR] [--bt-sink FILE] [--open FILE] [--shelf videos|books] [--script FILE] [--shots DIR] [--quit-after MS]
 //
 // --open starts on one film or book (the launcher's "Continue"); Back from it then leaves the program.
-// --script drives it for tests: lines "MS key A", "MS touch down|move|up X Y" (the lower panel), "MS shot NAME"
+// --script drives it for tests: lines "MS key A", "MS touch down|move|up X Y" (the lower panel), "MS utouch
+// down|move|up X Y" (the upper panel), "MS shot NAME"
 // (both panels into DIR/NAME.png, 640 x 960), "MS quit". MS counts from the start.
 //
 // Under RG DS Core the program gets both panels, like a game: the upper one is display 0. On a desktop it is one
@@ -151,7 +152,7 @@ std::vector<ScriptLine> read_script(const std::string& path) {
         std::istringstream in(line);
         ScriptLine s;
         in >> s.at >> s.verb;
-        if (s.verb == "touch") in >> s.a >> s.x >> s.y;
+        if (s.verb == "touch" || s.verb == "utouch") in >> s.a >> s.x >> s.y;
         else in >> s.a;
         out.push_back(s);
     }
@@ -262,7 +263,10 @@ int main(int argc, char** argv) {
             SDL_RenderSetLogicalSize(p->r, PW, PH);
         }
     } else {
-        if (!open_panel(c.upper, 0, PW, PH * 2, false, "RG DS Media")) {
+        // RGDS_MEDIA_SCALE=1.6: the window at the RG DS Plus's panel size (a desktop preview of its sharpness).
+        const char* scale_env = std::getenv("RGDS_MEDIA_SCALE");
+        const double ws = scale_env ? std::clamp(std::atof(scale_env), 1.0, 3.0) : 1.0;
+        if (!open_panel(c.upper, 0, int(std::lround(PW * ws)), int(std::lround(PH * 2 * ws)), false, "RG DS Media")) {
             std::fprintf(stderr, "rgds-media: window: %s\n", SDL_GetError());
             return 1;
         }
@@ -272,15 +276,52 @@ int main(int argc, char** argv) {
         c.upper.viewport = {0, 0, PW, PH};
         c.lower.viewport = {0, PH, PW, PH};
     }
+    {
+        // The panel's own pixels a layout unit (1024x768 on the RG DS Plus: 1.6).
+        int ow = 0, oh = 0;
+        if (SDL_GetRendererOutputSize(c.lower.r, &ow, &oh) == 0 && ow > PW) c.scale = float(ow) / PW;
+        // A desktop preview of a panel size: that scale, whatever the display's own density.
+        if (const char* forced = std::getenv("RGDS_MEDIA_SCALE"); forced && !two)
+            c.scale = float(std::clamp(std::atof(forced), 1.0, 3.0));
+        std::fprintf(stderr, "rgds-media: panel %dx%d, scale %.2f\n", ow, oh, double(c.scale));
+    }
 
     play::EvdevPad pad_device;
-    pad_device.open();
+    // The stock pad, else RG DS OS's (positional codes). Without either, SDL's controller mapping is positional
+    // too (Xbox): its A is the button labelled B on the handheld, so A would leave and B would play.
+    if (!pad_device.open()) pad_device.open("retrogame_joypad", true);
     // The lower panel's touch screen, read directly on the handheld (no bridge runs under RG DS Media). A finger
     // already down when it opens (the tap on the Home tile) is ignored until it lifts.
     rgds::TouchDevice lower_touch;
     if (const char* dev = std::getenv("RGDS_TOUCH_DEV"); dev && *dev && std::string(dev) != "none" && two) {
         if (lower_touch.open_device(dev)) lower_touch.hold_initial_contact();
     }
+    // The upper panel's own touch screen (the reader turns pages on both): RGDS_TOP_TOUCH_DEV, else the Goodix on
+    // the upper panel's I2C bus (fe5c0000), as the launcher finds it.
+    rgds::TouchDevice upper_touch;
+#ifdef __linux__
+    if (two) {
+        const char* configured = std::getenv("RGDS_TOP_TOUCH_DEV");
+        std::string device = configured ? configured : "";
+        if (device.empty()) {
+            std::error_code walk;
+            for (const auto& entry : fs::directory_iterator("/sys/class/input", walk)) {
+                const auto name = entry.path().filename().string();
+                std::error_code resolve;
+                if (name.rfind("event", 0) == 0 &&
+                    fs::canonical(entry.path() / "device", resolve).string().find("fe5c0000") != std::string::npos)
+                    device = "/dev/input/" + name;
+            }
+        }
+        if (!device.empty() && device != "none" && device != lower_touch.path() && upper_touch.open_device(device))
+            upper_touch.hold_initial_contact();
+    }
+#endif
+    // Touches read from the panels' own devices: the upper panel answers only when it has one (the RG DS Plus has
+    // none). On a desktop SDL's mouse reaches both.
+    c.upper_touch = !upper_touch.path().empty() || lower_touch.path().empty();
+    if (const char* forced = std::getenv("RGDS_MEDIA_UPPER_TOUCH")) c.upper_touch = std::atoi(forced) != 0; // tests
+    std::fprintf(stderr, "rgds-media: upper touch %s\n", c.upper_touch ? "yes" : "no");
     // The volume keys are the runner's (runtime/media.py); it writes the level here and we show it.
     const char* hud_env = std::getenv("RGDS_MEDIA_VOLUME_HUD");
     const std::string volume_hud = hud_env ? hud_env : "";
@@ -288,6 +329,46 @@ int main(int argc, char** argv) {
     int volume_level = -1;
     uint32_t volume_at = 0, hud_checked = 0;
     Tex volume_tex;
+    // The touch sliders' levels: asked for through RGDS_MEDIA_CONTROL, what is set read from RGDS_MEDIA_LEVELS
+    // (both runtime/media.py's). Without the runner (a desktop) the sliders still move, and change nothing.
+    const char* control_env = std::getenv("RGDS_MEDIA_CONTROL");
+    const char* levels_env = std::getenv("RGDS_MEDIA_LEVELS");
+    const std::string control_file = control_env ? control_env : "", levels_file = levels_env ? levels_env : "";
+    fs::file_time_type levels_seen{};
+    uint32_t levels_checked = 0, level_set_at = 0;
+    if (levels_file.empty()) c.volume = 50, c.brightness = 70;
+    auto read_levels = [&]() {
+        std::error_code e;
+        auto stamp = fs::last_write_time(levels_file, e);
+        if (e || stamp == levels_seen) return;
+        levels_seen = stamp;
+        std::ifstream in(levels_file);
+        std::string line;
+        while (std::getline(in, line)) {
+            if (line.rfind("volume=", 0) == 0) c.volume = std::clamp(std::atoi(line.c_str() + 7), 0, 100);
+            else if (line.rfind("brightness=", 0) == 0) c.brightness = std::clamp(std::atoi(line.c_str() + 11), 5, 100);
+        }
+        c.dirty = true;
+    };
+    if (!levels_file.empty()) read_levels();
+    c.set_level = [&](const std::string& what, int value) {
+        if (what == "volume") c.volume = std::clamp(value, 0, 100), value = c.volume;
+        else if (what == "brightness") c.brightness = std::clamp(value, 5, 100), value = c.brightness;
+        else return;
+        level_set_at = SDL_GetTicks();
+        c.dirty = true;
+        if (control_file.empty()) return;
+        // Both levels each time: the runner takes the file away once read, so a level in a file it had not read
+        // yet is never lost to the next one.
+        const std::string pending = control_file + ".tmp";
+        {
+            std::ofstream out(pending, std::ios::trunc);
+            if (c.volume >= 0) out << "volume=" << c.volume << '\n';
+            if (c.brightness >= 0) out << "brightness=" << c.brightness << '\n';
+        }
+        std::error_code e;
+        fs::rename(pending, control_file, e);
+    };
     SDL_GameController* pad = nullptr;
     for (int i = 0; i < SDL_NumJoysticks() && !pad && !pad_device.active(); ++i)
         if (SDL_IsGameController(i)) pad = SDL_GameControllerOpen(i);
@@ -351,6 +432,11 @@ int main(int argc, char** argv) {
         c.dirty = true;
     };
     c.quit = [&]() { running = false; };
+    c.crossfade = [&]() {
+        snapshot();
+        trans_back = false;
+        c.dirty = true;
+    };
 
     if (!open_file.empty()) {
         Item item;
@@ -396,14 +482,23 @@ int main(int argc, char** argv) {
             repeat.up(k);
         }
     };
-    bool finger_down = false;
-    auto send_touch = [&](TouchEvent::Kind kind, double x, double y) {
+    // One finger at a time across both panels: the panel it went down on has it until it lifts.
+    int finger_panel = -1; // 0 upper, 1 lower
+    auto send_touch = [&](TouchEvent::Kind kind, double x, double y, bool upper = false) {
         if (stack.empty()) return;
-        if (kind == TouchEvent::Down) finger_down = true;
-        if (kind == TouchEvent::Move && !finger_down) return;
-        if (kind == TouchEvent::Up) finger_down = false;
+        if (upper && !stack.back()->upper_touch()) return;
+        const int panel = upper ? 0 : 1;
+        if (kind == TouchEvent::Down) {
+            if (finger_panel >= 0 && finger_panel != panel) return;
+            finger_panel = panel;
+        } else if (finger_panel != panel) {
+            return;
+        } else if (kind == TouchEvent::Up) {
+            finger_panel = -1;
+        }
         TouchEvent t;
         t.kind = kind;
+        t.upper = upper;
         t.x = std::clamp(x, 0.0, double(PW - 1));
         t.y = std::clamp(y, 0.0, double(PH - 1));
         t.at = SDL_GetTicks();
@@ -414,31 +509,68 @@ int main(int argc, char** argv) {
     std::vector<ScriptLine> script = script_file.empty() ? std::vector<ScriptLine>{} : read_script(script_file);
     size_t script_at = 0;
     const uint32_t started = SDL_GetTicks();
+    auto draw_volume_hud = [&](Panel& p, uint32_t now) {
+        // The volume, for a moment after a volume key: the card games show (src/platform/hud_style.hpp's
+        // volume: same place and parts), in the launcher's colours.
+        if (volume_at && now - volume_at < 1600 && volume_level >= 0 && !c.levels_shown) {
+            constexpr int hx = 108, hy = 104, hw = 424, hh = 82, pad_px = 10;
+            if (!volume_tex) {
+                FontScale fs_(c.font, c.scale);
+                const play::Look& L = c.look;
+                const int level = std::clamp(volume_level, 0, 100);
+                Canvas cv(hw + 2 * pad_px, hh + 2 * pad_px, c.scale);
+                std::fill(cv.data(), cv.data() + size_t(cv.pixel_w()) * cv.pixel_h(), 0u);
+                play::soft_round(cv, pad_px, pad_px + 4, hw, hh, 20, L.shadow(), L.dark ? 110 : 50);
+                cv.rounded_rect(pad_px, pad_px, hw, hh, 20, play::mix(L.panel, L.line, 90));
+                cv.rounded_rect(pad_px + 1, pad_px + 1, hw - 2, hh - 2, 19, L.panel);
+                const int x = pad_px, y = pad_px;
+                glyph(cv, Glyph::Audio, x + 38, y + 28, 28, level ? L.ink : L.muted, L.panel);
+                const std::string word = c.tr(level ? "Volume" : "Muted");
+                c.font.draw(cv, x + 64, c.font.centred(24, y + 28), word, 24, L.ink);
+                const std::string pct = std::to_string(level) + "%";
+                c.font.draw(cv, x + hw - 24 - c.font.measure(pct, 24), c.font.centred(24, y + 28), pct, 24,
+                            level ? L.accent : L.muted);
+                cv.rounded_rect(x + 24, y + 57, hw - 48, 10, 5, L.line);
+                if (level) cv.rounded_rect(x + 24, y + 57, std::max(10, (hw - 48) * level / 100), 10, 5, L.accent);
+                upload(p.r, volume_tex, cv, true, true);
+            }
+            const double t = (now - volume_at) / 1600.0;
+            const int alpha = t < .85 ? 255 : int(255 * (1 - (t - .85) / .15));
+            const double rise = c.animations() ? 6 * (1 - ease_out(std::min(1.0, t * 7))) : 0;
+            draw(p.r, volume_tex, hx - pad_px, hy - pad_px + rise, alpha);
+            c.dirty = true; // until it has faded
+        }
+    };
     auto shoot = [&](const std::string& name) {
-        // Both panels drawn again into one picture: upper above lower.
-        std::vector<uint32_t> px(size_t(PW) * PH * 2);
+        // Both panels drawn again into one picture: upper above lower, at the panels' own pixels.
+        const int sw = int(std::lround(PW * c.scale)), sh = int(std::lround(PH * c.scale));
+        std::vector<uint32_t> px(size_t(sw) * sh * 2);
         for (int i = 0; i < 2; ++i) {
             Panel& p = i == 0 ? c.upper : c.lower;
             use_panel(p);
-            SDL_Texture* t = SDL_CreateTexture(p.r, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_TARGET, PW, PH);
+            SDL_Texture* t = SDL_CreateTexture(p.r, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_TARGET, sw, sh);
             SDL_SetRenderTarget(p.r, t);
             SDL_RenderSetViewport(p.r, nullptr);
+            SDL_RenderSetScale(p.r, c.scale, c.scale);
             SDL_SetRenderDrawColor(p.r, 0, 0, 0, 255);
             SDL_RenderClear(p.r);
             draw_panel(p, i == 0, *stack.back());
-            if (i == 1) c.ripples.draw(p.r, c.now, c.look.accent, c.animations());
-            SDL_Rect all{0, 0, PW, PH};
-            SDL_RenderReadPixels(p.r, &all, SDL_PIXELFORMAT_ABGR8888, px.data() + size_t(i) * PW * PH, PW * 4);
+            if ((i == 0) == stack.back()->controls_upper()) c.ripples.draw(p.r, c.now, c.look.accent, c.animations());
+            if (i == 0) draw_volume_hud(p, c.now);
+            SDL_Rect all{0, 0, sw, sh};
+            SDL_RenderReadPixels(p.r, &all, SDL_PIXELFORMAT_ABGR8888, px.data() + size_t(i) * sw * sh, sw * 4);
+            SDL_RenderSetScale(p.r, 1, 1);
             SDL_SetRenderTarget(p.r, nullptr);
             SDL_DestroyTexture(t);
         }
         fs::create_directories(shots, ec);
-        write_png(shots + "/" + name + ".png", px.data(), PW, PH * 2);
+        write_png(shots + "/" + name + ".png", px.data(), sw, sh * 2);
         std::fprintf(stderr, "rgds-media: shot %s\n", name.c_str());
     };
 
     uint64_t frames = 0;
     double frame_ms_total = 0;
+    uint32_t opened_at = 0;
     while (running && !stop_requested) {
         SDL_Event e;
         const bool busy = c.dirty || trans_live || c.ripples.active() || (!stack.empty() && stack.back()->live());
@@ -459,39 +591,43 @@ int main(int argc, char** argv) {
                 Key k = key_for_button(e.cbutton.button, ok);
                 if (ok) press(k, e.type == SDL_CONTROLLERBUTTONDOWN);
             } else if (e.type == SDL_FINGERDOWN || e.type == SDL_FINGERMOTION || e.type == SDL_FINGERUP) {
-                // The lower panel's touches: the bridge's reader (touch id -2), or the lower window's own.
+                // The lower panel's touches: the bridge's reader (touch id -2), or the lower window's own; the
+                // upper window's own are the upper panel's.
                 bool lower = e.tfinger.touchId == -2 ||
                              (two && c.lower.window && e.tfinger.windowID == SDL_GetWindowID(c.lower.window));
-                if (!lower) continue;
+                bool upper = !lower && two && c.upper.window && e.tfinger.windowID == SDL_GetWindowID(c.upper.window);
+                if (!lower && !upper) continue;
                 auto kind = e.type == SDL_FINGERDOWN ? TouchEvent::Down
                             : e.type == SDL_FINGERUP ? TouchEvent::Up
                                                      : TouchEvent::Move;
-                send_touch(kind, e.tfinger.x * PW, e.tfinger.y * PH);
+                send_touch(kind, e.tfinger.x * PW, e.tfinger.y * PH, upper);
             } else if (!two && (e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP ||
                                 (e.type == SDL_MOUSEMOTION && (e.motion.state & SDL_BUTTON_LMASK)))) {
-                // A desktop: the mouse is a finger on the lower half of the window.
+                // A desktop: the mouse is a finger on whichever half of the window it went down on.
                 if (e.type != SDL_MOUSEMOTION && e.button.which == SDL_TOUCH_MOUSEID) continue;
                 int mx = e.type == SDL_MOUSEMOTION ? e.motion.x : e.button.x;
                 int my = e.type == SDL_MOUSEMOTION ? e.motion.y : e.button.y;
                 float lx = 0, ly = 0;
                 SDL_RenderWindowToLogical(c.upper.r, mx, my, &lx, &ly);
-                if (ly < PH && e.type == SDL_MOUSEBUTTONDOWN) continue;
                 auto kind = e.type == SDL_MOUSEBUTTONDOWN ? TouchEvent::Down
                             : e.type == SDL_MOUSEBUTTONUP ? TouchEvent::Up
                                                           : TouchEvent::Move;
-                send_touch(kind, lx, ly - PH);
+                const bool on_upper = kind == TouchEvent::Down ? ly < PH : finger_panel == 0;
+                send_touch(kind, lx, on_upper ? ly : ly - PH, on_upper);
             }
         }
-        for (const auto& point : lower_touch.poll()) {
-            if (point.kind > 2) { // cancelled
-                send_touch(TouchEvent::Up, point.x, point.y);
-                continue;
+        for (int panel = 0; panel < 2; ++panel)
+            for (const auto& point : (panel == 0 ? upper_touch : lower_touch).poll()) {
+                const bool upper = panel == 0;
+                if (point.kind > 2) { // cancelled
+                    send_touch(TouchEvent::Up, point.x, point.y, upper);
+                    continue;
+                }
+                send_touch(point.kind == 0   ? TouchEvent::Down
+                           : point.kind == 1 ? TouchEvent::Move
+                                             : TouchEvent::Up,
+                           point.x, point.y, upper);
             }
-            send_touch(point.kind == 0   ? TouchEvent::Down
-                       : point.kind == 1 ? TouchEvent::Move
-                                         : TouchEvent::Up,
-                       point.x, point.y);
-        }
         if (!volume_hud.empty() && SDL_GetTicks() - hud_checked > 120) {
             hud_checked = SDL_GetTicks();
             std::error_code hud_error;
@@ -503,12 +639,18 @@ int main(int argc, char** argv) {
                 std::string line;
                 while (std::getline(in, line))
                     if (line.rfind("volume=", 0) == 0) volume_level = std::atoi(line.c_str() + 7);
-                if (!first) {
+                if (volume_level >= 0) c.volume = std::clamp(volume_level, 0, 100);
+                if (!first) c.dirty = true;
+                if (!first && !c.levels_shown) {
                     volume_at = hud_checked;
                     volume_tex.reset();
                     c.dirty = true;
                 }
             }
+        }
+        if (!levels_file.empty() && SDL_GetTicks() - levels_checked > 400 && SDL_GetTicks() - level_set_at > 1200) {
+            levels_checked = SDL_GetTicks();
+            read_levels();
         }
         if (pad_device.active()) {
             bool home = false;
@@ -531,11 +673,11 @@ int main(int argc, char** argv) {
                 bool ok;
                 Key k = key_by_name(s.a, ok);
                 if (ok) send_key(k, false);
-            } else if (s.verb == "touch") {
+            } else if (s.verb == "touch" || s.verb == "utouch") {
                 send_touch(s.a == "down" ? TouchEvent::Down
                            : s.a == "up" ? TouchEvent::Up
                                          : TouchEvent::Move,
-                           s.x, s.y);
+                           s.x, s.y, s.verb == "utouch");
             } else if (s.verb == "shot" && !shots.empty() && !stack.empty()) {
                 c.now = now;
                 stack.back()->update(now);
@@ -569,25 +711,16 @@ int main(int argc, char** argv) {
                 }
             }
             draw_panel(p, i == 0, top);
-            if (i == 1) c.ripples.draw(p.r, now, c.look.accent, c.animations());
-            // The volume, for a moment after a volume key: a pill at the top of the upper screen.
-            if (i == 0 && volume_at && now - volume_at < 1600 && volume_level >= 0) {
-                if (!volume_tex) {
-                    Canvas cv(260, 52);
-                    std::fill(cv.data(), cv.data() + size_t(cv.w()) * cv.h(), 0u);
-                    cv.rounded_rect(0, 0, 260, 52, 26, Rgb{0, 0, 0}, 170);
-                    glyph(cv, Glyph::Audio, 30, 26, 24, Rgb{255, 255, 255}, Rgb{0, 0, 0});
-                    cv.rounded_rect(58, 22, 150, 8, 4, Rgb{255, 255, 255}, 70);
-                    cv.rounded_rect(58, 22, std::max(8, 150 * std::clamp(volume_level, 0, 100) / 100), 8, 4,
-                                    c.look.accent);
-                    std::string pct = std::to_string(volume_level);
-                    c.font.draw(cv, 246 - c.font.measure(pct, 20), c.font.centred(20, 26), pct, 20, Rgb{255, 255, 255});
-                    upload(p.r, volume_tex, cv, true, true);
+            if ((i == 0) == top.controls_upper()) c.ripples.draw(p.r, now, c.look.accent, c.animations());
+            if (i == 0) draw_volume_hud(p, now);
+            // A film or book opened from the launcher comes up out of the black its loader ended in.
+            if (!open_file.empty() && c.animations()) {
+                if (!opened_at) opened_at = now;
+                const double f = (now - opened_at) / 450.0;
+                if (f < 1) {
+                    fill(p.r, 0, 0, PW, PH, Rgb{0, 0, 0}, int(255 * (1 - ease_out(f))));
+                    c.dirty = true;
                 }
-                const double t = (now - volume_at) / 1600.0;
-                const int alpha = t < .8 ? 255 : int(255 * (1 - (t - .8) / .2));
-                draw(p.r, volume_tex, (PW - 260) / 2.0, 18 - 8 * ease_out(1 - std::min(1.0, t * 8)), alpha);
-                c.dirty = true; // until it has faded
             }
             // The screen that went: fades and grows a touch (forward) or shrinks back into place (back).
             if (trans_live) {

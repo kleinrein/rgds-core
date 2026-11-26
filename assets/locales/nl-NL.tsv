@@ -1519,6 +1519,7 @@ Just you	Alleen jij
 Buttons, shortcut and fast-forward	Knoppen, sneltoets en vooruitspoelen
 DS nickname	DS-naam
 Join or host	Meedoen of hosten
+Smooth (2 players)	Soepel (2 spelers)
 Host	Host
 Sharing details	Deelgegevens
 Graphics saved.	Graphics opgeslagen.
@@ -1819,6 +1820,7 @@ Sleep in	Slaapstand over
 Sleep timer	Slaaptimer
 Smaller	Kleiner
 Stand mode	Standmodus
+Touch below for the remote	Tik onder voor de afstandsbediening
 Stretch	Uitrekken
 Subtitles	Ondertitels
 Tap or press A to play now	Tik of druk op A om nu af te spelen
@@ -2071,6 +2073,7 @@ Charge cycles	Laadcycli
 Since unplugged	Sinds losgekoppeld
 This handheld does not report its battery.	Dit apparaat meldt zijn batterij niet.
 The battery's capacity is not known yet.	De capaciteit van de batterij is nog niet bekend.
+Measured once the battery runs low and charges full.	Wordt gemeten zodra de batterij bijna leeg was en volledig is opgeladen.
 Your battery is in good health.	Je batterij is in goede staat.
 Your battery holds clearly less than when new.	Je batterij houdt duidelijk minder vast dan nieuw.
 On the charger	Aan de lader
@@ -2079,3 +2082,10 @@ Charged to {0}%	Opgeladen tot {0}%
 Last 7 days on battery	Laatste 7 dagen op batterij
 What uses your battery shows here after some time unplugged.	Wat je batterij gebruikt, zie je hier na een tijdje zonder lader.
 Menus & Home	Menu's en Home
+Orientation	Stand
+Sideways	Zijwaarts
+Upright	Rechtop
+With controls	Met bediening
+Left hand	Linkerhand
+Right hand	Rechterhand
+Volume and brightness	Volume en helderheid

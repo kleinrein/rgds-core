@@ -1519,6 +1519,7 @@ Just you	Só tu
 Buttons, shortcut and fast-forward	Botões, atalho e avanço rápido
 DS nickname	Nome da DS
 Join or host	Juntar ou criar
+Smooth (2 players)	Fluido (2 jogadores)
 Host	Criar
 Sharing details	Detalhes da partilha
 Graphics saved.	Gráficos guardados.
@@ -1819,6 +1820,7 @@ Sleep in	Desligar em
 Sleep timer	Temporizador
 Smaller	Menor
 Stand mode	Modo suporte
+Touch below for the remote	Toque em baixo para o comando
 Stretch	Esticar
 Subtitles	Legendas
 Tap or press A to play now	Toque ou prima A para reproduzir já
@@ -2071,6 +2073,7 @@ Charge cycles	Ciclos de carga
 Since unplugged	Desde que desligou
 This handheld does not report its battery.	Esta consola não indica a sua bateria.
 The battery's capacity is not known yet.	A capacidade da bateria ainda não é conhecida.
+Measured once the battery runs low and charges full.	Medida quando a bateria fica fraca e depois carrega por completo.
 Your battery is in good health.	A tua bateria está em bom estado.
 Your battery holds clearly less than when new.	A tua bateria guarda bem menos do que quando nova.
 On the charger	No carregador
@@ -2079,3 +2082,10 @@ Charged to {0}%	Carregada até {0}%
 Last 7 days on battery	Últimos 7 dias na bateria
 What uses your battery shows here after some time unplugged.	O que usa a bateria aparece aqui após algum tempo fora do carregador.
 Menus & Home	Menus e Início
+Orientation	Orientação
+Sideways	De lado
+Upright	Na vertical
+With controls	Com controlos
+Left hand	Mão esquerda
+Right hand	Mão direita
+Volume and brightness	Volume e brilho

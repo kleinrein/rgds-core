@@ -832,14 +832,7 @@ void App::media_top(SDL_Renderer* r, int y) {
     // The status bar over a band of the theme, as on every page.
     rect(r, 0, y, 640, 48, "background");
     status_bar(r, y);
-    // The shoulders name the sections either side.
-    const auto list = media_section_list();
-    if (list.size() > 1) {
-        const auto at = std::find(list.begin(), list.end(), mu.section);
-        const int i = at == list.end() ? 0 : int(at - list.begin()), n = int(list.size());
-        shoulder_tab(r, y, false, "L", locale.text(media_layout::section_names[size_t(list[size_t((i + n - 1) % n)])]));
-        shoulder_tab(r, y, true, "R", locale.text(media_layout::section_names[size_t(list[size_t((i + 1) % n)])]));
-    }
+    media_section_shoulders(r, y);
     if (current && current->kind != MediaEntry::Kind::Folder) {
         const MediaPlace p = media_place(*current);
         const std::string a = p.started() && !p.finished() ? (current->books ? "Read on" : "Resume")
@@ -847,6 +840,16 @@ void App::media_top(SDL_Renderer* r, int y) {
                                                            : "Play";
         media_hero_hints(r, y, {{"A", a}, {"X", "Options"}});
     } else if (current) media_hero_hints(r, y, {{"A", "Open"}});
+}
+
+// The shoulders name the sections either side.
+void App::media_section_shoulders(SDL_Renderer* r, int y) {
+    const auto list = media_section_list();
+    if (list.size() < 2) return;
+    const auto at = std::find(list.begin(), list.end(), mu.section);
+    const int i = at == list.end() ? 0 : int(at - list.begin()), n = int(list.size());
+    shoulder_tab(r, y, false, "L", locale.text(media_layout::section_names[size_t(list[size_t((i + n - 1) % n)])]));
+    shoulder_tab(r, y, true, "R", locale.text(media_layout::section_names[size_t(list[size_t((i + 1) % n)])]));
 }
 
 // Music's library under Media: the focused row's cover large over a blur of itself (the engine's 44 px cover,

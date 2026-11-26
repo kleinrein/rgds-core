@@ -2,6 +2,7 @@
 // A panel-sized picture drawn on the CPU (the companion screen), and the
 // launcher's own rounded font so the player reads like the rest of RG DS.
 #pragma once
+#include <cmath>
 #include <cstdint>
 #include <map>
 #include <string>
@@ -18,19 +19,41 @@ struct Rgb {
 };
 Rgb mix(Rgb a, Rgb b, int t256); // t256 = 0: a, 256: b
 
+// Drawn in layout units, stored in panel pixels: `scale` panel pixels a unit (1 on the RG DS; 1.6 on the RG DS
+// Plus's 1024x768, whose second screen is laid out at the RG DS's 640x480 as the launcher's is). Every drawing call
+// takes layout units and fills the panel's own pixels, so edges, corners and text are as sharp as the panel; w()
+// and h() are the layout's size. data() and at() are the stored pixels (pixel_w() x pixel_h()), for code that
+// writes pixels itself: it works in panel pixels (to_px turns a layout length into them).
 class Canvas {
 public:
     Canvas(int w = 0, int h = 0) { resize(w, h); }
-    void resize(int w, int h) {
-        w_ = w;
-        h_ = h;
-        px_.assign(static_cast<size_t>(w) * h, 0xFF000000u);
+    Canvas(int w, int h, float scale) { resize(w, h, scale); }
+    void resize(int w, int h, float scale = 1) {
+        lw_ = w;
+        lh_ = h;
+        k_ = scale > 0 ? scale : 1;
+        w_ = k_ == 1 ? w : int(std::lround(w * k_));
+        h_ = k_ == 1 ? h : int(std::lround(h * k_));
+        px_.assign(static_cast<size_t>(w_) * h_, 0xFF000000u);
     }
-    int w() const { return w_; }
-    int h() const { return h_; }
+    // The same layout size and scale as `other`.
+    void resize_like(const Canvas& other, int w, int h) { resize(w, h, other.k_); }
+    int w() const { return lw_; }
+    int h() const { return lh_; }
+    float scale() const { return k_; }
+    int pixel_w() const { return w_; }
+    int pixel_h() const { return h_; }
+    // A layout position or length in panel pixels.
+    int to_px(double v) const { return k_ == 1 ? int(v) : int(std::lround(v * k_)); }
     uint32_t* data() { return px_.data(); }
     const uint32_t* data() const { return px_.data(); }
     uint32_t at(int x, int y) const { return px_[static_cast<size_t>(y) * w_ + x]; }
+    // One panel pixel blended (text, code drawing pixel by pixel at the panel's own size).
+    void put_px(int x, int y, Rgb c, int alpha = 255) {
+        if (x >= 0 && y >= 0 && x < w_ && y < h_) blend(px_[static_cast<size_t>(y) * w_ + x], c, alpha);
+    }
+    // `src` (pixel_w x pixel_h of a canvas of the same scale) at layout x, y, as it is.
+    void paste(const Canvas& src, int x, int y);
 
     void fill(Rgb c);
     void fill_rect(int x, int y, int w, int h, Rgb c, int alpha = 255);
@@ -48,7 +71,13 @@ public:
 
 private:
     void blend(uint32_t& dst, Rgb c, int alpha);
-    int w_ = 0, h_ = 0;
+    void fill_px(int x0, int y0, int x1, int y1, Rgb c, int alpha);
+    void rounded_px(int x, int y, int w, int h, int radius, Rgb c, int alpha);
+    void blit_px(const uint32_t* src, int sw, int sh, int dx, int dy, int dw, int dh, int alpha, bool keyed,
+                 uint32_t key);
+    int w_ = 0, h_ = 0;   // the stored pixels
+    int lw_ = 0, lh_ = 0; // the layout
+    float k_ = 1;
     std::vector<uint32_t> px_;
 };
 
@@ -76,6 +105,9 @@ public:
     bool loaded() const { return !atlases_.empty(); }
     void set_pixel(bool pixel) { pixel_ = pixel; }
     bool pixel() const { return pixel_; }
+    // The layout's scale (Canvas::scale) for measuring: text is laid out in layout units but drawn from the atlas
+    // of the panel's own size (rounded-26 for 16 at 1.6x), so measure() and ascent() answer for that atlas.
+    void set_scale(float scale) const { scale_ = scale > 0 ? scale : 1; }
     // The size text of `size` is really drawn at.
     static int snap(int size);
     int measure(const std::string& text, int size) const;
@@ -112,6 +144,8 @@ private:
     std::string directory_;
     std::vector<std::string> families_;
     bool pixel_ = false;
+    mutable float scale_ = 1; // set for each canvas it lays out on (Session::render_companion)
+    int native(int size, float scale) const;
 };
 
 std::vector<unsigned> utf8_codepoints(const std::string& s);

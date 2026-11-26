@@ -1,11 +1,24 @@
 #!/bin/sh
 # wpa_cli -a hook (started by net): an address for every network joined, gone again when it is left.
 #   wpa-event IFACE CONNECTED|DISCONNECTED
+# A hop to another access point of the same network (a mesh, 2026-11-26) also says CONNECTED, sometimes after a
+# DISCONNECTED. Starting udhcpc again for it cleared the address first (a fresh udhcpc always deconfigs) and the
+# handheld stayed without one for 20 s and more, so PocketTube's search failed with "name resolution". Now the same
+# network keeps its address and udhcpc only renews the lease; a DISCONNECTED clears it only if no network is back
+# a few seconds later.
 stop() { [ -f /run/rgds/udhcpc.pid ] && kill $(cat /run/rgds/udhcpc.pid) 2>/dev/null; rm -f /run/rgds/udhcpc.pid; }
+running() { [ -f /run/rgds/udhcpc.pid ] && kill -0 $(cat /run/rgds/udhcpc.pid) 2>/dev/null; }
+ssid() { wpa_cli -i "$1" status 2>/dev/null | sed -n 's/^ssid=//p'; }
 case $2 in
 CONNECTED)
-    stop
-    udhcpc -b -t 10 -i "$1" -p /run/rgds/udhcpc.pid -s /usr/share/udhcpc/default.script > /dev/null 2>&1
+    now=$(ssid "$1")
+    if [ -n "$now" ] && [ "$now" = "$(cat /run/rgds/wifi-ssid 2>/dev/null)" ] && running; then
+        kill -USR1 $(cat /run/rgds/udhcpc.pid) # the same network: renew, the address stays
+    else
+        stop
+        udhcpc -b -t 10 -i "$1" -p /run/rgds/udhcpc.pid -s /usr/share/udhcpc/default.script > /dev/null 2>&1
+    fi
+    printf '%s\n' "$now" > /run/rgds/wifi-ssid
     # the clock, once per boot: the RTC on this unit drifts (10 days fast under Banana)
     # (one at a time, the folder is the lock; ntpd -q waits for an answer for ever, so it gets a minute)
     [ -f /run/rgds/ntp-done ] || ! mkdir /run/rgds/ntp-running 2> /dev/null || (
@@ -14,7 +27,13 @@ CONNECTED)
     ) &
     ;;
 DISCONNECTED)
-    stop
-    ip addr flush dev "$1"
+    # wait out a hop; a network left for good loses its address
+    (
+        sleep 5
+        [ "$(wpa_cli -i "$1" status 2>/dev/null | sed -n 's/^wpa_state=//p')" = COMPLETED ] && exit 0
+        stop
+        rm -f /run/rgds/wifi-ssid
+        ip addr flush dev "$1"
+    ) &
     ;;
 esac

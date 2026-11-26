@@ -1,0 +1,224 @@
+diff --git a/core/src/avm1/property_map.rs b/core/src/avm1/property_map.rs
+index ac82a437..fc7d8326 100644
+--- a/core/src/avm1/property_map.rs
++++ b/core/src/avm1/property_map.rs
+@@ -13,48 +13,74 @@ use std::hash::{Hash, Hasher};
+ type FnvIndexMap<K, V> = IndexMap<K, V, FnvBuildHasher>;
+ 
+ /// A map from property names to values.
++///
++/// RG DS: deleting a property used to be IndexMap's shift_remove, which moves every later entry and renumbers it in
++/// the hash table: O(n) a delete, and a game deleting from a big object (Uphill Rush, a quarter of a race's CPU and
++/// 300 ms stalls on the handheld) paid it every frame. A delete is now a swap_remove (the last entry: a pop) and every
++/// key carries its insertion number, so Flash's order is put back by a sort only when the map is enumerated.
+ #[derive(Default, Clone, Debug, Collect)]
+ #[collect(no_drop)]
+-pub struct PropertyMap<'gc, V>(FnvIndexMap<PropertyName<'gc>, V>);
++pub struct PropertyMap<'gc, V> {
++    map: FnvIndexMap<PropertyName<'gc>, V>,
++    /// The insertion number the next new key gets.
++    next: u64,
++    /// A delete moved an entry out of insertion order: `order` sorts before anything reads the order.
++    unordered: bool,
++}
+ 
+ impl<'gc, V> PropertyMap<'gc, V> {
+     pub fn new() -> Self {
+-        Self(FnvIndexMap::default())
++        Self {
++            map: FnvIndexMap::default(),
++            next: 0,
++            unordered: false,
++        }
++    }
++
++    /// Puts the entries back in insertion order after deletes.
++    fn order(&mut self) {
++        if std::mem::take(&mut self.unordered) {
++            self.map.sort_by(|a, _, b, _| a.1.cmp(&b.1));
++        }
+     }
+ 
+     /// Returns the number of stored properties.
+     pub fn len(&self) -> usize {
+-        self.0.len()
++        self.map.len()
+     }
+ 
+     pub fn contains_key<T: AsRef<WStr>>(&self, key: T, case_sensitive: bool) -> bool {
+         if case_sensitive {
+-            self.0.contains_key(&CaseSensitive(key.as_ref()))
++            self.map.contains_key(&CaseSensitive(key.as_ref()))
+         } else {
+-            self.0.contains_key(&CaseInsensitive(key.as_ref()))
++            self.map.contains_key(&CaseInsensitive(key.as_ref()))
+         }
+     }
+ 
+     pub fn entry<'a>(&'a mut self, key: AvmString<'gc>, case_sensitive: bool) -> Entry<'gc, 'a, V> {
+         if case_sensitive {
+-            match self.0.get_index_of(&CaseSensitive(key.as_ref())) {
++            match self.map.get_index_of(&CaseSensitive(key.as_ref())) {
+                 Some(index) => Entry::Occupied(OccupiedEntry {
+-                    map: &mut self.0,
++                    map: &mut self.map,
++                    unordered: &mut self.unordered,
+                     index,
+                 }),
+                 None => Entry::Vacant(VacantEntry {
+-                    map: &mut self.0,
++                    map: &mut self.map,
++                    next: &mut self.next,
+                     key,
+                 }),
+             }
+         } else {
+-            match self.0.get_index_of(&CaseInsensitive(key.as_ref())) {
++            match self.map.get_index_of(&CaseInsensitive(key.as_ref())) {
+                 Some(index) => Entry::Occupied(OccupiedEntry {
+-                    map: &mut self.0,
++                    map: &mut self.map,
++                    unordered: &mut self.unordered,
+                     index,
+                 }),
+                 None => Entry::Vacant(VacantEntry {
+-                    map: &mut self.0,
++                    map: &mut self.map,
++                    next: &mut self.next,
+                     key,
+                 }),
+             }
+@@ -64,24 +90,29 @@ impl<'gc, V> PropertyMap<'gc, V> {
+     /// Gets the value for the specified property.
+     pub fn get<T: AsRef<WStr>>(&self, key: T, case_sensitive: bool) -> Option<&V> {
+         if case_sensitive {
+-            self.0.get(&CaseSensitive(key.as_ref()))
++            self.map.get(&CaseSensitive(key.as_ref()))
+         } else {
+-            self.0.get(&CaseInsensitive(key.as_ref()))
++            self.map.get(&CaseInsensitive(key.as_ref()))
+         }
+     }
+ 
+     /// Gets a mutable reference to the value for the specified property.
+     pub fn get_mut<T: AsRef<WStr>>(&mut self, key: T, case_sensitive: bool) -> Option<&mut V> {
+         if case_sensitive {
+-            self.0.get_mut(&CaseSensitive(key.as_ref()))
++            self.map.get_mut(&CaseSensitive(key.as_ref()))
+         } else {
+-            self.0.get_mut(&CaseInsensitive(key.as_ref()))
++            self.map.get_mut(&CaseInsensitive(key.as_ref()))
+         }
+     }
+ 
+     /// Gets a value by index, based on insertion order.
+     pub fn get_index(&self, index: usize) -> Option<&V> {
+-        self.0.get_index(index).map(|(_, v)| v)
++        if !self.unordered {
++            return self.map.get_index(index).map(|(_, v)| v);
++        }
++        let mut all: Vec<_> = self.map.iter().map(|(k, v)| (k.1, v)).collect();
++        all.sort_by_key(|e| e.0);
++        all.get(index).map(|e| e.1)
+     }
+ 
+     pub fn insert(&mut self, key: AvmString<'gc>, value: V, case_sensitive: bool) -> Option<V> {
+@@ -96,21 +127,26 @@ impl<'gc, V> PropertyMap<'gc, V> {
+ 
+     /// Returns the value tuples in Flash's iteration order (most recently added first).
+     pub fn iter(&self) -> impl Iterator<Item = (AvmString<'gc>, &V)> {
+-        self.0.iter().rev().map(|(k, v)| (k.0, v))
++        let mut all: Vec<_> = self.map.iter().collect();
++        if self.unordered {
++            all.sort_by_key(|(k, _)| k.1);
++        }
++        all.into_iter().rev().map(|(k, v)| (k.0, v))
+     }
+ 
+     /// Returns the key-value tuples in Flash's iteration order (most recently added first).
+     pub fn iter_mut(&mut self) -> impl Iterator<Item = (AvmString<'gc>, &mut V)> {
+-        self.0.iter_mut().rev().map(|(k, v)| (k.0, v))
++        self.order();
++        self.map.iter_mut().rev().map(|(k, v)| (k.0, v))
+     }
+ 
+     pub fn remove<T: AsRef<WStr>>(&mut self, key: T, case_sensitive: bool) -> Option<V> {
+-        // Note that we must use shift_remove to maintain order in case this object is enumerated.
+-        if case_sensitive {
+-            self.0.shift_remove(&CaseSensitive(key.as_ref()))
++        let index = if case_sensitive {
++            self.map.get_index_of(&CaseSensitive(key.as_ref()))
+         } else {
+-            self.0.shift_remove(&CaseInsensitive(key.as_ref()))
+-        }
++            self.map.get_index_of(&CaseInsensitive(key.as_ref()))
++        }?;
++        remove_index(&mut self.map, &mut self.unordered, index).map(|(_, v)| v)
+     }
+ }
+ 
+@@ -121,12 +157,25 @@ pub enum Entry<'gc, 'a, V> {
+ 
+ pub struct OccupiedEntry<'gc, 'a, V> {
+     map: &'a mut FnvIndexMap<PropertyName<'gc>, V>,
++    unordered: &'a mut bool,
+     index: usize,
+ }
+ 
++/// Removes one entry: the last one is popped, any other swapped with the last (the map then out of insertion order).
++fn remove_index<'gc, V>(
++    map: &mut FnvIndexMap<PropertyName<'gc>, V>,
++    unordered: &mut bool,
++    index: usize,
++) -> Option<(PropertyName<'gc>, V)> {
++    if index + 1 != map.len() {
++        *unordered = true;
++    }
++    map.swap_remove_index(index)
++}
++
+ impl<'gc, V> OccupiedEntry<'gc, '_, V> {
+     pub fn remove_entry(&mut self) -> (AvmString<'gc>, V) {
+-        let (k, v) = self.map.shift_remove_index(self.index).unwrap();
++        let (k, v) = remove_index(self.map, self.unordered, self.index).unwrap();
+         (k.0, v)
+     }
+ 
+@@ -145,12 +194,15 @@ impl<'gc, V> OccupiedEntry<'gc, '_, V> {
+ 
+ pub struct VacantEntry<'gc, 'a, V> {
+     map: &'a mut FnvIndexMap<PropertyName<'gc>, V>,
++    next: &'a mut u64,
+     key: AvmString<'gc>,
+ }
+ 
+ impl<V> VacantEntry<'_, '_, V> {
+     pub fn insert(self, value: V) {
+-        self.map.insert(PropertyName(self.key), value);
++        let n = *self.next;
++        *self.next += 1;
++        self.map.insert(PropertyName(self.key, n), value);
+     }
+ }
+ 
+@@ -190,9 +242,18 @@ impl<'gc> Equivalent<PropertyName<'gc>> for CaseSensitive<&WStr> {
+ /// SWFv6, which is case insensitive. The equality check is handled by the `Equivalent`
+ /// impls above, which allow it to be either case-sensitive or insensitive.
+ /// Note that the property of if key1 == key2 -> hash(key1) == hash(key2) still holds.
+-#[derive(Debug, Clone, PartialEq, Eq, Collect)]
++/// The second field is the insertion number (RG DS), left out of equality and the hash.
++#[derive(Debug, Clone, Collect)]
+ #[collect(no_drop)]
+-struct PropertyName<'gc>(AvmString<'gc>);
++struct PropertyName<'gc>(AvmString<'gc>, u64);
++
++impl PartialEq for PropertyName<'_> {
++    fn eq(&self, other: &Self) -> bool {
++        self.0 == other.0
++    }
++}
++
++impl Eq for PropertyName<'_> {}
+ 
+ impl Hash for PropertyName<'_> {
+     fn hash<H: Hasher>(&self, state: &mut H) {

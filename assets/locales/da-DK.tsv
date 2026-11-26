@@ -1519,6 +1519,7 @@ Just you	Kun dig
 Buttons, shortcut and fast-forward	Knapper, genvej og fremspoling
 DS nickname	DS-kaldenavn
 Join or host	Deltag eller vær vært
+Smooth (2 players)	Glidende (2 spillere)
 Host	Vært
 Sharing details	Delingsoplysninger
 Graphics saved.	Grafik gemt.
@@ -1819,6 +1820,7 @@ Sleep in	Sover om
 Sleep timer	Sleep-timer
 Smaller	Mindre
 Stand mode	Stå-tilstand
+Touch below for the remote	Tryk nederst for fjernbetjeningen
 Stretch	Stræk
 Subtitles	Undertekster
 Tap or press A to play now	Tryk, eller tryk på A, for at afspille nu
@@ -2071,6 +2073,7 @@ Charge cycles	Opladningscyklusser
 Since unplugged	Siden frakobling
 This handheld does not report its battery.	Denne enhed oplyser ikke sit batteri.
 The battery's capacity is not known yet.	Batteriets kapacitet kendes ikke endnu.
+Measured once the battery runs low and charges full.	Måles, når batteriet har været næsten tomt og er ladet helt op.
 Your battery is in good health.	Dit batteri er i god stand.
 Your battery holds clearly less than when new.	Dit batteri rummer tydeligt mindre end som nyt.
 On the charger	I opladeren
@@ -2079,3 +2082,10 @@ Charged to {0}%	Opladet til {0}%
 Last 7 days on battery	Seneste 7 dage på batteri
 What uses your battery shows here after some time unplugged.	Hvad der bruger batteriet, vises her efter et stykke tid uden oplader.
 Menus & Home	Menuer og Hjem
+Orientation	Orientering
+Sideways	Sidelæns
+Upright	Opret
+With controls	Med knapper
+Left hand	Venstre hånd
+Right hand	Højre hånd
+Volume and brightness	Lydstyrke og lysstyrke

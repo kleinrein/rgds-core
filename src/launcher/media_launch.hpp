@@ -113,3 +113,73 @@ void App::media_home_top(SDL_Renderer* r, int y) {
     raw_label(r, note, 320 - std::min(500, label_width(note, 18, false)) / 2, y + 282, 18, "muted", 500);
     key_hints(r, 320, y + 432, {{"A", "Open"}}, 0);
 }
+
+// ---- A film starting
+
+const MediaEntry* App::film_launching() const {
+    if (!launching || !media_launch || media_launch_file.empty()) return nullptr;
+    for (const auto& e : mu.entries)
+        if (e.path == media_launch_file) return e.kind == MediaEntry::Kind::Video ? &e : nullptr;
+    return nullptr;
+}
+
+// Not a game's loader: the room goes dark. Both panels fade to black, the film's picture stays lit on the upper one
+// with its title under it, and a thin line breathes on the lower one until rgds-media has the panels. The handoff
+// ends in black, so the film fades up out of the same black.
+void App::film_loading_overlay(SDL_Renderer* r, int y, bool lower, Uint32 now) {
+    const MediaEntry& e = *film_launching();
+    const bool motion = preferences.animations;
+    const double t = double(now - launch_at);
+    auto ease = [](double v) { return 1 - std::pow(1 - std::clamp(v, 0.0, 1.0), 3); };
+    const bool exiting = launch_phase == LaunchPhase::Exiting;
+    // The dark: in over 380 ms; at the handoff all of it.
+    double dark = motion ? ease(t / 380) : 1;
+    if (exiting && launch_handoff) dark = 1;
+    // What sits in the dark: in after the dark has begun, out quickly at a cancelled launch.
+    double shown = motion ? ease((t - 120) / 420) : 1;
+    if (exiting) shown *= launch_handoff ? 1 : launch_opacity(now);
+    s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
+    const double wash = exiting && !launch_handoff ? dark * launch_opacity(now) : dark;
+    blend_rect(r, 0, y, 640, 480, Color{0, 0, 0}, int(255 * wash));
+    const int alpha = int(255 * shown);
+    if (alpha <= 0) return;
+    if (!lower) {
+        // The picture, drifting a touch closer while it waits (as a cinema's screen seems to).
+        SDL_Rect box{120, y + 92, 400, 225};
+        const bool picture = !e.picture.empty() && media.ready(r, e.picture);
+        if (picture) box = media.fitted_box(r, e.picture, box);
+        const double grow = motion ? .035 * ease(t / 2400) : 0;
+        const int gw = int(std::lround(box.w * grow)), gh = int(std::lround(box.h * grow));
+        box = {box.x - gw / 2, box.y - gh / 2, box.w + gw, box.h + gh};
+        rounded.opacity = alpha;
+        if (!picture || !media.draw(r, e.picture, box, false, Uint8(alpha), true, 14)) {
+            alpha_round(r, box.x, box.y, box.w, box.h, 14, Color{24, 26, 30}, alpha);
+            music_glyph(r, MusicGlyph::Film, box.x + box.w / 2, box.y + box.h / 2, 64, Color{120, 126, 136}, alpha);
+        }
+        const std::string title = e.name;
+        const int width = std::min(560, label_width(title, 24, false));
+        raw_label_colour(r, title, 320 - width / 2, box.y + box.h + 30, 24, Color{236, 238, 242}, 560);
+        const MediaPlace place = media_place(e);
+        if (place.started() && !place.finished()) {
+            const std::string where = locale.text("Resume at") + " " + music_time(int64_t(place.position * 1000));
+            const int ww = std::min(560, label_width(where, 18, false));
+            raw_label_colour(r, where, 320 - ww / 2, box.y + box.h + 66, 18, Color{150, 156, 166}, 560);
+        }
+        rounded.opacity = 255;
+        return;
+    }
+    // The lower panel: a hairline with a soft light gliding along it.
+    const int lx = 250, lw = 140, ly = y + 239;
+    blend_rect(r, lx, ly, lw, 2, Color{255, 255, 255}, alpha * 40 / 255);
+    if (motion) {
+        const double phase = std::fmod(t / 1300.0, 1.0);
+        const double centre =
+            lx - 30 + (lw + 60) * (phase < .5 ? 2 * phase * phase : 1 - 2 * (1 - phase) * (1 - phase));
+        for (int i = -30; i <= 30; i++) {
+            const int x = int(centre) + i;
+            if (x < lx || x >= lx + lw) continue;
+            const double fall = 1 - std::abs(i) / 30.0;
+            blend_rect(r, x, ly, 1, 2, Color{255, 255, 255}, int(alpha * fall * fall * .9));
+        }
+    }
+}

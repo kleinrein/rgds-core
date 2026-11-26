@@ -16,6 +16,7 @@
 #include "companion/dock.hpp"
 #include "ui/kit.hpp"
 #include "ui/canvas.hpp"
+#include "ui/screens.hpp"
 #include "ui/colour.hpp"
 #include "ui/gb_palettes.hpp"
 
@@ -1620,6 +1621,54 @@ void test_zx_machine() {
 
 // Flash's touch pad: a slide moves the mouse, and the button is held by a second finger on the pad, by a finger kept
 // on Left while another slides, or by a tap and a slide.
+// The second screen on an RG DS Plus: laid out at 640x480, drawn at 1.6x the pixels (ui/canvas.hpp). Rects land on
+// the scaled pixels, text is drawn from the 1.6x atlas and measures as it does at 640x480, and the dock and the
+// Flash touch pad come out as the RG DS's, bigger. PLAY_TESTS_SHOTS=DIR writes them for a look.
+void test_plus_canvas() {
+    Canvas c(640, 480, 1.6f);
+    CHECK(c.w() == 640 && c.h() == 480 && c.pixel_w() == 1024 && c.pixel_h() == 768);
+    c.fill(Rgb{0, 0, 0});
+    c.fill_rect(10, 10, 10, 10, Rgb{255, 0, 0});
+    CHECK(c.at(16, 16) == rgb_to_px(0xFF0000) && c.at(31, 31) == rgb_to_px(0xFF0000));
+    CHECK(c.at(15, 15) == rgb_to_px(0) && c.at(32, 32) == rgb_to_px(0));
+    Font font;
+    if (!font.load(PLAY_FONTS)) return;
+    const int narrow = font.measure("Game menu", kit::body);
+    font.set_scale(1.6f);
+    const int wide = font.measure("Game menu", kit::body);
+    CHECK(std::abs(wide - narrow) <= narrow / 10); // the same layout width, from the 32 px atlas
+    Canvas t(640, 480, 1.6f);
+    t.fill(Rgb{0, 0, 0});
+    font.draw(t, 100, 100, "H", kit::body, Rgb{255, 255, 255});
+    int ink_rows = 0;
+    for (int y = 100; y < 180; ++y)
+        for (int x = 150; x < 220; ++x)
+            if (t.at(x, y) != rgb_to_px(0)) {
+                ++ink_rows;
+                break;
+            }
+    CHECK(ink_rows >= 20); // an H of the 32 px atlas (a 20 px H scaled would be 14 rows tall at 1.6x... drawn 1:1: more)
+    const char* dir = std::getenv("PLAY_TESTS_SHOTS");
+    for (float k : {1.0f, 1.6f}) {
+        font.set_scale(k);
+        Canvas out(640, 480, k);
+        Dock closed("Bloons", "FLASH");
+        auto pad = make_keyboard("flash");
+        pad->draw(out, Look{}, font, 0);
+        closed.draw(out, Look{}, font, Words{});
+        Canvas open(640, 480, k);
+        Dock dock("Bloons", "FLASH");
+        dock.set_full(true);
+        dock.draw(open, Look{}, font, Words{});
+        if (dir) {
+            const std::string tag = k == 1 ? "640" : "1024";
+            write_bmp(std::string(dir) + "/pad-" + tag + ".bmp", out);
+            write_bmp(std::string(dir) + "/dock-" + tag + ".bmp", open);
+        }
+    }
+    font.set_scale(1);
+}
+
 void test_touch_pad() {
     struct Mouse final : Core {
         int x = 0, y = 0;
@@ -1725,6 +1774,51 @@ void test_touch_pad() {
     step({{203, 102}, {150, 300}});
     CHECK(mouse.left);
     for (int i = 0; i < 5; ++i) pad->update(mouse, ++frame);
+    CHECK(!mouse.left);
+    // A quick slide carries the pointer further than the finger went, and the same however often the screen reports
+    // it: once a frame (the RG DS) or twice (the RG DS Plus).
+    auto flick = [&](int reports) {
+        auto quick = make_keyboard("flash");
+        mouse.x = mouse.y = 0;
+        quick->touch({Touch::Down, 100, 200});
+        quick->update(mouse, ++frame);
+        for (int x = 100; x < 340;) {
+            for (int r = 0; r < reports; ++r) quick->touch({Touch::Move, x += 24 / reports, 200});
+            quick->update(mouse, ++frame);
+        }
+        quick->touch({Touch::Up, 340, 200});
+        quick->update(mouse, ++frame);
+        return mouse.x;
+    };
+    const int once = flick(1), twice = flick(2);
+    CHECK(once > 240 * 2 && once == twice);
+
+    // An RG DS Plus's lower panel (1024x768): the pad fills it, so a finger far past 640x480 slides the mouse, and
+    // the buttons sit along the panel's own foot.
+    auto plus = make_keyboard("flash");
+    {
+        Canvas out(1024, 768);
+        Font font;
+        plus->draw(out, Look{}, font, 0);
+        const char* shot = std::getenv("PLAY_TESTS_SHOT");
+        if (shot) write_bmp(shot, out);
+    }
+    const int x0 = mouse.x;
+    plus->touch({Touch::Down, 900, 600});
+    plus->update(mouse, ++frame);
+    for (int x = 904; x <= 920; x += 4) {
+        plus->touch({Touch::Move, x, 600});
+        plus->update(mouse, ++frame);
+    }
+    plus->touch({Touch::Up, 920, 600});
+    plus->update(mouse, ++frame);
+    CHECK(mouse.x == x0 + 20);
+    // Left, the row's first button, near the panel's foot (on a 640x480 layout it was at y 424-472).
+    plus->touch({Touch::Down, 40, 768 - 8 - 24});
+    plus->update(mouse, ++frame);
+    CHECK(mouse.left);
+    plus->touch({Touch::Up, 40, 768 - 8 - 24});
+    for (int i = 0; i < 8; ++i) plus->update(mouse, ++frame);
     CHECK(!mouse.left);
 }
 
@@ -1903,6 +1997,7 @@ int main() {
     test_canvas();
     test_keyboard();
     test_touch_pad();
+    test_plus_canvas();
     std::printf("%d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }

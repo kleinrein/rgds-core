@@ -5,6 +5,11 @@ ready, 'C' once the launcher has let go), then rgds-media runs until Back or Hom
 comes back. Nothing of a game's runner is needed: no saves, no playtime, no shared menu. The volume keys keep
 working (audio.VolumeWatch) and rgds-media shows their level itself.
 
+rgds-media's touch sliders (a film's Volume and brightness popup) ask for a level through a small file
+(RGDS_MEDIA_CONTROL: volume=N, brightness=N); MediaControls applies it the way the launcher's Settings do (audio.Volume,
+system_controls.Hardware), keeps brightness in system.ini so the launcher finds it on return, and publishes what is
+set in RGDS_MEDIA_LEVELS for the sliders to start from.
+
     python3 runtime/media.py launch --app APP --data USERDATA [--open FILE] [--display-handoff-fd N]
     python3 runtime/media.py plan --app APP --data USERDATA      the command and folders, as JSON
 """
@@ -16,6 +21,8 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
+import time
 
 sys.dont_write_bytecode = True
 
@@ -73,7 +80,103 @@ def plan(app, data, open_file=None):
         except (OSError, ValueError):
             pass
     env['RGDS_MEDIA_VOLUME_HUD'] = str(data / 'session/volume-hud.ini')
+    env['RGDS_MEDIA_CONTROL'] = str(data / 'session/media-control.ini')
+    env['RGDS_MEDIA_LEVELS'] = str(data / 'session/media-levels.ini')
     return {'command': command, 'env': env, 'folders': {k: str(v) for k, v in folders.items()}, 'state': str(state)}
+
+
+def save_brightness(system_ini, percent):
+    """The brightness line of the launcher's system.ini (the rest kept as it is), written atomically."""
+    try:
+        lines = Path(system_ini).read_text().splitlines()
+    except OSError:
+        return False
+    out, found = [], False
+    for line in lines:
+        if line.startswith('brightness='):
+            line, found = f'brightness={percent}', True
+        out.append(line)
+    if not found:
+        return False  # not a system.ini the launcher wrote: leave it alone
+    pending = Path(str(system_ini) + '.media')
+    pending.write_text('\n'.join(out) + '\n')
+    os.replace(pending, system_ini)
+    return True
+
+
+class MediaControls:
+    """Levels asked for by rgds-media's sliders: polled every 40 ms while it runs."""
+    def __init__(self, data, volume):
+        self.data = Path(data)
+        self.volume = volume  # audio.Volume, shared with the volume keys
+        self.request = self.data / 'session/media-control.ini'
+        self.levels = self.data / 'session/media-levels.ini'
+        self.system_ini = self.data / 'system.ini'
+        self.stop = threading.Event()
+        self.thread = None
+        self.brightness = None
+        self.brightness_saved = None
+        self.brightness_at = 0.0
+
+    def hardware(self):
+        from system_controls import Hardware
+        return Hardware(self.data)
+
+    def publish(self):
+        from fields import write_fields
+        fields = dict(schema=1, volume=self.volume.status())
+        if self.brightness is not None:
+            fields['brightness'] = self.brightness
+        write_fields(self.levels, fields, durable=False)
+
+    def start(self):
+        self.request.unlink(missing_ok=True)
+        try:
+            self.brightness = self.hardware().status().get('brightness')
+        except (OSError, ValueError, subprocess.SubprocessError):
+            self.brightness = None
+        try:
+            self.publish()
+        except (OSError, ValueError, subprocess.SubprocessError) as error:
+            print(f'Media controls: {error}', file=sys.stderr, flush=True)
+        self.thread = threading.Thread(target=self.watch, name='rgds-media-controls', daemon=True)
+        self.thread.start()
+
+    def step(self):
+        from fields import read_fields
+        try:
+            fields = read_fields(self.request) if self.request.exists() else {}
+            if fields:
+                self.request.unlink(missing_ok=True)
+            if 'volume' in fields:
+                self.volume.apply(value=max(0, min(100, int(fields['volume']))))
+            if 'brightness' in fields and self.brightness is not None:
+                self.brightness = max(5, min(100, int(fields['brightness'])))
+                self.hardware().brightness(self.brightness)
+                self.brightness_at = time.monotonic()
+            if fields:
+                self.publish()
+        except (OSError, ValueError, subprocess.SubprocessError) as error:
+            print(f'Media controls: {error}', file=sys.stderr, flush=True)
+        # Saved once the slider rests, not on every step of a drag.
+        if self.brightness is not None and self.brightness != self.brightness_saved and \
+                time.monotonic() - self.brightness_at > .6:
+            try:
+                save_brightness(self.system_ini, self.brightness)
+            except OSError as error:
+                print(f'Media controls: {error}', file=sys.stderr, flush=True)
+            self.brightness_saved = self.brightness
+
+    def watch(self):
+        self.brightness_saved = self.brightness
+        while not self.stop.wait(.04):
+            self.step()
+
+    def close(self):
+        self.stop.set()
+        if self.thread:
+            self.thread.join(timeout=2)
+        self.step()  # a level asked for in the last moment, and an unsaved brightness
 
 
 def release_launcher_display(channel):
@@ -95,6 +198,7 @@ def launch(app, data, open_file=None, channel=None):
     Path(p['state']).mkdir(parents=True, exist_ok=True)
     from audio import VolumeWatch
     volume = VolumeWatch(Path(data))
+    controls = MediaControls(data, volume.volume)
     child = None
 
     def stop(_signum, _frame):
@@ -103,6 +207,7 @@ def launch(app, data, open_file=None, channel=None):
     signal.signal(signal.SIGTERM, stop)
     try:
         volume.start()
+        controls.start()
         release_launcher_display(channel)
         log = open(Path(data) / 'logs/rgds-media.log', 'w') if (Path(data) / 'logs').is_dir() else None
         child = subprocess.Popen(p['command'], env=p['env'], stdout=log, stderr=log or None)
@@ -116,6 +221,7 @@ def launch(app, data, open_file=None, channel=None):
                 child.kill()
         return 0
     finally:
+        controls.close()
         volume.close()
 
 

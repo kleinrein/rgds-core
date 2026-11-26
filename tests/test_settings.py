@@ -388,8 +388,8 @@ class SettingsTests(unittest.TestCase):
 140 key Down
 160 key Down
 180 key A
-200 key Right
-240 key Right
+200 key Left
+240 key Left
 260 key A
 300 key Up
 320 key Right
@@ -489,7 +489,7 @@ class SettingsTests(unittest.TestCase):
         )
         self.assertEqual(
             self.system_prefs.read_text(),
-            "schema=1\npower=3\nbrightness=60\nidle=0\nlid=1\nbattery_percent=1\ntimezone=Europe/Oslo\n"
+            "schema=1\npower=3\nbrightness=60\nidle=4\nlid=1\nbattery_percent=1\ntimezone=Europe/Oslo\n"
         )
 
     def test_every_tzdata_zone_loads_and_left_right_jump_by_region(self):

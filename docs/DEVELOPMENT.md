@@ -131,7 +131,12 @@ shim: a scrolling wall went from about 4500 to 400 draws a frame (both panels), 
 The choppiness the owner still felt after that was not drawing at all: a gliding wall set `dirty` but was not counted
 as `animated` in `run_loop.hpp`, so after each frame the loop slept its idle wait (up to 250 ms). Any new motion
 must feed `animated` or `feedback_active`. `RGDS_FRAME_LOG=FILE` writes one line a second of where frame time goes
-(draw, present, loop work, wait, frame-gap histogram, touch points, tiles built) for measuring on the handheld. The in-game menu helper writes it too (`--game-menu`), and its overlay readback counts as the present.
+(draw, present, loop work, wait, frame-gap histogram, touch points, tiles built, SDL draw calls, texture uploads and
+render-target switches per frame from `draw_count.hpp`) for measuring on the handheld. The in-game menu helper writes it
+too (`--game-menu`), and its overlay readback counts as the present. `RGDS_BENCH_OFF=sound,haptics,rowtext,rows,slivers`
+leaves those parts out of a run to find what a frame pays for (`slivers`: rounded corners as rows, as before the disc).
+An animation frame is due 16 ms after the previous one began (`frame_left` in `run_loop.hpp`): a fixed 16 ms sleep after
+the present woke the loop just past a vblank and held transitions at 30 fps on the RG DS Plus.
 On the wall, B goes back as anywhere (the level is kept: `ui.ini` `library_zoom=N`, restored at start), a quiet grid
 button at the end of the title row steps through the levels, and the edge gestures pass through.
 
@@ -142,6 +147,10 @@ panel pixels (`src/launcher/panel_scale.hpp`), small icons averaged down to thei
 and `@2x` status icons and logo (`App::sharp_asset`). `RGDS_PREVIEW_SCALE=1.6` opens the desktop preview at the Plus's
 size, so `--screenshot` shows what the Plus shows; a picture rendered at both scales and compared (the 1x one scaled up)
 finds what is still stretched: areas with detail that barely differ.
+A rounded rectangle's corners come from a cached disc texture there (`RoundCorners`): drawn as rows a panel pixel high
+across the whole width they cost the Plus's tile-based GPU about 20 ms a frame of Settings rows; the disc gives the same
+pixels in four quads. Settings pages whose upper panel is the plain note skip unchanged upper frames like the library
+(`quiet_settings_top`, `top_signature`).
 
 ### Toasts (2026-11-23)
 

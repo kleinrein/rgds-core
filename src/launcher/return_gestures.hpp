@@ -18,6 +18,10 @@ bool App::return_writes_pending() const {
     return return_control_child > 0 || return_volume || return_brightness || return_power || return_lid;
 }
 
+bool App::return_writes_slow() const {
+    return return_writes_pending() && return_controls_at && s.GetTicks() - return_controls_at > 2500;
+}
+
 void App::begin_return_controls() {
     if (return_control_child > 0 || system.volume_pending() || system.brightness_pending()) return;
     if (!return_volume && !return_brightness && !return_power && !return_lid) return;

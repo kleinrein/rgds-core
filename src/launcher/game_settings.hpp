@@ -74,8 +74,11 @@ void App::ds_apply_in_game(const std::string& key) {
 }
 
 // Local wireless (ds-input.ini wireless, DSCore's net.mode): 0 off, 1 join a session heard on the Wi-Fi or host one,
-// 2 host, 3 join only.
-std::vector<std::string> App::wireless_names() const { return {"Off", "Join or host", "Host", "Join"}; }
+// 2 host, 3 join only, 4 smooth: each handheld runs both consoles and only inputs cross (net.mode twin,
+// docs/NETPLAY_PLAN.md; two players).
+std::vector<std::string> App::wireless_names() const {
+    return {"Off", "Join or host", "Host", "Join", "Smooth (2 players)"};
+}
 
 // Online play (ds-input.ini online): 0 off, else DSCore's net.mode = internet with net.dns naming the fan-run
 // Nintendo WFC service the game's lookups go to: 1 Wiimmfi, 2 WiiLink WFC. It wins over local wireless.
@@ -86,7 +89,7 @@ int App::ds_online() {
 }
 
 int App::ds_wireless() {
-    return ds_settings.count("wireless") ? std::clamp(std::atoi(ds_settings["wireless"].c_str()), 0, 3) : 0;
+    return ds_settings.count("wireless") ? std::clamp(std::atoi(ds_settings["wireless"].c_str()), 0, 4) : 0;
 }
 
 void App::save_ds_setting(const std::string& key, const std::string& value) {

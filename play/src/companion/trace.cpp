@@ -135,7 +135,7 @@ void stamp(Canvas& out, const Face& face, int left, int top) {
         for (int x = 0; x < face.w; ++x) {
             const int ox = left + x;
             const uint32_t c = face.px[size_t(y) * face.w + x];
-            if (c >> 24 && ox >= 0 && ox < out.w()) out.data()[size_t(oy) * out.w() + ox] = c;
+            if (c >> 24 && ox >= 0 && ox < out.w()) out.fill_rect(ox, oy, 1, 1, Rgb::from_px(c));
         }
     }
 }
@@ -328,12 +328,12 @@ public:
         const uint64_t want = (uint64_t(layer_serial_) << 32) ^ (uint64_t(course_now_ & 0xFFFF) << 16) ^
                               (uint64_t(out.w()) << 8) ^ uint64_t(out.h()) ^ colour_key(look) ^
                               (drawn ? 1ull << 63 : 0);
-        if (want != layer_key_ || layer_.w() != out.w() || layer_.h() != out.h()) {
-            layer_.resize(out.w(), out.h());
+        if (want != layer_key_ || layer_.pixel_w() != out.pixel_w() || layer_.pixel_h() != out.pixel_h()) {
+            layer_.resize_like(out, out.w(), out.h());
             paint_layer(layer_, look, font, drawn ? &found->second : nullptr);
             layer_key_ = want;
         }
-        std::memcpy(out.data(), layer_.data(), size_t(out.w()) * size_t(out.h()) * sizeof(uint32_t));
+        std::memcpy(out.data(), layer_.data(), size_t(out.pixel_w()) * size_t(out.pixel_h()) * sizeof(uint32_t));
         if (!drawn) return;
         const bool places = standings(&found->second);
         const int map_right = places ? column_x(out) - kit::gap : out.w();

@@ -193,11 +193,12 @@ void App::battery_bottom(SDL_Renderer* r, int y) {
         if (filled) fill_round(r, 44, top + 46, filled, 8, 4, battery.health >= 80 ? battery_green : battery_orange);
     }
     {
-        const std::string verdict = battery.health < 0     ? "The battery's capacity is not known yet."
+        const std::string verdict = battery.seeded         ? "Measured once the battery runs low and charges full."
+                                    : battery.health < 0   ? "The battery's capacity is not known yet."
                                     : battery.health >= 80 ? "Your battery is in good health."
                                                            : "Your battery holds clearly less than when new.";
-        label(r, verdict, 44, top + 64, 14, "muted", 380);
-        if (g.full > 0 && g.design > 0) {
+        label(r, verdict, 44, top + 64, 14, "muted", battery.seeded ? 552 : 380);
+        if (g.full > 0 && g.design > 0 && !battery.seeded) {
             const std::string mah = std::to_string(g.full / 1000) + " / " + std::to_string(g.design / 1000) + " mAh";
             raw_label(r, mah, 596 - label_width(mah, 14, false), top + 64, 14, "muted", 170);
         }

@@ -77,6 +77,12 @@ public:
     bool top_is_touched() const { return profile_ && profile_->has_screens && profile_->screens.pointer; }
     // [screens] tall: the game over both panels, one screen twice as tall (a vertical arcade game).
     bool tall_screen() const { return profile_ && profile_->has_screens && profile_->screens.tall; }
+    // The tall game's lower half, for the frontend to draw on the lower panel the way it draws the upper half
+    // (same texture path, scale and filter, so the two meet as one screen). Empty while the second screen shows
+    // anything else (the dock open, a note, the whole picture above): render() draws that panel then.
+    Picture tall_lower() const;
+    // Where the dock's button sits on the second screen (w x h): drawn over the lower half from render()'s canvas.
+    Box tall_button(int w, int h) const;
     // A short click in the motor as one of the machine's buttons goes down, 0-1.
     float machine_click() const { return click_frames_ > 0 || view_click_ > 0 ? 0.45f : 0; }
     // The info screen: the title card every game has before its own second screen appears, and the corner button.
@@ -125,6 +131,8 @@ private:
     std::vector<uint32_t> lower_;
     Rect lower_rect_;               // the part of the picture lower_ holds
     int lower_w_ = 0, lower_h_ = 0; // the picture's size
+    // The panels' pixels, as last drawn (1024x768 on an RG DS Plus): where touches come in.
+    mutable int panel_w_ = 640, panel_h_ = 480;
     bool picture_matches(int w, int h) const;
     bool menu_over_game_ = false;
     Core* finger_core_ = nullptr;

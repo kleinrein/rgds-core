@@ -1519,6 +1519,7 @@ Just you	Chỉ mình bạn
 Buttons, shortcut and fast-forward	Nút, phím tắt và tua nhanh
 DS nickname	Biệt danh DS
 Join or host	Tham gia hoặc tạo phòng
+Smooth (2 players)	Mượt (2 người chơi)
 Host	Tạo phòng
 Sharing details	Thông tin chia sẻ
 Graphics saved.	Đã lưu đồ họa.
@@ -1819,6 +1820,7 @@ Sleep in	Ngủ sau
 Sleep timer	Hẹn giờ ngủ
 Smaller	Nhỏ hơn
 Stand mode	Chế độ dựng
+Touch below for the remote	Chạm màn hình dưới để điều khiển
 Stretch	Kéo giãn
 Subtitles	Phụ đề
 Tap or press A to play now	Chạm hoặc nhấn A để phát ngay
@@ -2071,6 +2073,7 @@ Charge cycles	Chu kỳ sạc
 Since unplugged	Từ lúc rút sạc
 This handheld does not report its battery.	Máy này không báo thông tin pin.
 The battery's capacity is not known yet.	Chưa biết dung lượng pin.
+Measured once the battery runs low and charges full.	Được đo khi pin gần cạn rồi sạc đầy.
 Your battery is in good health.	Pin của bạn còn tốt.
 Your battery holds clearly less than when new.	Pin của bạn chứa ít hơn rõ rệt so với lúc mới.
 On the charger	Đang cắm sạc
@@ -2079,3 +2082,10 @@ Charged to {0}%	Đã sạc đến {0}%
 Last 7 days on battery	7 ngày qua khi dùng pin
 What uses your battery shows here after some time unplugged.	Những gì dùng pin sẽ hiện ở đây sau một lúc không cắm sạc.
 Menus & Home	Menu và Trang chủ
+Orientation	Hướng cầm
+Sideways	Nằm ngang
+Upright	Dọc
+With controls	Có nút điều khiển
+Left hand	Tay trái
+Right hand	Tay phải
+Volume and brightness	Âm lượng và độ sáng

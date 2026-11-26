@@ -1519,6 +1519,7 @@ Just you	Hanya kamu
 Buttons, shortcut and fast-forward	Tombol, pintasan, dan percepat
 DS nickname	Nama DS
 Join or host	Gabung atau host
+Smooth (2 players)	Lancar (2 pemain)
 Host	Host
 Sharing details	Detail berbagi
 Graphics saved.	Grafis tersimpan.
@@ -1819,6 +1820,7 @@ Sleep in	Tidur dalam
 Sleep timer	Timer tidur
 Smaller	Lebih kecil
 Stand mode	Mode berdiri
+Touch below for the remote	Sentuh layar bawah untuk remote
 Stretch	Regangkan
 Subtitles	Subtitle
 Tap or press A to play now	Ketuk atau tekan A untuk putar sekarang
@@ -2071,6 +2073,7 @@ Charge cycles	Siklus pengisian
 Since unplugged	Sejak dicabut
 This handheld does not report its battery.	Perangkat ini tidak melaporkan baterainya.
 The battery's capacity is not known yet.	Kapasitas baterai belum diketahui.
+Measured once the battery runs low and charges full.	Diukur setelah baterai hampir habis lalu terisi penuh.
 Your battery is in good health.	Baterai kamu dalam kondisi baik.
 Your battery holds clearly less than when new.	Baterai kamu menampung jauh lebih sedikit daripada saat baru.
 On the charger	Di pengisi daya
@@ -2079,3 +2082,10 @@ Charged to {0}%	Terisi hingga {0}%
 Last 7 days on battery	7 hari terakhir pakai baterai
 What uses your battery shows here after some time unplugged.	Yang memakai baterai muncul di sini setelah beberapa saat tanpa pengisi daya.
 Menus & Home	Menu dan Beranda
+Orientation	Orientasi
+Sideways	Menyamping
+Upright	Tegak
+With controls	Dengan kontrol
+Left hand	Tangan kiri
+Right hand	Tangan kanan
+Volume and brightness	Volume dan kecerahan

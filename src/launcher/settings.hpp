@@ -112,7 +112,9 @@ struct Preferences {
     bool achievements = false;
 };
 struct SystemPreferences {
-    int power = 2, brightness = 60, idle = 0;
+    // idle: the menu sleeps after idle_minutes[idle] without input; 10 min since 2026-11-26 (Never before, and a
+    // handheld left awake at Home drained half its battery in four hours)
+    int power = 2, brightness = 60, idle = 4;
     // dim: the panels dim after dim_seconds[dim] without input (menu and games); game_sleep: a game with no input for
     // game_sleep_minutes[game_sleep] sleeps like a closed lid (runtime/game_menu.py reads both from system.ini)
     int dim = 2, game_sleep = 0;

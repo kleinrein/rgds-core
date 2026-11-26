@@ -70,8 +70,10 @@ void polygon(Canvas& c, const std::vector<std::pair<double, double>>& pts, Rgb i
         minx = std::min(minx, p.first), maxx = std::max(maxx, p.first);
         miny = std::min(miny, p.second), maxy = std::max(maxy, p.second);
     }
-    int x0 = std::max(0, int(std::floor(minx))), x1 = std::min(c.w() - 1, int(std::ceil(maxx)));
-    int y0 = std::max(0, int(std::floor(miny))), y1 = std::min(c.h() - 1, int(std::ceil(maxy)));
+    // Sampled at the canvas's own pixels (a larger panel's), the points being layout units.
+    const double k = c.scale();
+    int x0 = std::max(0, int(std::floor(minx * k))), x1 = std::min(c.pixel_w() - 1, int(std::ceil(maxx * k)));
+    int y0 = std::max(0, int(std::floor(miny * k))), y1 = std::min(c.pixel_h() - 1, int(std::ceil(maxy * k)));
     auto inside = [&](double x, double y) {
         bool in = false;
         for (size_t i = 0, j = pts.size() - 1; i < pts.size(); j = i++) {
@@ -86,8 +88,8 @@ void polygon(Canvas& c, const std::vector<std::pair<double, double>>& pts, Rgb i
         for (int x = x0; x <= x1; ++x) {
             int hits = 0; // 4x4 samples a pixel
             for (int sy = 0; sy < 4; ++sy)
-                for (int sx = 0; sx < 4; ++sx) hits += inside(x + (sx + .5) / 4, y + (sy + .5) / 4);
-            if (hits) c.fill_rect(x, y, 1, 1, ink, alpha * hits / 16);
+                for (int sx = 0; sx < 4; ++sx) hits += inside((x + (sx + .5) / 4) / k, (y + (sy + .5) / 4) / k);
+            if (hits) c.put_px(x, y, ink, alpha * hits / 16);
         }
 }
 
@@ -244,6 +246,17 @@ void glyph(Canvas& c, Glyph g, int cx, int cy, int size, Rgb ink, Rgb ground, in
         rect(6, 8, 2.2, 3, ink);
         rect(15.8, 8, 2.2, 3, ink);
         round_box(4, 10, 16, 12, 2, ink);
+        break;
+    case Glyph::Sun: // brightness: a disc and eight short rays
+        round_box(7, 7, 10, 10, 5, ink);
+        for (int i = 0; i < 8; ++i) {
+            const double a = pi * i / 4, ca = std::cos(a), sa = std::sin(a), nx = -sa * 1.1, ny = ca * 1.1;
+            const double r0 = 8.2, r1 = 11.2;
+            polygon(c,
+                    {P(12 + ca * r0 + nx, 12 + sa * r0 + ny), P(12 + ca * r1 + nx, 12 + sa * r1 + ny),
+                     P(12 + ca * r1 - nx, 12 + sa * r1 - ny), P(12 + ca * r0 - nx, 12 + sa * r0 - ny)},
+                    ink, alpha);
+        }
         break;
     }
 }

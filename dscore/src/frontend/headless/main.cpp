@@ -39,6 +39,8 @@
 #include <thread>
 #if DSPERATE_NET
 #include "net/lan_mp.h"
+#include "net/input_link.h"
+#include "net/twin_mp.h"
 #include "net/slirp_driver.h"
 #include <arpa/inet.h>
 #endif
@@ -398,7 +400,10 @@ int main(int argc, char** argv) {
   bool jit = false;
 #endif
   TraceState ts;
-  bool rtc_host = false;             // --rtc-host: free-running clock seeded from the wall
+  bool rtc_host = false; // --rtc-host: free-running clock seeded from the wall
+  ds::u8 rtc_at[7] = {}; // --rtc-at YYMMDDWHHMMSS (BCD, as hex digits): a clock from this moment
+  bool rtc_at_given = false;
+  long long mac_suffix = -1;         // --mac-suffix N: this console's Wi-Fi MAC low bytes (the owner's)
   const char* fw_override = nullptr; // --firmware-override: sidecar of changed firmware pages
   bool no_aa = false;
   bool frames_given = false;
@@ -430,6 +435,11 @@ int main(int argc, char** argv) {
   const char* lan_join = nullptr;         // --lan-join ADDR: join the session at ADDR
   const char* lan_name = "RG DS Core";    // --lan-name NAME: our player name when joining
   bool netplay = false;                   // --netplay: join a session heard on the LAN within 2.5 s, else host one
+  const char* twin = nullptr;             // --twin PATH: local wireless with a second console on this machine (TwinMp)
+  const char* input_send = nullptr;       // --input-send HOST:PORT: this console's player is here; send what it applies
+  int input_recv = 0;                     // --input-recv PORT: this console's player is on the other handheld
+  int input_delay = 3;                    // --input-delay D: a pad reading is applied D frames later (sender)
+  bool twin_host = true;                  // --twin-role host|guest: which side makes the shared block
   // --internet [WHERE]: DNS host, wiimmfi (default) or address; excludes local wireless.
   bool internet = false;
   const char* dns_arg = nullptr;
@@ -458,6 +468,11 @@ int main(int argc, char** argv) {
       lan_join = argv[++i];
       pace = true;
     } else if (arg("--lan-name")) lan_name = argv[++i];
+    else if (arg("--twin")) twin = argv[++i];
+    else if (arg("--input-send")) input_send = argv[++i];
+    else if (arg("--input-recv")) input_recv = std::atoi(argv[++i]);
+    else if (arg("--input-delay")) input_delay = std::max(0, std::atoi(argv[++i]));
+    else if (arg("--twin-role")) twin_host = std::strcmp(argv[++i], "guest") != 0;
     else if (flag("--netplay")) {
       netplay = true;
       pace = true;
@@ -499,7 +514,21 @@ int main(int argc, char** argv) {
       dsi_font = argv
           [++i]; // with --dsi-hle-launch and no --dsi-nand: the console's /sys/TWLFontTable.dat instead of RG DS Core's own font
     else if (arg("--user-name")) user.nickname = argv[++i]; // generated firmware / DSi settings: the owner's nickname
-    else if (arg("--user-language"))
+    else if (arg("--user-message")) user.message = argv[++i];
+    else if (arg("--user-birthday")) { // M/D
+      const char* d = argv[++i];
+      user.birthday_month = static_cast<ds::u8>(std::atoi(d));
+      if (const char* slash = std::strchr(d, '/')) user.birthday_day = static_cast<ds::u8>(std::atoi(slash + 1));
+    } else if (arg("--user-colour")) user.favourite_colour = static_cast<ds::u8>(std::atoi(argv[++i]));
+    else if (arg("--mac-suffix")) mac_suffix = std::atoll(argv[++i]);
+    else if (arg("--rtc-at")) {
+      const char* h = argv[++i];
+      for (int k = 0; k < 7 && h[2 * k] && h[2 * k + 1]; ++k) {
+        const char pair[3] = {h[2 * k], h[2 * k + 1], 0};
+        rtc_at[k] = static_cast<ds::u8>(std::strtoul(pair, nullptr, 16));
+      }
+      rtc_at_given = true;
+    } else if (arg("--user-language"))
       user.language = static_cast<ds::u8>(std::atoi(argv[++i])); // 0 ja 1 en 2 fr 3 de 4 it 5 es 6 zh 7 ko
     else if (flag("--dsi-offline"))
       dsi_offline = true; // --dsi-install never downloads the TMD from Nintendo's update CDN
@@ -615,7 +644,8 @@ int main(int argc, char** argv) {
       std::fprintf(stderr, "bios: %s\n", err.c_str());
       return 1;
     }
-    if (lan_host || lan_join || netplay) {
+    if (mac_suffix >= 0) nds.set_wifi_mac_suffix(static_cast<ds::u32>(mac_suffix) & 0xFFFFFF);
+    else if (lan_host || lan_join || netplay) {
       std::random_device rd;
       nds.set_wifi_mac_suffix(rd() & 0xFFFFFF);
     }
@@ -758,7 +788,8 @@ int main(int argc, char** argv) {
     else if (!err.empty()) std::fprintf(stderr, "firmware override: warning: %s\n", err.c_str());
   }
   nds.reset();
-  if (rtc_host) nds.io.start_rtc_clock(); // after reset(), which clears the RTC
+  if (rtc_at_given) nds.io.start_rtc_clock_at(rtc_at); // a two-console session's agreed moment
+  else if (rtc_host) nds.io.start_rtc_clock();         // after reset(), which clears the RTC
   // A zipped ROM may be inflated to disk on first use (slow on an SD card).
   nds.rom_progress = [](void*, ds::u64 done, ds::u64 total) {
     static ds::u64 last = ~0ull;
@@ -1096,6 +1127,35 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "lan: %s, player %d\n", lan->is_host() ? "hosting" : "joined", lan->my_id());
     nds.io.wifi.set_transport(lan.get());
   }
+  std::unique_ptr<ds::net::TwinMp> twin_mp;
+  if (twin) {
+    if (lan) {
+      std::fprintf(stderr, "twin: --twin is instead of --lan-*; pick one\n");
+      return 1;
+    }
+    twin_mp = std::make_unique<ds::net::TwinMp>(twin, twin_host, [&nds] { return nds.sched.now(); });
+    if (!twin_mp->ok()) {
+      std::fprintf(stderr, "twin: %s\n", twin_mp->error().c_str());
+      return 1;
+    }
+    std::fprintf(stderr, "twin: %s at %s\n", twin_host ? "host" : "guest", twin);
+    nds.io.wifi.set_transport(twin_mp.get());
+  }
+  std::unique_ptr<ds::net::InputLink> input_link;
+  std::map<ds::u32, ds::input::Frame> input_pending; // sender: what each coming frame applies
+  if (input_send || input_recv) {
+    input_link = input_send ? ds::net::InputLink::sender(input_send) : ds::net::InputLink::receiver(input_recv);
+    if (!input_link->ok()) {
+      std::fprintf(stderr, "input: %s\n", input_link->error().c_str());
+      return 1;
+    }
+    std::fprintf(stderr, "input: %s, delay %d\n", input_send ? "sending" : "receiving", input_delay);
+    if (input_send)
+      for (int k = 0; k < input_delay; ++k) {
+        input_pending[static_cast<ds::u32>(k)] = ds::input::Frame{};
+        input_link->push(static_cast<ds::u32>(k), ds::input::Frame{});
+      }
+  }
   std::unique_ptr<ds::net::SlirpDriver> slirp;
   if (internet) {
     if (lan_host || lan_join || netplay) {
@@ -1133,7 +1193,8 @@ int main(int argc, char** argv) {
     return 1;
   }
   const auto pace_start = std::chrono::steady_clock::now();
-  for (int i = 0; i < frames; ++i) {
+  // --frames 0 in a two-console session: until the other handheld stops sending (InputLink::get gives up).
+  for (int i = 0; i < frames || (frames == 0 && input_link); ++i) {
     if (pc_profile && i == stats_from) ds::pcsample::set_active(true);
     if (i == stats_from && ds::mem::fmc::on()) ds::mem::fmc::set_counting(true);
     static const bool fm_verify = std::getenv("DS_FASTMEM_VERIFY") != nullptr;
@@ -1190,7 +1251,25 @@ int main(int argc, char** argv) {
       nds.trace_user = nullptr;
     }
     nds.io.wifi.trace_frame(i); // "# frame N" in the Wi-Fi trace, aligns it with --trace
-    if (log.reading()) {
+#if DSPERATE_NET
+    if (input_link) { // a two-console session: this frame applies what both handhelds apply for it
+      ds::input::Frame in;
+      const ds::u32 n = static_cast<ds::u32>(i);
+      if (input_send) {
+        ds::input::Frame pad;
+        if (log.reading()) log.read(pad);
+        input_pending[n + static_cast<ds::u32>(input_delay)] = pad;
+        input_link->push(n + static_cast<ds::u32>(input_delay), pad);
+        in = input_pending[n];
+        input_pending.erase(n);
+      } else if (!input_link->get(n, in)) {
+        std::fprintf(stderr, "input: frame %u never came from the other handheld\n", n);
+        return 1;
+      }
+      ds::input::apply(nds, in);
+    } else
+#endif
+        if (log.reading()) {
       ds::input::Frame in;
       if (log.read(in)) ds::input::apply(nds, in);
     }
@@ -1253,6 +1332,10 @@ int main(int argc, char** argv) {
     } else
 #endif
       nds.run_frame();
+#if DSPERATE_NET
+    if (twin_mp) twin_mp->publish(); // the other console never waits more than a frame on one whose radio is off
+    if (input_link) ds::net::log_ram_hash(static_cast<ds::u32>(i), nds.bus.main_ram.get(), 4u << 20);
+#endif
     if (!write_state(i + 1)) return 1;
     if (static const bool fh = std::getenv("DS_FRAME_HASH") != nullptr; fh) {
       auto fnv = [](const ds::u8* p, size_t n, ds::u64 h) {
@@ -1410,6 +1493,8 @@ int main(int argc, char** argv) {
   if (lan)
     std::fprintf(stderr, "lan: reply/host waits %u, total %.1f ms, max %.1f ms, timeouts %u\n", lan->wait_count(),
                  lan->wait_total_ms(), lan->wait_max_ms(), lan->wait_timeouts());
+  if (twin_mp) std::fprintf(stderr, "twin: %llu waits, %.1f ms\n", twin_mp->waits(), twin_mp->wait_ms());
+  if (input_link) std::fprintf(stderr, "input: %u waits, %.1f ms\n", input_link->waits(), input_link->wait_ms());
 #endif
   ds::interp::census_report(nds.frame_count);
   if (std::getenv("DS_STATE_DUMP")) {

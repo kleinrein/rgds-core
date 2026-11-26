@@ -28,7 +28,7 @@ constexpr u32 kProtocolVersion = 1;
 constexpr u32 kLocalhost = 0x0100007F; // 127.0.0.1 in network order
 constexpr u16 kDiscoveryPort = 7063, kLanPort = 7064;
 enum { Chan_Cmd = 0, Chan_MP = 1 };
-enum : u8 { Cmd_ClientInit = 1, Cmd_PlayerInfo, Cmd_PlayerList, Cmd_PlayerConnect, Cmd_PlayerDisconnect };
+enum : u8 { Cmd_ClientInit = 1, Cmd_PlayerInfo, Cmd_PlayerList, Cmd_PlayerConnect, Cmd_PlayerDisconnect, Cmd_Seat };
 
 struct DiscoveryData { // melonDS's, byte for byte
   u32 magic, version, tick;
@@ -460,6 +460,11 @@ void LanMp::process_host_event(ENetEvent& ev) {
     if (ev.packet->dataLength < 1) break;
     const u8* d = ev.packet->data;
     switch (d[0]) {
+    case Cmd_Seat: // a two-console session's seat (send_seat)
+      seat_.assign(reinterpret_cast<const char*>(d + 1), ev.packet->dataLength - 1);
+      seat_ip_ = ev.peer->address.host;
+      have_seat_ = true;
+      break;
     case Cmd_PlayerInfo: {
       if (ev.packet->dataLength != 9 + sizeof(Player)) break;
       if (get32(d + 1) != kLanMagic || get32(d + 5) != kProtocolVersion) {
@@ -551,6 +556,11 @@ void LanMp::process_client_event(ENetEvent& ev) {
     if (ev.packet->dataLength < 1) break;
     const u8* d = ev.packet->data;
     switch (d[0]) {
+    case Cmd_Seat: // a two-console session's seat (send_seat)
+      seat_.assign(reinterpret_cast<const char*>(d + 1), ev.packet->dataLength - 1);
+      seat_ip_ = ev.peer->address.host;
+      have_seat_ = true;
+      break;
     case Cmd_PlayerList: {
       if (ev.packet->dataLength != 2 + sizeof(players_) || d[1] > 16) break;
       {
@@ -630,6 +640,11 @@ void LanMp::process_lan(int type) {
     }
     break;
   }
+  if (type != 2) {
+    const auto now = std::chrono::steady_clock::now();
+    if (now - last_poll_ < std::chrono::nanoseconds(kPollGapNs)) return;
+    last_poll_ = now;
+  }
   int timeout = type == 2 ? recv_timeout_ms_ : 0;
   time_last = ms_now();
   ENetEvent ev;
@@ -705,6 +720,35 @@ void LanMp::process() {
       players_[i].ping = peers_[i]->roundTripTime;
     }
   }
+}
+
+// ---- two-console sessions ----------------------------------------------------
+void LanMp::send_seat(const std::string& blob) {
+  if (!host_) return;
+  ENetPacket* pkt = enet_packet_create(nullptr, blob.size() + 1, ENET_PACKET_FLAG_RELIABLE);
+  pkt->data[0] = Cmd_Seat;
+  std::memcpy(pkt->data + 1, blob.data(), blob.size());
+  enet_host_broadcast(host_, Chan_Cmd, pkt);
+  enet_host_flush(host_);
+}
+
+bool LanMp::wait_seat(std::string& blob, u32& peer_ip, int timeout_ms) {
+  const u32 start = ms_now();
+  while (!have_seat_) {
+    if (!host_ || static_cast<int>(ms_now() - start) >= timeout_ms) return false;
+    ENetEvent ev;
+    if (enet_host_service(host_, &ev, 10) <= 0) continue;
+    if (ev.type == ENET_EVENT_TYPE_RECEIVE && ev.channelID == Chan_MP) {
+      enet_packet_destroy(ev.packet); // no game traffic before the session starts
+      continue;
+    }
+    if (is_host_) process_host_event(ev);
+    else process_client_event(ev);
+  }
+  blob = seat_;
+  peer_ip = seat_ip_;
+  have_seat_ = false;
+  return true;
 }
 
 // ---- MpTransport -------------------------------------------------------------

@@ -1519,6 +1519,7 @@ Just you	Berre deg
 Buttons, shortcut and fast-forward	Knappar, snarveg og hurtigspoling
 DS nickname	DS-kallenamn
 Join or host	Bli med eller vert
+Smooth (2 players)	Jamt (2 spelarar)
 Host	Vert
 Sharing details	Delingsdetaljar
 Graphics saved.	Grafikk lagra.
@@ -1819,6 +1820,7 @@ Sleep in	Kvilemodus om
 Sleep timer	Sovetidsur
 Smaller	Mindre
 Stand mode	Ståmodus
+Touch below for the remote	Trykk nede for fjernkontrollen
 Stretch	Strekk
 Subtitles	Undertekstar
 Tap or press A to play now	Trykk eller trykk A for å spele no
@@ -2071,6 +2073,7 @@ Charge cycles	Ladesyklusar
 Since unplugged	Sidan fråkopling
 This handheld does not report its battery.	Denne eininga oppgir ikkje batteriet sitt.
 The battery's capacity is not known yet.	Kapasiteten til batteriet er ikkje kjend enno.
+Measured once the battery runs low and charges full.	Blir målt når batteriet har vore nesten tomt og er lada heilt opp.
 Your battery is in good health.	Batteriet ditt er i god stand.
 Your battery holds clearly less than when new.	Batteriet ditt rommar klart mindre enn som nytt.
 On the charger	I ladaren
@@ -2079,3 +2082,10 @@ Charged to {0}%	Lada til {0}%
 Last 7 days on battery	Siste 7 dagar på batteri
 What uses your battery shows here after some time unplugged.	Kva som brukar batteriet, blir vist her etter ei stund utan ladar.
 Menus & Home	Menyar og Heim
+Orientation	Stilling
+Sideways	Sidelengs
+Upright	Ståande
+With controls	Med kontrollar
+Left hand	Venstre hand
+Right hand	Høgre hand
+Volume and brightness	Volum og lysstyrke

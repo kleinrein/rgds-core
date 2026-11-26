@@ -188,3 +188,27 @@ Motion (2026-11-23): the house motion, nothing of its own. The lit pill glides 1
 control; a section or a Music tab crossfades the page in place under the pills (no sideways slide); the focus
 corners sit on the focused tile as every grid's focus does (only the scroll glides); the hero crossfades in 140 ms
 with no lift, and not at all while a section change's own crossfade runs.
+
+## 11. Reader orientations, both touch screens, covers (2026-11-26, Mac only)
+
+- Three orientations in `read_screen.cpp`, kept per book (`mode=book|stack|page` in places.tsv): **Sideways** (the
+  book view as before), **Upright** (new: held normally, the book runs down both screens; a reflowing book shows two
+  pages, upper first, a fixed page such as a PDF or comic is one tall page across both), and **With controls** (the
+  old page view). Select steps through them; a change crossfades both panels (`Context::crossfade`).
+- Both touch screens turn pages: rgds-media opens the upper panel's Goodix (`RGDS_TOP_TOUCH_DEV`, else the one on
+  fe5c0000, as the launcher finds it). Touches carry `TouchEvent::upper` and reach only screens whose `upper_touch()`
+  is true; one finger at a time across both panels. Drag follows the finger on either screen; a tap near an outer
+  edge turns, a tap in the middle (around the spine sideways) opens the menu. On a desktop the mouse on the upper
+  half is the upper panel; test scripts have `utouch`.
+- The menu replaces the old list: title and place, a slider through the book (chapters as ticks, reversed for right
+  to left), the three orientations as small pictures of the handheld, Left/Right hand (sideways), paper swatches,
+  text size A / A (only for reflowing books), direction, Contents and Close. It is drawn upright for the reader
+  (turned when sideways), every change shows at once behind it, the D-pad moves a focus ring through it (turned with
+  the reader), B/X/Start or a tap outside or on the other screen puts it away.
+- Covers: Project Gutenberg EPUBs showed white posters and a blank first page, because MuPDF pushed the tall cover
+  picture to page 2 when the body's top and bottom margins left it short. A user stylesheet drops the body's vertical
+  margins (`fz_set_user_css` on the image's MuPDF 1.23, `fz_style_document` on 1.26+); the shelf's cover is the
+  EPUB's own cover picture (EPUB 3 `cover-image`, EPUB 2 `<meta name="cover">`, the guide's cover page), else the
+  first of the first three pages with something on it. Book posters are named `-c2` so old white ones are remade.
+- Not done: the handheld (upper touch orientation on the RG DS and the Plus is assumed to match the panel, as the
+  launcher assumes), a book-mode fade between hands, pinch zoom.

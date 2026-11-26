@@ -77,7 +77,7 @@ class MediaLevelTests(unittest.TestCase):
         # Music, Videos and Books: a new Media opens on Music. The index lists both shelves and makes posters.
         report = self.run_ui(keys(100, 'A'))
         self.assertEqual((report['music_open'], report['media_section']), (1, 0))
-        report = self.run_ui(keys(100, 'A') + keys(900, 'e'))  # R2: Videos
+        report = self.run_ui(keys(100, 'A') + keys(900, ']'))  # R: Videos
         self.assertEqual(report['media_section'], 1)
         index = (self.state / 'index.tsv').read_text()
         self.assertIn('Film', index)
@@ -114,22 +114,31 @@ class MediaLevelTests(unittest.TestCase):
 
     def test_music_is_always_a_section(self):
         # 2026-11-25: Music had vanished from Media on a new card (the music player switch, off by default); the
-        # switch is gone. Even an old music_player=0 keeps all three sections: Books, R2, round to Music.
+        # switch is gone. Even an old music_player=0 keeps all three sections: Books, R, round to Music.
         (self.root / 'ui.ini').write_text((self.root / 'ui.ini').read_text() + 'music_player=0\n')
         (self.state).mkdir(parents=True, exist_ok=True)
         (self.state / 'launcher.ini').write_text('section=2\n')
-        report = self.run_ui(keys(100, 'A') + keys(900, 'e'), seconds=4)
+        report = self.run_ui(keys(100, 'A') + keys(900, ']'), seconds=4)
         self.assertEqual(report['media_section'], 0)
 
     def test_sections_change_in_place(self):
         (self.root / 'ui.ini').write_text((self.root / 'ui.ini').read_text() + 'music_player=1\n')
         (self.state).mkdir(parents=True)
         (self.state / 'launcher.ini').write_text('section=0\n')
-        # Music, then R2 to Videos, R2 to Books, R2 round to Music: four crossfades in place, none of them Back.
-        report = self.run_ui(keys(100, 'A') + keys(900, 'e', 'e', 'e'), seconds=4)
+        # Music, then R to Videos, R to Books, R round to Music (L and R step sections on every one): four crossfades in place, none of them Back.
+        report = self.run_ui(keys(100, 'A') + keys(900, ']', ']', ']'), seconds=4)
         self.assertEqual(report['media_section'], 0)
         self.assertEqual((report['view_transitions'], report['back_transitions']), (4, 0))
 
+
+    def test_l2_and_r2_keep_musics_own_tabs(self):
+        # L and R step the sections on Music's first page as on Videos and Books; L2 and R2 stay inside Music.
+        (self.state).mkdir(parents=True)
+        (self.state / 'launcher.ini').write_text('section=0\n')
+        report = self.run_ui(keys(100, 'A') + keys(900, 'e', 'q'), seconds=4)
+        self.assertEqual(report['media_section'], 0)
+        report = self.run_ui(keys(100, 'A') + keys(900, '['), seconds=4)
+        self.assertEqual(report['media_section'], 2)  # L from Music: round to Books
 
 if __name__ == '__main__':
     unittest.main()

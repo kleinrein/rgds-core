@@ -339,7 +339,8 @@ void App::draw_scrollbar(SDL_Renderer* r, int x, int y, int height, int thumb, i
 // its own, and a screen of cards, pills and badges came to thousands a frame. Same rectangles, same order, same pixels.
 void App::round_rect(SDL_Renderer* r, int x, int y, int w, int h, int radius, const std::string& key) {
     color(r, key);
-    if (fill_round_on_panel(s, r, x, y, w, h, std::clamp(radius, 0, std::min(w, h) / 2), panel_rows)) return;
+    if (fill_round_on_panel(s, r, x, y, w, h, std::clamp(radius, 0, std::min(w, h) / 2), panel_rows,
+                            &round_corners)) return;
     auto& rows = fill_rows;
     rows.clear();
     rows.push_back({x + radius, y, w - 2 * radius, h});

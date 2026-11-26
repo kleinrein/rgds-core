@@ -1519,6 +1519,7 @@ Just you	仅你自己
 Buttons, shortcut and fast-forward	按键、快捷键和快进
 DS nickname	DS 名称
 Join or host	加入或创建
+Smooth (2 players)	流畅（2人）
 Host	主机
 Sharing details	共享详情
 Graphics saved.	图形设置已保存。
@@ -1819,6 +1820,7 @@ Sleep in	休眠倒计时
 Sleep timer	睡眠定时
 Smaller	更小
 Stand mode	支架模式
+Touch below for the remote	点按下屏使用遥控
 Stretch	拉伸
 Subtitles	字幕
 Tap or press A to play now	轻触或按 A 立即播放
@@ -2071,6 +2073,7 @@ Charge cycles	充电次数
 Since unplugged	拔下充电器后
 This handheld does not report its battery.	这台设备不报告电池信息。
 The battery's capacity is not known yet.	还不知道电池容量。
+Measured once the battery runs low and charges full.	电池电量用到很低再充满后即可测出。
 Your battery is in good health.	你的电池状态良好。
 Your battery holds clearly less than when new.	你的电池容量比新的时候明显少了。
 On the charger	已接充电器
@@ -2079,3 +2082,10 @@ Charged to {0}%	已充到{0}%
 Last 7 days on battery	过去7天的电池使用
 What uses your battery shows here after some time unplugged.	不接充电器使用一段时间后，这里会显示耗电的项目。
 Menus & Home	菜单和主页
+Orientation	握持方式
+Sideways	横握
+Upright	竖握
+With controls	带控制
+Left hand	左手
+Right hand	右手
+Volume and brightness	音量和亮度

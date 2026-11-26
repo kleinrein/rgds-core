@@ -1519,6 +1519,7 @@ Just you	Vain sinä
 Buttons, shortcut and fast-forward	Painikkeet, pikanäppäin ja pikakelaus
 DS nickname	DS-nimi
 Join or host	Liity tai isännöi
+Smooth (2 players)	Sujuva (2 pelaajaa)
 Host	Isäntä
 Sharing details	Jakamistiedot
 Graphics saved.	Grafiikka tallennettu.
@@ -1819,6 +1820,7 @@ Sleep in	Lepotila
 Sleep timer	Uniajastin
 Smaller	Pienempi
 Stand mode	Telinetila
+Touch below for the remote	Kosketa alhaalla kaukosäädintä varten
 Stretch	Venytä
 Subtitles	Tekstitykset
 Tap or press A to play now	Napauta tai paina A toistaaksesi nyt
@@ -2071,6 +2073,7 @@ Charge cycles	Latausjaksot
 Since unplugged	Irrotuksen jälkeen
 This handheld does not report its battery.	Tämä laite ei kerro akustaan.
 The battery's capacity is not known yet.	Akun kapasiteettia ei vielä tiedetä.
+Measured once the battery runs low and charges full.	Mitataan, kun akku on ollut lähes tyhjä ja latautunut täyteen.
 Your battery is in good health.	Akkusi on hyvässä kunnossa.
 Your battery holds clearly less than when new.	Akkusi varaa selvästi vähemmän kuin uutena.
 On the charger	Laturissa
@@ -2079,3 +2082,10 @@ Charged to {0}%	Ladattu {0}%:iin
 Last 7 days on battery	Viimeiset 7 päivää akulla
 What uses your battery shows here after some time unplugged.	Akun kuluttajat näkyvät tässä, kun laite on ollut hetken irti laturista.
 Menus & Home	Valikot ja Koti
+Orientation	Asento
+Sideways	Sivuttain
+Upright	Pystyssä
+With controls	Säätimillä
+Left hand	Vasen käsi
+Right hand	Oikea käsi
+Volume and brightness	Äänenvoimakkuus ja kirkkaus

@@ -16,10 +16,11 @@
 #   usb up|down   at boot and shutdown
 #   usb on|off    the switch, remembered
 #   usb drive CMD...  the data partition as the drive while CMD (the screen saying so) runs
+#   usb sleep|wake  around a suspend (usr/libexec/rgds/power)
 #   usb status|watch
-G=/sys/kernel/config/usb_gadget/rgds
+G=${RGDS_GADGET:-/sys/kernel/config/usb_gadget/rgds}
 ADDRESS=10.55.0.1
-RUN=/run/rgds
+RUN=${RGDS_RUN:-/run/rgds}
 EXTCON=/sys/class/extcon/extcon0/state
 LUN=$G/functions/mass_storage.usb0/lun.0
 
@@ -168,6 +169,28 @@ watch() {
     done
 }
 
+# A bound gadget stops a suspend whenever the controller cannot halt: on a wall charger the PHY is off, the stop
+# times out (4 s) and dwc3 returns -EAGAIN, so the kernel backs out and the handheld stays awake. Every lid sleep on
+# an RG DS Plus on its charger failed this way (2026-11-26). So the gadget is unbound for the sleep and bound again
+# on the wake, as if the cable had been pulled and put back; with no gadget bound the controller has nothing to stop.
+gadget_sleep() {
+    rm -f $RUN/usb-asleep
+    [ -e $G/UDC ] || return 0
+    read -r udc < $G/UDC
+    [ -n "$udc" ] || return 0
+    echo "$udc" > $RUN/usb-asleep
+    echo > $G/UDC
+}
+
+gadget_wake() {
+    [ -f $RUN/usb-asleep ] || return 0
+    read -r udc < $RUN/usb-asleep
+    rm -f $RUN/usb-asleep
+    [ -n "$udc" ] && [ -e $G/UDC ] || return 0
+    echo "$udc" > $G/UDC
+    network_up
+}
+
 gadget_down() {
     [ -e $G ] || return 0
     cd $G || return 1
@@ -215,6 +238,12 @@ down)
 watch)
     watch
     ;;
+sleep)
+    gadget_sleep
+    ;;
+wake)
+    gadget_wake
+    ;;
 drive)
     shift
     drive "$@" || exit 1
@@ -225,7 +254,7 @@ status)
     ip -o -f inet addr show dev usb0 2> /dev/null
     ;;
 *)
-    echo "usage: usb up|down|on|off|drive|status|watch" >&2
+    echo "usage: usb up|down|on|off|drive|sleep|wake|status|watch" >&2
     exit 2
     ;;
 esac

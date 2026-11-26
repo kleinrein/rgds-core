@@ -24,7 +24,7 @@ void App::alpha_round(SDL_Renderer* r, int x, int y, int w, int h, int radius, C
     radius = std::clamp(radius, 0, std::min(w, h) / 2);
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
     s.SetRenderDrawColor(r, fill.r, fill.g, fill.b, Uint8(std::clamp(alpha, 0, 255)));
-    if (fill_round_on_panel(s, r, x, y, w, h, radius, panel_rows)) return;
+    if (fill_round_on_panel(s, r, x, y, w, h, radius, panel_rows, &round_corners)) return;
     auto& rows = fill_rows; // one call for every row, as round_rect
     rows.clear();
     for (int dy = 0; dy < radius; dy++) {
@@ -232,6 +232,7 @@ double App::launch_opacity(Uint32 now) const {
 void App::loading_overlay(SDL_Renderer* r, int y, bool lower) {
     if (!launching) return;
     auto now = s.GetTicks();
+    if (film_launching()) return film_loading_overlay(r, y, lower, now);
     double opacity = launch_opacity(now);
     SDL_Rect panel{0, y, 640, 480};
     s.SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);

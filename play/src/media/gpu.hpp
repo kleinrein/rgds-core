@@ -22,15 +22,18 @@ using play::Rgb;
 // A texture and its size; owns it.
 struct Tex {
     SDL_Texture* t = nullptr;
-    int w = 0, h = 0;
+    int w = 0, h = 0; // its pixels
+    float k = 1;      // its pixels a layout unit (a canvas drawn at a larger panel's own pixels)
+    double lw() const { return w / double(k); } // its size in layout units
+    double lh() const { return h / double(k); }
     Tex() = default;
     Tex(const Tex&) = delete;
     Tex& operator=(const Tex&) = delete;
-    Tex(Tex&& o) noexcept : t(o.t), w(o.w), h(o.h) { o.t = nullptr; }
+    Tex(Tex&& o) noexcept : t(o.t), w(o.w), h(o.h), k(o.k) { o.t = nullptr; }
     Tex& operator=(Tex&& o) noexcept {
         if (this != &o) {
             reset();
-            t = o.t, w = o.w, h = o.h;
+            t = o.t, w = o.w, h = o.h, k = o.k;
             o.t = nullptr;
         }
         return *this;
@@ -40,19 +43,23 @@ struct Tex {
         if (t) SDL_DestroyTexture(t);
         t = nullptr;
         w = h = 0;
+        k = 1;
     }
     explicit operator bool() const { return t != nullptr; }
 };
 
 // Pixels (bytes R, G, B, A) into a texture, made or remade to fit. `linear`: smooth when scaled.
 bool upload(SDL_Renderer* r, Tex& tex, const uint32_t* px, int w, int h, bool blend, bool linear);
+// A canvas keeps its scale: drawn at its layout size, a larger panel shows its pixels one for one.
 inline bool upload(SDL_Renderer* r, Tex& tex, const Canvas& c, bool blend = false, bool linear = false) {
-    return upload(r, tex, c.data(), c.w(), c.h(), blend, linear);
+    const bool ok = upload(r, tex, c.data(), c.pixel_w(), c.pixel_h(), blend, linear || c.scale() != 1);
+    tex.k = c.scale();
+    return ok;
 }
 // Draws a texture into a rect (float, so slides are smooth), at an alpha.
 void draw(SDL_Renderer* r, const Tex& tex, double x, double y, double w, double h, int alpha = 255);
 inline void draw(SDL_Renderer* r, const Tex& tex, double x, double y, int alpha = 255) {
-    draw(r, tex, x, y, tex.w, tex.h, alpha);
+    draw(r, tex, x, y, tex.lw(), tex.lh(), alpha);
 }
 // The same, turned by `angle` degrees clockwise around the rect's centre.
 void draw_turned(SDL_Renderer* r, const Tex& tex, double cx, double cy, double w, double h, double angle,
@@ -86,7 +93,8 @@ enum class Glyph {
     Film,
     Folder,
     Close,
-    Lock
+    Lock,
+    Sun
 };
 // A glyph centred on cx, cy, `size` px tall; `ground` is what shows through its cut-outs.
 void glyph(Canvas& c, Glyph g, int cx, int cy, int size, Rgb ink, Rgb ground, int alpha = 255);

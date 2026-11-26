@@ -1519,6 +1519,7 @@ Just you	Только вы
 Buttons, shortcut and fast-forward	Кнопки, сочетание и ускорение
 DS nickname	Имя DS
 Join or host	Подключиться или создать
+Smooth (2 players)	Плавно (2 игрока)
 Host	Создать
 Sharing details	Данные сеанса
 Graphics saved.	Графика сохранена.
@@ -1819,6 +1820,7 @@ Sleep in	Сон через
 Sleep timer	Таймер сна
 Smaller	Мельче
 Stand mode	Режим подставки
+Touch below for the remote	Пульт — касанием нижнего экрана
 Stretch	Растянуть
 Subtitles	Субтитры
 Tap or press A to play now	Коснитесь или нажмите A, чтобы смотреть
@@ -2071,6 +2073,7 @@ Charge cycles	Циклы зарядки
 Since unplugged	После отключения
 This handheld does not report its battery.	Это устройство не сообщает о батарее.
 The battery's capacity is not known yet.	Ёмкость батареи пока неизвестна.
+Measured once the battery runs low and charges full.	Измеряется, когда батарея почти разрядится и зарядится полностью.
 Your battery is in good health.	Ваша батарея в хорошем состоянии.
 Your battery holds clearly less than when new.	Ваша батарея держит заметно меньше, чем новая.
 On the charger	На зарядке
@@ -2079,3 +2082,10 @@ Charged to {0}%	Заряжена до {0}%
 Last 7 days on battery	Последние 7 дней от батареи
 What uses your battery shows here after some time unplugged.	Что расходует батарею, появится здесь после работы без зарядки.
 Menus & Home	Меню и Главная
+Orientation	Ориентация
+Sideways	Боком
+Upright	Вертикально
+With controls	С кнопками
+Left hand	Левая рука
+Right hand	Правая рука
+Volume and brightness	Громкость и яркость

@@ -74,9 +74,31 @@ use crate::target::FlashTarget;
 
 const SAMPLE_RATE: u32 = 44100;
 const FPS: f64 = 60.0;
-/// The picture never exceeds a panel (640x480), drawn at that size so vector art stays sharp.
-const MAX_W: u32 = 640;
-const MAX_H: u32 = 480;
+/// The picture never exceeds 640x480, drawn at that size (FXAA over it) and scaled up by the player to a bigger panel.
+/// The RG DS Plus's own 1024x768 was tried: Bloons played at ~20 fps (p50 44 ms) in RG DS Play even without FXAA,
+/// against smooth at 640x480; its menu alone had measured 2 ms, so the GPU cost is in play, not on a title screen.
+/// RGDS_FLASH_MAX=WxH sets another size (measuring); a picture bigger than 640x480 is drawn without FXAA (fxaa_fits).
+pub fn max_picture() -> (u32, u32) {
+    static MAX: std::sync::OnceLock<(u32, u32)> = std::sync::OnceLock::new();
+    *MAX.get_or_init(|| {
+        std::env::var("RGDS_FLASH_MAX")
+            .ok()
+            .and_then(|s| {
+                let (w, h) = s.split_once('x')?;
+                Some((w.trim().parse::<u32>().ok()?.clamp(64, 2048), h.trim().parse::<u32>().ok()?.clamp(64, 2048)))
+            })
+            .unwrap_or((640, 480))
+    })
+}
+
+/// FXAA only over a picture up to 640x480. On the RG DS Plus's Mali the pass over Bloons' menu at 1024x768 took
+/// ~72 ms a picture (the same picture drawn without it: 2 ms; a plain copy pass: 2 ms; at 640x480: ~1 ms), though
+/// the shader is ~4.5 cycles a pixel with no spills: a cliff in its dependent reads along edges that no shader change
+/// tried here (highp, texelFetch, unfiltered edge reads, a copy into a texture of our own) moved. At the Plus's size
+/// the edges are 1.6x finer than 640x480 scaled up, and look sharper without FXAA than that picture with it.
+fn fxaa_fits(width: u32, height: u32) -> bool {
+    width * height <= 640 * 480
+}
 
 // ---- Callbacks (set before anything else, kept as plain addresses so every thread sees them) ----
 
@@ -299,10 +321,17 @@ static GAME: Mutex<Slot> = Mutex::new(Slot(None));
 
 fn fit(stage_w: f64, stage_h: f64) -> (u32, u32) {
     let (sw, sh) = (stage_w.max(1.0), stage_h.max(1.0));
-    let scale = (MAX_W as f64 / sw).min(MAX_H as f64 / sh);
-    let w = ((sw * scale).round() as u32).clamp(16, MAX_W) & !1;
-    let h = ((sh * scale).round() as u32).clamp(16, MAX_H) & !1;
+    let (max_w, max_h) = max_picture();
+    let scale = (max_w as f64 / sw).min(max_h as f64 / sh);
+    let w = ((sw * scale).round() as u32).clamp(16, max_w) & !1;
+    let h = ((sh * scale).round() as u32).clamp(16, max_h) & !1;
     (w, h)
+}
+
+/// RGDS_FLASH_FXAA=0 (measuring): the renderer as with FXAA (no MSAA), the picture blitted without the pass.
+fn fxaa_on() -> bool {
+    static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ON.get_or_init(|| std::env::var("RGDS_FLASH_FXAA").as_deref() != Ok("0"))
 }
 
 fn backends() -> wgpu::Backends {
@@ -772,7 +801,7 @@ impl Game {
                 let (w, h) = (self.width, self.height);
                 // RGDS_FLASH_SKIP=present (measuring): drawn but not put on the player's framebuffer.
                 on_player = skip() == Some("present")
-                    || self.out.as_mut().is_some_and(|out| out.present(&texture, w, h, self.smooth, self.drawn, pointer));
+                    || self.out.as_mut().is_some_and(|out| out.present(&texture, w, h, self.smooth && fxaa_fits(w, h) && fxaa_on(), self.drawn, pointer));
             }
             if !on_player {
                 self.frame.copy_from_slice(&self.clean);
@@ -1017,13 +1046,13 @@ pub extern "C" fn retro_get_system_av_info(info: *mut lr::SystemAvInfo) {
     // Before the context comes (a game drawn on the player's), the size its movie will have.
     let pending = PENDING.lock().ok().and_then(|p| p.as_ref().map(|p| p.size));
     let (w, h) =
-        GAME.lock().ok().and_then(|g| g.0.as_ref().map(|g| (g.width, g.height))).or(pending).unwrap_or((MAX_W, MAX_H));
+        GAME.lock().ok().and_then(|g| g.0.as_ref().map(|g| (g.width, g.height))).or(pending).unwrap_or_else(max_picture);
     if let Some(info) = unsafe { info.as_mut() } {
         info.geometry = lr::GameGeometry {
             base_width: w,
             base_height: h,
-            max_width: MAX_W,
-            max_height: MAX_H,
+            max_width: max_picture().0,
+            max_height: max_picture().1,
             aspect_ratio: w as f32 / h as f32,
         };
         info.timing = lr::SystemTiming { fps: FPS, sample_rate: SAMPLE_RATE as f64 };

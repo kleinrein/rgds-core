@@ -201,6 +201,25 @@ void App::load_system_configuration() {
     } catch (const std::exception& e) {
         std::cerr << "System preferences fallback: " << e.what() << std::endl;
     }
+    // Once per handheld: a Never saved before the idle sleep had a default (2026-11-26) was the old default, not a
+    // choice, so it becomes 10 min. Never set again after this stays Never (the marker says it was done). A fresh
+    // handheld (no system.ini yet) starts at the new default, so it only gets the marker: without it, a Never picked
+    // on the first day would be turned into 10 min on the next start.
+    if (o.rgds_os && !probe && !o.game_menu && !o.preview) {
+        std::error_code ec;
+        const fs::path marker = o.data / "idle-sleep-default";
+        if (!fs::exists(marker, ec)) {
+            try {
+                if (fs::exists(o.system_preferences, ec) && system_preferences.idle == 0) {
+                    system_preferences.idle = SystemPreferences{}.idle;
+                    save_system_preferences(o.system_preferences, system_preferences);
+                }
+                std::ofstream(marker) << "2026-11-26\n";
+            } catch (const std::exception& e) {
+                std::cerr << "Idle sleep default: " << e.what() << std::endl;
+            }
+        }
+    }
     if (!probe && !o.game_menu && hardware.lid && system_preferences.lid && !system.set("lid", 1))
         status = "Could not enable lid wake";
     apply_timezone();
@@ -574,8 +593,15 @@ void App::watch_system(Uint32 now) {
             return;
         }
     }
+    // Not while something is under way that a sleep would cut off: music playing, a helper (an update download, a
+    // scrape, an import), a Files copy, a network folder task or the transfer queue, or a page waiting for a phone
+    // (a port's file upload, Send to phone). The minutes count from when it ended.
+    if (worker > 0 || files_child > 0 || files_queue_child > 0 || files_net_child > 0 || port_files_child > 0 ||
+        album_share_child > 0 || (music_available() && music_ready && music.playing()))
+        idle_busy_at = now;
+    const Uint32 quiet_since = idle_busy_at && now - idle_busy_at < now - last_activity ? idle_busy_at : last_activity;
     if (!pointer_down && system_preferences.idle > 0 && hardware.sleep &&
-        now - last_activity >= static_cast<Uint32>(idle_minutes[system_preferences.idle]) * 60000)
+        now - quiet_since >= static_cast<Uint32>(idle_minutes[system_preferences.idle]) * 60000)
         sleep_now();
 }
 

@@ -1519,6 +1519,7 @@ Just you	Bara du
 Buttons, shortcut and fast-forward	Knappar, genväg och snabbspolning
 DS nickname	DS-smeknamn
 Join or host	Anslut eller värd
+Smooth (2 players)	Smidigt (2 spelare)
 Host	Värd
 Sharing details	Delningsinformation
 Graphics saved.	Grafik sparad.
@@ -1819,6 +1820,7 @@ Sleep in	Viloläge om
 Sleep timer	Insomningstimer
 Smaller	Mindre
 Stand mode	Stativläge
+Touch below for the remote	Tryck nedtill för fjärrkontrollen
 Stretch	Sträck ut
 Subtitles	Undertexter
 Tap or press A to play now	Tryck eller tryck på A för att spela nu
@@ -2071,6 +2073,7 @@ Charge cycles	Laddningscykler
 Since unplugged	Sedan urkoppling
 This handheld does not report its battery.	Den här enheten rapporterar inte sitt batteri.
 The battery's capacity is not known yet.	Batteriets kapacitet är inte känd än.
+Measured once the battery runs low and charges full.	Mäts när batteriet har varit nästan tomt och laddats fullt.
 Your battery is in good health.	Ditt batteri är i gott skick.
 Your battery holds clearly less than when new.	Ditt batteri rymmer klart mindre än som nytt.
 On the charger	I laddaren
@@ -2079,3 +2082,10 @@ Charged to {0}%	Laddat till {0}%
 Last 7 days on battery	Senaste 7 dagarna på batteri
 What uses your battery shows here after some time unplugged.	Vad som använder batteriet visas här efter en stund utan laddare.
 Menus & Home	Menyer och Hem
+Orientation	Orientering
+Sideways	På sidan
+Upright	Upprätt
+With controls	Med kontroller
+Left hand	Vänster hand
+Right hand	Höger hand
+Volume and brightness	Volym och ljusstyrka

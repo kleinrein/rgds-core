@@ -33,7 +33,8 @@ public:
 
   // POWCNT2 bit 1 or W_POWER_US changed: start or stop the 8 us timer.
   void update_power_on();
-  void us_timer();
+  // The timer event: runs `ticks` 8 us ticks (the event's parameter; 0, from older save states, is one).
+  void us_timer(u32 ticks);
 
   // Outside world. Null means nobody is listening.
   // A transport attached while the radio is already on joins the conversation
@@ -170,7 +171,8 @@ public:
   };
 
 private:
-  static constexpr int kTimerInterval = 8; // us per event
+  static constexpr int kTimerInterval = 8; // us per tick
+  static constexpr u32 kQuietTicks = 4;    // ticks per event while the radio is quiet (us_timer)
   static constexpr u32 kTimeCheckMask = ~u32(kTimerInterval - 1);
 
   NDS& nds_;
@@ -248,7 +250,10 @@ private:
   u16 read16_inner(u32 addr);
   u16 ram16(u32 a) const;
   void ram16(u32 a, u16 v);
-  void schedule_timer(bool first);
+  // Arms the next timer event `ticks` ticks away.
+  void schedule_timer(bool first, u32 ticks = 1);
+  void us_tick();
+  bool radio_quiet() const;
   void check_irq(u16 old_flags);
   void set_irq(u32 irq);
   void set_irq13();

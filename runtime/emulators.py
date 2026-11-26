@@ -643,7 +643,8 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
     ds_language = max(0, min(5, ds_language))
     ds_microphone = ds_input.get('microphone', '1') != '0'
     # Local wireless (DS controls → Local wireless): DSCore's net.mode, a session with another console on the LAN
-    ds_wireless = {'1': 'auto', '2': 'host', '3': 'guest'}.get(ds_input.get('wireless', '0'), 'off')
+    # 4: smooth, two consoles a handheld and only inputs between them (net.mode twin, docs/NETPLAY_PLAN.md)
+    ds_wireless = {'1': 'auto', '2': 'host', '3': 'guest', '4': 'twin'}.get(ds_input.get('wireless', '0'), 'off')
     # A Kid profile is on no one's network unless the owner said so.
     limits = read_fields(player / 'profile.ini')
     # Online play (DS controls → Online play): Nintendo WFC through a fan-run service, DSCore's net.mode = internet

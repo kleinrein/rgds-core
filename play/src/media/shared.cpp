@@ -48,20 +48,22 @@ void resample(const uint32_t* src, int sw, int sh, uint32_t* dst, int dw, int dh
 }
 
 void blit_rounded(Canvas& c, const uint32_t* px, int w, int h, int x, int y, int r) {
+    // px is w x h of the canvas's own pixels, its corner at layout x, y; r is in layout units.
+    const int X = c.to_px(x), Y = c.to_px(y);
+    const double R = r * double(c.scale());
     for (int row = 0; row < h; ++row) {
-        int cy = y + row;
-        if (cy < 0 || cy >= c.h()) continue;
+        int cy = Y + row;
+        if (cy < 0 || cy >= c.pixel_h()) continue;
         for (int col = 0; col < w; ++col) {
-            int cx = x + col;
-            if (cx < 0 || cx >= c.w()) continue;
+            int cx = X + col;
+            if (cx < 0 || cx >= c.pixel_w()) continue;
             // Coverage in the corners: the distance from the corner circle's centre.
             double cover = 1;
-            double dx = col < r ? r - col - .5 : col >= w - r ? col - (w - r) + .5 : 0;
-            double dy = row < r ? r - row - .5 : row >= h - r ? row - (h - r) + .5 : 0;
-            if (dx > 0 && dy > 0) cover = std::clamp(r - std::hypot(dx, dy) + .5, 0.0, 1.0);
+            double dx = col < R ? R - col - .5 : col >= w - R ? col - (w - R) + .5 : 0;
+            double dy = row < R ? R - row - .5 : row >= h - R ? row - (h - R) + .5 : 0;
+            if (dx > 0 && dy > 0) cover = std::clamp(R - std::hypot(dx, dy) + .5, 0.0, 1.0);
             if (cover <= 0) continue;
-            uint32_t p = px[size_t(row) * w + col];
-            c.fill_rect(cx, cy, 1, 1, Rgb::from_px(p), int(255 * cover));
+            c.put_px(cx, cy, Rgb::from_px(px[size_t(row) * w + col]), int(255 * cover));
         }
     }
 }
@@ -189,10 +191,12 @@ void Sheet::touch(const TouchEvent& t) {
 bool Sheet::update(double dt_ms) { return rise.step(dt_ms, .0040, .80); }
 
 void Sheet::draw(SDL_Renderer* r, Context& c) {
-    if (stale || !tex || tex.w != w || tex.h != h) {
-        Canvas cv(w, h);
+    if (stale || !tex || tex.k != c.scale || tex.w != int(std::lround(w * c.scale)) ||
+        tex.h != int(std::lround(h * c.scale))) {
+        FontScale fs_(c.font, c.scale);
+        Canvas cv(w, h, c.scale);
         // Transparent ground: only the panel is drawn.
-        std::fill(cv.data(), cv.data() + size_t(w) * h, 0x00000000u);
+        std::fill(cv.data(), cv.data() + size_t(cv.pixel_w()) * cv.pixel_h(), 0x00000000u);
         Box p = panel_box();
         play::soft_round(cv, p.x, p.y - 4, p.w, p.h, 22, c.look.shadow(), c.look.dark ? 120 : 60);
         play::glossy(cv, p.x, p.y, p.w, p.h, 22, c.look.panel, 0, true);

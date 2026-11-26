@@ -1519,6 +1519,7 @@ Just you	Just you
 Buttons, shortcut and fast-forward	Buttons, shortcut and fast-forward
 DS nickname	DS nickname
 Join or host	Join or host
+Smooth (2 players)	Smooth (2 players)
 Host	Host
 Sharing details	Sharing details
 Graphics saved.	Graphics saved.
@@ -1819,6 +1820,7 @@ Sleep in	Sleep in
 Sleep timer	Sleep timer
 Smaller	Smaller
 Stand mode	Stand mode
+Touch below for the remote	Touch below for the remote
 Stretch	Stretch
 Subtitles	Subtitles
 Tap or press A to play now	Tap or press A to play now
@@ -2071,6 +2073,7 @@ Charge cycles	Charge cycles
 Since unplugged	Since unplugged
 This handheld does not report its battery.	This handheld does not report its battery.
 The battery's capacity is not known yet.	The battery's capacity is not known yet.
+Measured once the battery runs low and charges full.	Measured once the battery runs low and charges full.
 Your battery is in good health.	Your battery is in good health.
 Your battery holds clearly less than when new.	Your battery holds clearly less than when new.
 On the charger	On the charger
@@ -2079,3 +2082,10 @@ Charged to {0}%	Charged to {0}%
 Last 7 days on battery	Last 7 days on battery
 What uses your battery shows here after some time unplugged.	What uses your battery shows here after some time unplugged.
 Menus & Home	Menus & Home
+Orientation	Orientation
+Sideways	Sideways
+Upright	Upright
+With controls	With controls
+Left hand	Left hand
+Right hand	Right hand
+Volume and brightness	Volume and brightness

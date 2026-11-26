@@ -94,6 +94,16 @@ int main(int argc, char** argv) {
     bare.level = 40;
     const auto empty = battery_report(bare, {}, {}, 45200);
     assert(empty.health == -1 && empty.cycles < 0 && empty.uses.empty() && empty.unplugged == 0);
+    // A gauge still on a seed (a new Plus whose PMIC kept the RG DS tree's 4000 mAh): no health from it.
+    BatteryGauge seeded = now;
+    seeded.full = 4000000;
+    seeded.design = 4247000;
+    const auto fresh = battery_report(seeded, rows, {}, 45200);
+    assert(fresh.seeded && fresh.health == -1);
+    seeded.full = seeded.design;
+    assert(battery_report(seeded, rows, {}, 45200).health == -1);
+    seeded.full = 3990000; // measured
+    assert(battery_report(seeded, rows, {}, 45200).health == 94 && !battery_report(seeded, rows, {}, 45200).seeded);
     std::cout << "ok\n";
 }
 '''

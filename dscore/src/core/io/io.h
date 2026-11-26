@@ -457,6 +457,7 @@ private:
   void rtc_seed();                // from host local time
   void rtc_seed_time();           // ... the date and time only
   bool rtc_host_clock_ = false;   // survives reset()
+  bool rtc_fixed_ = false;        // start_rtc_clock_at: the seed came from the session, not the host
   // status1 bit 7 (power lost) clears on guest read and stays clear across
   // reset(); otherwise every reboot re-enters the setup wizard.
   bool rtc_power_lost_seen_ = false;
@@ -464,11 +465,15 @@ private:
 public:
   void rtc_step_second() { rtc_tick(); } // one second of the clock, with its interrupts (tests)
   void start_rtc_clock();                // host time; also clears power-lost; survives reset()
+  // As start_rtc_clock, but from a given date and time (the chip's seven BCD bytes: year, month, day, weekday,
+  // hour with its PM flag, minute, second), and never re-read from the host after: the two copies of a console in
+  // a two-console session must count the same time.
+  void start_rtc_clock_at(const u8 datetime[7]);
   bool rtc_host_clock() const { return rtc_host_clock_; }
   // Re-read the host clock into a running RTC (after the host slept, which
   // emulated time does not see). No-op unless start_rtc_clock() was called.
   void resync_rtc_clock() {
-    if (rtc_host_clock_) rtc_seed();
+    if (rtc_host_clock_ && !rtc_fixed_) rtc_seed();
   }
   void rtc_event();
   static void grid_rtc_event(NDS& nds, u32); // DSi interleave grid

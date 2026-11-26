@@ -812,6 +812,11 @@ int main(int argc, char** argv) {
         upper.area = {0, 0, pw, ph};
         lower.area = {0, ph, pw, ph};
     }
+    // The second screen is laid out at 640x480 whatever the panel, as the launcher's is: on an RG DS Plus
+    // (1024x768) the companion's canvas is drawn at the panel's own pixels with everything 1.6x as big (ui/canvas.hpp),
+    // so it is the RG DS's size on the glass and as sharp as the panel. Its touches come in layout units.
+    const int lw = 640, lh = 480;
+    const float lk = std::min(float(pw) / lw, float(ph) / lh);
     if (upper.gl) gpu_core_window = upper.window;
     // The PSP's, N64's, Dreamcast's and Flash's frames go straight into the game panel's texture (Mario Kart 64's
     // frame on the main thread: 7 ms read back, about 2 this way; a Flash picture 15-30 ms read back on the RG DS);
@@ -823,10 +828,10 @@ int main(int argc, char** argv) {
     Panel* gpu_panel = &upper; // the panel whose texture the core's frames go into
     Picture first = session.game();
     use_panel(upper);
-    make_textures(upper, first.w, first.h, pw, ph);
+    make_textures(upper, first.w, first.h, int(std::lround(lw * lk)), int(std::lround(lh * lk)));
     if (lower.renderer != upper.renderer) {
         use_panel(lower);
-        make_textures(lower, first.w, first.h, pw, ph);
+        make_textures(lower, first.w, first.h, int(std::lround(lw * lk)), int(std::lround(lh * lk)));
     } else {
         // Game textures of its own (the Virtual Boy's 3D draws a picture on each panel), the companion's shared.
         make_game_textures(lower, first.w, first.h);
@@ -946,7 +951,7 @@ int main(int argc, char** argv) {
     };
     reload_stick_controls(true);
 
-    Canvas companion(pw, ph);
+    Canvas companion(lw, lh, lk);
     Look look = session.look();
     // A game's art on the second screen in the palette the top screen shows it in.
     auto shade_look = [&]() {
@@ -965,8 +970,8 @@ int main(int argc, char** argv) {
         const SDL_Rect& d = lower.game_dest;
         const Picture game = session.core().picture();
         if (d.w <= 0 || d.h <= 0 || game.w <= 0 || game.h <= 0) return;
-        const int wx = lower.area.x + x * lower.area.w / std::max(1, pw),
-                  wy = lower.area.y + y * lower.area.h / std::max(1, ph);
+        const int wx = lower.area.x + x * lower.area.w / std::max(1, lw),
+                  wy = lower.area.y + y * lower.area.h / std::max(1, lh);
         const bool inside = wx >= d.x && wy >= d.y && wx < d.x + d.w && wy < d.y + d.h;
         session.core().set_pointer(inside ? (wx - d.x) * game.w / d.w : -1, inside ? (wy - d.y) * game.h / d.h : -1,
                                    down);
@@ -977,8 +982,8 @@ int main(int argc, char** argv) {
         const SDL_Rect& d = upper.game_dest;
         const Picture game = session.core().picture();
         if (d.w <= 0 || d.h <= 0 || game.w <= 0 || game.h <= 0) return;
-        const int wx = upper.area.x + x * upper.area.w / std::max(1, pw),
-                  wy = upper.area.y + y * upper.area.h / std::max(1, ph);
+        const int wx = upper.area.x + x * upper.area.w / std::max(1, lw),
+                  wy = upper.area.y + y * upper.area.h / std::max(1, lh);
         const bool inside = wx >= d.x && wy >= d.y && wx < d.x + d.w && wy < d.y + d.h;
         session.core().set_pointer(inside ? (wx - d.x) * game.w / d.w : -1, inside ? (wy - d.y) * game.h / d.h : -1,
                                    down);
@@ -1115,25 +1120,25 @@ int main(int argc, char** argv) {
                 if (e.type == SDL_FINGERDOWN || e.type == SDL_FINGERMOTION || e.type == SDL_FINGERUP) {
                     int x = -1, y = -1;
                     if (e.tfinger.touchId == -2) {
-                        x = int(e.tfinger.x * pw), y = int(e.tfinger.y * ph);
+                        x = int(e.tfinger.x * lw), y = int(e.tfinger.y * lh);
                     } else if (lower.window && e.tfinger.windowID == SDL_GetWindowID(lower.window)) {
                         int ww = 0, wh = 0;
                         SDL_GetWindowSize(lower.window, &ww, &wh);
-                        x = (int(e.tfinger.x * ww) - lower.area.x) * pw / std::max(1, lower.area.w);
-                        y = (int(e.tfinger.y * wh) - lower.area.y) * ph / std::max(1, lower.area.h);
+                        x = (int(e.tfinger.x * ww) - lower.area.x) * lw / std::max(1, lower.area.w);
+                        y = (int(e.tfinger.y * wh) - lower.area.y) * lh / std::max(1, lower.area.h);
                     }
                     aim(x, y, e.type != SDL_FINGERUP);
                 } else if ((e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP) &&
                            e.button.which != SDL_TOUCH_MOUSEID && lower.window &&
                            e.button.windowID == SDL_GetWindowID(lower.window)) {
-                    aim((e.button.x - lower.area.x) * pw / std::max(1, lower.area.w),
-                        (e.button.y - lower.area.y) * ph / std::max(1, lower.area.h), e.type == SDL_MOUSEBUTTONDOWN);
+                    aim((e.button.x - lower.area.x) * lw / std::max(1, lower.area.w),
+                        (e.button.y - lower.area.y) * lh / std::max(1, lower.area.h), e.type == SDL_MOUSEBUTTONDOWN);
                 } else if (e.type == SDL_MOUSEMOTION && (e.motion.state & SDL_BUTTON_LMASK) &&
                            e.motion.which != SDL_TOUCH_MOUSEID && lower.window &&
                            e.motion.windowID == SDL_GetWindowID(lower.window)) {
                     // A desktop's mouse dragged: a finger drawing (Mario Paint).
-                    aim((e.motion.x - lower.area.x) * pw / std::max(1, lower.area.w),
-                        (e.motion.y - lower.area.y) * ph / std::max(1, lower.area.h), true);
+                    aim((e.motion.x - lower.area.x) * lw / std::max(1, lower.area.w),
+                        (e.motion.y - lower.area.y) * lh / std::max(1, lower.area.h), true);
                 }
                 // A desktop's mouse on the top panel: the second screen shown there (the top touch screen below).
                 if ((e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP ||
@@ -1147,7 +1152,7 @@ int main(int argc, char** argv) {
                         session.touch(Touch{e.type == SDL_MOUSEBUTTONDOWN ? Touch::Down
                                             : e.type == SDL_MOUSEBUTTONUP ? Touch::Up
                                                                           : Touch::Move,
-                                            (mx - a.x) * pw / std::max(1, a.w), (my - a.y) * ph / std::max(1, a.h)}))
+                                            (mx - a.x) * lw / std::max(1, a.w), (my - a.y) * lh / std::max(1, a.h)}))
                         drawn_key = ~0ull;
                 }
                 continue;
@@ -1161,7 +1166,7 @@ int main(int argc, char** argv) {
                           my = e.type == SDL_MOUSEMOTION ? e.motion.y : e.button.y;
                 const SDL_Rect& a = upper.area;
                 if (mx >= a.x && my >= a.y && mx < a.x + a.w && my < a.y + a.h) {
-                    aim_top((mx - a.x) * pw / std::max(1, a.w), (my - a.y) * ph / std::max(1, a.h),
+                    aim_top((mx - a.x) * lw / std::max(1, a.w), (my - a.y) * lh / std::max(1, a.h),
                             e.type != SDL_MOUSEBUTTONUP);
                     continue;
                 }
@@ -1172,15 +1177,15 @@ int main(int argc, char** argv) {
             bool have = false;
             if (e.type == SDL_FINGERDOWN || e.type == SDL_FINGERMOTION || e.type == SDL_FINGERUP) {
                 t.kind = e.type == SDL_FINGERDOWN ? Touch::Down : e.type == SDL_FINGERUP ? Touch::Up : Touch::Move;
-                if (e.tfinger.touchId == -2) { // the bridge's reader: the lower panel, 640x480
-                    t.x = int(e.tfinger.x * pw);
-                    t.y = int(e.tfinger.y * ph);
+                if (e.tfinger.touchId == -2) { // the bridge's reader: the lower panel, in layout units
+                    t.x = int(e.tfinger.x * lw);
+                    t.y = int(e.tfinger.y * lh);
                     have = true;
                 } else if (lower.window && e.tfinger.windowID == SDL_GetWindowID(lower.window)) {
                     int ww = 0, wh = 0;
                     SDL_GetWindowSize(lower.window, &ww, &wh);
-                    t.x = (int(e.tfinger.x * ww) - lower.area.x) * pw / std::max(1, lower.area.w);
-                    t.y = (int(e.tfinger.y * wh) - lower.area.y) * ph / std::max(1, lower.area.h);
+                    t.x = (int(e.tfinger.x * ww) - lower.area.x) * lw / std::max(1, lower.area.w);
+                    t.y = (int(e.tfinger.y * wh) - lower.area.y) * lh / std::max(1, lower.area.h);
                     have = true;
                 }
             } else if ((e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP ||
@@ -1193,9 +1198,9 @@ int main(int argc, char** argv) {
                 t.kind = e.type == SDL_MOUSEBUTTONDOWN ? Touch::Down
                          : e.type == SDL_MOUSEBUTTONUP ? Touch::Up
                                                        : Touch::Move;
-                t.x = (mx - lower.area.x) * pw / std::max(1, lower.area.w);
-                t.y = (my - lower.area.y) * ph / std::max(1, lower.area.h);
-                have = t.y >= 0 && t.y < ph;
+                t.x = (mx - lower.area.x) * lw / std::max(1, lower.area.w);
+                t.y = (my - lower.area.y) * lh / std::max(1, lower.area.h);
+                have = t.y >= 0 && t.y < lh;
             }
             if (have && session.touch(t)) drawn_key = ~0ull;
         }
@@ -1431,8 +1436,23 @@ int main(int argc, char** argv) {
                     }
                 } else if (const Picture eye = stereo ? session.core().other_eye() : Picture{}; eye.px) {
                     draw_game(*p, eye, fit, frame, session.font()); // the right eye, as the left is drawn
+                } else if (const Picture half = tall && second == SecondCompanion && !session.rewinding()
+                                                    ? session.companion()->tall_lower()
+                                                    : Picture{};
+                           half.px) {
+                    // A tall game's lower half drawn as the upper one is (same scale, filter and colours), so the
+                    // two meet at the hinge as one screen; only the dock's button is taken from the second screen.
+                    draw_game(*p, colour.apply(half), fit == FitInteger ? FitSharp : fit, no_frame, session.font());
+                    if (companion_new)
+                        SDL_UpdateTexture(p->companion, nullptr, companion.data(), companion.pixel_w() * 4);
+                    const Box b = session.companion()->tall_button(companion.w(), companion.h());
+                    const float k = companion.scale();
+                    const SDL_Rect from{int(b.x * k), int(b.y * k), int(b.w * k), int(b.h * k)},
+                        to{p->area.x + b.x * p->area.w / companion.w(), p->area.y + b.y * p->area.h / companion.h(),
+                           b.w * p->area.w / companion.w(), b.h * p->area.h / companion.h()};
+                    SDL_RenderCopy(p->renderer, p->companion, &from, &to);
                 } else if (second != SecondOff) {
-                    if (companion_new) SDL_UpdateTexture(p->companion, nullptr, companion.data(), pw * 4);
+                    if (companion_new) SDL_UpdateTexture(p->companion, nullptr, companion.data(), companion.pixel_w() * 4);
                     SDL_RenderCopy(p->renderer, p->companion, nullptr, &p->area);
                 }
                 if (p == &lower && toast.busy()) toast.draw(p->renderer, p->area, look, session.font(), SDL_GetTicks());

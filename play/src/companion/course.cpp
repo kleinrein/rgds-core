@@ -201,7 +201,7 @@ private:
             for (int x = 0; x < art.w; ++x) {
                 const int ox = left + x;
                 const uint32_t c = art.px[size_t(y) * art.w + x];
-                if (c && ox >= clip.x && ox < clip.x + clip.w) out.data()[size_t(oy) * out.w() + ox] = c;
+                if (c && ox >= clip.x && ox < clip.x + clip.w) out.fill_rect(ox, oy, 1, 1, Rgb::from_px(c));
             }
         }
     }
@@ -260,19 +260,12 @@ private:
         const double fx = ahead_x_, fy = ahead_y_, rx = -fy, ry = fx;
         const double px = racers_[0].x, py = racers_[0].y;
         const int cx = map.x + map.w / 2, cy = map.y + map.h * 62 / 100;
-        uint32_t* dst = out.data();
         for (int y = 0; y < map.h; y += 2)
             for (int x = 0; x < map.w; x += 2) {
                 const double dx = (map.x + x + 1 - cx) / zoom, dy = (cy - map.y - y - 1) / zoom;
                 const int wx = int(std::floor(px + rx * dx + fx * dy)), wy = int(std::floor(py + ry * dx + fy * dy));
                 const uint32_t c = colours_[world_[size_t(wy & 1023) * 1024 + (wx & 1023)]];
-                const size_t i = size_t(map.y + y) * out.w() + map.x + x;
-                dst[i] = c;
-                if (x + 1 < map.w) dst[i + 1] = c;
-                if (y + 1 < map.h) {
-                    dst[i + out.w()] = c;
-                    if (x + 1 < map.w) dst[i + out.w() + 1] = c;
-                }
+                out.fill_rect(map.x + x, map.y + y, std::min(2, map.w - x), std::min(2, map.h - y), Rgb::from_px(c));
             }
         auto at = [&](double wx, double wy, int& sx, int& sy) {
             const double dx = wx - px, dy = wy - py;

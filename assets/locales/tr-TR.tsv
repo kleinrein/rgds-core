@@ -1519,6 +1519,7 @@ Just you	Yalnızca sen
 Buttons, shortcut and fast-forward	Düğmeler, kısayol ve hızlı ileri
 DS nickname	DS takma adı
 Join or host	Bli med eller vert
+Smooth (2 players)	Akıcı (2 oyuncu)
 Host	Vert
 Sharing details	Delingsdetaljar
 Graphics saved.	Grafikk lagra.
@@ -1819,6 +1820,7 @@ Sleep in	Uykuya kalan
 Sleep timer	Uyku zamanlayıcı
 Smaller	Daha küçük
 Stand mode	Stant modu
+Touch below for the remote	Kumanda için alta dokunun
 Stretch	Uzat
 Subtitles	Altyazılar
 Tap or press A to play now	Şimdi oynatmak için dokunun veya A'ya basın
@@ -2071,6 +2073,7 @@ Charge cycles	Şarj döngüsü
 Since unplugged	Fişten çekildiğinden beri
 This handheld does not report its battery.	Bu cihaz pil bilgisini bildirmiyor.
 The battery's capacity is not known yet.	Pilin kapasitesi henüz bilinmiyor.
+Measured once the battery runs low and charges full.	Pil azalıp tamamen şarj olduğunda ölçülür.
 Your battery is in good health.	Pilin iyi durumda.
 Your battery holds clearly less than when new.	Pilin yeniyken olduğundan belirgin şekilde az tutuyor.
 On the charger	Şarjda
@@ -2079,3 +2082,10 @@ Charged to {0}%	%{0} seviyesine şarj edildi
 Last 7 days on battery	Pilde son 7 gün
 What uses your battery shows here after some time unplugged.	Pili neyin kullandığı, bir süre şarj olmadan kullanınca burada görünür.
 Menus & Home	Menüler ve Ana ekran
+Orientation	Duruş
+Sideways	Yan
+Upright	Dik
+With controls	Kontrollü
+Left hand	Sol el
+Right hand	Sağ el
+Volume and brightness	Ses ve parlaklık

@@ -31,6 +31,9 @@ NET=${RGDS_NET_CMD:-/usr/libexec/rgds/net}
 WLAN=${RGDS_WLAN_DIR:-/sys/class/net/wlan0}
 HCI=${RGDS_HCI_DIR:-/sys/class/bluetooth/hci0}
 BTCTL=${RGDS_BTCTL:-bluetoothctl}
+# the USB gadget is unbound for the sleep (usb sleep|wake): bound, it stops every suspend on a wall charger
+USB=${RGDS_USB_CMD:-/usr/libexec/rgds/usb}
+DMESG=${RGDS_DMESG_CMD:-dmesg}
 # Deep sleep watch (2026-11-24). Deep sleep (since 0.9.0: BL31's deep mode with the RK817 asleep on its sleep pin)
 # turned one tester's RG DS off on every sleep, an RG DS that also boots the stock Android from eMMC; 0.8.0's shallow
 # sleep was fine there. A marker on the card is written before every sleep and removed after the wake; if a boot
@@ -129,6 +132,13 @@ radios_up() {
     return 0
 }
 
+# why the kernel backed out of a suspend: its last word on it (a device that failed to suspend, or a wake event on
+# the way down), for sleep.log
+suspend_failure() {
+    $DMESG 2>/dev/null | grep -E 'failed to suspend|Wakeup pending|active wakeup source|Freezing.*failed' |
+        grep -v 'Some devices failed' | tail -n 1 | sed 's/^\[[ 0-9.]*\] //'
+}
+
 case "$1" in
 suspend)
     token=$(cat $RUN/suspend-request 2>/dev/null)
@@ -139,6 +149,7 @@ suspend)
     started=$(cat $RTC/since_epoch 2>/dev/null)
     panels_save
     radios_down
+    $USB sleep > /dev/null 2>&1
     # shallow on a handheld whose deep sleep ended in a cold boot, deep otherwise (written each time, so removing
     # sleep-shallow takes effect at the next sleep)
     if [ -f "$SHALLOW" ]; then echo s2idle > "$MEM_SLEEP"; else echo deep > "$MEM_SLEEP"; fi 2>/dev/null
@@ -157,6 +168,7 @@ suspend)
         suspend_now
         rc=$?
         if [ $rc != 0 ]; then
+            echo "$(date '+%F %T') the sleep failed ($rc): $(suspend_failure)" >> "$LOG" 2>/dev/null
             # a wake event on the way down (the charger pulled as the lid shut) aborts the suspend: try again
             # while the lid stays closed, or the handheld would sit awake under it
             tries=$((tries + 1))
@@ -187,6 +199,7 @@ suspend)
     done
     rm -f "$PENDING"
     echo 0 > $RTC/wakealarm 2>/dev/null
+    $USB wake > /dev/null 2>&1
     panels_back
     echo 0 > $LED 2>/dev/null
     if [ $wake = poweroff ]; then

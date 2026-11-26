@@ -24,8 +24,11 @@ namespace play {
 class EvdevPad {
 public:
     ~EvdevPad() { close(); }
-    // The first device named like the RG DS pad. False on other machines.
-    bool open(const std::string& name = "ANBERNIC-rk3568-keys") {
+    // The first device named like the RG DS pad. False on other machines. `mainline`: the device reports
+    // positional BTN_* codes (RG DS OS's rgds-pad, "retrogame_joypad": A is BTN_EAST, B BTN_SOUTH, Home KEY_HOME)
+    // instead of the stock driver's order.
+    bool open(const std::string& name = "ANBERNIC-rk3568-keys", bool mainline = false) {
+        mainline_ = mainline;
 #ifdef __linux__
         DIR* dir = opendir("/dev/input");
         if (!dir) return false;
@@ -73,8 +76,11 @@ public:
             for (size_t i = 0; i < size_t(n) / sizeof(input_event); ++i) {
                 const auto& e = ev[i];
                 if (e.type == EV_KEY) {
-                    uint32_t bit = key_bit(e.code);
-                    if (e.code == BTN_TL2 && e.value == 1) home = true;
+                    uint32_t bit = mainline_ ? mainline_bit(e.code) : key_bit(e.code);
+                    // RG DS OS's rgds-pad sends Home as KEY_HOME; the RG DS Plus's kernel joypad (ROCKNIX's
+                    // retrogame_joypad) has it as BTN_MODE (src/platform/mainline_controls.hpp).
+                    const bool home_key = mainline_ ? e.code == KEY_HOME || e.code == BTN_MODE : e.code == BTN_TL2;
+                    if (home_key && e.value == 1) home = true;
                     if (bit) held_ = e.value ? (held_ | bit) : (held_ & ~bit);
                 } else if (e.type == EV_ABS && e.code == ABS_HAT0X) {
                     held_ = (held_ & ~(Left | Right)) | (e.value < 0 ? Left : e.value > 0 ? Right : 0);
@@ -110,6 +116,31 @@ private:
         return 0;
 #endif
     }
+    static uint32_t mainline_bit(unsigned code) {
+#ifdef __linux__
+        switch (code) {
+        case BTN_EAST: return A;
+        case BTN_SOUTH: return B;
+        case BTN_NORTH: return X;
+        case BTN_WEST: return Y;
+        case BTN_TL: return L;
+        case BTN_TR: return R;
+        case BTN_TL2: return L2;
+        case BTN_TR2: return R2;
+        case BTN_SELECT: return Select;
+        case BTN_START: return Start;
+        case BTN_DPAD_UP: return Up;
+        case BTN_DPAD_DOWN: return Down;
+        case BTN_DPAD_LEFT: return Left;
+        case BTN_DPAD_RIGHT: return Right;
+        default: return 0;
+        }
+#else
+        (void)code;
+        return 0;
+#endif
+    }
+    bool mainline_ = false;
     int fd_ = -1;
     std::string path_;
     uint32_t held_ = 0;

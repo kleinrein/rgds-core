@@ -98,7 +98,8 @@ void paint(Canvas& out, const Dock::Image& img, int x, int y, int alpha = 255) {
 
 // A box blur of `radius`, rows then columns, in place.
 void blur(Canvas& c, int radius) {
-    const int W = c.w(), H = c.h();
+    const int W = c.pixel_w(), H = c.pixel_h();
+    radius = c.to_px(radius);
     std::vector<uint32_t> line(size_t(std::max(W, H)));
     auto pass = [&](uint32_t* first, int count, int step) {
         for (int i = 0; i < count; ++i) line[size_t(i)] = first[size_t(i) * step];
@@ -193,6 +194,10 @@ int Dock::shown_brightness() const {
     return int(std::lround(brightness_ + (rest - brightness_) * t));
 }
 
+bool Dock::resting() const {
+    return reachable_ && !full_ && !off_ && openness() <= 0 && (toast_.empty() || now_ - toast_at_ >= toast_ms);
+}
+
 bool Dock::moving() const {
     if (held_item(held_) && !fired_) return true;
     if (now_ - toast_at_ < toast_ms && !toast_.empty()) return true;
@@ -219,7 +224,7 @@ Box Dock::box(Item item, int w, int h) const {
 }
 
 bool Dock::touch(const Touch& t) {
-    const int W = 640, H = 480;
+    const int W = w_, H = h_;
     if (off_) {
         // A touch on the black screen brings it back, and does nothing else.
         if (t.kind == Touch::Down) {
@@ -318,8 +323,9 @@ uint64_t Dock::controls_key() const {
 void Dock::reveal(Canvas& out, const Canvas& layer, double cx, double cy, double radius) const {
     // Row by row: the span well inside the circle is copied as it is, only
     // the edge's two-pixel band is blended (a whole-screen distance test per
-    // pixel cost the handheld most of a frame).
-    const int W = out.w(), H = out.h();
+    // pixel cost the handheld most of a frame). In the canvas's stored pixels.
+    const int W = out.pixel_w(), H = out.pixel_h();
+    cx *= out.scale(), cy *= out.scale(), radius *= out.scale();
     uint32_t* dst = out.data();
     const uint32_t* src = layer.data();
     auto blend = [](uint32_t d, uint32_t s, uint32_t a) {
@@ -353,6 +359,7 @@ void Dock::reveal(Canvas& out, const Canvas& layer, double cx, double cy, double
 }
 
 void Dock::draw(Canvas& out, const Look& look, const Font& font, const Words& words) const {
+    w_ = out.w(), h_ = out.h();
     if (!reachable_ && !full_) return;
     if (off_) {
         out.fill({0, 0, 0});
@@ -367,8 +374,8 @@ void Dock::draw(Canvas& out, const Look& look, const Font& font, const Words& wo
         // from the button's centre over the companion. They are drawn once
         // for the whole opening, not again for every frame of it.
         const uint64_t k = controls_key() ^ look_key(look);
-        if (layer_.w() != out.w() || layer_.h() != out.h() || k != layer_key_) {
-            layer_.resize(out.w(), out.h());
+        if (layer_.pixel_w() != out.pixel_w() || layer_.pixel_h() != out.pixel_h() || k != layer_key_) {
+            layer_.resize_like(out, out.w(), out.h());
             ground(layer_, look);
             draw_controls(layer_, look, font, words);
             layer_key_ = k;
@@ -376,7 +383,7 @@ void Dock::draw(Canvas& out, const Look& look, const Font& font, const Words& wo
         const Box b = box(Item::Button, out.w(), out.h());
         const double cx = b.x + b.w / 2.0, cy = b.y + b.h / 2.0;
         const double R = look.animations && open < 1 ? open * (std::hypot(cx, cy) + 2) : 1e6;
-        if (R >= 1e6) std::copy(layer_.data(), layer_.data() + size_t(out.w()) * out.h(), out.data());
+        if (R >= 1e6) std::copy(layer_.data(), layer_.data() + size_t(out.pixel_w()) * out.pixel_h(), out.data());
         else reveal(out, layer_, cx, cy, R);
     }
     if (!full_) draw_button(out, look);
@@ -399,14 +406,18 @@ void Dock::draw_button(Canvas& out, const Look& look) const {
     double t = open_ ? 1 : idle < faint_after_ms ? 1 : 1 - std::min(1.0, double(idle - faint_after_ms) / 700);
     if (!look.animations && !open_) t = idle < faint_after_ms ? 1 : 0;
     const int alpha = int(90 + 165 * t);
-    Canvas pill(b.w, b.h + 4);
-    for (int y = 0; y < pill.h(); ++y)
-        for (int x = 0; x < pill.w(); ++x) pill.data()[size_t(y * pill.w() + x)] = out.at(b.x + x, b.y + y);
+    // Drawn on a copy of what is under it, then laid over that at the button's alpha: in the stored pixels.
+    Canvas pill(b.w, b.h + 4, out.scale());
+    const int px = out.to_px(b.x), py = out.to_px(b.y);
+    for (int y = 0; y < pill.pixel_h(); ++y)
+        for (int x = 0; x < pill.pixel_w(); ++x)
+            if (px + x < out.pixel_w() && py + y < out.pixel_h())
+                pill.data()[size_t(y) * pill.pixel_w() + x] = out.at(px + x, py + y);
     raised(pill, look, 0, 0, b.w, b.h, b.h / 2, open_ ? look.accent : look.panel, 0, true, false);
     icon(pill, look, open_ ? Icon::Close : Icon::More, b.w / 2, b.h / 2, 24, open_ ? look.on_accent : look.accent);
-    for (int y = 0; y < pill.h(); ++y)
-        for (int x = 0; x < pill.w(); ++x)
-            out.fill_rect(b.x + x, b.y + y, 1, 1, Rgb::from_px(pill.data()[size_t(y * pill.w() + x)]), alpha);
+    for (int y = 0; y < pill.pixel_h(); ++y)
+        for (int x = 0; x < pill.pixel_w(); ++x)
+            out.put_px(px + x, py + y, Rgb::from_px(pill.data()[size_t(y) * pill.pixel_w() + x]), alpha);
 }
 
 void Dock::hold_button(Canvas& out, const Look& look, const Font& font, const Words& words, Item item, Icon glyph,
@@ -430,21 +441,21 @@ void Dock::ground(Canvas& out, const Look& look) const {
         backdrop(out, look);
         return;
     }
-    const uint64_t k = look_key(look) ^ uint64_t(out.w()) << 48 ^ uint64_t(out.h()) << 36;
-    if (ground_.w() != out.w() || ground_.h() != out.h() || k != ground_key_) {
+    const uint64_t k = look_key(look) ^ uint64_t(out.pixel_w()) << 48 ^ uint64_t(out.pixel_h()) << 36;
+    if (ground_.pixel_w() != out.pixel_w() || ground_.pixel_h() != out.pixel_h() || k != ground_key_) {
         // The box art over the whole screen, soft and faint: a colour of the game, not a picture to read.
-        ground_.resize(out.w(), out.h());
+        ground_.resize_like(out, out.w(), out.h());
         backdrop(ground_, look);
-        Canvas art(out.w(), out.h());
+        Canvas art(out.w(), out.h(), out.scale());
         art.cover(cover_.px.data(), cover_.w, cover_.h, cover_.w, 256);
         blur(art, 6);
         blur(art, 6);
         const int alpha = look.high_contrast ? 0 : look.dark ? 72 : 60;
-        for (size_t i = 0; i < size_t(out.w()) * out.h(); ++i)
+        for (size_t i = 0; i < size_t(out.pixel_w()) * out.pixel_h(); ++i)
             ground_.data()[i] = mix(Rgb::from_px(ground_.data()[i]), Rgb::from_px(art.data()[i]), alpha).px();
         ground_key_ = k;
     }
-    std::copy(ground_.data(), ground_.data() + size_t(out.w()) * out.h(), out.data());
+    std::copy(ground_.data(), ground_.data() + size_t(out.pixel_w()) * out.pixel_h(), out.data());
 }
 
 void Dock::art(Canvas& out, const Look& look, const Box& b) const {

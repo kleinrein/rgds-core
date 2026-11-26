@@ -1519,6 +1519,7 @@ Just you	나만 사용
 Buttons, shortcut and fast-forward	버튼, 단축키, 빨리 감기
 DS nickname	DS 닉네임
 Join or host	참가 또는 호스트
+Smooth (2 players)	부드럽게 (2명)
 Host	호스트
 Sharing details	공유 세부 정보
 Graphics saved.	그래픽을 저장했습니다.
@@ -1819,6 +1820,7 @@ Sleep in	절전까지
 Sleep timer	취침 타이머
 Smaller	작게
 Stand mode	스탠드 모드
+Touch below for the remote	리모컨은 아래 화면을 터치
 Stretch	늘이기
 Subtitles	자막
 Tap or press A to play now	탭하거나 A를 눌러 지금 재생
@@ -2071,6 +2073,7 @@ Charge cycles	충전 횟수
 Since unplugged	충전기 분리 후
 This handheld does not report its battery.	이 기기는 배터리 정보를 알려 주지 않습니다.
 The battery's capacity is not known yet.	배터리 용량을 아직 알 수 없습니다.
+Measured once the battery runs low and charges full.	배터리가 거의 다 닳은 뒤 완전히 충전하면 측정됩니다.
 Your battery is in good health.	배터리 상태가 좋습니다.
 Your battery holds clearly less than when new.	배터리 용량이 새것보다 확실히 줄었습니다.
 On the charger	충전기 연결됨
@@ -2079,3 +2082,10 @@ Charged to {0}%	{0}%까지 충전됨
 Last 7 days on battery	지난 7일간 배터리 사용
 What uses your battery shows here after some time unplugged.	충전기 없이 한동안 사용하면 배터리를 쓴 항목이 여기에 표시됩니다.
 Menus & Home	메뉴와 홈
+Orientation	방향
+Sideways	가로
+Upright	세로
+With controls	컨트롤 포함
+Left hand	왼손
+Right hand	오른손
+Volume and brightness	볼륨 및 밝기

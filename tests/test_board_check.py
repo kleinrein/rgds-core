@@ -14,7 +14,7 @@ OLD_UBOOT = 'root=PARTLABEL=rgds-root-a rgds.detected=rgds rgds.adc=1061000\n'
 
 class BoardCheck(unittest.TestCase):
 
-    def run_check(self, raw, model, cmdline=NEW_UBOOT, board_file=None, marker=False, uptime=25):
+    def run_check(self, raw, model, cmdline=NEW_UBOOT, board_file=None, marker=False, uptime=25, readonly=False):
         tmp = Path(self.tmp.name)
         sysfs, boot = tmp / 'sys', tmp / 'boot'
         adc = sysfs / 'bus/iio/devices/iio:device0'
@@ -48,7 +48,11 @@ class BoardCheck(unittest.TestCase):
             RGDS_BOARD_LOG=str(tmp / 'log'),
             RGDS_BOARD_UPTIME=str(tmp / 'uptime')
         )
-        subprocess.run(['sh', str(SCRIPT)], env=env, check=True, timeout=10)
+        if readonly: boot.chmod(0o555)
+        try:
+            subprocess.run(['sh', str(SCRIPT)], env=env, check=True, timeout=10)
+        finally:
+            boot.chmod(0o755)
         board = (boot / 'rgds-board.txt').read_text() if (boot / 'rgds-board.txt').exists() else None
         return board, (tmp / 'reboots').read_text().count('reboot'), (boot / 'rgds-board.reboot').exists()
 
@@ -89,6 +93,19 @@ class BoardCheck(unittest.TestCase):
     def test_an_old_u_boot_gets_the_file_but_no_restart(self):
         # The OTA never writes U-Boot: one that does not read the file would restart for nothing, forever.
         self.assertEqual(self.run_check(1023, 'Anbernic RG DS', OLD_UBOOT), ('rgds_known=rgds-plus\n', 0, False))
+
+    def test_an_old_u_boot_under_the_new_extlinux_template_gets_no_restart(self):
+        # An updated card keeps its old U-Boot, which expands the template's rgds.from=${rgds_from} to nothing.
+        empty = 'root=PARTLABEL=rgds-root-a rgds.detected=rgds rgds.adc=1061000 rgds.from= quiet\n'
+        self.assertEqual(self.run_check(1023, 'Anbernic RG DS', empty), ('rgds_known=rgds-plus\n', 0, False))
+        at_end = 'root=PARTLABEL=rgds-root-a rgds.detected= rgds.adc= rgds.from=\n'
+        self.assertEqual(self.run_check(1023, 'Anbernic RG DS', at_end), ('rgds_known=rgds-plus\n', 0, False))
+
+    def test_no_restart_when_the_boot_partition_cannot_be_written(self):
+        self.assertEqual(
+            self.run_check(1023, 'Anbernic RG DS', board_file='rgds_known=rgds-plus\n', readonly=True),
+            ('rgds_known=rgds-plus\n', 0, False)
+        )
 
     def test_an_early_rg_ds_like_reading_on_a_plus_is_not_trusted(self):
         # 2026-11-25: early in boot the Plus's ID still read inside the RG DS's window; the script wrote "rgds" and

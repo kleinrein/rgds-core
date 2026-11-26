@@ -77,10 +77,13 @@ def fit_label(template, cmdline, compatible):
     """The LABEL blocks of a release's extlinux.conf for this handheld. They load the device tree U-Boot picked
     (FDTDIR, by the board's ID voltage) only when the running U-Boot picked this handheld's: an older U-Boot sets no
     $fdtfile (rgds.detected= is empty) and FDTDIR would load a file that is not there, and a Plus that boots from
-    rgds-os-plus.img may be one whose voltage reads wrong. Otherwise this handheld's own is named (FDT)."""
+    rgds-os-plus.img may be one whose voltage reads wrong. A U-Boot from before rgds-board.txt (0.9.1 and older,
+    which an OTA never replaces) sets rgds.detected= but no rgds.from=, and its guess on a Plus is a coin toss, so
+    FDTDIR needs both. Otherwise this handheld's own is named (FDT)."""
     here = board(compatible)
     match = re.search(r'(?:^|\s)rgds\.detected=(\S*)', cmdline)
-    if match and match[1] == here:
+    source = re.search(r'(?:^|\s)rgds\.from=(adc|file)(?:\s|$)', cmdline)
+    if match and match[1] == here and source:
         return template
     dtb = DTBS[BOARDS.index(here)]
     return re.sub(r'^(\s*)FDTDIR (/[ab]/)\s*$', lambda m: f'{m[1]}FDT {m[2]}{dtb}', template, flags=re.M)

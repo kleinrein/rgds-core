@@ -483,11 +483,13 @@ private:
         const int oy = bh <= vh ? a.min_y : std::clamp(fy - vh / 2, a.min_y, a.max_y - vh);
         const uint32_t unseen = mix(look.background, look.panel, 128).px();
         const uint32_t sky = a.sky ? a.sky : unseen;
-        uint32_t* px = out.data();
         // A card the size of what is shown, so the map has an edge on the theme's ground.
         const int cw = std::min(bw, vw) * zoom, ch = std::min(bh, vh) * zoom;
         const int cx = left + (room_w - cw) / 2, cy = top + (H - ch) / 2;
         card(out, look, {cx - 6, cy - 6, cw + 12, ch + 12}, false, kit::radius);
+        // The map's pixels in the layout's units, then onto the canvas at its scale.
+        std::vector<uint32_t> map(size_t(std::max(0, cw)) * size_t(std::max(0, ch)));
+        uint32_t* px = map.data();
         // Each stored tile is looked up once per row of tiles: once per panel pixel, a
         // big map cost the handheld more than a whole frame's time.
         const int cols = cw / zoom, rows = ch / zoom;
@@ -503,7 +505,7 @@ private:
                     stored[i] = t == a.tiles.end() ? nullptr : &t->second;
                 }
             }
-            uint32_t* row = px + size_t(cy + my * zoom) * W + cx;
+            uint32_t* row = px + size_t(my * zoom) * cw;
             uint32_t* to = row;
             for (int mx = ox; mx < ox + cols;) {
                 const int tx = floor_div(mx, tile), lx = mx - tx * tile, n = std::min(tile - lx, ox + cols - mx);
@@ -515,8 +517,9 @@ private:
                 }
                 mx += n;
             }
-            for (int z = 1; z < zoom; ++z) std::copy(row, row + cw, row + size_t(z) * W);
+            for (int z = 1; z < zoom; ++z) std::copy(row, row + cw, row + size_t(z) * cw);
         }
+        if (cw > 0 && ch > 0) out.blit(px, cw, ch, cx, cy, 1);
         // The screen in view, and the player blinking on it.
         auto to_x = [&](int mx) { return cx + (mx - ox) * zoom; };
         auto to_y = [&](int my) { return cy + (my - oy) * zoom; };
@@ -524,16 +527,14 @@ private:
         const Rgb edge = look.accent;
         const int t = std::max(1, zoom / 2 + 1);
         const int rx = to_x(view_x_), ry = to_y(view_y_), rw = view_w_ * zoom, rh = view_h_ * zoom;
-        auto hline = [&](int x, int y, int w) {
-            for (int yy = y; yy < y + t; ++yy)
-                for (int xx = x; xx < x + w; ++xx)
-                    if (inside(xx, yy)) px[size_t(yy) * W + xx] = edge.px();
+        // A box's edge kept inside the map's card.
+        auto clipped = [&](int x, int y, int w, int h) {
+            const int x0 = std::max(x, cx), y0 = std::max(y, cy), x1 = std::min(x + w, cx + cw),
+                      y1 = std::min(y + h, cy + ch);
+            if (x1 > x0 && y1 > y0) out.fill_rect(x0, y0, x1 - x0, y1 - y0, edge);
         };
-        auto vline = [&](int x, int y, int h) {
-            for (int yy = y; yy < y + h; ++yy)
-                for (int xx = x; xx < x + t; ++xx)
-                    if (inside(xx, yy)) px[size_t(yy) * W + xx] = edge.px();
-        };
+        auto hline = [&](int x, int y, int w) { clipped(x, y, w, t); };
+        auto vline = [&](int x, int y, int h) { clipped(x, y, t, h); };
         if (view_w_ > 0) {
             hline(rx, ry, rw);
             hline(rx, ry + rh - t, rw);

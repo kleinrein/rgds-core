@@ -1519,6 +1519,7 @@ Just you	あなただけ
 Buttons, shortcut and fast-forward	ボタン、ショートカット、早送り
 DS nickname	DSの名前
 Join or host	参加またはホスト
+Smooth (2 players)	なめらか（2人）
 Host	ホスト
 Sharing details	共有の詳細
 Graphics saved.	グラフィックを保存しました。
@@ -1819,6 +1820,7 @@ Sleep in	スリープまで
 Sleep timer	スリープタイマー
 Smaller	小さく
 Stand mode	スタンドモード
+Touch below for the remote	リモコンは下の画面をタッチ
 Stretch	引き伸ばし
 Subtitles	字幕
 Tap or press A to play now	タップかAで今すぐ再生
@@ -2071,6 +2073,7 @@ Charge cycles	充電回数
 Since unplugged	充電器を外してから
 This handheld does not report its battery.	この本体はバッテリーの情報を報告しません。
 The battery's capacity is not known yet.	バッテリーの容量はまだわかりません。
+Measured once the battery runs low and charges full.	バッテリーが少なくなってから満充電すると測定されます。
 Your battery is in good health.	バッテリーは良好な状態です。
 Your battery holds clearly less than when new.	バッテリーの容量は新品より明らかに少なくなっています。
 On the charger	充電器に接続中
@@ -2079,3 +2082,10 @@ Charged to {0}%	{0}%まで充電
 Last 7 days on battery	過去7日間のバッテリー使用
 What uses your battery shows here after some time unplugged.	しばらく充電器を外して使うと、バッテリーを使ったものがここに表示されます。
 Menus & Home	メニューとホーム
+Orientation	向き
+Sideways	横向き
+Upright	縦向き
+With controls	操作つき
+Left hand	左手
+Right hand	右手
+Volume and brightness	音量と明るさ

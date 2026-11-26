@@ -271,6 +271,7 @@ void Session::frame(uint32_t buttons) {
 }
 
 void Session::render_companion(Canvas& out, const Look& look) const {
+    font_.set_scale(out.scale()); // text measured for the atlas it is drawn from at this canvas's scale
     if (rewind_.is_open()) rewind_.draw(out, look, font_, words_);
     else if (companion_) companion_->render(out, look, font_, words_);
     else out.fill(look.background);

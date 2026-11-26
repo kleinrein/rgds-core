@@ -74,8 +74,10 @@ if [ "$running" = "$board" ]; then
     fi
     exit 0
 fi
-# The wrong device tree: white panels on a Plus, the wrong panel modes on an RG DS.
-if ! grep -q 'rgds\.from=' "$CMDLINE" 2>/dev/null; then
+# The wrong device tree: white panels on a Plus, the wrong panel modes on an RG DS. Only a U-Boot that reads the file
+# gives rgds.from= a value: an older one expands the template's ${rgds_from} to nothing, and restarting under it
+# would only make the same guess again.
+if ! grep -q 'rgds\.from=[a-z]' "$CMDLINE" 2>/dev/null; then
     echo "board-check: running $running on a $board; this U-Boot does not read rgds-board.txt" >> "$LOG"
     exit 0
 fi
@@ -83,6 +85,10 @@ if [ -e "$BOOT/rgds-board.reboot" ]; then
     echo "board-check: running $running on a $board after a restart for it; not restarting again" >> "$LOG"
     exit 0
 fi
-writable && : > "$BOOT/rgds-board.reboot" && readonly_again
+# No restart without the marker (and the file above): /boot not writable would otherwise restart on every boot.
+if ! { writable && : > "$BOOT/rgds-board.reboot" && readonly_again; }; then
+    echo "board-check: running $running on a $board; /boot not writable, not restarting" >> "$LOG"
+    exit 0
+fi
 echo "board-check: running $running on a $board; restarting with the right device tree" >> "$LOG"
 $REBOOT

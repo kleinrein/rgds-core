@@ -73,9 +73,11 @@ inline uint32_t lerp(uint32_t p, uint32_t q, uint32_t f) { // f in 0..256
 // to a panel pixel; bilinear, or nearest while a finger drags it.
 void draw_scaled(Canvas& out, const Level& lv, double rx, double ry, double rw, double rh, double x0, double y0,
                  double step, bool smooth) {
+    // In the canvas's stored pixels: a bigger panel shows the page at its own resolution.
+    x0 *= out.scale(), y0 *= out.scale(), step /= out.scale();
     const int dw = int(std::ceil(rw / step)), dh = int(std::ceil(rh / step));
-    const int xa = std::max(0, int(std::floor(x0))), xb = std::min(out.w(), int(std::ceil(x0)) + dw);
-    const int ya = std::max(0, int(std::floor(y0))), yb = std::min(out.h(), int(std::ceil(y0)) + dh);
+    const int xa = std::max(0, int(std::floor(x0))), xb = std::min(out.pixel_w(), int(std::ceil(x0)) + dw);
+    const int ya = std::max(0, int(std::floor(y0))), yb = std::min(out.pixel_h(), int(std::ceil(y0)) + dh);
     if (xa >= xb || ya >= yb) return;
     const int lo_x = std::clamp(int(rx), 0, lv.w - 1), hi_x = std::clamp(int(std::ceil(rx + rw)) - 1, lo_x, lv.w - 1);
     const int lo_y = std::clamp(int(ry), 0, lv.h - 1), hi_y = std::clamp(int(std::ceil(ry + rh)) - 1, lo_y, lv.h - 1);
@@ -94,7 +96,7 @@ void draw_scaled(Canvas& out, const Level& lv, double rx, double ry, double rw, 
         const uint32_t fy = smooth ? uint32_t((v - j) * 256) : 0;
         const uint32_t* r0 = lv.px.data() + size_t(j) * lv.w;
         const uint32_t* r1 = lv.px.data() + size_t(std::min(j + 1, hi_y)) * lv.w;
-        uint32_t* d = out.data() + size_t(y) * out.w();
+        uint32_t* d = out.data() + size_t(y) * out.pixel_w();
         for (int x = xa; x < xb; ++x) {
             const size_t k = size_t(x - xa);
             if (!smooth) {

@@ -109,13 +109,24 @@ bool Companion::picture_matches(int w, int h) const {
     return !menu_over_game_ && (!s.match_w || (s.match_w == w && s.match_h == h));
 }
 
+Picture Companion::tall_lower() const {
+    if (!tall_screen() || !shown_ || lower_.empty() || !picture_matches(lower_w_, lower_h_) || !dock_.resting())
+        return {};
+    return {lower_.data(), lower_rect_.w, lower_rect_.h, lower_rect_.w};
+}
+
+Box Companion::tall_button(int w, int h) const {
+    const Box b = dock_.box(Dock::Item::Button, w, h);
+    return {b.x - 2, b.y - 2, b.w + 4, b.h + 8}; // the pill's shadow too
+}
+
 void Companion::touch_top(const Touch& t) {
     if (!finger_core_ || !top_is_touched()) return;
     const Rect r = picture_matches(lower_w_, lower_h_) ? profile_->screens.top_rect(lower_w_, lower_h_)
                                                        : Rect{0, 0, lower_w_, lower_h_};
     if (r.w <= 0 || r.h <= 0) return;
-    const double fit = std::min(640.0 / r.w, 480.0 / r.h);
-    const int x0 = int(640 - r.w * fit) / 2, y0 = int(480 - r.h * fit) / 2;
+    const double fit = std::min(double(panel_w_) / r.w, double(panel_h_) / r.h);
+    const int x0 = int(panel_w_ - r.w * fit) / 2, y0 = int(panel_h_ - r.h * fit) / 2;
     finger_core_->set_pointer(r.x + int((t.x - x0) / fit), r.y + int((t.y - y0) / fit), t.kind != Touch::Up);
 }
 
@@ -507,6 +518,11 @@ namespace {
 void sharp_blit(Canvas& out, const uint32_t* px, int w, int h, int ox, int oy, int tw, int th, bool keyed,
                 uint32_t key) {
     if (tw <= 0 || th <= 0) return;
+    // In the canvas's stored pixels (the layout's box at its scale).
+    {
+        const int x1 = out.to_px(ox + tw), y1 = out.to_px(oy + th);
+        ox = out.to_px(ox), oy = out.to_px(oy), tw = x1 - ox, th = y1 - oy;
+    }
     const int k = std::max(1, int(std::max(double(tw) / w, double(th) / h)) + 1), bw = w * k, bh = h * k;
     struct Tap {
         int at, next, w; // the two source pixels, and how much of the second (of 256)
@@ -523,13 +539,13 @@ void sharp_blit(Canvas& out, const uint32_t* px, int w, int h, int ox, int oy, i
     const std::vector<Tap> cols = taps(tw, bw), rows = taps(th, bh);
     uint32_t* dst = out.data();
     for (int y = 0; y < th; ++y) {
-        if (oy + y < 0 || oy + y >= out.h()) continue;
+        if (oy + y < 0 || oy + y >= out.pixel_h()) continue;
         const Tap& r = rows[size_t(y)];
         const uint32_t* a = px + size_t(r.at) * size_t(w);
         const uint32_t* c = px + size_t(r.next) * size_t(w);
-        uint32_t* line = dst + size_t(oy + y) * size_t(out.w());
+        uint32_t* line = dst + size_t(oy + y) * size_t(out.pixel_w());
         for (int x = 0; x < tw; ++x) {
-            if (ox + x < 0 || ox + x >= out.w()) continue;
+            if (ox + x < 0 || ox + x >= out.pixel_w()) continue;
             const Tap& t = cols[size_t(x)];
             const uint32_t p[4] = {a[t.at], a[t.next], c[t.at], c[t.next]};
             const int wt[4] = {(256 - t.w) * (256 - r.w), t.w * (256 - r.w), (256 - t.w) * r.w, t.w * r.w};
@@ -563,15 +579,17 @@ bool Companion::render_hud(Canvas& out, const Look& look) const {
     bool have_backdrop = false;
     if (h.backdrop_game && h.backdrop_layers) {
         std::lock_guard<std::mutex> g(backdrop_lock_);
-        if (!backdrop_.empty() && (backdrop_panel_serial_ != backdrop_serial_ || backdrop_panel_.w() != out.w() ||
-                                   backdrop_panel_.h() != out.h())) {
-            backdrop_panel_.resize(out.w(), out.h());
+        if (!backdrop_.empty() && (backdrop_panel_serial_ != backdrop_serial_ ||
+                                   backdrop_panel_.pixel_w() != out.pixel_w() ||
+                                   backdrop_panel_.pixel_h() != out.pixel_h())) {
+            backdrop_panel_.resize_like(out, out.w(), out.h());
             backdrop_panel_.cover(backdrop_.data(), backdrop_w_, backdrop_h_, backdrop_w_, 90);
             backdrop_panel_serial_ = backdrop_serial_;
         }
         have_backdrop = !backdrop_.empty();
     }
-    if (have_backdrop) std::copy_n(backdrop_panel_.data(), static_cast<size_t>(out.w()) * out.h(), out.data());
+    if (have_backdrop)
+        std::copy_n(backdrop_panel_.data(), static_cast<size_t>(out.pixel_w()) * out.pixel_h(), out.data());
     else if (h.backdrop_game && game.px) out.cover(game.px, game.w, rows, game.stride, 90);
     else if (h.backdrop_theme) backdrop(out, look);
     else out.fill(h.backdrop_game ? look.background : Rgb::hex(h.backdrop));
@@ -794,11 +812,11 @@ bool Companion::touch(const Touch& t) {
     if (dock_.touch(t)) return dock_.key() != before;
     if (screens_mode()) {
         const Rect r = lower_rect_.w ? lower_rect_ : profile_->screens.bottom_rect(lower_w_, lower_h_);
-        const double fit = std::min(640.0 / r.w, 480.0 / r.h);
-        const double tall =
-            std::min(480.0 / r.h, fit * (lower_w_ == r.w && lower_h_ == r.h ? 1 : profile_->screens.stretch));
-        const int x = r.x + int((t.x - (640 - r.w * fit) / 2) / fit),
-                  y = r.y + int((t.y - (480 - r.h * tall) / 2) / tall);
+        const double fit = std::min(double(panel_w_) / r.w, double(panel_h_) / r.h);
+        const double tall = std::min(double(panel_h_) / r.h,
+                                     fit * (lower_w_ == r.w && lower_h_ == r.h ? 1 : profile_->screens.stretch));
+        const int x = r.x + int((t.x - (panel_w_ - r.w * fit) / 2) / fit),
+                  y = r.y + int((t.y - (panel_h_ - r.h * tall) / 2) / tall);
         if (profile_->screens.pointer) {
             if (finger_core_) finger_core_->set_pointer(x, y, t.kind != Touch::Up);
             return false;
@@ -810,7 +828,7 @@ bool Companion::touch(const Touch& t) {
                     finger_ |= zone.buttons;
         return false;
     }
-    if (t.kind == Touch::Down && has_switch() && switch_box(640).contains(t.x, t.y)) {
+    if (t.kind == Touch::Down && has_switch() && switch_box(panel_w_).contains(t.x, t.y)) {
         // The switch steps between the game's own screen (map, team), the status board and the manual.
         const int next = screen_next();
         manual_on_ = next == 2;
@@ -891,10 +909,10 @@ namespace {
 
 // The second screen's ground from row y down (under a band).
 void backdrop_rows(Canvas& out, const Look& look, int y) {
-    Canvas ground(out.w(), out.h());
+    Canvas ground(out.w(), out.h(), out.scale());
     backdrop(ground, look);
-    std::copy(ground.data() + size_t(y) * out.w(), ground.data() + size_t(out.w()) * out.h(),
-              out.data() + size_t(y) * out.w());
+    const size_t from = size_t(out.to_px(y)) * out.pixel_w(), all = size_t(out.pixel_w()) * out.pixel_h();
+    std::copy(ground.data() + from, ground.data() + all, out.data() + from);
 }
 
 struct Placement {
@@ -958,11 +976,13 @@ void title_card(Canvas& out, const Look& look, const Font& font, const Dock& doc
 } // namespace
 
 void Companion::render(Canvas& out, const Look& look, const Font& font, const Words& words) const {
+    panel_w_ = out.w(), panel_h_ = out.h();
     // Wide open, the dock's controls cover the whole screen and the companion is not seen.
     if (!dock_.full() && !dock_.screen_off() && dock_.openness() < 1) {
         const uint64_t k = screen_key();
-        const size_t n = size_t(out.w()) * out.h();
-        if (dock_.moving() && k == screen_cache_key_ && screen_cache_.w() == out.w() && screen_cache_.h() == out.h())
+        const size_t n = size_t(out.pixel_w()) * out.pixel_h();
+        if (dock_.moving() && k == screen_cache_key_ && screen_cache_.pixel_w() == out.pixel_w() &&
+            screen_cache_.pixel_h() == out.pixel_h())
             std::copy(screen_cache_.data(), screen_cache_.data() + n, out.data());
         else {
             Look l = look;
@@ -973,7 +993,7 @@ void Companion::render(Canvas& out, const Look& look, const Font& font, const Wo
             render_screen(out, l, font);
             // Kept for the frames that follow while the dock moves over the same picture.
             if (dock_.moving()) {
-                screen_cache_.resize(out.w(), out.h());
+                screen_cache_.resize_like(out, out.w(), out.h());
                 std::copy(out.data(), out.data() + n, screen_cache_.data());
                 screen_cache_key_ = k;
             } else screen_cache_key_ = ~k;
@@ -1070,9 +1090,9 @@ void Companion::render_with_strip(Canvas& out, const Look& look, const Font& fon
     if (scale * hud_w_ > out.w() * 3 / 4 && scale > 1) --scale;
     const int bw = hud_w_ * scale + pad * 2, bh = hud_h_ * scale + pad * 2;
     const int band = bh + kit::margin + kit::gap;
-    Canvas content(out.w(), out.h() - band + kit::gap);
+    Canvas content(out.w(), out.h() - band + kit::gap, out.scale());
     render_content(content, look, font);
-    std::copy_n(content.data(), static_cast<size_t>(content.w()) * content.h(), out.data());
+    std::copy_n(content.data(), static_cast<size_t>(content.pixel_w()) * content.pixel_h(), out.data());
     out.fill_rect(0, content.h(), out.w(), out.h() - content.h(), look.background);
     backdrop_rows(out, look, content.h());
     // The band's most common colour in its first column: the HUD's own background.

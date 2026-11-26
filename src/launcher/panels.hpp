@@ -162,7 +162,7 @@ void App::top(SDL_Renderer* r, int y) {
                    {int(SettingsIcon::Cartridge), int(SettingsIcon::Play), int(SettingsIcon::Clock)});
         if (banner_shown()) update_banner(r, y + 408);
         else if (!library_ready) centered(r, "Preparing your cartridges…", y + 423, 1, "muted");
-        else if (return_writes_pending()) centered(r, "Restoring settings…", y + 423, 1, "muted");
+        else if (return_writes_slow()) centered(r, "Restoring settings…", y + 423, 1, "muted");
         return;
     }
     if (model.games.empty()) {

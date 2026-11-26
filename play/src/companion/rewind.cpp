@@ -41,12 +41,15 @@ std::string clock_text(uint64_t frames, double rate) {
 // The thumb nearest-scaled into b (whole rows and columns: cheap, and sharp for a game's pixels).
 void blit_scaled(Canvas& out, const Thumb& t, const Box& b) {
     if (t.empty() || b.w <= 0 || b.h <= 0) return;
+    // At the canvas's own pixels (a bigger panel's box is bigger, the thumb scaled into it).
+    const int bx = out.to_px(b.x), by = out.to_px(b.y), bw = out.to_px(b.x + b.w) - bx, bh = out.to_px(b.y + b.h) - by;
+    if (bw <= 0 || bh <= 0) return;
     uint32_t* px = out.data();
-    for (int y = std::max(0, b.y); y < std::min(out.h(), b.y + b.h); ++y) {
-        const uint32_t* row = t.px.data() + size_t(std::min(t.h - 1, (y - b.y) * t.h / b.h)) * t.w;
-        uint32_t* dst = px + size_t(y) * out.w();
-        for (int x = std::max(0, b.x); x < std::min(out.w(), b.x + b.w); ++x)
-            dst[x] = row[std::min(t.w - 1, (x - b.x) * t.w / b.w)] | 0xFF000000u;
+    for (int y = std::max(0, by); y < std::min(out.pixel_h(), by + bh); ++y) {
+        const uint32_t* row = t.px.data() + size_t(std::min(t.h - 1, (y - by) * t.h / bh)) * t.w;
+        uint32_t* dst = px + size_t(y) * out.pixel_w();
+        for (int x = std::max(0, bx); x < std::min(out.pixel_w(), bx + bw); ++x)
+            dst[x] = row[std::min(t.w - 1, (x - bx) * t.w / bw)] | 0xFF000000u;
     }
 }
 

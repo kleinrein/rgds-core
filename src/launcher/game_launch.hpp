@@ -142,6 +142,7 @@ void App::finish_launch(bool reopen) {
         }
         if (hardware.power && system_preferences.power > 0) return_power = system_preferences.power;
         return_status_needed = true;
+        return_controls_at = s.GetTicks();
         begin_return_controls();
     }
     last_activity = s.GetTicks();

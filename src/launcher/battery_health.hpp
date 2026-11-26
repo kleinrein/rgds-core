@@ -40,7 +40,8 @@ struct BatterySitting {
 struct BatteryReport {
     BatteryGauge gauge;
     size_t rows = 0;        // history rows read
-    int health = -1;        // charge_full against the design capacity, %
+    int health = -1;        // charge_full against the design capacity, % (-1 while the gauge has not measured it)
+    bool seeded = false;    // charge_full is still a seed the driver was handed, not one it measured
     double cycles = -1;     // what the charger put in, in design capacities
     double watts = 0;       // now: + charging, - on battery
     long long minutes = -1; // to empty on battery, to full on the charger
@@ -134,7 +135,13 @@ inline BatteryReport battery_report(const BatteryGauge& gauge, const std::vector
     report.level.fill(-1);
     const long long design = gauge.design > 0 ? gauge.design : 0;
     const long long full = gauge.full > 0 ? gauge.full : rows.empty() ? 0 : rows.back().full;
-    if (design > 0 && full > 0) report.health = int(std::min<long long>(100, (full * 100 + design / 2) / design));
+    // The RK817 driver keeps its full charge in the PMIC's NVRAM and only moves it after a run to empty and a charge to
+    // full. Until then it holds a seed: a device tree's design figure, its own or the other board's (4000 mAh on the
+    // RG DS, 4247 on the Plus, so a new Plus whose PMIC first met an RG DS tree reads 94 %). A measured charge is
+    // counted to the mAh, so it landing on one of these exactly is not a reading worth showing as health.
+    report.seeded = full > 0 && (full == design || full == 4000000 || full == 4247000);
+    if (design > 0 && full > 0 && !report.seeded)
+        report.health = int(std::min<long long>(100, (full * 100 + design / 2) / design));
     if (design > 0 && !rows.empty()) report.cycles = double(rows.back().charged) / double(design);
     report.watts = double(gauge.current) * double(gauge.voltage) / 1e12;
     const bool charging = gauge.plugged && gauge.status == 'C';

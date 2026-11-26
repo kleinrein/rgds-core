@@ -4,7 +4,7 @@
 //!     headless GAME.swf|GAME.zip [FRAMES] [SAVE_DIR]
 //!
 //! On Linux it offers the core a GLES 3 context of its own (EGL with no window, Mesa's surfaceless platform) and a
-//! 640x480 framebuffer, as RG DS Play does, so the core draws there; RGDS_FLASH_SOFTWARE=1 refuses it (the read-back
+//! framebuffer as big as the core's largest picture (1024x768 on a Plus), as RG DS Play does, so the core draws there; RGDS_FLASH_SOFTWARE=1 refuses it (the read-back
 //! path). HEADLESS_READ=1 reads every picture with glReadPixels, as Play does for a game on the lower panel;
 //! HEADLESS_SHOT=FILE.ppm writes the last picture. Prints the frames run, the pictures sent and the time a frame took
 //! (mean and worst); RGDS_FLASH_LOG works as in the player.
@@ -94,7 +94,8 @@ mod context {
             gl.bind_framebuffer(glow::FRAMEBUFFER, Some(fbo));
             let colour = gl.create_renderbuffer()?;
             gl.bind_renderbuffer(glow::RENDERBUFFER, Some(colour));
-            gl.renderbuffer_storage(glow::RENDERBUFFER, glow::RGBA8, 640, 480);
+            let (w, h) = ruffle_libretro::max_picture();
+            gl.renderbuffer_storage(glow::RENDERBUFFER, glow::RGBA8, w as i32, h as i32);
             gl.framebuffer_renderbuffer(glow::FRAMEBUFFER, glow::COLOR_ATTACHMENT0, glow::RENDERBUFFER, Some(colour));
             fbo.0.get()
         };

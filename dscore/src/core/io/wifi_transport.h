@@ -18,6 +18,9 @@ public:
   virtual ~MpTransport() = default;
   virtual void begin() {}
   virtual void end() {}
+  // Each Wi-Fi timer event, with the radio on: a transport that keeps consoles in step by game time says how far
+  // this one has run (TwinMp). Must be cheap.
+  virtual void tick() {}
   // Regular frames (LOC1-3 slots and beacons).
   virtual int send_packet(const u8* data, int len, u64 timestamp) = 0;
   virtual int recv_packet(u8* data, u64* timestamp) = 0; // > 0: bytes; 0: nothing

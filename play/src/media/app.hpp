@@ -32,6 +32,7 @@ struct TouchEvent {
     enum Kind { Down, Move, Up } kind = Down;
     double x = 0, y = 0; // panel pixels
     uint32_t at = 0;
+    bool upper = false; // the upper panel's touch screen (only for screens that ask for it: upper_touch())
 };
 
 struct Context;
@@ -41,7 +42,9 @@ public:
     explicit Screen(Context& c) : c(c) {}
     virtual ~Screen() = default;
     virtual void key(Key k, bool repeat) = 0;
-    virtual void touch(const TouchEvent& t) = 0; // the lower panel
+    virtual void touch(const TouchEvent& t) = 0; // the lower panel, and the upper one when upper_touch()
+    // Whether touches on the upper panel come here too (the reader: both screens are pages).
+    virtual bool upper_touch() const { return false; }
     // Advances time; true while something moves (a frame is due).
     virtual bool update(uint32_t now) = 0;
     virtual void draw_upper(SDL_Renderer* r) = 0;
@@ -52,6 +55,8 @@ public:
     virtual void leave() {}
     // Back on top after the screen over it closed.
     virtual void resumed() {}
+    // Its buttons are on the upper panel (a film with the screens swapped): touch answers are drawn there.
+    virtual bool controls_upper() const { return false; }
     virtual const char* name() const = 0;
 
 protected:
@@ -78,6 +83,21 @@ struct Context {
     std::function<void(std::unique_ptr<Screen>)> push;
     std::function<void()> pop;
     std::function<void()> quit;
+    // Panel pixels a layout unit: 1 on the RG DS, 1.6 on the RG DS Plus's 1024x768 (the layout stays 640x480).
+    // Canvases made at this scale (Canvas(w, h, c.scale)) are drawn at the panel's own pixels, so they are sharp.
+    float scale = 1;
+    // The volume and brightness (percent; -1: not known or not adjustable here), as runtime/media.py reports
+    // them, and how to ask for another level: set_level("volume" | "brightness", percent). While
+    // levels_shown, a screen shows the volume itself and the volume keys' pill stays away.
+    int volume = -1, brightness = -1;
+    bool levels_shown = false;
+    // Whether the upper panel takes touches. False on the RG DS Plus: only its lower panel is a touch screen, so a
+    // screen that moves its buttons up (a film with the screens swapped) reads them from the lower panel instead.
+    bool upper_touch = true;
+    std::function<void(const std::string&, int)> set_level;
+    // Fades from what both panels show now to what they show next (a reader turned to another orientation): call
+    // it before changing anything.
+    std::function<void()> crossfade;
     const std::string& tr(const std::string& s) const { return words(s); }
     bool animations() const { return look.animations; }
 };
@@ -88,9 +108,20 @@ std::unique_ptr<Screen> make_read(Context& c, const Item& item);
 
 // ---- Pieces the screens share
 
+// Text measured for canvases at the panel's scale while it lives (Font::set_scale), back to 1 after: the other
+// screens' canvases are still made at the layout's size.
+struct FontScale {
+    play::Font& font;
+    FontScale(play::Font& f, float k) : font(f) { font.set_scale(k); }
+    ~FontScale() { font.set_scale(1); }
+    FontScale(const FontScale&) = delete;
+    FontScale& operator=(const FontScale&) = delete;
+};
+
 // Area-averaged scaling (posters and covers into tiles), once, on the CPU.
 void resample(const uint32_t* src, int sw, int sh, uint32_t* dst, int dw, int dh);
-// A picture into a canvas with rounded corners (anti-aliased against what is there).
+// A picture (w x h of the canvas's own pixels: Canvas::to_px of its layout size) into a canvas at layout x, y with
+// corners of radius r (layout), anti-aliased against what is there.
 void blit_rounded(Canvas& c, const uint32_t* px, int w, int h, int x, int y, int r);
 // Text broken into lines that fit `width` (spaces, then anywhere), at most max_lines (the last one ellipsed).
 std::vector<std::string> wrap(const play::Font& font, const std::string& text, int size, int width, int max_lines);

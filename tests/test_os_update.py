@@ -54,8 +54,21 @@ class FitLabelTests(unittest.TestCase):
     PLUS = b"anbernic,rg-ds-plus\0rockchip,rk3568\0"
 
     def test_keeps_fdtdir_when_u_boot_picked_this_handheld(self):
-        self.assertEqual(fit_label(UNIVERSAL, "ro rgds.detected=rgds rgds.adc=1061000", self.RG_DS), UNIVERSAL)
-        self.assertEqual(fit_label(UNIVERSAL, "rgds.detected=rgds-plus rgds.adc=1770000", self.PLUS), UNIVERSAL)
+        self.assertEqual(
+            fit_label(UNIVERSAL, "ro rgds.detected=rgds rgds.adc=1061000 rgds.from=adc", self.RG_DS), UNIVERSAL
+        )
+        self.assertEqual(
+            fit_label(UNIVERSAL, "rgds.detected=rgds-plus rgds.adc=1770000 rgds.from=file", self.PLUS), UNIVERSAL
+        )
+
+    def test_names_the_tree_under_a_u_boot_without_the_board_file(self):
+        # 0.9.1's U-Boot guesses by voltage alone (a Plus read 0.27-1.57 V there) and an OTA never replaces it: a
+        # lucky guess on the boot that installs must not leave FDTDIR for the unlucky ones.
+        guessed = "rgds.detected=rgds-plus rgds.adc=1570000"
+        for cmdline in (guessed, guessed + " rgds.from="):
+            out = fit_label(UNIVERSAL, cmdline, self.PLUS)
+            self.assertIn("  FDT /a/rk3568-anbernic-rg-ds-plus.dtb\n", out)
+            self.assertNotIn("FDTDIR", out)
 
     def test_names_the_tree_under_a_u_boot_that_picks_none(self):
         # an older U-Boot sets no $fdtfile: FDTDIR would load the Quartz64's default, which is not on the card

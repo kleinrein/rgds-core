@@ -15,6 +15,7 @@
 #include <array>
 #include <map>
 #include <mutex>
+#include <chrono>
 #include <queue>
 #include <string>
 #include <vector>
@@ -79,6 +80,11 @@ public:
   int max_players() const { return max_players_; }
   int my_id() const { return me_.id; }
 
+  // Two-console sessions (docs/NETPLAY_PLAN.md): each side sends the other its seat (the save, settings and
+  // firmware its console needs) over the session's reliable channel. wait_seat services the session until the
+  // other's seat has come, and says where from (IPv4, network order).
+  void send_seat(const std::string& blob);
+  bool wait_seat(std::string& blob, u32& peer_ip, int timeout_ms);
   void process();   // once per frame
   void scan_step(); // discovery-only scan; call between start_discovery()/end_discovery()
   // Ends a scan_step() scan: joins the first session with room if any, ends
@@ -142,11 +148,18 @@ private:
   _ENetPeer* last_host_peer_ = nullptr;
   std::queue<_ENetPacket*> rx_;
   u32 frame_count_ = 0;
+  // Last socket service by a non-blocking poll (process_lan): a guest's Wi-Fi peeks for the host's frame every
+  // 64 us of game time, two system calls each, so those polls go to the socket at most every kPollGapNs.
+  std::chrono::steady_clock::time_point last_poll_{};
+  static constexpr long long kPollGapNs = 250000;
   std::string peer_name_;
   _ENetPeer* join_peer_ = nullptr; // a begin_join in flight
   std::string join_host_;
   u32 join_addr_ = 0, join_start_ms_ = 0;
   int join_state_ = 0; // 0 connecting, 1 connected, awaiting ClientInit
+  std::string seat_;
+  u32 seat_ip_ = 0;
+  bool have_seat_ = false;
   unsigned wait_count_ = 0, wait_timeouts_ = 0;
   double wait_total_ms_ = 0, wait_max_ms_ = 0;
 };

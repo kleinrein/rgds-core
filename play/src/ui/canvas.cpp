@@ -27,12 +27,38 @@ void Canvas::blend(uint32_t& dst, Rgb c, int alpha) {
 void Canvas::fill(Rgb c) { std::fill(px_.begin(), px_.end(), c.px()); }
 
 void Canvas::fill_rect(int x, int y, int w, int h, Rgb c, int alpha) {
-    int x0 = std::max(0, x), y0 = std::max(0, y), x1 = std::min(w_, x + w), y1 = std::min(h_, y + h);
+    if (w <= 0 || h <= 0) return;
+    if (k_ == 1) fill_px(x, y, x + w, y + h, c, alpha);
+    // Edges at the panel pixels the layout's edges fall on: neighbouring rects meet, none overlap.
+    else fill_px(to_px(x), to_px(y), to_px(x + w), to_px(y + h), c, alpha);
+}
+
+void Canvas::fill_px(int x0, int y0, int x1, int y1, Rgb c, int alpha) {
+    x0 = std::max(0, x0), y0 = std::max(0, y0), x1 = std::min(w_, x1), y1 = std::min(h_, y1);
     for (int yy = y0; yy < y1; ++yy)
         for (int xx = x0; xx < x1; ++xx) blend(px_[static_cast<size_t>(yy) * w_ + xx], c, alpha);
 }
 
+void Canvas::paste(const Canvas& src, int x, int y) {
+    const int dx = to_px(x), dy = to_px(y);
+    for (int sy = 0; sy < src.h_; ++sy) {
+        const int ty = dy + sy;
+        if (ty < 0 || ty >= h_) continue;
+        const int x0 = std::max(0, -dx), x1 = std::min(src.w_, w_ - dx);
+        if (x1 > x0)
+            std::copy(src.px_.begin() + static_cast<ptrdiff_t>(sy) * src.w_ + x0,
+                      src.px_.begin() + static_cast<ptrdiff_t>(sy) * src.w_ + x1,
+                      px_.begin() + static_cast<ptrdiff_t>(ty) * w_ + dx + x0);
+    }
+}
+
 void Canvas::rounded_rect(int x, int y, int w, int h, int radius, Rgb c, int alpha) {
+    if (k_ == 1) return rounded_px(x, y, w, h, radius, c, alpha);
+    const int x0 = to_px(x), y0 = to_px(y);
+    rounded_px(x0, y0, to_px(x + w) - x0, to_px(y + h) - y0, to_px(radius), c, alpha);
+}
+
+void Canvas::rounded_px(int x, int y, int w, int h, int radius, Rgb c, int alpha) {
     radius = std::min({radius, w / 2, h / 2});
     for (int yy = std::max(0, y); yy < std::min(h_, y + h); ++yy) {
         int dy = yy - y < radius ? radius - (yy - y) : (yy >= y + h - radius ? yy - (y + h - radius) + 1 : 0);
@@ -81,8 +107,33 @@ template <typename Put> void scaled_row(const uint32_t* src, int sw, int dx, int
 }
 } // namespace
 
+// A picture's pixels nearest-scaled into the panel pixels dx, dy, dw x dh (a layout scale that is not whole).
+void Canvas::blit_px(const uint32_t* src, int sw, int sh, int dx, int dy, int dw, int dh, int alpha, bool keyed,
+                     uint32_t key) {
+    if (sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0) return;
+    const int x0 = std::max(0, dx), x1 = std::min(w_, dx + dw), y0 = std::max(0, dy), y1 = std::min(h_, dy + dh);
+    if (x1 <= x0) return;
+    std::vector<int> column(size_t(x1 - x0));
+    for (int x = x0; x < x1; ++x) column[size_t(x - x0)] = std::min(sw - 1, int(int64_t(x - dx) * sw / dw));
+    for (int y = y0; y < y1; ++y) {
+        const uint32_t* row = src + static_cast<size_t>(std::min(sh - 1, int(int64_t(y - dy) * sh / dh))) * sw;
+        uint32_t* out = px_.data() + static_cast<size_t>(y) * w_;
+        for (int x = x0; x < x1; ++x) {
+            const uint32_t v = row[column[size_t(x - x0)]];
+            if (keyed) {
+                if ((v & 0xFFFFFF) != key) out[x] = v | 0xFF000000u;
+            } else if (alpha >= 255) out[x] = v | 0xFF000000u;
+            else blend(out[x], Rgb::from_px(v), alpha);
+        }
+    }
+}
+
 void Canvas::blit(const uint32_t* src, int sw, int sh, int dx, int dy, int scale, int alpha) {
     if (scale < 1) scale = 1;
+    if (k_ != 1) {
+        const int x0 = to_px(dx), y0 = to_px(dy);
+        return blit_px(src, sw, sh, x0, y0, to_px(dx + sw * scale) - x0, to_px(dy + sh * scale) - y0, alpha, false, 0);
+    }
     for (int sy = 0; sy < sh; ++sy) {
         const uint32_t* row = src + static_cast<size_t>(sy) * sw;
         for (int k = 0; k < scale; ++k) {
@@ -103,6 +154,10 @@ void Canvas::blit(const uint32_t* src, int sw, int sh, int dx, int dy, int scale
 
 void Canvas::blit_keyed(const uint32_t* src, int sw, int sh, int dx, int dy, int scale, uint32_t key) {
     if (scale < 1) scale = 1;
+    if (k_ != 1) {
+        const int x0 = to_px(dx), y0 = to_px(dy);
+        return blit_px(src, sw, sh, x0, y0, to_px(dx + sw * scale) - x0, to_px(dy + sh * scale) - y0, 255, true, key);
+    }
     for (int sy = 0; sy < sh; ++sy) {
         const uint32_t* row = src + static_cast<size_t>(sy) * sw;
         for (int k = 0; k < scale; ++k) {
@@ -195,7 +250,8 @@ bool Font::load(const std::string& directory, const std::string& language) {
     families_ = {"ja", "zh", "ko"};
     auto own = std::find(families_.begin(), families_.end(), language.substr(0, 2));
     if (own != families_.end()) std::rotate(families_.begin(), own, own + 1);
-    for (int size : text_sizes) {
+    // The layout's sizes, and the launcher's for a panel 1.6x as big (assets/fonts: 26, 32, 38, 45, 58).
+    for (int size : {16, 20, 24, 26, 28, 32, 36, 38, 45, 58}) {
         Atlas a;
         if (read_atlas(directory + "/rounded-" + std::to_string(size) + ".rgf", a, size)) atlases_[size] = std::move(a);
     }
@@ -214,9 +270,12 @@ Font::Found Font::find(int size, unsigned cp) const {
             const auto key = std::make_pair(family, a->size);
             auto e = extras_.find(key);
             if (e == extras_.end()) {
+                // The CJK families are baked at the layout's sizes only: a bigger panel's size takes the nearest.
                 Atlas x;
-                if (!read_atlas(directory_ + "/rounded-" + family + "-" + std::to_string(a->size) + ".rgf", x, a->size))
-                    x = Atlas{};
+                bool ok = false;
+                for (int s : {a->size, snap(a->size)})
+                    if (!ok) ok = read_atlas(directory_ + "/rounded-" + family + "-" + std::to_string(s) + ".rgf", x, s);
+                if (!ok) x = Atlas{};
                 e = extras_.emplace(key, std::move(x)).first;
             }
             auto g = e->second.glyphs.find(cp);
@@ -244,7 +303,17 @@ int Font::snap(int size) {
     return best;
 }
 
+// The atlas size text of layout `size` is drawn from at `scale` panel pixels a unit: the nearest one loaded.
+int Font::native(int size, float scale) const {
+    const int want = scale == 1 ? snap(size) : int(std::lround(snap(size) * scale));
+    int best = 0;
+    for (const auto& [s, a] : atlases_)
+        if (!best || std::abs(s - want) < std::abs(best - want)) best = s;
+    return best ? best : want;
+}
+
 const Font::Atlas* Font::pick(int size) const {
+    if (auto exact = atlases_.find(size); exact != atlases_.end()) return &exact->second;
     auto it = atlases_.find(snap(size));
     if (it != atlases_.end()) return &it->second;
     const Atlas* best = nullptr;
@@ -255,11 +324,12 @@ const Font::Atlas* Font::pick(int size) const {
 
 int Font::ascent(int size) const {
     if (pixel_) return 7 * dot_scale(size);
-    const Atlas* a = pick(size);
+    const Atlas* a = pick(native(size, scale_));
     if (!a) return size * 7 / 10;
     // The ink of capitals and digits: the top of 'H' above the baseline.
     auto it = a->glyphs.find('H');
-    return it != a->glyphs.end() ? -it->second.top : a->ascent * 7 / 10;
+    const int px = it != a->glyphs.end() ? -it->second.top : a->ascent * 7 / 10;
+    return scale_ == 1 ? px : int(std::lround(px / scale_));
 }
 
 int Font::measure(const std::string& text, int size) const {
@@ -268,7 +338,8 @@ int Font::measure(const std::string& text, int size) const {
         for (unsigned cp : utf8_codepoints(text)) cells += rgds::pixel_wide(cp) ? 2 : 1;
         return cells * 6 * dot_scale(size) - (cells ? dot_scale(size) : 0);
     }
-    return measure_rounded(text, size);
+    if (scale_ == 1) return measure_rounded(text, size);
+    return int(std::lround(measure_rounded(text, native(size, scale_)) / scale_));
 }
 
 int Font::measure_rounded(const std::string& text, int size) const {
@@ -292,15 +363,20 @@ int Font::draw(Canvas& c, int x, int y, const std::string& text, int size, Rgb c
         long r = 0, g = 0, b = 0, n = 0;
         for (int yy = std::max(0, m.y); yy < std::min(c.h(), m.y + m.h); ++yy)
             for (int xx = std::max(0, x); xx < std::min(c.w(), x + m.w); ++xx, ++n) {
-                Rgb p = Rgb::from_px(c.at(xx, yy));
+                Rgb p = Rgb::from_px(c.at(c.to_px(xx), c.to_px(yy)));
                 r += p.r, g += p.g, b += p.b;
             }
         if (n) m.ground = {uint8_t(r / n), uint8_t(g / n), uint8_t(b / n)};
         text_log->push_back(m);
     }
-    return pixel_ ? draw_dots(c, x, y, text, size, color, alpha) : draw_rounded(c, x, y, text, size, color, alpha);
+    if (pixel_) return draw_dots(c, x, y, text, size, color, alpha);
+    if (c.scale() == 1) return draw_rounded(c, x, y, text, size, color, alpha);
+    // From the panel-sized atlas at the panel's own pixels; the advance back in layout units.
+    const int advance = draw_rounded(c, c.to_px(x), c.to_px(y), text, native(size, c.scale()), color, alpha);
+    return int(std::lround(advance / c.scale()));
 }
 
+// x, y and the size in the canvas's stored pixels.
 int Font::draw_rounded(Canvas& c, int x, int y, const std::string& text, int size, Rgb color, int alpha) const {
     int pen = 0;
     for (unsigned cp : utf8_codepoints(text)) {
@@ -312,10 +388,8 @@ int Font::draw_rounded(Canvas& c, int x, int y, const std::string& text, int siz
         const int gx = x + pen / 64 + g.left, gy = y + g.top;
         for (int yy = 0; yy < g.h; ++yy)
             for (int xx = 0; xx < g.w; ++xx) {
-                const int tx = gx + xx, ty = gy + yy;
-                if (tx < 0 || ty < 0 || tx >= c.w() || ty >= c.h()) continue;
                 const int al = a.alpha[static_cast<size_t>(g.y + yy) * a.width + g.x + xx];
-                if (al) c.fill_rect(tx, ty, 1, 1, color, al * alpha / 255);
+                if (al) c.put_px(gx + xx, gy + yy, color, al * alpha / 255);
             }
         pen += g.advance;
     }
@@ -330,8 +404,9 @@ int Font::draw_dots(Canvas& c, int x, int y, const std::string& text, int size, 
         [&](unsigned cp, int cell_x, int baseline_y) {
             // Kana and kanji have no dots: the rounded glyph, centred in two cells.
             std::string one = rgds::utf8_encode(cp);
-            const int w = measure_rounded(one, 20);
-            draw_rounded(c, cell_x + k * 6 - w / 2, baseline_y + k * 7, one, 20, color, alpha);
+            const int size = native(20, c.scale());
+            const int w = measure_rounded(one, size);
+            draw_rounded(c, c.to_px(cell_x + k * 6) - w / 2, c.to_px(baseline_y + k * 7), one, size, color, alpha);
         });
     return measure(text, size) + k;
 }

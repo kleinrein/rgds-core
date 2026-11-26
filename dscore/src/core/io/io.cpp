@@ -781,6 +781,17 @@ void Io::start_rtc_clock() {
   rtc_seed();
 }
 
+void Io::start_rtc_clock_at(const u8 datetime[7]) {
+  rtc_host_clock_ = true;
+  rtc_fixed_ = true;
+  rtc_seed();
+  Rtc& r = rtc;
+  std::memcpy(r.datetime, datetime, 7);
+  // In the chip's 24-hour mode the PM flag goes with the hour (rtc_seed_time).
+  const int hour = from_bcd(static_cast<u8>(r.datetime[4] & 0x3F));
+  r.datetime[4] = static_cast<u8>(to_bcd(hour) | (hour >= 12 ? 0x40 : 0));
+}
+
 // The chip's two interrupt outputs, after melonDS RTC::ProcessIRQ. Both reach
 // the ARM7 as IRQ 7 when RCNT routes the pin there. The clock here steps in
 // whole seconds, so the per-minute and alarm interrupts are exact to the
@@ -2846,7 +2857,7 @@ template <class S> void Io::sync_state(S& s) {
     nds_.sched.rebind(EventId::Div, ev_div);
     nds_.sched.rebind(EventId::Sqrt, ev_sqrt);
     nds_.sched.rebind(EventId::LcdIrq, ev_lcd_irq);
-    nds_.sched.rebind(EventId::Wifi, [](NDS& n, u32) { n.io.wifi.us_timer(); });
+    nds_.sched.rebind(EventId::Wifi, [](NDS& n, u32 t) { n.io.wifi.us_timer(t); });
     // Clock is a session property, not state: this run's setting keeps
     // going, rebased onto the restored timeline. A clock that follows the
     // host shows the host's time again, not the hour the state was saved at

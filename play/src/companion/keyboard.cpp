@@ -730,6 +730,8 @@ public:
     }
 
     void draw(Canvas& out, const Look& look, const Font& font, uint64_t) const override {
+        // The panel's own size (1024x768 on an RG DS Plus): the keys and the pad fill it, and touches are hit there.
+        w_ = out.w(), h_ = out.h();
         backdrop(out, look);
         if (on_mouse_page()) {
             draw_mouse_page(out, look, font);
@@ -749,7 +751,7 @@ public:
         // The tray to the screen's foot, notched where the last row stops short of the dock's corner button.
         const Box last = box(rows(), int(rows().size()) - 1, 0, 1);
         const int tray_right = row_right(rows(), int(rows().size()) - 1) + tray;
-        out.rounded_rect(left - tray, keys_top - tray, W - 2 * left + 2 * tray, last.y - keys_top + 2 * tray, 10,
+        out.rounded_rect(left - tray, keys_top - tray, w_ - 2 * left + 2 * tray, last.y - keys_top + 2 * tray, 10,
                          look.slot);
         out.rounded_rect(left - tray, keys_top - tray, tray_right - left + tray, last.y + last.h - keys_top + 2 * tray,
                          10, look.slot);
@@ -776,14 +778,18 @@ public:
     }
 
 private:
-    static constexpr int W = 640, left = 18, tray = 6, keys_top = 84, keys_bottom = 480 - left, key_gap = 5;
-    // The dock's corner button (dock.cpp Item::Button) sits under the last row's right end.
-    static constexpr int corner_x = W - kit::margin - 56 - kit::gap, corner_y = 480 - kit::margin - 56;
+    static constexpr int left = 18, tray = 6, keys_top = 84, key_gap = 5;
     static constexpr int hold_frames = 4, gap_frames = 2;
+    // The canvas last drawn (the lower panel's pixels, which touches come in): 640x480 on the RG DS.
+    mutable int w_ = 640, h_ = 480;
+    int keys_bottom() const { return h_ - left; }
+    // The dock's corner button (dock.cpp Item::Button) sits under the last row's right end.
+    int corner_x() const { return w_ - kit::margin - 56 - kit::gap; }
+    int corner_y() const { return h_ - kit::margin - 56; }
 
     const Rows& rows() const { return pages_[size_t(page_)]; }
     // At the top, clear of the switch.
-    static Box disk_box() { return {W - kit::margin - 56 - kit::gap - 120, kit::margin + 4, 120, 48}; }
+    Box disk_box() const { return {w_ - kit::margin - 56 - kit::gap - 120, kit::margin + 4, 120, 48}; }
     static int encode(int row, int column) { return row * 16 + column; }
     bool is_held(unsigned code) const { return std::find(held_.begin(), held_.end(), code) != held_.end(); }
 
@@ -798,8 +804,8 @@ private:
         return n;
     }
     // A row's keys as left and right edges on the grid, as wide as the longest row's keys.
-    static std::vector<std::pair<int, int>> grid_edges(const Rows& rows, int row) {
-        const double step = double(W - 2 * left + key_gap) / units(rows);
+    std::vector<std::pair<int, int>> grid_edges(const Rows& rows, int row) const {
+        const double step = double(w_ - 2 * left + key_gap) / units(rows);
         std::vector<std::pair<int, int>> edges;
         int column = 0;
         for (const Key& k : rows[size_t(row)]) {
@@ -810,7 +816,7 @@ private:
         return edges;
     }
     // Room the last row's wide keys (space bar, page keys) can give and keep a finger's width.
-    static int wide_slack(const Rows& rows) {
+    int wide_slack(const Rows& rows) const {
         const int last = int(rows.size()) - 1;
         const auto edges = grid_edges(rows, last);
         int slack = 0;
@@ -818,15 +824,15 @@ private:
             if (rows[size_t(last)][i].span > 1) slack += std::max(0, edges[i].second - edges[i].first - kit::touch);
         return slack;
     }
-    static int overhang(const Rows& rows) { return grid_edges(rows, int(rows.size()) - 1).back().second - corner_x; }
+    int overhang(const Rows& rows) const { return grid_edges(rows, int(rows.size()) - 1).back().second - corner_x(); }
     // Down to the screen's foot when the last row can stop short of the dock's corner button; a row of single keys
     // (the Spectrum's, whose words need every key's width) can't, so that board stops above the button.
-    static int bottom(const Rows& rows) {
-        return overhang(rows) <= 0 || wide_slack(rows) >= overhang(rows) ? keys_bottom : corner_y - key_gap;
+    int bottom(const Rows& rows) const {
+        return overhang(rows) <= 0 || wide_slack(rows) >= overhang(rows) ? keys_bottom() : corner_y() - key_gap;
     }
-    static int row_high(const Rows& rows) { return (bottom(rows) - keys_top + key_gap) / int(rows.size()); }
+    int row_high(const Rows& rows) const { return (bottom(rows) - keys_top + key_gap) / int(rows.size()); }
     // The last row beside the corner button gives up the room from its wide keys, the space bar most.
-    static std::vector<std::pair<int, int>> row_edges(const Rows& rows, int row) {
+    std::vector<std::pair<int, int>> row_edges(const Rows& rows, int row) const {
         auto edges = grid_edges(rows, row);
         const int over = overhang(rows), slack = wide_slack(rows);
         if (row != int(rows.size()) - 1 || over <= 0 || slack < over) return edges;
@@ -843,9 +849,9 @@ private:
         }
         return edges;
     }
-    static int row_right(const Rows& rows, int row) { return row_edges(rows, row).back().second; }
+    int row_right(const Rows& rows, int row) const { return row_edges(rows, row).back().second; }
     // Every row across the same grid, as wide as the longest row's keys; rows share the height, down to the foot.
-    static Box box(const Rows& rows, int row, int column, int) {
+    Box box(const Rows& rows, int row, int column, int) const {
         const auto edges = row_edges(rows, row);
         int at = 0, index = 0;
         for (const Key& k : rows[size_t(row)]) {
@@ -888,16 +894,17 @@ private:
     // The PC's mouse page: the touch pad over the rows the keys had, its buttons on the last.
     // The pad over the whole screen but a slim row of buttons, which stops short of the dock's corner button.
     bool on_mouse_page() const { return pc_ && page_ == int(to_mouse - 1); }
-    static constexpr int pad_edge = 12, mouse_row_h = kit::touch, mouse_row_y = 480 - 8 - mouse_row_h,
-                         mouse_row_right = 548;
-    static Box pad_box() { return {pad_edge, pad_edge, W - 2 * pad_edge, mouse_row_y - key_gap - pad_edge}; }
+    static constexpr int pad_edge = 12, mouse_row_h = kit::touch;
+    int mouse_row_y() const { return h_ - 8 - mouse_row_h; }
+    int mouse_row_right() const { return w_ - 92; } // short of the dock's corner button
+    Box pad_box() const { return {pad_edge, pad_edge, w_ - 2 * pad_edge, mouse_row_y() - key_gap - pad_edge}; }
     Box mouse_key_box(int column, int span) const {
         int units = 0;
         for (const Key& k : rows().back()) units += k.span;
-        const double step = double(mouse_row_right - pad_edge + key_gap) / units;
+        const double step = double(mouse_row_right() - pad_edge + key_gap) / units;
         const int x = pad_edge + int(std::lround(column * step));
         const int right = pad_edge + int(std::lround((column + span) * step)) - key_gap;
-        return {x, mouse_row_y, right - x, mouse_row_h};
+        return {x, mouse_row_y(), right - x, mouse_row_h};
     }
 
     void draw_mouse_page(Canvas& out, const Look& look, const Font& font) const {
@@ -954,10 +961,17 @@ private:
         return was_dragging;
     }
 
-    // Slow slides land on a pixel, quick ones cross the screen.
-    void slide_by(int dx, int dy) {
-        const double speed = std::hypot(dx, dy), gain = speed > 12 ? 1.8 : speed > 5 ? 1.3 : 1.0;
-        pad_dx_ += dx * gain, pad_dy_ += dy * gain;
+    // The finger's motion, gathered over the frame: how fast it went is judged a frame at a time (update_mouse), not a
+    // report at a time, so a touch screen that reports more often (the RG DS Plus's) doesn't lose the quick slides.
+    void slide_by(int dx, int dy) { pad_rx_ += dx, pad_ry_ += dy; }
+
+    // Slow slides land on a pixel, quick ones cross the screen and more: the pad is smaller than the picture it aims
+    // at, so a flick has to carry the pointer across it in one stroke, as a laptop's pad does.
+    void accelerate() {
+        const double speed = std::hypot(pad_rx_, pad_ry_);
+        const double gain = speed <= 4 ? 1.0 : std::min(3.0, 1.0 + (speed - 4) * 0.1);
+        pad_dx_ += pad_rx_ * gain, pad_dy_ += pad_ry_ * gain;
+        pad_rx_ = pad_ry_ = 0;
     }
 
     void update_mouse(Core& live) {
@@ -967,6 +981,7 @@ private:
         // Pressed and kept in place: the button is this finger's until it lifts.
         if (pad_finger_ && !pad_slid_ && !dragging_ && clock_ - pad_down_at_ >= press_frames)
             dragging_ = true, click_ = true;
+        accelerate();
         const int dx = int(pad_dx_), dy = int(pad_dy_); // the whole pixels; the rest waits for the next frame
         pad_dx_ -= dx, pad_dy_ -= dy;
         if (button_ >= 0 && ++button_frames_ >= hold_frames && button_up_) button_ = -1, finger_ = -1;
@@ -1130,6 +1145,7 @@ private:
     bool pad_finger_ = false, pad_moved_ = false, dragging_ = false, pad_used_ = false;
     int pad_x_ = 0, pad_y_ = 0, pad_travel_ = 0, pad_down_at_ = 0, tapped_at_ = -1000, click_frames_ = 0;
     double pad_dx_ = 0, pad_dy_ = 0;
+    int pad_rx_ = 0, pad_ry_ = 0; // this frame's finger motion, before acceleration
     // From fingers(): a second finger holding a button, and the pad's finger followed when touch() has another.
     bool finger_left_ = false, finger_right_ = false, sliding_ = false;
     bool pad_slid_ = false, click_ = false;

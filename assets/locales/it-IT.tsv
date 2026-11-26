@@ -1519,6 +1519,7 @@ Just you	Solo tu
 Buttons, shortcut and fast-forward	Pulsanti, scorciatoia e avanzamento rapido
 DS nickname	Nome DS
 Join or host	Partecipa o ospita
+Smooth (2 players)	Fluido (2 giocatori)
 Host	Ospita
 Sharing details	Dettagli di condivisione
 Graphics saved.	Grafica salvata.
@@ -1819,6 +1820,7 @@ Sleep in	Spegni tra
 Sleep timer	Timer spegnimento
 Smaller	Più piccolo
 Stand mode	Modalità supporto
+Touch below for the remote	Tocca sotto per il telecomando
 Stretch	Allunga
 Subtitles	Sottotitoli
 Tap or press A to play now	Tocca o premi A per riprodurre ora
@@ -2071,6 +2073,7 @@ Charge cycles	Cicli di carica
 Since unplugged	Da quando è scollegata
 This handheld does not report its battery.	Questa console non indica la sua batteria.
 The battery's capacity is not known yet.	La capacità della batteria non è ancora nota.
+Measured once the battery runs low and charges full.	Si misura quando la batteria si scarica e poi si ricarica del tutto.
 Your battery is in good health.	La tua batteria è in buono stato.
 Your battery holds clearly less than when new.	La tua batteria tiene molto meno di quando era nuova.
 On the charger	Sul caricatore
@@ -2079,3 +2082,10 @@ Charged to {0}%	Carica al {0}%
 Last 7 days on battery	Ultimi 7 giorni a batteria
 What uses your battery shows here after some time unplugged.	Cosa usa la batteria compare qui dopo un po' senza caricatore.
 Menus & Home	Menu e Home
+Orientation	Orientamento
+Sideways	Di lato
+Upright	Verticale
+With controls	Con comandi
+Left hand	Mano sinistra
+Right hand	Mano destra
+Volume and brightness	Volume e luminosità

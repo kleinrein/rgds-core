@@ -154,14 +154,15 @@ void Wifi::reset() {
 }
 
 // ---- timer -------------------------------------------------------------------
-void Wifi::schedule_timer(bool first) {
+void Wifi::schedule_timer(bool first, u32 ticks) {
   if (first) timer_err_ = 0;
-  s32 cycles = 33513982 * kTimerInterval; // ARM7 cycles per interval, error-diffused
+  s32 cycles = 33513982 * kTimerInterval * static_cast<s32>(ticks); // ARM7 cycles per interval, error-diffused
   cycles -= timer_err_;
   const s32 delay = (cycles + 999999) / 1000000;
   timer_err_ = delay * 1000000 - cycles;
   const u64 base = first ? nds_.sched.now() : nds_.sched.event_time();
-  nds_.sched.schedule(EventId::Wifi, base + static_cast<u64>(delay) * 2, [](NDS& n, u32) { n.io.wifi.us_timer(); }, 0);
+  nds_.sched.schedule(
+      EventId::Wifi, base + static_cast<u64>(delay) * 2, [](NDS& n, u32 t) { n.io.wifi.us_timer(t); }, ticks);
 }
 
 void Wifi::update_power_on() {
@@ -282,7 +283,7 @@ void Wifi::ms_timer() {
   }
 }
 
-void Wifi::us_timer() {
+void Wifi::us_tick() {
   us_timestamp_ += kTimerInterval;
 
   if (is_mp_client_ && !com_status_) {
@@ -408,8 +409,24 @@ void Wifi::us_timer() {
       }
     }
   }
+}
 
-  schedule_timer(false);
+// Nothing on the air or about to be: no frame going out or coming in, none queued, no host frame due.
+bool Wifi::radio_quiet() const {
+  return com_status_ == 0 && reg(W_TXBusy) == 0 && rx_timestamp_ == 0 &&
+         !(is_mp_client_ && us_timestamp_ + 4 * kTimerInterval >= next_sync_);
+}
+
+// The hardware ticks every 8 us, but a scheduler event per tick is what costs: 125,000 a second, each one
+// ending the CPUs' run, made Mario Kart DS ~30% slower on the RG DS Plus (mean 8.6 -> 11.3 ms a frame,
+// 2026-11-26), which is most of why local wireless lagged. While the radio is quiet one event runs
+// kQuietTicks ticks: every counter and IRQ comes out the same, seen by the CPUs at most 24 us late. A frame
+// being sent or received, or a host frame due, is ticked one event at a time as before.
+void Wifi::us_timer(u32 ticks) {
+  if (ticks == 0) ticks = 1;
+  for (u32 k = 0; k < ticks; ++k) us_tick();
+  if (mp_) mp_->tick();
+  schedule_timer(false, radio_quiet() ? kQuietTicks : 1);
 }
 
 // ---- TX ----------------------------------------------------------------------

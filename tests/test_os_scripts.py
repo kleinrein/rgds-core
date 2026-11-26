@@ -145,6 +145,13 @@ esac
         tool(d / 'bin', 'timeout', 'shift; exec "$@"\n')  # BusyBox has it, macOS does not
         (d / 'wlan0').mkdir()
         (d / 'hci0').mkdir()
+        # the USB gadget (usb sleep|wake) and the kernel log a failed suspend is explained from
+        self.usb_log = d / 'usb.log'
+        tool(d / 'bin', 'usb', f'echo "usb $*" >> {self.usb_log}\n')
+        tool(
+            d / 'bin', 'dmesg', 'echo "[ 2046.893325] dwc3 fcc00000.usb: PM: failed to suspend: error -11"\n'
+            'echo "[ 2046.893452] PM: Some devices failed to suspend, or early wake event detected"\n'
+        )
         self.env = dict(
             os.environ,
             PATH=f"{d / 'bin'}:{os.environ.get('PATH', '')}",
@@ -152,6 +159,8 @@ esac
             RGDS_BTCTL=str(d / 'bin/bluetoothctl'),
             RGDS_WLAN_DIR=str(d / 'wlan0'),
             RGDS_HCI_DIR=str(d / 'hci0'),
+            RGDS_USB_CMD=str(d / 'bin/usb'),
+            RGDS_DMESG_CMD=str(d / 'bin/dmesg'),
             RGDS_RUN=str(d / 'run'),
             RGDS_RTC=str(d / 'rtc'),
             RGDS_BATTERY_DIR=str(d / 'battery'),
@@ -331,12 +340,72 @@ esac
             ]
         )
 
+    def test_the_usb_gadget_is_unbound_for_the_sleep(self):
+        # 2026-11-26: bound on a wall charger, it failed every suspend on an RG DS Plus (dwc3 -EAGAIN)
+        code, state = self.sleep('rtc', 'charger 30', 'user 5')
+        self.assertEqual(state['wake'], 'user')
+        self.assertEqual(self.usb_log.read_text().splitlines(), ['usb sleep', 'usb wake'])
+
+    def test_a_failed_sleep_names_the_device_that_stopped_it(self):
+        tool(self.dir / 'bin', 'sleep', ':\n')
+        code, state = self.sleep('fail', 'user 5')
+        self.assertEqual(state['wake'], 'user')
+        log = self.dir.joinpath('sleep.log').read_text()
+        self.assertIn('the sleep failed (1): dwc3 fcc00000.usb: PM: failed to suspend: error -11', log)
+        self.assertNotIn('Some devices failed', log)
+
     def test_radios_that_were_off_stay_off(self):
         (self.dir / 'wlan0').rmdir()
         (self.dir / 'hci0').rmdir()
         code, state = self.sleep('user 5')
         self.assertEqual(state['wake'], 'user')
         self.assertFalse(self.radio_log.exists())
+
+
+class UsbSleepTest(unittest.TestCase):
+    """usr/libexec/rgds/usb sleep|wake: the gadget off its controller for a suspend and back on after."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        d = self.dir = Path(self.temp.name)
+        (d / 'gadget').mkdir()
+        (d / 'run').mkdir()
+        (d / 'bin').mkdir()
+        self.udc = d / 'gadget/UDC'
+        self.ip_log = d / 'ip.log'
+        tool(d / 'bin', 'ip', f'echo "ip $*" >> {self.ip_log}\n')
+        self.env = dict(
+            os.environ,
+            PATH=f"{d / 'bin'}:{os.environ.get('PATH', '')}",
+            RGDS_GADGET=str(d / 'gadget'),
+            RGDS_RUN=str(d / 'run')
+        )
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def usb(self, command):
+        return subprocess.run(['sh', str(LIBEXEC / 'usb'), command], env=self.env, timeout=10).returncode
+
+    def test_a_bound_gadget_is_unbound_and_bound_again(self):
+        self.udc.write_text('fcc00000.usb\n')
+        self.assertEqual(self.usb('sleep'), 0)
+        self.assertEqual(self.udc.read_text().strip(), '')
+        self.assertEqual(self.usb('wake'), 0)
+        self.assertEqual(self.udc.read_text().strip(), 'fcc00000.usb')
+        self.assertIn('ip link set usb0 up', self.ip_log.read_text())
+        self.assertFalse((self.dir / 'run/usb-asleep').exists())
+
+    def test_a_gadget_that_was_off_stays_off(self):
+        # USB data transfer switched off: no UDC bound (or no gadget at all)
+        self.udc.write_text('\n')
+        self.usb('sleep')
+        self.usb('wake')
+        self.assertEqual(self.udc.read_text().strip(), '')
+        self.assertFalse(self.ip_log.exists())
+        self.udc.unlink()
+        self.assertEqual(self.usb('sleep'), 0)
+        self.assertEqual(self.usb('wake'), 0)
+        self.assertFalse(self.udc.exists())
 
 
 class BatteryWatchTest(unittest.TestCase):

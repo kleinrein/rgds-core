@@ -820,6 +820,26 @@ suspend` now sleeps again after every wake with the lid still closed unless the 
 (`rk805_pwrkey` in `/proc/interrupts`); an unreadable count counts as a person, and an aborted suspend is
 retried twice with the lid closed. Lines in `sleep.log` say "woken with the lid closed".
 
+**The USB gadget stopped every sleep on a wall charger (2026-11-26).** A tester's report of half a battery gone in
+five hours of standby led to the owner's RG DS Plus: every lid sleep in its journal had `asleep_seconds: 0` and
+`suspend_fail` up by three. The kernel said `dwc3 fcc00000.usb: dwc3_plat_suspend returns -11`. With a wall charger
+(extcon `DCP=1`) the PHY driver keeps the USB PHY off, but the NCM gadget stays bound to the controller, so the
+gadget's soft disconnect at suspend cannot halt it, times out after 4 s, and dwc3 returns `-EAGAIN`. The kernel backs
+out and the handheld stays awake under the closed lid, so it drains as if it were on. `power suspend` now runs
+`usb sleep` before the suspend (it unbinds the UDC and remembers which one) and `usb wake` after it (it binds the UDC
+again and readdresses `usb0`). On the Plus on its charger, the shipped script failed the same way that morning, and
+the fixed one slept until the power key and, in a second run, for a full 46 s RTC-timed sleep, with the gadget and
+10.55.0.1 back after both. Every failed suspend now writes a line to `sleep.log` that names the device that stopped it
+(`the sleep failed (1): dwc3 ...: failed to suspend: error -11`). The owner's RG DS, meanwhile, sleeps at 14-16 mA
+(7-9 h lid sleeps, about 0.4 % an hour). Not yet seen: a Plus sleep on battery alone, or an RG DS on a wall charger.
+
+The same report fits a handheld left awake at Home, which had no idle sleep by default. Settings > Power > Menu idle
+sleep now defaults to 10 min (`SystemPreferences::idle = 4`). On RG DS OS, each handheld turns a saved Never into
+10 min once (the marker is `userdata/idle-sleep-default`), because Never was the old default rather than a choice. A
+Never chosen after that stays. The timer waits while music plays, while a helper runs (an update download, a scrape,
+an import) and while Files or the transfer queue copies, and it counts from when they end. The game sleep timer is
+still Never by default.
+
 ### After v0: speed, picture and more systems
 
 Rule one: **measure before and after every change**, on the same scenes, on stock and on RG DS OS. The tools exist:

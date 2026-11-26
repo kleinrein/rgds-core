@@ -81,6 +81,8 @@ endif()
 
 add_library(dsperate_net STATIC
   lan_mp.cpp
+  twin_mp.cpp
+  input_link.cpp
   slirp_driver.cpp)
 target_include_directories(dsperate_net PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(dsperate_net PUBLIC dsperate_core dsperate_enet dsperate_slirp)
