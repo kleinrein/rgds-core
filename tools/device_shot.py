@@ -304,6 +304,42 @@ def glyph(char, m, height_mm=3.0):
     return box_blur(np.pad(np.kron(rows, np.ones((cell, cell), np.float32)), 2), 1)
 
 
+# Capital letters as pen strokes on a 4 x 6 grid, for the Plus's smooth printing.
+STROKES = {
+    'A': (((0, 6), (2, 0), (4, 6)), ((0.8, 4), (3.2, 4))),
+    'B': (((0, 3), (3, 3), (4, 3.8), (4, 5.2), (3, 6), (0, 6), (0, 0), (2.8, 0), (3.7, 0.7), (3.7, 2.3), (3, 3)),),
+    'C': (((4, 1.2), (3, 0), (1, 0), (0, 1.2), (0, 4.8), (1, 6), (3, 6), (4, 4.8)),),
+    'E': (((4, 0), (0, 0), (0, 6), (4, 6)), ((0, 3), (3.2, 3))),
+    'I': (((2, 0), (2, 6)),),
+    'L': (((0, 0), (0, 6), (4, 6)),),
+    'M': (((0, 6), (0, 0), (2, 3.4), (4, 0), (4, 6)),),
+    'R': (((0, 6), (0, 0), (3, 0), (4, 0.9), (4, 2.2), (3, 3.1), (0, 3.1)), ((2.2, 3.1), (4, 6))),
+    'S': (((3.8, 1), (3, 0), (1, 0), (0, 1), (0, 2), (1, 2.8), (3, 3.2), (4, 4), (4, 5), (3, 6), (1, 6), (0.2, 5)),),
+    'T': (((0, 0), (4, 0)), ((2, 0), (2, 6))),
+    'X': (((0, 0), (4, 6)), ((4, 0), (0, 6))),
+    'Y': (((0, 0), (2, 3), (4, 0)), ((2, 3), (2, 6))),
+}
+
+
+def lettering(text, m, height_mm, weight=0.15):
+    """Coverage of a word in round-ended strokes; `weight` is the pen width as a share of the letter height."""
+    unit = height_mm * m / 6
+    pen = height_mm * m * weight / 2
+    pad = int(pen) + 2
+    advance = 6 if len(text) > 1 else 4
+    rows, cols = int(6 * unit) + 2 * pad, int(((len(text) - 1) * advance + 4) * unit) + 2 * pad
+    yy, xx = np.mgrid[0:rows, 0:cols].astype(np.float32) + 0.5 - pad
+    nearest = np.full((rows, cols), 1e9, np.float32)
+    for i, char in enumerate(text):
+        for line in STROKES[char]:
+            points = [((x + i * advance) * unit, y * unit) for x, y in line]
+            for (x0, y0), (x1, y1) in zip(points, points[1:]):
+                dx, dy = x1 - x0, y1 - y0
+                t = np.clip(((xx - x0) * dx + (yy - y0) * dy) / (dx * dx + dy * dy), 0, 1)
+                np.minimum(nearest, np.hypot(xx - x0 - t * dx, yy - y0 - t * dy), out=nearest)
+    return np.clip(pen - nearest + 0.5, 0, 1).astype(np.float32)
+
+
 def dome(diameter):
     """A glossy black stick cap: a soft falloff to the rim and a specular spot up and to the left."""
     n = diameter
@@ -456,108 +492,177 @@ def draw_rg_ds(canvas, margin, m, shell):
 
 
 PLUS_SHELLS = {
-    # Anbernic's three colourways (matte plastic, one colour for lid, face and base). Glass is the screen window.
-    'black': dict(body=((0.155, 0.157, 0.168), (0.090, 0.092, 0.100)), glass=(0.016, 0.017, 0.021), dots=0.03),
-    'pink': dict(body=((0.95, 0.80, 0.78), (0.82, 0.64, 0.62)), glass=(0.60, 0.60, 0.62), dots=0.42),
-    'blue': dict(body=((0.34, 0.31, 0.86), (0.17, 0.15, 0.58)), glass=(0.62, 0.63, 0.67), dots=0.06),
+    # Anbernic's three colourways, sampled from their straight-on photos. Each tone is (top, bottom).
+    'black': dict(
+        lid=('#464646', '#3a3a3a'),
+        base=('#2a2a2a', '#1f1f1f'),
+        key=('#2f2f2f', '#1b1b1b'),
+        pad=('#3d3d3d', '#2a2a2a'),
+        cap=('#505050', '#222222'),
+        ink=('#e8e8e8', 0.85),
+        label=('#a0a0a0', 0.7)
+    ),
+    'pink': dict(
+        lid=('#ffe2df', '#fbdbd7'),
+        base=('#f3ceca', '#f9d2ce'),
+        key=('#fcdbd8', '#ecc4c1'),
+        pad=('#fddcd9', '#f1cac7'),
+        cap=('#fff4ee', '#dfbcb8'),
+        ink=('#b58f8d', 0.7),
+        label=('#a98381', 0.75)
+    ),
+    'blue': dict(
+        lid=('#8088d0', '#7076b4'),
+        base=('#4a4f7b', '#3c3d66'),
+        key=('#3d416c', '#25274a'),
+        pad=('#55546f', '#3b3a57'),
+        cap=('#8084b4', '#3a3c68'),
+        ink=('#f2f2fa', 0.9),
+        label=('#17182f', 0.7)
+    ),
 }
-PLUS_W, PLUS_LID, PLUS_BASE_Y, PLUS_H = 167, 86, 90, 177
+# Millimetres, measured off the straight-on view in Anbernic's dimension sheet (167 x 181 mm open).
+PLUS_W, PLUS_H = 167, 181.5
 
 
 def plus_parts(m):
-    """The open RG DS Plus in group pixels: lid, hinge knuckles (the base's two pillars) and base."""
+    """The open RG DS Plus in group pixels: lid, base, the two hinge knuckles and the barrel between them."""
     P = lambda mm: int(round(mm * m))
     return [
-        (0, 0, rounded4(P(PLUS_LID), P(PLUS_W), P(7), P(7), P(2), P(2))),
-        (P(80), 0, rounded4(P(14), P(15), P(3), P(3), 0, 0)),
-        (P(80), P(PLUS_W - 15), rounded4(P(14), P(15), P(3), P(3), 0, 0)),
-        (P(85), 0, rounded4(P(PLUS_H - 85), P(PLUS_W), P(2), P(2), P(7), P(7))),  # top edge hides under the hinge
+        (0, 0, rounded4(P(87), P(PLUS_W), P(5.8), P(5.8), P(1.2), P(1.2))),
+        (P(88), 0, rounded4(P(PLUS_H - 88), P(PLUS_W), P(1.5), P(1.5), P(7), P(7))),
+        (P(85.4), 0, rounded4(P(10.8), P(17.8), P(4.2), P(1.2), P(1.2), P(4.8))),
+        (P(85.4), P(PLUS_W - 17.8), rounded4(P(10.8), P(17.8), P(1.2), P(4.2), P(4.8), P(1.2))),
+        (P(86.5), P(17.5), rounded(P(9.6), P(PLUS_W - 35), P(0.8))),
     ]
 
 
 def plus_spots(m):
     P = lambda mm: int(round(mm * m))
-    return [(P(11), P(39.5)), (P(PLUS_BASE_Y + 11), P(39.5))]  # 88 x 66 mm panels (4.3", 4:3), centred
+    return [(P(11.7), P(39.5)), (P(103.7), P(39.5))]  # 88 x 66 mm panels (4.3", 4:3)
 
 
 def draw_plus(canvas, margin, m, shell):
-    """The open RG DS Plus, 167 mm wide, after the launch photos: DSi XL-like flat
-    halves in one colour, a glass window round each screen, five-dot speakers, a hinge bar between two knuckles,
-    D-pad over one stick on the left, ABXY over Start/Select on the right. Panels go on top."""
+    """The open RG DS Plus after Anbernic's photos: one-colour halves, a raised frame round each screen,
+    seven-dot speakers, a hinge barrel between two knuckles, D-pad over the one stick and two keys on the left,
+    ABXY, Start and Select on the right. Panels go on top."""
     P = lambda mm: int(round(mm * m))
     at = lambda y, x: (margin + P(y), margin + P(x))
     mid = lambda y, x, mask: (margin + P(y) - mask.shape[0] // 2, margin + P(x) - mask.shape[1] // 2)
     colour = PLUS_SHELLS[shell]
-    body = colour['body']
-    key = tuple(tuple(c * 0.93 for c in tone) for tone in body)
-    glass = np.array(colour['glass'], np.float32)
-    lid, left_knuckle, right_knuckle, base = (part[2] for part in plus_parts(m))
-    by = PLUS_BASE_Y
-
-    def window(y):  # glass window, a hairline step round it, panel goes inside
-        over(canvas, *at(y - 0.4, 35.1), np.zeros(3, np.float32), rounded(P(72.8), P(96.8), P(2.6)) * 0.35)
-        pane = rounded(P(72), P(96), P(2.4))
-        over(canvas, *at(y, 35.5), vertical(pane.shape[0], pane.shape[1], glass * 1.08, glass * 0.92), pane)
-        lit, _ = lit_edges(pane, max(1, P(0.25)), False)
-        over(canvas, *at(y, 35.5), np.ones(3, np.float32), lit * 0.12)
-
-    # Base first: its top edge hides under the hinge bar.
-    raised(canvas, *at(85, 0), base, *body, m, depth=1.4, shadow=0, light=0.3)
-    window(by + 8)
-    # Lid, its face and corner pads, speakers.
-    raised(canvas, *at(0, 0), lid, *body, m, depth=1.4, shadow=0, light=0.32)
-    sheen = 0.06 * np.clip(
-        1 -
-        (np.arange(lid.shape[1])[None, :] / lid.shape[1] * 0.7 + np.arange(lid.shape[0])[:, None] / lid.shape[0]) / 0.9,
-        0, 1
-    )**2
-    over(canvas, *at(0, 0), np.ones(3, np.float32), sheen.astype(np.float32) * lid)
-    window(8)
-    for cx, cy in ((20, 9), (147, 9), (20, 77), (147, 77)):  # rubber stops
-        pad = rounded(P(3), P(3), P(0.7))
-        sunken(canvas, *mid(cy, cx, pad), pad, *(tuple(c * 0.8 for c in tone) for tone in body), m, 0.3)
-    for cx in (20, 147):
-        for dy, dx in ((-2.2, -2.2), (-2.2, 2.2), (0, 0), (2.2, -2.2), (2.2, 2.2)):
-            dot = disc(max(2, P(1.3)))
-            over(canvas, *mid(44 + dy, cx + dx, dot), np.full(3, colour['dots'], np.float32), dot * 0.85)
-    # Hinge: the base's knuckles at both ends, a barrel between them, the microphone in its middle.
-    for x, knuckle in ((0, left_knuckle), (PLUS_W - 15, right_knuckle)):
-        raised(canvas, *at(80, x), knuckle, *body, m, depth=1.2, shadow=0.35, light=0.4)
-    bar = rounded(P(8), P(PLUS_W - 29), P(4))
-    profile = (barrel(bar.shape[0], bar.shape[1]) - 0.045) / 0.2  # 0 in shadow .. ~1 in the band of light
-    tint = np.array(body[0], np.float32) * (0.62 + 0.45 * profile)
-    raised(canvas, *at(83, 14.5), bar, *body, m, depth=1.0, shadow=0.4, light=0.2)
-    over(canvas, *at(83, 14.5), np.clip(tint, 0, 1), bar * 0.92)
-    mic = disc(max(2, P(0.9)))
-    over(canvas, *mid(87, PLUS_W / 2, mic), np.zeros(3, np.float32), mic * 0.8)
-    # D-pad, and the one stick under it.
-    arm, span = P(5.6), P(17)
-    cross = np.maximum(
-        np.pad(rounded(arm, span, P(1.2)), (((span - arm) // 2, span - arm - (span - arm) // 2), (0, 0))),
-        np.pad(rounded(span, arm, P(1.2)), ((0, 0), ((span - arm) // 2, span - arm - (span - arm) // 2)))
+    lid_tone, base_tone, key, pad_tone, cap_tone = (
+        tuple(hex_colour(c) for c in colour[name]) for name in ('lid', 'base', 'key', 'pad', 'cap')
     )
-    raised(canvas, *mid(by + 18, 18.5, cross), cross, *key, m, depth=0.9, shadow=0.4, light=0.4)
-    cy, cx = by + 40, 20.5
-    well = disc(P(17.5))
-    sunken(canvas, *mid(cy, cx, well), well, (0.02, 0.02, 0.025), (0.05, 0.05, 0.06), m, 0.7)
-    ring = disc(P(14.5))
-    raised(canvas, *mid(cy, cx, ring), ring, (0.30, 0.30, 0.32), (0.13, 0.13, 0.14), m, depth=0.7, shadow=0, light=0.45)
-    stick = disc(P(11.5))
-    over(canvas, *mid(cy, cx, stick), dome(stick.shape[0]), stick)
-    for x in (10.5, 21.5):  # two small keys (Anbernic key, function) low in the left corner
-        small = disc(P(5.4))
-        raised(canvas, *mid(by + 74, x, small), small, *key, m, depth=0.5, shadow=0.3, light=0.3)
-    # ABXY with faint print, Start and Select under them.
-    face_button = disc(P(6.6))
-    for char, dx, dy in (('X', 0, -6.7), ('B', 0, 6.7), ('Y', -6.7, 0), ('A', 6.7, 0)):
-        raised(
-            canvas, *mid(by + 22 + dy, 147 + dx, face_button), face_button, *key, m, depth=0.6, shadow=0.4, light=0.38
-        )
-        g = glyph(char, m, 2.4)
-        over(canvas, *mid(by + 22 + dy, 147 + dx, g), INK, g * 0.4)
-    for y in (by + 70, by + 78.5):  # Start over Select, low in the right corner beside the screen's lower edge
-        small = disc(P(4.4))
-        raised(canvas, *mid(y, 140, small), small, *key, m, depth=0.45, shadow=0.3, light=0.3)
+    ink, label = ((np.array(hex_colour(colour[n][0]), np.float32), colour[n][1]) for n in ('ink', 'label'))
+    black = np.zeros(3, np.float32)
+    white = np.ones(3, np.float32)
+    shade = lambda tone, k: tuple(tuple(min(1, c * k) for c in end) for end in tone)
+    lid, base, left_knuckle, right_knuckle, bar = (part[2] for part in plus_parts(m))
+
+    def write(y, x, text, height, tint):  # left aligned at x, centred on y
+        word = lettering(text, m, height)
+        over(canvas, margin + P(y) - word.shape[0] // 2, margin + P(x), tint[0], word * tint[1])
+
+    def groove(y, x, mask, strength=0.2):  # a hairline step in the moulding: shadow above, light below
+        edge = max(1, P(0.3))
+        dark, lit = lit_edges(mask, edge, False)
+        side = np.clip(mask - rounded_inset(mask, edge), 0, 1)
+        over(canvas, *at(y, x), black, side * strength * 0.5)
+        over(canvas, *at(y, x), black, dark * strength)
+        over(canvas, *at(y, x), white, lit * strength)
+
+    def rounded_inset(mask, edge):
+        inner = mask.copy()
+        for axis in (0, 1):
+            for step in (edge, -edge):
+                inner = np.minimum(inner, np.roll(mask, step, axis))
+        return inner
+
+    def key_disc(y, x, diameter, depth=0.7):
+        cap = disc(P(diameter))
+        rim = disc(P(diameter + 0.7))
+        over(canvas, *mid(y, x, rim), black, rim * 0.28)
+        raised(canvas, *mid(y, x, cap), cap, *key, m, depth=depth, shadow=0.35, light=0.3)
+
+    # Base first: its top edge hides under the hinge.
+    raised(canvas, *at(88, 0), base, *base_tone, m, depth=1.4, shadow=0, light=0.3)
+    plate = rounded(P(80), P(102.2), P(2.4))
+    raised(canvas, *at(96.8, 32.6), plate, *shade(base_tone, 1.02), m, depth=0.9, shadow=0.3, light=0.22)
+    groove(99.6, 35.4, rounded(P(74.2), P(96.6), P(1.6)))
+    # Lid: the rim, the frame round the screen, rubber stops, side tabs, speakers.
+    raised(canvas, *at(0, 0), lid, *lid_tone, m, depth=1.4, shadow=0, light=0.34)
+    groove(3.4, 3.4, rounded4(P(83), P(PLUS_W - 6.8), P(4), P(4), P(0.8), P(0.8)), 0.14)
+    frame = rounded(P(74.6), P(96.6), P(1.8))
+    over(canvas, *at(7.1, 35.2), vertical(*frame.shape, *shade(lid_tone, 0.97)), frame)
+    groove(7.1, 35.2, frame, 0.24)
+    for cx in (16.4, 150.8):
+        for cy in (14.9, 76.2):
+            stop = rounded(P(4.1), P(4.1), P(1.1))
+            sunken(canvas, *mid(cy, cx, stop), stop, *shade(lid_tone, 0.91), m, 0.22)
+    for x in (0.2, PLUS_W - 3.3):
+        tab = rounded(P(6), P(3.1), P(0.9))
+        raised(canvas, *at(22.8, x), tab, *lid_tone, m, depth=0.7, shadow=0.35, light=0.35)
+    for cx in (19.3, 148.1):
+        for dy, dx in ((-3.8, -2), (-3.8, 2), (0, -4), (0, 0), (0, 4), (3.8, -2), (3.8, 2)):
+            dot = disc(max(2, P(1.0)))
+            over(canvas, *mid(43.3 + dy, cx + dx, dot), np.full(3, 0.04, np.float32), dot)
+    # Hinge: dark cut-outs above the knuckles, the barrel, the knuckles, the microphone slot.
+    for x in (10, 153.2):
+        gap = rounded(P(2.6), P(6.8), P(0.5))
+        over(canvas, *at(85, x), black, gap * 0.82)
+    over(canvas, *at(86, 0.8), black, rounded(P(1.4), P(PLUS_W - 1.6), P(0.7)) * 0.4)
+
+    def cylinder(y, x, mask):
+        t = np.linspace(0, 1, mask.shape[0], dtype=np.float32)[:, None, None]
+        level = 0.7 + 0.42 * np.exp(-((t - 0.28) / 0.22)**2) - 0.5 * np.clip((t - 0.62) / 0.38, 0, 1)**1.4
+        tone = np.array(lid_tone[1], np.float32) * 0.45 + np.array(base_tone[0], np.float32) * 0.55
+        if shell == 'pink':
+            tone = np.array(base_tone[0], np.float32)
+            level = 1 + (level - 1) * 0.55
+        raised(canvas, *at(y, x), mask, *base_tone, m, depth=0.8, shadow=0.4, light=0.2)
+        over(canvas, *at(y, x), np.clip(np.broadcast_to(tone * level, (*mask.shape, 3)), 0, 1), mask * 0.97)
+
+    cylinder(86.5, 17.5, bar)
+    cylinder(85.4, 0, left_knuckle)
+    cylinder(85.4, PLUS_W - 17.8, right_knuckle)
+    slot = rounded(P(3.6), P(1.3), P(0.65))
+    over(canvas, *mid(91.3, 83.5, slot), np.full(3, 0.02, np.float32), slot)
+    write(91.3, 85.6, 'MIC', 1.7, label)
+    # D-pad with its four printed dashes.
+    arm, span = P(7.4), P(21.8)
+    pads = ((span - arm) // 2, span - arm - (span - arm) // 2)
+    cross = np.maximum(
+        np.pad(rounded(arm, span, P(1.1)), (pads, (0, 0))), np.pad(rounded(span, arm, P(1.1)), ((0, 0), pads))
+    )
+    raised(canvas, *mid(116.1, 16.8, cross), cross, *pad_tone, m, depth=1.0, shadow=0.5, light=0.38)
+    for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
+        dash = rounded(P(3.3), P(1.0), P(0.4)) if dy else rounded(P(1.0), P(3.3), P(0.4))
+        over(canvas, *mid(116.1 + 6.9 * dy, 16.8 + 6.9 * dx, dash), ink[0], dash * ink[1])
+    # The stick: a moulded dish, a dark socket, a slightly hollow cap.
+    dish = disc(P(23.2))
+    sunken(canvas, *mid(143.9, 17.3, dish), dish, *shade(base_tone, 0.93), m, 0.45)
+    socket = disc(P(18))
+    sunken(canvas, *mid(143.9, 17.3, socket), socket, *shade(base_tone, 0.82 if shell == 'pink' else 0.3), m, 0.5)
+    stick = disc(P(12.4))
+    raised(canvas, *mid(143.9, 17.3, stick), stick, *cap_tone, m, depth=1.0, shadow=0.55, light=0.35)
+    n = P(10.4)
+    yy, xx = (np.mgrid[0:n, 0:n].astype(np.float32) + 0.5) / n * 2 - 1
+    dent = np.clip((1 - np.hypot(xx, yy)) / 0.35, 0, 1) * 0.8  # a soft-edged hollow, lit from below
+    over(canvas, *mid(143.9, 17.3, dent), vertical(n, n, cap_tone[1], cap_tone[0]), dent)
+    for x in (10.7, 23.1):
+        key_disc(167.2, x, 8.4, 0.6)
+    # ABXY, then Start and Select with their names.
+    for char, dx, dy in (('X', 0, -8.2), ('B', 0, 8.2), ('Y', -8.2, 0), ('A', 8.2, 0)):
+        key_disc(124.6 + dy, 150.6 + dx, 8.2)
+        g = lettering(char, m, 3.2, 0.17)
+        over(canvas, *mid(124.6 + dy, 150.6 + dx, g), ink[0], g * ink[1])
+    for y, name in ((157, 'START'), (167.2, 'SELECT')):
+        key_disc(y, 141.9, 5.4, 0.55)
+        write(y, 146.3, name, 2.0, label)
+    # The two status lights on the right edge.
+    for y in (109, 114):
+        led = rounded(max(2, P(1.3)), P(3.6), P(0.5))
+        over(canvas, *mid(y, 165.1, led), np.array((0.96, 0.97, 1.0), np.float32), led)
 
 
 def compose(top, bottom, style='float', layout='stack', bg='auto', scale=2, shell='red'):
