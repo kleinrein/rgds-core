@@ -30,6 +30,10 @@ DraStic keeps the DS saves on the system card's ext4 vendor partition (`/mnt/ven
 
 A ROCKNIX card only gets a warning. Its data is on ext4, which macOS and Windows can't read. RG DS OS can bring it over from the old card in a Plus's second slot or a USB card reader instead.
 
+## Format first
+
+**Format the card first** on the card step (`format.go`) formats the card before the flash, as the SD Association's formatter would: one partition, FAT32 up to 32 GB and exFAT above, on 4 MiB boundaries. It clears whatever the card had (old partition tables, a backup GPT at its end, the saves header of an earlier flash) before RG DS OS goes on. It runs after the fake-card check, so a fake card stops before anything is erased; only a few MB are written, each read back. `RGDS_FSCK=1 go test -run Format` formats sparse images and checks them with macOS's `fsck_msdos` and `fsck_exfat`, and mounts them.
+
 ## When things go wrong
 
 - **The card reader drops the card.** Some USB readers reset now and then, mostly while reading ("device not configured"). The flasher waits for the card to come back (the one disk with the same name and size), opens it again and carries on. One authorization covers every reopen (`security authorize` holds the `sys.openfile.readwrite./dev/rdiskN` rights, and `authopen -extauth` uses them), so this needs no new password. Reads go in 256 KiB pieces on macOS: buggy readers often reset on large reads (Linux caps USB storage requests at 120 KiB for the same reason). After a reset, macOS reads the partition table again and mounts what it finds, writing to it (`.fseventsd`, the FAT dirty flag). The card has no partition table until the end, so there is nothing to mount. If the reader drops the card after the table is on, RGDS-BOOT is checked again and repaired. macOS also gets no cache-flush command: writes to `/dev/rdisk` aren't cached, and the eject flushes.

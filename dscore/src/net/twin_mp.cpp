@@ -24,6 +24,16 @@ constexpr u32 kDropped = 0xFFFFFFFFu; // a slot the reader has thrown away in pl
 constexpr u64 kGone = ~u64(0);        // a clock that will never hold anyone up again
 constexpr double kTicksPerUs = 67.027964;
 
+// DS_TWIN_JITTER_US=N (tests): now and then a random pause of up to N us in sends and clock updates, so a
+// session whose result depends on the machine's timing shows it as differing hashes between runs.
+void jitter() {
+  static const int max_us = std::getenv("DS_TWIN_JITTER_US") ? std::atoi(std::getenv("DS_TWIN_JITTER_US")) : 0;
+  if (max_us <= 0) return;
+  static thread_local unsigned seed = static_cast<unsigned>(::getpid()) * 2654435761u;
+  seed = seed * 1103515245u + 12345u;
+  if ((seed >> 16) % 4 == 0) ::usleep((seed >> 8) % static_cast<unsigned>(max_us));
+}
+
 int popcount16(u16 v) {
   int n = 0;
   for (; v; v &= static_cast<u16>(v - 1)) ++n;
@@ -113,6 +123,7 @@ TwinMp::~TwinMp() {
 
 void TwinMp::publish() {
   if (!shm_) return;
+  jitter();
   const u64 t = now_();
   u64 cur = shm_->clock[me_].load(std::memory_order_relaxed);
   if (t > cur) shm_->clock[me_].store(t, std::memory_order_release);
@@ -125,7 +136,10 @@ void TwinMp::wait_for(u64 t) {
   const auto t0 = std::chrono::steady_clock::now();
   for (unsigned spin = 0; shm_->clock[other].load(std::memory_order_acquire) < t; ++spin) {
     if (spin < 4000) continue;
-    std::this_thread::yield();
+    // Spinning is for the short waits of play; a long one (a menu open on one side) sleeps instead of burning
+    // the core.
+    if (spin < 200000) std::this_thread::yield();
+    else ::usleep(200);
   }
   wait_ns_ += std::chrono::duration<double, std::nano>(std::chrono::steady_clock::now() - t0).count();
 }
@@ -133,13 +147,11 @@ void TwinMp::wait_for(u64 t) {
 int TwinMp::send(u32 type, const u8* data, int len, u64 timestamp) {
   if (!shm_ || len < 0) return 0;
   publish();
-  const u64 at = now_();
-  // A promise made in recv_replies covers the reply window; a send inside it would break determinism.
-  if (at < shm_->clock[me_].load(std::memory_order_relaxed)) {
-    static bool said = false;
-    if (!said) std::fprintf(stderr, "twin: a send at %llu inside a promised window\n", (unsigned long long)at);
-    said = true;
-  }
+  // recv_replies promised nothing would come from this console before the reply window ends, and the other may
+  // already have run past that point: whether it has depends on the machine, not the games. So a message sent
+  // inside the window (the ACK that follows the replies) goes out as the window ends. The promise is a function
+  // of the game alone, so both copies of the session see it the same.
+  const u64 at = std::max(now_(), shm_->clock[me_].load(std::memory_order_relaxed));
   auto& r = shm_->ring[me_];
   const u64 tail = r.tail.load(std::memory_order_relaxed);
   while (tail - r.head.load(std::memory_order_acquire) >= kSlots) std::this_thread::yield(); // full: rare
@@ -150,6 +162,7 @@ int TwinMp::send(u32 type, const u8* data, int len, u64 timestamp) {
   m.len = static_cast<u32>(std::min<int>(len, kMaxLen));
   if (m.len) std::memcpy(m.data, data, m.len);
   r.tail.store(tail + 1, std::memory_order_release);
+  jitter();
   return len;
 }
 
@@ -165,8 +178,14 @@ const TwinMp::Msg* TwinMp::front(u64 by) {
       }
       return m.at + kLead <= by ? &m : nullptr; // in order: a later one arrives later still
     }
-    // Empty for now: final only once nothing sent before by - kLead can still come.
-    if (by < kLead || shm_->clock[1 - me_].load(std::memory_order_acquire) > by - kLead) return nullptr;
+    // Empty for now: final only once nothing sent before by - kLead can still come. The other writes a message
+    // before it moves its clock past it, so once the clock is read the ring is read again: a message written
+    // between the two reads must not pass for "nothing came".
+    if (by < kLead) return nullptr;
+    if (shm_->clock[1 - me_].load(std::memory_order_acquire) > by - kLead) {
+      if (r.head.load(std::memory_order_relaxed) != r.tail.load(std::memory_order_acquire)) continue;
+      return nullptr;
+    }
     wait_for(by - kLead + 1);
   }
 }
@@ -263,7 +282,10 @@ u16 TwinMp::recv_replies(u8* packets, u64 timestamp, u16 aidmask) {
   for (;;) {
     const u64 head = r.head.load(std::memory_order_relaxed);
     if (head == r.tail.load(std::memory_order_acquire)) {
-      if (shm_->clock[1 - me_].load(std::memory_order_acquire) >= until) return ret; // the window closed
+      if (shm_->clock[1 - me_].load(std::memory_order_acquire) >= until) { // the window closed...
+        if (head != r.tail.load(std::memory_order_acquire)) continue;      // ...unless a reply came meanwhile
+        return ret;
+      }
       // Wait for a message or the other's clock past the window, whichever comes first.
       ++waits_;
       const auto t0 = std::chrono::steady_clock::now();

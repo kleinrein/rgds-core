@@ -1519,7 +1519,6 @@ Just you	Vain sinä
 Buttons, shortcut and fast-forward	Painikkeet, pikanäppäin ja pikakelaus
 DS nickname	DS-nimi
 Join or host	Liity tai isännöi
-Smooth (2 players)	Sujuva (2 pelaajaa)
 Host	Isäntä
 Sharing details	Jakamistiedot
 Graphics saved.	Grafiikka tallennettu.
@@ -2089,3 +2088,5 @@ With controls	Säätimillä
 Left hand	Vasen käsi
 Right hand	Oikea käsi
 Volume and brightness	Äänenvoimakkuus ja kirkkaus
+Local wireless starts the game fresh on both handhelds	Paikallinen langaton yhteys käynnistää pelin alusta kummallakin laitteella
+Applies when the game starts.	Tulee voimaan, kun peli käynnistyy.

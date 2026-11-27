@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <enet/enet.h>
 #include <arpa/inet.h>
+#include <ifaddrs.h>
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -736,6 +737,7 @@ bool LanMp::wait_seat(std::string& blob, u32& peer_ip, int timeout_ms) {
   const u32 start = ms_now();
   while (!have_seat_) {
     if (!host_ || static_cast<int>(ms_now() - start) >= timeout_ms) return false;
+    process_discovery(); // a waiting host keeps announcing itself, or nobody finds it
     ENetEvent ev;
     if (enet_host_service(host_, &ev, 10) <= 0) continue;
     if (ev.type == ENET_EVENT_TYPE_RECEIVE && ev.channelID == Chan_MP) {
@@ -749,6 +751,26 @@ bool LanMp::wait_seat(std::string& blob, u32& peer_ip, int timeout_ms) {
   peer_ip = seat_ip_;
   have_seat_ = false;
   return true;
+}
+
+bool LanMp::rival_host() {
+  if (!is_host_ || discovery_fd_ < 0) return false;
+  poll_discovery(ms_now());
+  u32 lowest_mine = 0xffffffffu;
+  ifaddrs* ifs = nullptr;
+  if (getifaddrs(&ifs) == 0) {
+    for (ifaddrs* i = ifs; i; i = i->ifa_next)
+      if (i->ifa_addr && i->ifa_addr->sa_family == AF_INET) {
+        const u32 a = ntohl(reinterpret_cast<sockaddr_in*>(i->ifa_addr)->sin_addr.s_addr);
+        if ((a >> 24) != 127) lowest_mine = std::min(lowest_mine, a);
+        mine_.insert(a);
+      }
+    freeifaddrs(ifs);
+  }
+  std::lock_guard<std::mutex> l(sessions_mutex_);
+  for (const auto& [ip, s] : sessions_)
+    if (!mine_.count(ip) && ip < lowest_mine && s.num_players < s.max_players) return true;
+  return false;
 }
 
 // ---- MpTransport -------------------------------------------------------------

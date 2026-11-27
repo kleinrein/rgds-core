@@ -392,6 +392,7 @@ func (s *server) api(w http.ResponseWriter, r *http.Request, name string) {
 		Games   bool   `json:"games"`  // and copy its games to this computer
 		Backup  bool   `json:"backup"` // copy the whole card to this computer first (backup.go)
 		Preset  Preset `json:"preset"` // setup answers for the first start (preset.go)
+		Format  bool   `json:"format"` // format the card before the flash (format.go)
 		update
 	}
 	if r.Method == "POST" {
@@ -455,7 +456,7 @@ func (s *server) api(w http.ResponseWriter, r *http.Request, name string) {
 		s.mu.Unlock()
 		reply(nil)
 	case name == "flash":
-		reply(s.startFlash(req.Disk, req.Confirm, req.Keep, req.Games, req.Backup, req.Preset))
+		reply(s.startFlash(req.Disk, req.Confirm, req.Keep, req.Games, req.Backup, req.Format, req.Preset))
 	case name == "backup":
 		s.mu.Lock()
 		folder := s.st.CardCopy
@@ -559,7 +560,7 @@ func (s *server) prepare(modelName string) error {
 	return nil
 }
 
-func (s *server) startFlash(id, confirm string, keep, games, backup bool, preset Preset) error {
+func (s *server) startFlash(id, confirm string, keep, games, backup, format bool, preset Preset) error {
 	if id == "" || confirm != id {
 		return errors.New("not confirmed; nothing was written")
 	}
@@ -578,7 +579,7 @@ func (s *server) startFlash(id, confirm string, keep, games, backup bool, preset
 		s.mu.Unlock()
 		return errors.New("the image is not ready")
 	}
-	job := Job{Image: s.st.Image.path, Disk: id, Preset: presetPath}
+	job := Job{Image: s.st.Image.path, Disk: id, Preset: presetPath, Format: format && !restoring}
 	s.st.Busy, s.st.Error, s.st.Phase, s.st.Done, s.st.Total = true, "", "prepare", 0, 0
 	s.mu.Unlock()
 	s.notify()
@@ -665,6 +666,9 @@ func (s *server) run(j Job) error {
 	s.mu.Unlock()
 	// This blocks while Windows shows its admin prompt, so the lock is not held here.
 	args := []string{"--worker", "--report", s.base + "api/worker/" + job, "--disk", j.Disk, "--image", j.Image, "--log", logPath()}
+	if j.Format {
+		args = append(args, "--format")
+	}
 	for flag, value := range map[string]string{"--carry": j.Carry, "--backup": j.Backup, "--preset": j.Preset} {
 		if value != "" {
 			args = append(args, flag, value)

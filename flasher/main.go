@@ -33,6 +33,7 @@ func main() {
 	list := flag.Bool("list", false, "print the cards the flasher would offer, then exit")
 	noWindow := flag.Bool("no-window", false, "print the address instead of opening a window")
 	showVersion := flag.Bool("version", false, "print the version")
+	format := flag.Bool("format", false, "internal: the worker formats the card before the flash")
 	sshKey := flag.String("ssh-key", "", "developers: put this public key (~/.ssh/id_ed25519.pub) on the card, so SSH works from the first boot")
 	flag.Parse()
 
@@ -53,7 +54,7 @@ func main() {
 	case *showVersion:
 		fmt.Println(version)
 	case *worker:
-		os.Exit(runWorker(*report, Job{Image: *image, Disk: *disk, Carry: *carry, Backup: *backup, Preset: *preset}))
+		os.Exit(runWorker(*report, Job{Image: *image, Disk: *disk, Carry: *carry, Backup: *backup, Preset: *preset, Format: *format}))
 	case *list:
 		disks, err := listDisks()
 		if err != nil {

@@ -6,6 +6,8 @@ small <name>.thumb.bmp beside it for the launcher's grid; the folder's album.ini
 screenshots/ keeps which screens a picture holds: both (upper above lower, one PNG), top or bottom.
 """
 import argparse
+import math
+from operator import itemgetter
 from pathlib import Path
 import shutil
 import struct
@@ -166,14 +168,36 @@ def decode_png(data):
 
 
 def scale(picture, width, height):
-    """Nearest-neighbour: a game's pixels stay sharp."""
-    out = bytearray(width * height * 3)
-    columns = [x * picture.width // width * 3 for x in range(width)]
+    """Nearest-neighbour: a game's pixels stay sharp. Whole rows at C speed, and a repeated source row is reused:
+    a per-pixel Python loop took 2.4 s on the RG DS Plus to fit a 1024x1536 picture's two halves (2026-11-26),
+    most of the time the Album took to open a picture.
+
+    The picked columns repeat: with g = gcd(widths), output pixel k + m*(width/g) is source pixel
+    k*picture.width//width + m*(picture.width/g). A short period (1024 -> 640 picks 5 of every 8) is a few strided
+    slice copies per row; a long one gathers the row's byte indices with itemgetter."""
+    g = math.gcd(picture.width, width)
+    period_out, period_in = width // g, picture.width // g
+    gather = None
+    if period_out > 32:
+        picks = [x * picture.width // width * 3 + channel for x in range(width) for channel in range(3)]
+        gather = itemgetter(*picks)
+
+    def fill(row):
+        if gather: return bytes(gather(row))
+        line = bytearray(width * 3)
+        for k in range(period_out):
+            start = k * picture.width // width * 3
+            for channel in range(3):
+                line[k * 3 + channel::period_out * 3] = row[start + channel::period_in * 3]
+        return bytes(line)
+
+    out = bytearray()
+    last, line = -1, b''
     for y in range(height):
-        source = picture.row(y * picture.height // height)
-        target = y * width * 3
-        for x, column in enumerate(columns):
-            out[target + x * 3:target + x * 3 + 3] = source[column:column + 3]
+        source = y * picture.height // height
+        if source != last:
+            last, line = source, fill(picture.row(source))
+        out += line
     return Picture(width, height, bytes(out))
 
 

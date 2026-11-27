@@ -9,7 +9,7 @@
 
 ![Home screen, the Nintendo 64 shelf and a kart game's pause board, captured on an RG DS](docs/images/screens.png)
 
-> **Early release.** RG DS OS 0.9.1 is the latest public image. The RG DS and the RG DS Plus are both fully supported. This page describes the current source, which is ahead of 0.9.1; some newer features are not yet tested on a handheld.
+> **Early release.** RG DS OS 0.9.2 is the latest public image. The RG DS and the RG DS Plus are both fully supported, on the same card image. [What's new](https://github.com/kleinrein/rgds-core/releases/tag/v0.9.2)
 
 ## Features
 
@@ -79,7 +79,7 @@
 - Wi-Fi, Bluetooth controllers and headphones (aptX, aptX HD, LDAC).
 - File sharing, SSH, USB-C network and USB drive.
 - Signed over-the-air updates with automatic rollback. [More](docs/OTA.md)
-- One card image for both handhelds, with sharper menus on the RG DS Plus.
+- One card image for the RG DS and the RG DS Plus. On the Plus, menus are drawn at its full resolution and the second card slot is a live game library.
 
 ### Make it yours
 
@@ -96,7 +96,7 @@
 ## Install
 
 1. Download **RG DS Flasher** for [Windows](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-Windows.exe), [macOS](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-macOS.zip) or [Linux](https://github.com/kleinrein/rgds-core/releases/latest/download/RG-DS-Flasher-Linux-x64) and open it. Put a spare microSD card (8 GB or more) in your computer, pick it and press Flash. It downloads the latest RG DS OS, writes it, checks it and ejects the card. It can also preset your language and Wi-Fi, keep saves from a BananaOS or stock card, and back up or restore a whole card. [More about the flasher](flasher/README.md)
-2. Put the card in and power on. First boot sets up the rest of the card, then a short setup asks for your language, colour, name, Home and animations, DS or all systems, time and Wi-Fi, and shows how to add games. Every step can be skipped.
+2. Put the card in (on the RG DS Plus, the first card slot) and power on. First boot sets up the rest of the card, then a short setup asks for your language, colour, name, Home and animations, DS or all systems, time and Wi-Fi, and shows how to add games. Every step can be skipped.
 3. Join Wi-Fi in Settings and turn on file sharing. Copy games into `roms/nds`, `roms/gba` and so on from a computer, over Wi-Fi, USB-C or as a USB drive.
 
 Prefer doing it by hand? Download `RG-DS-OS-<version>.img.gz` from [releases](https://github.com/kleinrein/rgds-core/releases) (it works on the RG DS and the RG DS Plus), check it against its `.sha256` and write it with [balenaEtcher](https://etcher.balena.io) or Raspberry Pi Imager. Not Rufus: its cards stay black.

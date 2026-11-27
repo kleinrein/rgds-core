@@ -15,6 +15,7 @@
 #include "core/input/input_log.h"
 #include "core/types.h"
 
+#include <cstdio>
 #include <functional>
 #include <map>
 #include <memory>
@@ -77,7 +78,8 @@ private:
   int delay_ = 3;
   u8 rtc_[7] = {};
   pid_t child_ = -1;
-  std::string tmp_; // the session's files (twin block, the other's save and sidecar)
+  std::string tmp_; // the session's files (twin block, the other's save and sidecar, the two consoles' logs)
+  std::FILE* hashes_ = nullptr; // visible.log: this console's [twin-hash] lines, beside the hidden one's
 };
 
 } // namespace ds::sdl

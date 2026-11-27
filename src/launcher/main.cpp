@@ -212,6 +212,12 @@ struct Surface {
     Uint32 id = 0;
     SDL_Surface* bitmap = nullptr;
 };
+// Local wireless is held back from players until the two-console session plays a race through (2026-11-26: on the
+// handhelds the shown console and its hidden copy differ from the first frame; docs/NETPLAY_PLAN.md). Development
+// handhelds turn it on with the file dev/local-wireless in the data folder (read at start); without it Play together
+// has no such row and a stored "wireless" setting is ignored, here and in runtime/emulators.py.
+bool g_local_wireless = false;
+
 class App {
     Sdl s;
     MenuAudio sounds{s};
@@ -394,7 +400,8 @@ class App {
     SDL_Texture* panel_canvas(SDL_Renderer* renderer, bool native = false) {
         int w = 0, h = 0;
         s.GetRendererOutputSize(renderer, &w, &h);
-        static const bool all = std::getenv("RGDS_PANEL_CANVAS") && std::string(std::getenv("RGDS_PANEL_CANVAS")) == "1";
+        static const bool all =
+            std::getenv("RGDS_PANEL_CANVAS") && std::string(std::getenv("RGDS_PANEL_CANVAS")) == "1";
         const int width = (native || all) && panel_part("canvas") ? std::clamp(w, 640, 4096) : 640,
                   height = width * 480 / 640;
         return s.CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, width, height);
@@ -1903,6 +1910,7 @@ class App {
     pid_t album_child = -1;
     std::string album_task;
     bool album_viewing = false, shot_requested = false;
+    bool album_view_pending = false; // a View asked for while another screenshots.py command ran: album_poll starts it
     bool album_from_journal = false; // Back from the Album returns to the Journal, not Home
     Uint32 shutter_at = 0, launcher_menu_at = 0;
     bool launcher_menu_held = false, launcher_menu_chorded = false, launcher_r_held = false;
@@ -2290,8 +2298,8 @@ class App {
     std::string profile_editing;
     Page picker_return = Page::Library;
     bool picker_at_boot = false, boot_lock = false, look_follows_player = false, new_profile_restricted = false,
-         new_profile_simple = false, kind_editing = false, profile_removing = false, new_profile_flow = false, visibility_loading = false, visibility_changed = false,
-         profile_erasing = false,
+         new_profile_simple = false, kind_editing = false, profile_removing = false, new_profile_flow = false,
+         visibility_loading = false, visibility_changed = false, profile_erasing = false,
          profile_remove_backup = false; // the Back up first switch on the removal question
     VisibilityRules active_rules, games_rules;
     CatalogReader visibility_reader, games_reader;
@@ -2636,17 +2644,18 @@ class App {
     void draw_scrollbar(SDL_Renderer* r, int x, int y, int height, int thumb, int offset, bool dragging, bool hover,
                         int width = 36);
     void round_rect(SDL_Renderer* r, int x, int y, int w, int h, int radius, const std::string& key);
-    std::vector<SDL_Rect> fill_rows; // round_rect's and alpha_round's rows, reused
+    std::vector<SDL_Rect> fill_rows;   // round_rect's and alpha_round's rows, reused
     std::vector<SDL_FRect> panel_rows; // the same in panel pixels on a larger panel (fill_round_on_panel)
-    rgds::RoundCorners round_corners; // their corners as discs there (panel_scale.hpp)
+    rgds::RoundCorners round_corners;  // their corners as discs there (panel_scale.hpp)
     // RGDS_FRAME_LOG=FILE: one line a second of where frame time goes (ms; average and worst), for the handheld.
     struct FrameLog {
         std::FILE* file = nullptr;
         enum { Interval, Prepare, TopDraw, TopPresent, BottomDraw, BottomPresent, Work, Wait, Count };
         double sum[Count]{}, peak[Count]{}, last = 0, began = 0, loop_top = 0, waited = 0;
         int frames = 0, top_frames = 0, touches = 0, top_touches = 0;
-        long copies = 0, fills = 0, lines = 0, peak_draws = 0, uploads = 0, upload_px = 0, targets = 0; // draw_count.hpp
-        int gaps[5]{}; // frame intervals: up to 18, 34, 50, 100 ms, longer
+        long copies = 0, fills = 0, lines = 0, peak_draws = 0, uploads = 0, upload_px = 0,
+             targets = 0; // draw_count.hpp
+        int gaps[5]{};    // frame intervals: up to 18, 34, 50, 100 ms, longer
         static double clock() {
             return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch())
                 .count();
@@ -3223,8 +3232,8 @@ class App {
                 s.SetHint("SDL_RENDER_SCALE_QUALITY", "1");
                 large_panels = panel_native();
             }
-        } else if (const char* scale = std::getenv("RGDS_PREVIEW_SCALE"); scale && std::atof(scale) > 1.01 &&
-                   std::atof(scale) <= 4) {
+        } else if (const char* scale = std::getenv("RGDS_PREVIEW_SCALE");
+                   scale && std::atof(scale) > 1.01 && std::atof(scale) <= 4) {
             // Developers: the desktop preview at a larger panel's size (1.6 for the RG DS Plus's 1024x768), the same
             // 640-wide layout scaled up as on the handheld, so --screenshot shows what the Plus shows.
             width = int(std::lround(640 * std::atof(scale)));
@@ -3926,6 +3935,7 @@ public:
         if (o.preferences.empty())
             o.preferences = o.data.empty() ? fs::path("build/dev/preferences.ini") : o.data / "preferences.ini";
         if (o.data.empty()) o.data = o.preferences.parent_path();
+        g_local_wireless = fs::exists(o.data / "dev/local-wireless");
         library_cache.reset(o.data);
         if (o.system_preferences.empty()) o.system_preferences = o.preferences.parent_path() / "system.ini";
         // Set after system.ini, which is the handheld's: the look and language below are the player's.

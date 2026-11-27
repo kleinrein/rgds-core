@@ -12,6 +12,7 @@
 
 #include "core/input/input_log.h"
 
+#include <cstdio>
 #include <map>
 #include <memory>
 #include <string>
@@ -31,8 +32,10 @@ public:
 
   // Sender: frame n's input (n counts up from 0, one call per frame).
   void push(u32 n, const input::Frame& f);
-  // Receiver: frame n's input, waiting for it (up to `give_up_ms`); false if it never came.
-  bool get(u32 n, input::Frame& f, int give_up_ms = 15000);
+  // Receiver: frame n's input, waiting for it (up to `give_up_ms`); false if it never came, or at once once the
+  // sender has said it left. The wait is long: a player with the menu open sends nothing until they close it.
+  bool get(u32 n, input::Frame& f, int give_up_ms = 15 * 60 * 1000);
+  bool left() const { return bye_; }
 
   double wait_ms() const { return wait_ns_ / 1e6; }
   unsigned waits() const { return waits_; }
@@ -55,6 +58,7 @@ private:
   std::map<u32, input::Frame> got_;
   u32 need_ = 0; // frames below this are used: late copies of them are ignored
   bool have_peer_ = false;
+  bool bye_ = false;             // receiver: the sender has left
   unsigned char peer_[128] = {}; // sockaddr_storage, kept opaque here
   unsigned peer_len_ = 0;
   double wait_ns_ = 0;
@@ -64,6 +68,7 @@ private:
 // A quick hash of a console's main RAM, logged every 60 frames of a session by both frontends (DS_TWIN_HASH=0: not),
 // so the two copies of a console can be compared after a session ("[twin-hash] frame N H"). ~1 ms a second.
 u64 ram_hash(const u8* ram, size_t bytes);
-void log_ram_hash(u32 frame, const u8* ram, size_t bytes);
+// `to` also gets the line when given (the visible console's own file, readable while the session runs).
+void log_ram_hash(u32 frame, const u8* ram, size_t bytes, std::FILE* to = nullptr);
 
 } // namespace ds::net

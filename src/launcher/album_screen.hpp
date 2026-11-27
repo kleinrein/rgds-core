@@ -90,7 +90,11 @@ void App::album_poll() {
     const std::string task = std::move(album_task);
     album_task.clear();
     media.refresh(); // a new cover (box.bmp) or a new view replaces what is cached
-    if (task == "view") {
+    if (task == "view" && album_view_pending) {
+        // Left/Right moved on while this picture was loading: the one now selected loads next, and photo mode or
+        // PictoChat waits for that one (album_view_then_* stay set).
+        album_viewing = ok && settings.page == Page::Album;
+    } else if (task == "view") {
         album_viewing = ok && settings.page == Page::Album;
         if (!ok) emit_sound(MenuCue::Error);
         if (ok && album_view_then_photo && settings.page == Page::Album) photo_begin();
@@ -114,6 +118,11 @@ void App::album_poll() {
                 settings.focus = int(i);
                 break;
             }
+    }
+    if (album_view_pending) {
+        album_view_pending = false;
+        if (settings.page == Page::Album) album_view();
+        else album_view_then_photo = album_view_then_chat = false;
     }
     dirty = true;
 }
@@ -271,6 +280,12 @@ void App::album_action(int code) {
 
 void App::album_view() {
     if (album.empty()) return;
+    // One helper at a time: A right after the Album opens (its index refresh) or Left/Right before the last
+    // picture finished used to be dropped, leaving nothing shown or the previous picture under the new selection.
+    if (album_child > 0) {
+        album_view_pending = true;
+        return;
+    }
     const auto session = o.data / "session";
     album_helper({"view", "--path", album[size_t(settings.focus)].path, "--top",
                   (session / "album-view-top.bmp").string(), "--bottom", (session / "album-view-bottom.bmp").string()},

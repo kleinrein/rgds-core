@@ -62,7 +62,13 @@ void App::ds_apply_in_game(const std::string& key) {
     if (key == "online") menu_request("online:" + std::to_string(ds_online()));
     else if (key == "wireless") {
         if (ds_online()) status = "Online play is on. Local wireless applies when it is off.";
-        else menu_request(ds_wireless() ? "relaunch:wireless-on" : "relaunch:wireless-off");
+        else if (!ds_wireless()) menu_request("relaunch:wireless-off");
+        else // both handhelds start the game from its own save, so the moment since the last one goes
+            show_picker("Local wireless starts the game fresh on both handhelds",
+                        {"Restart later", "Restart now, unsaved progress is lost"}, 0, [this](int n) {
+                            if (n) menu_request("relaunch:wireless-on");
+                            else status = "Applies when the game starts.";
+                        });
     } else if (key == "microphone") menu_request("relaunch:microphone");
     else
         show_picker(key == "language" ? "The game reads its language when it starts"
@@ -73,12 +79,10 @@ void App::ds_apply_in_game(const std::string& key) {
                     });
 }
 
-// Local wireless (ds-input.ini wireless, DSCore's net.mode): 0 off, 1 join a session heard on the Wi-Fi or host one,
-// 2 host, 3 join only, 4 smooth: each handheld runs both consoles and only inputs cross (net.mode twin,
-// docs/NETPLAY_PLAN.md; two players).
-std::vector<std::string> App::wireless_names() const {
-    return {"Off", "Join or host", "Host", "Join", "Smooth (2 players)"};
-}
+// Local wireless (ds-input.ini wireless): one switch. On, the two handhelds find each other on the Wi-Fi and each
+// runs both consoles, so only inputs cross (DSCore's net.mode twin, docs/NETPLAY_PLAN.md; two players). Values
+// 2-4 from older builds (host, join, smooth) read as on.
+std::vector<std::string> App::wireless_names() const { return {"Off", "On"}; }
 
 // Online play (ds-input.ini online): 0 off, else DSCore's net.mode = internet with net.dns naming the fan-run
 // Nintendo WFC service the game's lookups go to: 1 Wiimmfi, 2 WiiLink WFC. It wins over local wireless.
@@ -89,7 +93,8 @@ int App::ds_online() {
 }
 
 int App::ds_wireless() {
-    return ds_settings.count("wireless") ? std::clamp(std::atoi(ds_settings["wireless"].c_str()), 0, 4) : 0;
+    if (!g_local_wireless) return 0;
+    return ds_settings.count("wireless") && std::atoi(ds_settings["wireless"].c_str()) > 0 ? 1 : 0;
 }
 
 void App::save_ds_setting(const std::string& key, const std::string& value) {
@@ -177,22 +182,26 @@ void App::open_play_together(Page back) {
     dirty = true;
 }
 
-// Rows: Local wireless, Online play, then Play now (library) or Leave session (in a live session).
-int App::play_together_rows() const { return (!o.game_menu || net_session_live()) ? 3 : 2; }
+// Rows: Local wireless, Online play, then Play now (library) or Leave session (in a live session). Without
+// g_local_wireless the first row is not shown, and the rows below it move up.
+int App::play_together_rows() const {
+    return ((!o.game_menu || net_session_live()) ? 3 : 2) - (g_local_wireless ? 0 : 1);
+}
 
-void App::play_together_row(SDL_Renderer* r, int y, int i) {
+void App::play_together_row(SDL_Renderer* r, int y, int row) {
     const bool no_network = kid_locked() && !active_profile().allow_wireless;
+    const int i = row + (g_local_wireless ? 0 : 1);
     if (i == 0)
-        list_row(r, y, i, "Local wireless",
+        list_row(r, y, row, "Local wireless",
                  !ds_supported() ? "Engine managed" : wireless_names()[no_network ? 0 : ds_wireless()],
                  ds_supported() && !no_network);
     else if (i == 1)
-        list_row(r, y, i, "Online play",
+        list_row(r, y, row, "Online play",
                  !ds_supported() ? "Engine managed" : online_names()[no_network ? 0 : ds_online()],
                  ds_supported() && !no_network);
-    else if (o.game_menu) list_row(r, y, i, "Leave session", "");
+    else if (o.game_menu) list_row(r, y, row, "Leave session", "");
     else
-        list_row(r, y, i, "Play now", ds_wireless() || ds_online() ? "" : "Turn one on first",
+        list_row(r, y, row, "Play now", ds_wireless() || ds_online() ? "" : "Turn one on first",
                  ds_supported() && (ds_wireless() || ds_online()));
 }
 
@@ -202,13 +211,14 @@ void App::play_together_action() {
         status = "Not on this profile";
         return;
     }
-    if (settings.focus == 0)
+    const int item = settings.focus + (g_local_wireless ? 0 : 1);
+    if (item == 0)
         show_picker("Local wireless", wireless_names(), ds_wireless(), [this](int n) {
             if (n == ds_wireless()) return;
             save_ds_setting("wireless", n);
             ds_apply_in_game("wireless");
         });
-    else if (settings.focus == 1)
+    else if (item == 1)
         show_picker("Online play", online_names(), ds_online(), [this](int n) {
             if (n == ds_online()) return;
             save_ds_setting("online", n);
@@ -254,11 +264,12 @@ void App::play_together_top(SDL_Renderer* r, int y) {
         return;
     }
     wrapped(r,
-            !ds_supported() ? "Use the engine's native settings for wireless play."
+            !ds_supported()     ? "Use the engine's native settings for wireless play."
+            : !g_local_wireless ? "Online play uses Wiimmfi or WiiLink, from the game's Nintendo WFC menu."
             : o.game_menu
-                ? "Local wireless plays with another RG DS on the same Wi-Fi; the game restarts to turn it on. Online "
-                  "play uses Wiimmfi or WiiLink, from the game's Nintendo WFC menu."
-                : "Local wireless plays with another RG DS on the same Wi-Fi: both pick it, then start the game. "
-                  "Online play uses Wiimmfi or WiiLink, from the game's Nintendo WFC menu.",
+                ? "Local wireless plays with another RG DS on the same Wi-Fi; the game restarts from its save to "
+                  "turn it on. Online play uses Wiimmfi or WiiLink, from the game's Nintendo WFC menu."
+                : "Local wireless plays with another RG DS on the same Wi-Fi: turn it on for both, then start the "
+                  "game on both. Online play uses Wiimmfi or WiiLink, from the game's Nintendo WFC menu.",
             54, y + 234, 22, 532, 5);
 }

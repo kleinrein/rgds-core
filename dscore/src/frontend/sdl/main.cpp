@@ -2164,6 +2164,14 @@ sdl_ready:
   // After the battery save (state's SRAM wins) and after the replay log
   // opens (can wind forward to the state's frame). Skipped under
   // replay/recording, since the log runs inputs from boot.
+#if DSPERATE_NET
+  // Both handhelds boot this console from the same seat; a resume state on one of them would put it minutes ahead
+  // of its copy on the other (which then waits that long, the screen black).
+  if (twin && load_state) {
+    std::fprintf(stderr, "twin: not resuming %s; a two-console session starts from a fresh boot\n", load_state);
+    load_state = nullptr;
+  }
+#endif
   const std::string autoload = load_state || log.reading() || log.writing()
 #if DSPERATE_NET
                                        || twin

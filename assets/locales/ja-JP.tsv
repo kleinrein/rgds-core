@@ -1519,7 +1519,6 @@ Just you	あなただけ
 Buttons, shortcut and fast-forward	ボタン、ショートカット、早送り
 DS nickname	DSの名前
 Join or host	参加またはホスト
-Smooth (2 players)	なめらか（2人）
 Host	ホスト
 Sharing details	共有の詳細
 Graphics saved.	グラフィックを保存しました。
@@ -2089,3 +2088,5 @@ With controls	操作つき
 Left hand	左手
 Right hand	右手
 Volume and brightness	音量と明るさ
+Local wireless starts the game fresh on both handhelds	ローカル通信では両方の本体でゲームを最初から起動します
+Applies when the game starts.	ゲームの起動時に反映されます。

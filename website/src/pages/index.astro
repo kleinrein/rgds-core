@@ -6,8 +6,8 @@ import icons from '../generated/system-icons.json'; // written by scripts/shots.
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const repo = 'https://github.com/kleinrein/rgds-core';
 const flasher = `${repo}/releases/latest/download/RG-DS-Flasher`;
-const title = 'RG DS OS: a fast, free operating system for the Anbernic RG DS';
-const description = 'A fast, free Linux OS for the Anbernic RG DS. Boots into your library, plays on both screens and updates safely.';
+const title = 'RG DS OS: a fast, free operating system for the Anbernic RG DS and RG DS Plus';
+const description = 'A fast, free Linux OS for the Anbernic RG DS and RG DS Plus. Boots into your library, plays on both screens and updates safely.';
 
 const secondScreen = [
   { id: 'pokemon', game: 'Pokémon', panel: 'Live team and battle panel', alt: 'Pokémon on the top screen, the current team on the bottom screen.' },
@@ -23,6 +23,7 @@ const views = [
 ];
 
 const features = [
+  { name: 'RG DS and RG DS Plus', text: 'One card for both. On the Plus, menus are drawn at its full resolution and games on the second card show up in the library.' },
   { name: 'DSCore', text: 'Crisp 3D at up to 5x. The most demanding games may slow down or show glitches.' },
   { name: 'Time travel', text: 'Rewind a few seconds on every system, the DS included.' },
   { name: 'RetroAchievements', text: 'Earn achievements on the DS and the classics, with pop-ups on the bottom screen.' },
@@ -41,7 +42,8 @@ const features = [
   { name: 'Controls on the second screen', text: 'Keyboards for the ZX Spectrum, C64, Amstrad CPC, MSX and Amiga. Keypads, Atari switches and the Sega Pico’s storybook.' },
   { name: 'Arcade on two screens', text: 'Vertical games stand tall across both screens, and dual-monitor classics use both.' },
   { name: 'PortMaster', text: 'PC games adapted for handhelds.' },
-  { name: 'Music player', text: 'Your own music from the card, from MP3 and FLAC to tracker modules.' },
+  { name: 'Media', text: 'Your music, from MP3 and FLAC to tracker modules, videos with subtitles, and books, comics and manga.' },
+  { name: 'Play together', text: 'Local wireless between handhelds and DS online play through Wiimmfi or WiiLink.' },
   { name: 'PictoChat', text: 'Our own take on the classic: Wi-Fi chat between handhelds.' },
   { name: 'Tailored', text: 'Light and dark themes, accent colours and 23 languages.' },
 ];
@@ -101,7 +103,7 @@ const systems = [
               <a class="button primary" id="download" href="#install">Download</a>
               <a class="button" href={repo}>View on GitHub</a>
             </div>
-            <p class="note">Free and open source. Early release for the RG&nbsp;DS and RG&nbsp;DS Plus.</p>
+            <p class="note">Free and open source. Early release for the RG&nbsp;DS and RG&nbsp;DS&nbsp;Plus, both fully supported.</p>
           </div>
           <img class="hero-device" src={`${base}/shots/home.webp`} width="584" height="628" fetchpriority="high"
             alt="RG DS showing a clock and calendar on the top screen, and the home menu with the last played game on the bottom screen." />
@@ -188,7 +190,7 @@ const systems = [
           </div>
           <ol class="steps" role="list">
             <li><h3>Flash a card</h3><p>Open RG DS Flasher, pick a microSD card of 8 GB or more and press Flash.</p></li>
-            <li><h3>Power on</h3><p>Put the card in your RG DS. The first boot sets up the rest of the card.</p></li>
+            <li><h3>Power on</h3><p>Put the card in your RG DS, or the first card slot of an RG DS Plus. The first boot sets up the rest of the card.</p></li>
             <li><h3>Add your games</h3><p>Join Wi-Fi, turn on file sharing in Settings and copy games into each system’s folder, like <code>roms/nds</code> or <code>roms/gba</code>.</p></li>
           </ol>
           <div class="actions downloads">

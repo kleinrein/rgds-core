@@ -1263,7 +1263,10 @@ int main(int argc, char** argv) {
         in = input_pending[n];
         input_pending.erase(n);
       } else if (!input_link->get(n, in)) {
-        std::fprintf(stderr, "input: frame %u never came from the other handheld\n", n);
+        std::fprintf(stderr,
+                     input_link->left() ? "input: the other handheld left (frame %u)\n"
+                                        : "input: frame %u never came from the other handheld\n",
+                     n);
         return 1;
       }
       ds::input::apply(nds, in);

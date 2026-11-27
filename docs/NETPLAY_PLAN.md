@@ -110,6 +110,27 @@ skipped), only inputs crossing the home Wi-Fi (UDP, 3 frames of delay, last 8 fr
 
 Not yet measured: the visible console's drawing in the real engine (GPU) on top of the pair's 7.6 ms. Phase 3 will.
 
+## Phase 3 status (2026-11-26): held back
+
+Local wireless is hidden from players for now. A development handheld turns it on with the file
+`dev/local-wireless` in its data folder (/data/rgds/userdata/dev/local-wireless), read by the launcher at start
+(`g_local_wireless`) and by runtime/emulators.py (`local_wireless`). The engine side (`net.mode = twin`,
+TwinSession, `rgds-twin`) stays in the tree.
+
+What works: the handhelds find each other (a waiting LanMp host keeps beaconing; two hosts settle by address), seats
+cross, the hidden console starts, both run at ~60 fps. Fixed on the way: a resume state put the shown console minutes
+ahead of its copy (Smooth now always boots fresh); a send inside a promised reply window and a ring/clock read race in
+TwinMp made the link's answers depend on the machine (a headless pair under `DS_TWIN_JITTER_US` now matches an
+undisturbed run for all 7000 frames, race included); InputLink says goodbye and waits through the other's menu.
+
+What fails: MKDS shows "An error has occurred". Each handheld now writes its shown console's `[twin-hash]` lines to
+/tmp/rgds-twin-PID/visible.log beside the hidden one's hidden.log; the shown console and its copy on the other
+handheld differ **at frame 0**. So the SDL engine and the headless child do not boot the same machine. Suspects,
+in order: the firmware each builds (user settings, the Wi-Fi sidecar, language), settings only the SDL engine
+applies at start (bridge hooks, DS_LID_PULSE, microphone, emu.* options from config.ini, frameskip), the RTC
+start, save handling (the SDL engine's .sav path vs `--save`). Next round: dump both machines' state at frame 0
+(DS_FRAME_HASH per region) and diff, then make the child take the exact options the engine resolved.
+
 ## Phases
 
 1. **TwinMp in headless:** two headless processes on one machine, linked by TwinMp, run MKDS (or Download Play)

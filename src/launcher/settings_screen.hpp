@@ -923,9 +923,9 @@ void App::settings_bottom(SDL_Renderer* r, int y) {
                 const int online = std::atoi(local.count("online") ? local.at("online").c_str() : "0"),
                           wireless = std::atoi(local.count("wireless") ? local.at("wireless").c_str() : "0");
                 list_row(r, y, i, "Play together",
-                         online > 0 && online <= 2 ? online_names()[size_t(online)]
-                         : wireless > 0            ? locale.text("Local wireless")
-                                                   : "Off");
+                         online > 0 && online <= 2          ? online_names()[size_t(online)]
+                         : wireless > 0 && g_local_wireless ? locale.text("Local wireless")
+                                                            : "Off");
             } else if (settings.page == Page::GameOptions && i == game_remove_row())
                 list_row(r, y, i, "Remove game", ""); // only listed when game_removable()
             else if (settings.page == Page::GameOptions && other_system_selected() && i == game_options_base() - 1)

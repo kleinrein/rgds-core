@@ -566,8 +566,14 @@ void App::watch_system(Uint32 now) {
             configure_sounds();
         }
     }
+    // `now` is read once at the top of the loop, and input handled after it (a held direction's repeat, a touch)
+    // stamps last_activity with a fresh s.GetTicks(), a millisecond or two later. Unsigned, now - last_activity then
+    // wrapped to ~49 days: the panels dimmed for one frame and lit again on the next, a black blink while navigating
+    // (RG DS Plus, 2026-11-27: backlight 1033 -> 258 -> 1033 in 31 ms), and the idle sleep could fire the same way.
+    const auto since = [now](Uint32 at) { return int32_t(now - at) > 0 ? now - at : Uint32(0); };
+    const Uint32 since_input = since(last_activity);
     const Uint32 dim_after = Uint32(dim_seconds[size_t(std::clamp(system_preferences.dim, 0, 4))]) * 1000;
-    const bool idle = dim_after > 0 && hardware.brightness && !pointer_down && now - last_activity >= dim_after;
+    const bool idle = dim_after > 0 && hardware.brightness && !pointer_down && since_input >= dim_after;
     if (mu.lid_dark) {
         // Music under a closed lid: the panels are dark on purpose (music_lid_hold below).
     } else if (idle && !system.panels_dimmed() && !system.brightness_pending()) system.dim_panels(25);
@@ -599,9 +605,9 @@ void App::watch_system(Uint32 now) {
     if (worker > 0 || files_child > 0 || files_queue_child > 0 || files_net_child > 0 || port_files_child > 0 ||
         album_share_child > 0 || (music_available() && music_ready && music.playing()))
         idle_busy_at = now;
-    const Uint32 quiet_since = idle_busy_at && now - idle_busy_at < now - last_activity ? idle_busy_at : last_activity;
+    const Uint32 quiet_for = idle_busy_at ? std::min(since(idle_busy_at), since_input) : since_input;
     if (!pointer_down && system_preferences.idle > 0 && hardware.sleep &&
-        now - quiet_since >= static_cast<Uint32>(idle_minutes[system_preferences.idle]) * 60000)
+        quiet_for >= static_cast<Uint32>(idle_minutes[system_preferences.idle]) * 60000)
         sleep_now();
 }
 

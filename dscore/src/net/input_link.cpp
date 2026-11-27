@@ -19,6 +19,7 @@ namespace ds::net {
 namespace {
 constexpr u32 kFrames = 0x4E494E31; // "1NIN": frames, sender to receiver
 constexpr u32 kAsk = 0x4B534131;    // "1ASK": send again from frame n, receiver to sender
+constexpr u32 kBye = 0x45594231;    // "1BYE": the sender has left, sender to receiver
 constexpr size_t kRecord = 13;      // buttons u16, x, y, flags (pen down, lid), 8 mic samples
 
 void put(u8* p, const input::Frame& f) {
@@ -41,6 +42,11 @@ input::Frame get_rec(const u8* p) {
 } // namespace
 
 InputLink::~InputLink() {
+  if (fd_ >= 0 && sender_ && have_peer_) { // so the other handheld's copy of this console ends now, not later
+    u8 buf[12] = {};
+    std::memcpy(buf, &kBye, 4);
+    for (int k = 0; k < 3; ++k) ::sendto(fd_, buf, sizeof buf, 0, reinterpret_cast<sockaddr*>(peer_), peer_len_);
+  }
   if (fd_ >= 0) ::close(fd_);
 }
 
@@ -116,7 +122,9 @@ void InputLink::drain() {
     std::memcpy(&magic, buf, 4);
     std::memcpy(&first, buf + 4, 4);
     std::memcpy(&count, buf + 8, 4);
-    if (sender_ && magic == kAsk) {
+    if (!sender_ && magic == kBye) {
+      bye_ = true;
+    } else if (sender_ && magic == kAsk) {
       for (auto it = sent_.begin(); it != sent_.end() && it->first + 64 < first;) it = sent_.erase(it);
       send_from(first);
     } else if (!sender_ && magic == kFrames && count <= 64 && static_cast<size_t>(n) >= 12 + count * kRecord) {
@@ -153,6 +161,7 @@ bool InputLink::get(u32 n, input::Frame& f, int give_up_ms) {
       drain();
       it = got_.find(n);
       if (it != got_.end()) break;
+      if (bye_) return false;
       const auto now = std::chrono::steady_clock::now();
       if (now - t0 > std::chrono::milliseconds(give_up_ms)) return false;
       if (have_peer_ && now - last_ask > std::chrono::milliseconds(kAskMs)) {
@@ -183,10 +192,12 @@ u64 ram_hash(const u8* ram, size_t bytes) {
   return h;
 }
 
-void log_ram_hash(u32 frame, const u8* ram, size_t bytes) {
+void log_ram_hash(u32 frame, const u8* ram, size_t bytes, std::FILE* to) {
   static const bool on = !std::getenv("DS_TWIN_HASH") || std::strcmp(std::getenv("DS_TWIN_HASH"), "0") != 0;
   if (!on || frame % 60) return;
-  std::fprintf(stderr, "[twin-hash] frame %u %016llx\n", frame, static_cast<unsigned long long>(ram_hash(ram, bytes)));
+  const auto h = static_cast<unsigned long long>(ram_hash(ram, bytes));
+  std::fprintf(stderr, "[twin-hash] frame %u %016llx\n", frame, h);
+  if (to) std::fprintf(to, "[twin-hash] frame %u %016llx\n", frame, h), std::fflush(to);
 }
 
 } // namespace ds::net

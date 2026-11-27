@@ -17,6 +17,7 @@
 #include <mutex>
 #include <chrono>
 #include <queue>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -85,6 +86,9 @@ public:
   // other's seat has come, and says where from (IPv4, network order).
   void send_seat(const std::string& blob);
   bool wait_seat(std::string& blob, u32& peer_ip, int timeout_ms);
+  // While hosting: true when another host is beaconing from a lower address than any of ours. Two handhelds
+  // started at once both host; the higher one gives way and joins (two-console sessions).
+  bool rival_host();
   void process();   // once per frame
   void scan_step(); // discovery-only scan; call between start_discovery()/end_discovery()
   // Ends a scan_step() scan: joins the first session with room if any, ends
@@ -133,6 +137,7 @@ private:
   u32 discovery_last_ms_ = 0;
   std::map<u32, Session> sessions_;
   std::mutex sessions_mutex_;
+  std::set<u32> mine_; // this handheld's addresses (rival_host)
   std::array<Player, 16> players_{};
   int num_players_ = 0, max_players_ = 0;
   std::mutex players_mutex_;

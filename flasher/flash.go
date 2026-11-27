@@ -428,6 +428,7 @@ type Job struct {
 	Carry  string // the bundle for the card's end (carry.go, preset.go); "-": the person declined their saves
 	Backup string // where the whole old card goes first (backup.go); "" for none
 	Preset string // setup answers for the first start (preset.go); "" for none
+	Format bool   // format the card before the flash (format.go)
 }
 
 // planFor is what flash writes from an image: the plan (plan.go) for an RG DS OS image, every byte of anything
@@ -508,6 +509,11 @@ func flash(job Job, report reporter) error {
 	if err != nil {
 		return fail("probe", err)
 	}
+	if job.Format { // after the probe: a fake card stops before anything is erased
+		if err := formatFirst(t, d.Size, report); err != nil {
+			return fail("format", err)
+		}
+	}
 	// the saves kept from an old card first, past the image; checked again once the image is on (carry.go)
 	if carry != "" {
 		if err := writeCarry(t, d.Size, plan.Total, carry, report); err != nil {
@@ -518,13 +524,16 @@ func flash(job Job, report reporter) error {
 		return fail("failed", err)
 	}
 	var carryArea [2]int64 // what the bundle and its header cover: the markers there are gone
+	if job.Format {        // the format zeroed the card's last MiB
+		carryArea = [2]int64{d.Size&^(sector-1) - (1 << 20), d.Size}
+	}
 	if carry != "" {
 		if err := checkCarry(t, d.Size, carry, report); err != nil {
 			return fail("carry after the image", err)
 		}
 		if info, err := os.Stat(carry); err == nil {
 			blob, _ := carryPlace(d.Size, info.Size())
-			carryArea = [2]int64{blob, d.Size}
+			carryArea = [2]int64{blob, d.Size} // the bundle sits below the last MiB: it covers the format's too
 		}
 	}
 	if err := pr.recheck(t, roundUp(plan.Total), carryArea, report); err != nil {

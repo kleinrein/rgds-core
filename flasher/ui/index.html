@@ -225,6 +225,7 @@ let lastPhase = "";
 let disks = null, pick = null, diskTimer = null, confirming = false;
 let keep = true, keepGames = false; // the old system's saves come along; its games to this computer only if asked
 let copyCard = false;                // a whole-card backup first (backup.go)
+let formatFirst = false;             // format the card before the flash (format.go)
 // Set up (preset.go): what the handheld's own setup would ask first. Language and time zone start from this
 // computer's; nothing is sent unless "useSetup" stays on.
 let useSetup = true, showPw = false;
@@ -269,7 +270,7 @@ function current() {
   switch (st.phase) {
     case "download": case "check": return 0;
     case "plan": return st.busy && step < 3 ? 0 : 3;
-    case "prepare": case "backup": case "backup-card": case "probe": case "carry": case "write": return 3;
+    case "prepare": case "backup": case "backup-card": case "probe": case "format": case "carry": case "write": return 3;
     case "verify": case "reopen": case "eject": return 4;
     case "done": return 5;
     case "error": return st.errorStep === "download" ? 0 : 3;
@@ -395,6 +396,8 @@ function viewCard() {
     body += `<div class="list">` + disks.map(d => `<button class="row ${d.id === pick ? "on" : ""}" data-act="disk" data-id="${esc(d.id)}" ${d.problem ? "disabled" : ""}>${ICON.sd}<span class="txt"><div class="name">${esc(d.name)}</div><small>${d.problem ? `<span class="why">${esc(d.problem)}</span>` : esc([d.path, ...(d.volumes || [])].join(" · "))}</small>${d.id === pick && d.warnings ? d.warnings.map(w => `<div class="rowwarn">${esc(w)}</div>`).join("") : ""}${d.carry ? `<div class="rowok">${esc(cap(d.carry.source))}: ${carryLine(d.carry)}. They can come along.</div>` : ""}</span><span class="size">${gb(d.size)}</span></button>`).join("") + `</div>`;
   }
   const ok = disks && disks.some(d => d.id === pick && !d.problem);
+  if (ok && !(st.image && isBackup(st.image.model)))
+    body += `<div class="carry"><label><input type="checkbox" data-act="formatfirst" ${formatFirst ? "checked" : ""}> <span>Format the card first<br><small>Clears whatever the card had (old partitions, other systems) before RG DS OS goes on. Takes a few seconds.</small></span></label></div>`;
   // a backup goes back as it was: nothing to set up
   return [body, btn("B", "Back", "back") + (st.image && isBackup(st.image.model) ? btn("A", "Flash", "confirm", "primary", !ok) : btn("A", "Next", "tosetup", "primary", !ok))];
 }
@@ -479,6 +482,12 @@ function viewFlash() {
     <div class="note">${ICON.info}<span>A card that fails gets back what was on it.</span></div>`;
     return [body, "", { pct: st.total ? st.done / st.total * 100 : 0, amount: "", left: "" }];
   }
+  if (ph === "format") {
+    const body = `<h1>Formatting the card</h1><p class="sub">${name} is cleared and gets a fresh partition table, then RG DS OS goes on.</p>
+    <div class="grow"></div><div class="big" data-k="pct">0%</div>${bar()}<div class="grow"></div>
+    <div class="note">${ICON.info}<span>Leave the card in until it's done.</span></div>`;
+    return [body, "", { pct: st.total ? st.done / st.total * 100 : 0, amount: "", left: "" }];
+  }
   if (ph === "carry") return [`<div class="empty"><div class="spin"></div><h1 style="color:var(--ink)">Putting your saves on the card</h1></div>`, ""];
   if (ph === "eject") return [`<div class="empty"><div class="spin"></div><h1 style="color:var(--ink)">Ejecting the card</h1></div>`, ""];
   const verify = ph === "verify";
@@ -523,7 +532,7 @@ function confirmDialog() {
   confirming = true;
   const ask = mac() ? "Your Mac will ask for your password next." : win() ? "Windows will ask for permission next." : "";
   $("modal").innerHTML = `<div class="modal"><div class="dialog"><h1>${ICON.alert}Erase this card?</h1>
-    <p>Everything on <b>${esc(d.name)}</b> (${gb(d.size)}${d.volumes && d.volumes.length ? ", " + esc(d.volumes.join(", ")) : ""}) will be erased.</p>
+    <p>Everything on <b>${esc(d.name)}</b> (${gb(d.size)}${d.volumes && d.volumes.length ? ", " + esc(d.volumes.join(", ")) : ""}) will be erased.${formatFirst && !(st.image && isBackup(st.image.model)) ? " The card is formatted first." : ""}</p>
     ${(d.warnings || []).map(w => `<div class="warn">${esc(w)}</div>`).join("")}
     ${d.carry ? carryChoice(d.carry) : ""}
     ${st.image && isBackup(st.image.model) ? "" : copyChoice(d)}
@@ -571,11 +580,12 @@ async function act(name, el) {
       case "flash": {
         const id = pick, d = disks.find(x => x.id === id) || {}, preset = presetBody();
         closeDialog(); step = 3;
-        await post("flash", { disk: id, confirm: id, keep: !!d.carry && keep, games: !!d.carry && keep && keepGames, backup: copyCard, preset });
+        await post("flash", { disk: id, confirm: id, keep: !!d.carry && keep, games: !!d.carry && keep && keepGames, backup: copyCard, format: formatFirst && !(st.image && isBackup(st.image.model)), preset });
         sentSetup = describeSetup(preset);
         break;
       }
       case "copycard": copyCard = el.checked; confirmDialog(); break;
+      case "formatfirst": formatFirst = el.checked; render(); break;
       case "tosetup": step = 2; render(); break;
       case "tocard": step = 1; render(); break;
       case "usesetup": useSetup = el.checked; setupEnabled(); renderHints(); break;
@@ -583,7 +593,7 @@ async function act(name, el) {
       case "keep": keep = el.checked; if (!keep) keepGames = false; confirmDialog(); break;
       case "keepgames": keepGames = el.checked; confirmDialog(); break;
       case "backup": await post("backup"); break;
-      case "again": step = 1; disks = null; sentSetup = ""; copyCard = false; await post("again"); break;
+      case "again": step = 1; disks = null; sentSetup = ""; copyCard = false; formatFirst = false; await post("again"); break;
       case "log": await post("log"); break;
       case "quit": await post("quit"); gone(); break;
     }

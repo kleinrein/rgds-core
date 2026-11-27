@@ -6,8 +6,10 @@
 #include "net/lan_mp.h"
 #include "net/twin_mp.h"
 
+#include <algorithm>
 #include <arpa/inet.h>
 #include <cerrno>
+#include <chrono>
 #include <csignal>
 #include <cstdio>
 #include <cstring>
@@ -138,19 +140,43 @@ std::unique_ptr<TwinSession> TwinSession::start(const Params& p, int scan_ms, in
       err = lan.error();
       return nullptr;
     }
-    const auto role = lan.start_auto(p.name, scan_ms, 2, true);
+    auto role = lan.start_auto(p.name, scan_ms, 2, true);
     if (role == net::LanMp::Role::None) {
       err = "no session heard and none could be hosted";
       return nullptr;
     }
-    t->host_ = role == net::LanMp::Role::Host;
     std::string blob;
-    if (t->host_) {
+    if (role == net::LanMp::Role::Host) {
       std::fprintf(stderr, "twin: hosting, waiting for the other handheld\n");
-      if (!lan.wait_seat(blob, peer_ip, wait_ms) || !decode(blob, theirs)) {
+      const auto t0 = std::chrono::steady_clock::now();
+      bool got = false;
+      while (!got) {
+        const int left =
+            wait_ms -
+            static_cast<int>(
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count());
+        if (left <= 0) break;
+        got = lan.wait_seat(blob, peer_ip, std::min(left, 1000));
+        if (got || !lan.rival_host()) continue;
+        // Both handhelds started at once and both host: the one with the higher address joins the other.
+        std::fprintf(stderr, "twin: the other handheld hosts too; joining it\n");
+        lan.end_session();
+        role = lan.start_auto(p.name, 3000, 2, false);
+        if (role == net::LanMp::Role::Guest) break;
+        role = lan.start_auto(p.name, 0, 2, true); // it went: host again
+        if (role == net::LanMp::Role::None) break;
+      }
+      if (role == net::LanMp::Role::Host && (!got || !decode(blob, theirs))) {
         err = "nobody joined";
         return nullptr;
       }
+      if (role == net::LanMp::Role::None) {
+        err = "no session heard and none could be hosted";
+        return nullptr;
+      }
+    }
+    t->host_ = role == net::LanMp::Role::Host;
+    if (t->host_) {
       now_bcd(t->rtc_);
       mine["rtc"] = std::string(reinterpret_cast<const char*>(t->rtc_), 7);
       lan.send_seat(encode(mine));
@@ -229,6 +255,7 @@ std::unique_ptr<TwinSession> TwinSession::start(const Params& p, int scan_ms, in
   if (theirs["jit"] == "0") args.push_back("--interp");
   const std::string idle = theirs["idle_skip"];
   const std::string log = t->tmp_ + "/hidden.log";
+  t->hashes_ = std::fopen((t->tmp_ + "/visible.log").c_str(), "we");
   t->child_ = fork();
   if (t->child_ == 0) {
     if (p.child_core >= 0) {
@@ -277,7 +304,9 @@ std::unique_ptr<TwinSession> TwinSession::start(const Params& p, int scan_ms, in
 }
 
 TwinSession::~TwinSession() {
-  link_.reset(); // says this console is gone, so the hidden one never waits for it
+  link_.reset();   // says this console is gone, so the hidden one never waits for it
+  inputs_.reset(); // and tells the other handheld, whose copy of this console then ends
+  if (hashes_) std::fclose(hashes_);
   if (child_ > 0) {
     ::kill(child_, SIGTERM);
     int st;
@@ -315,7 +344,7 @@ input::Frame TwinSession::frame(const input::Frame& in) {
 
 void TwinSession::after_frame(const u8* ram, size_t bytes) {
   if (link_) link_->publish();
-  net::log_ram_hash(frame_ - 1, ram, bytes); // frame_ counts the frames begun; this is the one just run
+  net::log_ram_hash(frame_ - 1, ram, bytes, hashes_); // frame_ counts the frames begun; this is the one just run
 }
 
 bool TwinSession::child_running() {

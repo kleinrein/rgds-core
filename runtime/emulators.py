@@ -35,6 +35,14 @@ from controls import paths as control_paths, load_profile as control_profile
 
 from engines import CORES, DSPERATE_CORES, RETIRED
 
+
+def local_wireless(data):
+    """Local wireless is held back from players until the two-console session plays a race through (2026-11-26,
+    docs/NETPLAY_PLAN.md): only a development handheld with dev/local-wireless in its data folder starts one. The
+    launcher hides the setting the same way (g_local_wireless)."""
+    return (Path(data) / 'dev' / 'local-wireless').exists()
+
+
 # DSCore's video.integer_scale for game.ini integer_scale 0, 1 and 2 (Graphics > Whole pixels).
 INTEGER_SCALES = ('off', 'under', 'over')
 
@@ -642,9 +650,9 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         ds_language = 1
     ds_language = max(0, min(5, ds_language))
     ds_microphone = ds_input.get('microphone', '1') != '0'
-    # Local wireless (DS controls → Local wireless): DSCore's net.mode, a session with another console on the LAN
-    # 4: smooth, two consoles a handheld and only inputs between them (net.mode twin, docs/NETPLAY_PLAN.md)
-    ds_wireless = {'1': 'auto', '2': 'host', '3': 'guest', '4': 'twin'}.get(ds_input.get('wireless', '0'), 'off')
+    # Local wireless (Play together → Local wireless), one switch: on is DSCore's net.mode twin, each handheld
+    # running both consoles with only inputs between them (docs/NETPLAY_PLAN.md). Older builds' 1-4 read as on.
+    ds_wireless = 'twin' if local_wireless(data) and ds_input.get('wireless', '0') in ('1', '2', '3', '4') else 'off'
     # A Kid profile is on no one's network unless the owner said so.
     limits = read_fields(player / 'profile.ini')
     # Online play (DS controls → Online play): Nintendo WFC through a fan-run service, DSCore's net.mode = internet
@@ -805,7 +813,8 @@ def launch_plan(core, app, data, rom, prepare=True, identity=None, fresh_start=F
         # checkpoints are keyed by game identity. Select explicitly so a stale
         # native slot cannot override disabled autoload or a newer battery save.
         command.append('--no-autoload')
-        if prepare and auto_load:
+        # A two-console session boots fresh on both handhelds (the other runs a copy of this console from boot).
+        if prepare and auto_load and ds_wireless != 'twin':
             resume = dsperate_resume_state(player, rom, identity, core)
             if resume is not None: command += ['--load-state', str(resume)]
         from linux_platform import independent

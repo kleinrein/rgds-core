@@ -1519,7 +1519,6 @@ Just you	仅你自己
 Buttons, shortcut and fast-forward	按键、快捷键和快进
 DS nickname	DS 名称
 Join or host	加入或创建
-Smooth (2 players)	流畅（2人）
 Host	主机
 Sharing details	共享详情
 Graphics saved.	图形设置已保存。
@@ -2089,3 +2088,5 @@ With controls	带控制
 Left hand	左手
 Right hand	右手
 Volume and brightness	音量和亮度
+Local wireless starts the game fresh on both handhelds	本地无线会在两台掌机上重新启动游戏
+Applies when the game starts.	游戏启动时生效。
